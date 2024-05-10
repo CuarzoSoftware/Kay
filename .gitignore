@@ -1,0 +1,7 @@
+**/build**
+**.user
+**.DS_Store
+**/*.ipynb_checkpoints/
+**.autosave
+**.vscode
+**.mkv
