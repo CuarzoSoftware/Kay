@@ -1,0 +1,21 @@
+#ifndef AKBAKEABLE_H
+#define AKBAKEABLE_H
+
+#include <AKRenderable.h>
+
+class AK::AKBakeable : public AKRenderable
+{
+protected:
+    AKBakeable(AKNode *parent = nullptr) noexcept : AKRenderable(parent) { m_caps |= Bake; }
+    virtual void onBake(SkCanvas *canvas) = 0;
+
+    void rebake() noexcept
+    {
+        m_pendingRebake = true;
+    }
+
+private:
+    bool m_pendingRebake { true };
+};
+
+#endif // AKBAKEABLE_H
