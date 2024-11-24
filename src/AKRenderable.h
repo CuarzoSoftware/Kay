@@ -8,15 +8,7 @@ class AK::AKRenderable : public AKNode
 public:
     AKRenderable(AKNode *parent = nullptr) noexcept : AKNode(parent) { m_caps |= Render; }
 
-    void setDirtyRegion(SkRegion *region) noexcept
-    {
-        m_dirtyRegion = region ? std::make_unique<SkRegion>(*region) : nullptr;
-    }
-
-    SkRegion *dirtyRegion() const noexcept
-    {
-        return m_dirtyRegion.get();
-    }
+    void addDamage(const SkRegion &region) noexcept;
 
     void setOpaqueRegion(SkRegion *region) noexcept
     {
@@ -29,10 +21,11 @@ public:
     }
 
 protected:
-    virtual void onRender(SkCanvas *canvas) = 0;
+    friend class AKScene;
+    virtual void onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque) = 0;
 
 private:
-    std::unique_ptr<SkRegion> m_dirtyRegion, m_opaqueRegion;
+    std::unique_ptr<SkRegion> m_opaqueRegion;
 };
 
 #endif // AKRENDERABLE_H

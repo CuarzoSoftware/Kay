@@ -36,4 +36,5 @@ kay_dep = declare_dependency(
 
 # -------------- EXAMPLES --------------
 
+subdir('examples/kay-louvre')
 subdir('examples/kay-srm')

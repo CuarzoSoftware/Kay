@@ -1,12 +1,14 @@
-srm_dep = dependency('SRM')
+louvre_dep = dependency('Louvre')
 egl_dep = dependency('egl')
+pixmap_dep = dependency('pixman-1')
 
 executable(
-    'kay-srm',
+    'kay-louvre',
     sources : ['main.cpp'],
     dependencies : [
         kay_dep,
-        srm_dep,
+        louvre_dep,
+        pixmap_dep,
         egl_dep
     ],
     install : true)

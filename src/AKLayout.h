@@ -6,7 +6,7 @@
 class AK::AKLayout : public AKNode
 {
 public:
-    AKLayout(AKNode *parent) noexcept : AKNode(parent){}
+    AKLayout(AKNode *parent = nullptr) noexcept : AKNode(parent){}
 };
 
 #endif // AKLAYOUT_H

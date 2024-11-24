@@ -6,11 +6,17 @@
 namespace AK
 {
     class AKObject;
+
     class AKScene;
+    class AKTarget;
+
     class AKNode;
-    class AKLayout;
     class AKRenderable;
     class AKBakeable;
+
+    class AKLayout;
+    class AKSolidColor;
+    class AKImage;
 
     /// @brief 64 bits unsigned integer
     typedef uint64_t        UInt64;

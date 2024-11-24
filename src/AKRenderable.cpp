@@ -1,3 +1,9 @@
-#include "AKRenderable.h"
+#include <AKRenderable.h>
 
-AKRenderable::AKRenderable() {}
+using namespace AK;
+
+void AKRenderable::addDamage(const SkRegion &region) noexcept
+{
+    for (auto &it : m_targets)
+        it.second.clientDamage.op(region, SkRegion::Op::kUnion_Op);
+}
