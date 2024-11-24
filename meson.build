@@ -11,6 +11,8 @@ project(
 cpp = meson.get_compiler('cpp')
 
 pkg         = import('pkgconfig')
+gl_dep      = dependency('gl')
+glesv2_dep  = dependency('glesv2')
 skia_dep    = dependency('Skia')
 yoga_dep    = dependency('yoga', modules: ['yoga::yogacore'])
 
@@ -25,6 +27,8 @@ kay = library(
     include_directories : include_directories,
     dependencies : [
         skia_dep,
+        gl_dep,
+        glesv2_dep,
         yoga_dep
     ],
     install : false)

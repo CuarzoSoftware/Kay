@@ -1,5 +1,8 @@
+#include "include/gpu/GrDirectContext.h"
+#include "include/gpu/GrRecordingContext.h"
 #include <AKScene.h>
 #include <AKRenderable.h>
+#include <AKBakeable.h>
 #include <yoga/Yoga.h>
 #include <include/core/SkCanvas.h>
 
@@ -10,18 +13,27 @@ AKScene::AKScene() noexcept
 
 }
 
-std::shared_ptr<AKTarget> AK::AKScene::createTarget() noexcept
+AKTarget *AK::AKScene::createTarget() noexcept
 {
-    m_targets.emplace_back(std::shared_ptr<AKTarget>(new AKTarget(this)));
+    m_targets.emplace_back(new AKTarget(this));
     return m_targets.back();
 }
 
-bool AKScene::render(std::shared_ptr<AKTarget> target)
+bool AKScene::destroyTarget(AKTarget *target)
+{
+    if (std::find(m_targets.begin(), m_targets.end(), target) == m_targets.end())
+        return false;
+
+    delete target;
+    return true;
+}
+
+bool AKScene::render(AKTarget *target)
 {
     // Invalid target
     if (!target || target->scale <= 0.f || !target->surface || std::find(m_targets.begin(), m_targets.end(), target) == m_targets.end())
         return false;
-    t = target.get();
+    t = target;
 
     // Keep the target surface alive
     sk_sp<SkSurface> targetSurfaceRef { target->surface };
@@ -166,26 +178,51 @@ void AKScene::calculateNewDamage(AKNode *node)
         node->t->targetLink = t->m_nodes.size() - 1;
     }
 
-    SkIRect rect = SkIRect::MakeXYWH(
-        node->layoutGetLeft(),
-        node->layoutGetTop(),
+    SkIRect parentRect;
+
+    if (node->parent())
+        parentRect = node->parent()->globalRect();
+
+    node->m_globalRect = SkIRect::MakeXYWH(
+        node->layoutGetLeft() + parentRect.x(),
+        node->layoutGetTop() + parentRect.y(),
         node->layoutGetWidth(),
         node->layoutGetHeight());
 
-    SkIRect clip = rect;
+    if ((node->caps() & AKNode::Bake) && !node->m_globalRect.isEmpty())
+    {
+        AKBakeable *bake { static_cast<AKBakeable*>(node) };
+        if (bake->updateBakeStorage() || node->m_globalRect.size() != bake->t->prevRect.size())
+        {
+            SkCanvas *canvas { bake->t->bake.surface->getCanvas() };
+            canvas->save();
+            canvas->clipRect(bake->t->bake.srcRect);
+            canvas->setMatrix(SkMatrix::Scale(t->scale, t->scale));
+            bake->onBake(canvas);
+            canvas->restore();
+        }
+    }
+
+    SkIRect clip = node->m_globalRect;
 
     SkIRect localRect = SkIRect::MakeXYWH(
-        rect.x() - t->m_viewport.x(),
-        rect.y() - t->m_viewport.y(),
-        rect.width(),
-        rect.height());
+        node->m_globalRect.x() - t->m_viewport.x(),
+        node->m_globalRect.y() - t->m_viewport.y(),
+        node->m_globalRect.width(),
+        node->m_globalRect.height());
 
     if (node->parent() == root())
+    {
         node->m_insideLastTarget = clip.intersect(t->m_viewport);
+
+        if (!node->m_insideLastTarget)
+            clip.setEmpty();
+    }
     else
     {
-        clip.intersect(node->parent()->t->prevClip);
-        node->m_insideLastTarget = SkIRect::Intersects(rect, t->m_viewport);
+        if (!clip.intersect(node->parent()->t->prevClip))
+            clip.setEmpty();
+        node->m_insideLastTarget = SkIRect::Intersects(node->m_globalRect, t->m_viewport);
     }
 
     if (localRect == node->t->prevLocalRect)
@@ -197,8 +234,8 @@ void AKScene::calculateNewDamage(AKNode *node)
         t->m_damage.op(clipDiff, SkRegion::Op::kUnion_Op);
 
         node->t->clientDamage.translate(
-            node->layoutGetLeft(),
-            node->layoutGetTop());
+            node->m_globalRect.x(),
+            node->m_globalRect.y());
 
         node->t->clientDamage.op(clip, SkRegion::Op::kIntersect_Op);
         t->m_damage.op(node->t->clientDamage, SkRegion::Op::kUnion_Op);
@@ -213,7 +250,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     node->t->clientDamage.setEmpty();
     node->t->prevClip = clip;
     node->t->prevLocalRect = localRect;
-    node->t->prevRect = rect;
+    node->t->prevRect = node->m_globalRect;
 
     for (std::list<AKNode*>::const_reverse_iterator it = node->children().crbegin(); it != node->children().crend(); it++)
         calculateNewDamage(*it);
@@ -222,7 +259,7 @@ void AKScene::calculateNewDamage(AKNode *node)
         return;
 
     AKRenderable *rend { static_cast<AKRenderable*>(node) };
-    rend->m_renderedOnLastTarget = !t->m_opaque.contains(clip) && !clip.isEmpty();
+    rend->m_renderedOnLastTarget = !t->m_opaque.contains(clip) && !clip.isEmpty() && !node->m_globalRect.isEmpty();
 
     if (!rend->m_renderedOnLastTarget)
         return;
@@ -232,7 +269,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     if (rend->opaqueRegion())
     {
         rend->t->opaque = *rend->opaqueRegion();
-        rend->t->opaque.translate(rect.x(), rect.y());
+        rend->t->opaque.translate(node->m_globalRect.x(), node->m_globalRect.y());
         rend->t->opaque.op(clip, SkRegion::kIntersect_Op);
         t->m_opaque.op(rend->t->opaque, SkRegion::kUnion_Op);
 
@@ -274,7 +311,7 @@ void AKScene::renderBackground() noexcept
     background.op(t->m_opaque, SkRegion::Op::kDifference_Op);
 
     SkPaint paint;
-    paint.setColor(SK_ColorBLACK);
+    paint.setColor(m_clearColor);
     paint.setBlendMode(SkBlendMode::kSrc);
 
     SkRegion::Iterator it(background);

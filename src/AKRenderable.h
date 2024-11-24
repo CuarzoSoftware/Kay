@@ -9,6 +9,7 @@ public:
     AKRenderable(AKNode *parent = nullptr) noexcept : AKNode(parent) { m_caps |= Render; }
 
     void addDamage(const SkRegion &region) noexcept;
+    void addDamage(const SkIRect &rect) noexcept;
 
     void setOpaqueRegion(SkRegion *region) noexcept
     {

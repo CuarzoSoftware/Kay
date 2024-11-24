@@ -1,3 +1,4 @@
+#include "AKDiv.h"
 #include <LLauncher.h>
 #include <LCompositor.h>
 #include <LOutput.h>
@@ -48,7 +49,12 @@ public:
 
     void initializeGL() override
     {
-        setScale(1.5f);
+        for (Int32 i = 0; i < 15; i++)
+        {
+            solidColors.push_back(new AKSolidColor((rand()) + 0x555555, &divs[0]));
+            solidColors.push_back(new AKSolidColor((rand()) + 0x555555, &divs[1]));
+        }
+
         enableFractionalOversampling(false);
         frame = 0;
         auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](void *, const char *p) -> void * {
@@ -76,20 +82,49 @@ public:
     void paintGL() override
     {
         static Float32 phase { 0.f };
-        phase += 0.1f;
+        phase += 0.01f;
 
-        layout.styleSetFlexDirection(YGFlexDirectionRow);
-        layout.styleSetWidth(size().w());
-        layout.styleSetHeight(size().h());
-        layout.styleSetGap(YGGutterAll, 50.f * (1.f + SkScalarSin(phase)));
-        layout.styleSetPadding(YGEdgeAll, 200.f);
+        layout.styleSetPositionType(YGPositionTypeAbsolute);
+        layout.styleSetPosition(YGEdgeTop, pos().y());
+        layout.styleSetPosition(YGEdgeLeft, pos().x());
+        layout.styleSetDisplay(YGDisplayFlex);
+        layout.styleSetFlexDirection(YGFlexDirectionColumn);
+        layout.styleSetFlex(1.f);
+        layout.styleSetMaxWidth(size().w());
+        layout.styleSetMinWidth(size().w());
+        layout.styleSetMinHeight(size().h());
+        layout.styleSetPadding(YGEdgeAll, 24.f);
+        layout.styleSetGap(YGGutterRow, 24.f);
 
-        for (Int32 i = 0; i < 4; i++)
+        for (AKSolidColor *sc : solidColors)
         {
-            solidColors[i].styleSetFlex(1.f);
-            solidColors[i].styleSetWidthPercent(100);
-            solidColors[i].styleSetHeightPercent(100);
+            sc->styleSetDisplay(YGDisplayFlex);
+            sc->styleSetFlexWrap(YGWrapWrap);
+            sc->styleSetFlex(1.f);
+            sc->styleSetMinWidth(50);
+            sc->styleSetMinHeight(50);
+            sc->styleSetMaxWidth(50);
+            sc->styleSetMaxHeight(50);
         }
+
+        for (int i = 0; i < 2; i++)
+        {
+            divs[i].styleSetAlignContent(YGAlignCenter);
+            divs[i].styleSetAlignItems(YGAlignCenter);
+            divs[i].styleSetFlex(1.f);
+            divs[i].styleSetFlexGrow(1.f);
+            divs[i].styleSetFlexDirection(YGFlexDirectionRow);
+            divs[i].styleSetFlexWrap(YGWrapWrap);
+            divs[i].styleSetPadding(YGEdgeAll, 24.f);
+            divs[i].styleSetGap(YGGutterColumn, 100.f * (2.f + SkScalarSin(phase)));
+            divs[i].styleSetGap(YGGutterRow, 24.f);
+        }
+
+
+
+
+        //layout.styleSetGap(YGGutterColumn, 50.f * (2.f + SkScalarSin(phase)));
+        //layout.styleSetGap(YGGutterRow, 50.f);
 
         const GrGLFramebufferInfo fbInfo
         {
@@ -122,6 +157,9 @@ public:
 
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
         {
+
+            if (s->cursorRole())
+                s->node.setParent(nullptr);
 
             const LPoint &pos { s->rolePos() };
             s->node.styleSetPositionType(YGPositionTypeAbsolute);
@@ -191,17 +229,29 @@ public:
 
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
         {
-            if (s->node.insideLastTarget())
+            if (s->node.renderedOnLastTarget())
+                s->requestNextFrame();
+
+            for (LOutput *o : compositor()->outputs())
             {
-                s->sendOutputEnterEvent(this);
-                if (s->node.renderedOnLastTarget())
-                    s->requestNextFrame();
-            }
-            else
-            {
-                s->sendOutputLeaveEvent(this);
+                if (LRect(s->rolePos(), s->size()).intersects(o->rect()))
+                    s->sendOutputEnterEvent(o);
+                else
+                    s->sendOutputLeaveEvent(o);
             }
         }
+
+        target->outDamageRegion.translate(pos().x(), pos().y());
+
+        LRegion damage;
+        SkRegion::Iterator it(target->outDamageRegion);
+        while (!it.done())
+        {
+            damage.addRect(it.rect().x(), it.rect().y(), it.rect().width(), it.rect().height());
+            it.next();
+        }
+
+        setBufferDamage(&damage);
     }
 
     void resizeGL() override
@@ -222,22 +272,17 @@ public:
 
     void uninitializeGL() override
     {
-
+        static_cast<Compositor*>(compositor())->scene.destroyTarget(target);
     }
 
     AKLayout layout { static_cast<Compositor*>(compositor())->scene.root() };
 
-    AKSolidColor solidColors[4]
-    {
-        {SK_ColorRED,   &layout},
-        {SK_ColorGREEN, &layout},
-        {SK_ColorBLUE,  &layout},
-        {SK_ColorWHITE, &layout}
-    };
+    std::vector<AKSolidColor*> solidColors;
+    AKDiv divs[2] { {&layout}, {&layout} };
 
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
-    std::shared_ptr<AKTarget> target;
+    AKTarget *target { nullptr };
     UInt32 age { 0 };
     UInt32 frame { 0 };
 };

@@ -44,52 +44,52 @@ void AKImage::calculateRenderParams(SkMatrix &matrix, SkRect &srcRect, SkRect &d
     switch (transform())
     {
     case AKTransform::Normal:
-        matrix.preTranslate(layoutGetLeft(), layoutGetTop());
+        matrix.preTranslate(globalRect().x(), globalRect().y());
         srcRect = src;
-        dstRect.setXYWH(0, 0, layoutGetWidth(), layoutGetHeight());
+        dstRect.setXYWH(0, 0, globalRect().width(), globalRect().height());
         break;
     case AKTransform::Rotated90:
-        matrix.preTranslate(layoutGetLeft() + layoutGetWidth(), layoutGetTop());
+        matrix.preTranslate(globalRect().x() + globalRect().width(), globalRect().y());
         matrix.preRotate(90.f);
         srcRect.setLTRB(
             src.top(),
             image()->height() - src.right(),
             src.bottom(),
             src.right());
-        dstRect.setXYWH(0, 0, layoutGetHeight(), layoutGetWidth());
+        dstRect.setXYWH(0, 0, globalRect().height(), globalRect().width());
         break;
     case AKTransform::Rotated180:
-        matrix.preTranslate(layoutGetLeft() + layoutGetWidth(), layoutGetTop() + layoutGetHeight());
+        matrix.preTranslate(globalRect().x() + globalRect().width(), globalRect().y() + globalRect().height());
         matrix.preRotate(180.f);
         srcRect.setLTRB(
             image()->width() - src.right(),
             image()->height() - src.bottom(),
             src.right(),
             src.bottom());
-        dstRect.setXYWH(0, 0, layoutGetWidth(), layoutGetHeight());
+        dstRect.setXYWH(0, 0, globalRect().width(), globalRect().height());
         break;
     case AKTransform::Rotated270:
-        matrix.preTranslate(layoutGetLeft(), layoutGetTop() + layoutGetHeight());
+        matrix.preTranslate(globalRect().x(), globalRect().y() + globalRect().height());
         matrix.preRotate(-90.f);
         srcRect.setLTRB(
             src.top(),
             src.left(),
             src.bottom(),
             src.right());
-        dstRect.setXYWH(0, 0, layoutGetHeight(), layoutGetWidth());
+        dstRect.setXYWH(0, 0, globalRect().height(), globalRect().width());
         break;
     case AKTransform::Flipped:
-        matrix.preTranslate(layoutGetLeft() + layoutGetWidth(), layoutGetTop());
+        matrix.preTranslate(globalRect().x() + globalRect().width(), globalRect().y());
         matrix.preScale(-1.f, 1.f);
         srcRect.setLTRB(
             image()->width() - src.right(),
             image()->height() - src.bottom(),
             src.right(),
             src.bottom());
-        dstRect.setXYWH(0, 0, layoutGetWidth(), layoutGetHeight());
+        dstRect.setXYWH(0, 0, globalRect().width(), globalRect().height());
         break;
     case AKTransform::Flipped90:
-        matrix.preTranslate(layoutGetLeft(), layoutGetTop());
+        matrix.preTranslate(globalRect().x(), globalRect().y());
         matrix.preScale(-1.f, 1.f);
         matrix.preRotate(90.f);
         srcRect.setLTRB(
@@ -97,20 +97,20 @@ void AKImage::calculateRenderParams(SkMatrix &matrix, SkRect &srcRect, SkRect &d
             src.left(),
             src.bottom(),
             src.right());
-        dstRect.setXYWH(0, 0, layoutGetHeight(), layoutGetWidth());
+        dstRect.setXYWH(0, 0, globalRect().height(), globalRect().width());
         break;
     case AKTransform::Flipped180:
-        matrix.preTranslate(layoutGetLeft(), layoutGetTop() + layoutGetHeight());
+        matrix.preTranslate(globalRect().x(), globalRect().y() + globalRect().height());
         matrix.preScale(1.f, -1.f);
         srcRect.setLTRB(
             src.left(),
             image()->height() - src.bottom(),
             src.right(),
             src.bottom());
-        dstRect.setXYWH(0, 0, layoutGetWidth(), layoutGetHeight());
+        dstRect.setXYWH(0, 0, globalRect().width(), globalRect().height());
         break;
     case AKTransform::Flipped270:
-        matrix.preTranslate(layoutGetLeft() + layoutGetWidth(), layoutGetTop() + layoutGetHeight());
+        matrix.preTranslate(globalRect().x() + globalRect().width(), globalRect().y() + globalRect().height());
         matrix.preScale(-1.f, 1.f);
         matrix.preRotate(-90.f);
         srcRect.setLTRB(
@@ -118,7 +118,7 @@ void AKImage::calculateRenderParams(SkMatrix &matrix, SkRect &srcRect, SkRect &d
             src.left(),
             src.bottom(),
             src.right());
-        dstRect.setXYWH(0, 0, layoutGetHeight(), layoutGetWidth());
+        dstRect.setXYWH(0, 0, globalRect().height(), globalRect().width());
         break;
     }
 }

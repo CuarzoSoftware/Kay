@@ -3,6 +3,8 @@
 
 #include "include/core/SkImage.h"
 #include "include/core/SkSurface.h"
+#include "include/gpu/GrBackendSurface.h"
+#include "include/gpu/gl/GrGLTypes.h"
 #include <AKObject.h>
 
 #include <include/core/SkRegion.h>
@@ -70,6 +72,11 @@ public:
     }
 
     /* Layout */
+
+    const SkIRect globalRect() const noexcept
+    {
+        return m_globalRect;
+    }
 
     float layoutGetWidth() const noexcept
     {
@@ -444,14 +451,23 @@ private:
         size_t targetLink;
         SkIRect prevClip; // Rect clipped by parent
         SkIRect prevLocalRect, prevRect;
-        sk_sp<SkImage> bakeImage;
-        sk_sp<SkSurface> bakeSurface;
         SkRegion clientDamage,
             opaque, translucent,
             opaqueOverlay;
+        struct {
+            GrGLFramebufferInfo fbInfo { 0 };
+            GrBackendRenderTarget renderTarget;
+            GrGLTextureInfo textureInfo { 0, 0 };
+            GrBackendTexture backendTexture;
+            sk_sp<SkImage> image;
+            sk_sp<SkSurface> surface;
+            SkRect srcRect;
+        } bake;
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
+    bool updateBakeStorage() noexcept;
+    SkIRect m_globalRect;
     UInt32 m_caps { 0 };
     size_t m_nodeIndex;
     YGNodeRef m_node { nullptr };

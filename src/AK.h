@@ -18,6 +18,8 @@ namespace AK
     class AKSolidColor;
     class AKImage;
 
+    class AKDiv;
+
     /// @brief 64 bits unsigned integer
     typedef uint64_t        UInt64;
 

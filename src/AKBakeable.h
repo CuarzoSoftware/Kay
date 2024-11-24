@@ -6,6 +6,7 @@
 class AK::AKBakeable : public AKRenderable
 {
 protected:
+    friend class AKScene;
     AKBakeable(AKNode *parent = nullptr) noexcept : AKRenderable(parent) { m_caps |= Bake; }
     virtual void onBake(SkCanvas *canvas) = 0;
 
@@ -15,6 +16,7 @@ protected:
     }
 
 private:
+    virtual void onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque) override;
     bool m_pendingRebake { true };
 };
 

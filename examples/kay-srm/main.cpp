@@ -35,7 +35,7 @@ struct ConnectorData
 {
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
-    std::shared_ptr<AKTarget> target;
+    AKTarget *target { nullptr };
     AKSolidColor background { SK_ColorWHITE, scene.root() };
     AKSolidColor childLeft  { SK_ColorRED, &background };
     AKSolidColor childRight { SK_ColorBLUE, &background };

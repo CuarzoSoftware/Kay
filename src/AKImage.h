@@ -56,7 +56,7 @@ public:
     }
 
 private:
-    void onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque) override;
+    virtual void onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque) override;
     void calculateRenderParams(SkMatrix &matrix, SkRect &srcRect, SkRect &dstRect) const noexcept;
     sk_sp<SkImage> m_image;
     SkRect m_srcRect;

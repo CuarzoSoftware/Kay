@@ -11,8 +11,11 @@ class AK::AKScene : public AKObject
 {
 public:
     AKScene() noexcept;
-    std::shared_ptr<AKTarget> createTarget() noexcept;
-    bool render(std::shared_ptr<AKTarget> target);
+
+    AKTarget *createTarget() noexcept;
+    bool destroyTarget(AKTarget *target);
+
+    bool render(AKTarget *target);
 
     AKNode *root() noexcept
     {
@@ -20,11 +23,13 @@ public:
     }
 
 private:
+    friend class AKTarget;
     AKNode m_root;
     SkCanvas *c;
     SkMatrix m_matrix;
     AKTarget *t;
-    std::vector<std::shared_ptr<AKTarget>> m_targets;
+    std::vector<AKTarget*> m_targets;
+    SkColor m_clearColor { SK_ColorDKGRAY };
     void updateMatrix() noexcept;
     void calculateNewDamage(AKNode *node);
     void renderOpaque(AKNode *node);

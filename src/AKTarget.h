@@ -11,7 +11,6 @@
 class AK::AKTarget : public AKObject
 {
 public:
-    ~AKTarget();
     sk_sp<SkSurface>    surface;
     SkPoint             pos       { 0.f, 0.f};
     Float32             scale     { 1 };
@@ -24,6 +23,7 @@ private:
     friend class AKScene;
     friend class AKNode;
     AKTarget(AKScene *scene) noexcept;
+    ~AKTarget();
     SkIRect             m_viewport;
     SkMatrix            m_matrix;
     SkRegion            m_damage;
@@ -32,6 +32,7 @@ private:
     SkRegion            m_damageRing[4];
     UInt32              m_damageIndex { 0 };
     AKScene *           m_scene;
+    size_t              m_sceneLink;
     std::vector<AKNode*>m_nodes;
 };
 
