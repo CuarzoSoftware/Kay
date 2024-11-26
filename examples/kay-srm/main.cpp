@@ -23,6 +23,7 @@
 #include <include/gpu/gl/GrGLAssembleInterface.h>
 #include <include/core/SkColorSpace.h>
 #include <AKScene.h>
+#include <AKContainer.h>
 #include <AKSolidColor.h>
 
 using namespace AK;
@@ -30,13 +31,14 @@ using namespace AK;
 static sk_sp<SkColorSpace> colorSpace = SkColorSpace::MakeSRGB();
 static SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
 static AKScene scene;
+static AKContainer root;
 
 struct ConnectorData
 {
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
-    AKSolidColor background { SK_ColorWHITE, scene.root() };
+    AKSolidColor background { SK_ColorWHITE, &root };
     AKSolidColor childLeft  { SK_ColorRED, &background };
     AKSolidColor childRight { SK_ColorBLUE, &background };
 };
@@ -126,7 +128,7 @@ static void paintGL(SRMConnector *connector, void *userData)
     data->childLeft.styleSetFlex(1.f);
     data->childRight.styleSetFlex(1.f);
 
-    data->target->pos.fX = 0.f;
+    data->target->viewport = { 0.f, 0.f, (float)target.width(), (float)target.height() };
     data->target->scale = 1.f;
     data->target->transform = AKTransform::Rotated180;
     scene.render(data->target);

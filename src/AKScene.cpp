@@ -1,10 +1,10 @@
-#include "include/gpu/GrDirectContext.h"
-#include "include/gpu/GrRecordingContext.h"
 #include <AKScene.h>
 #include <AKRenderable.h>
 #include <AKBakeable.h>
+#include <cassert>
 #include <yoga/Yoga.h>
 #include <include/core/SkCanvas.h>
+#include <include/gpu/GrDirectContext.h>
 
 using namespace AK;
 
@@ -30,141 +30,144 @@ bool AKScene::destroyTarget(AKTarget *target)
 
 bool AKScene::render(AKTarget *target)
 {
-    // Invalid target
-    if (!target || target->scale <= 0.f || !target->surface || std::find(m_targets.begin(), m_targets.end(), target) == m_targets.end())
-        return false;
-    t = target;
+    validateTarget(target);
 
     // Keep the target surface alive
-    sk_sp<SkSurface> targetSurfaceRef { target->surface };
-    c = target->surface->getCanvas();
+    const sk_sp<SkSurface> surfaceRef { target->surface };
+    c = surfaceRef->getCanvas();
     c->save();
 
+    const bool isNestedScene = (t->root->caps() & AKNode::Scene);
+
+    if (!isNestedScene)
+    {
+        YGNodeCalculateLayout(t->root->m_node, YGUndefined, YGUndefined, YGDirectionInherit);
+        t->root->m_globalRect.fLeft = t->root->layoutGetLeft();
+        t->root->m_globalRect.fTop = t->root->layoutGetTop();
+    }
+
+    t->m_globalIViewport = SkIRect::MakeXYWH(
+        t->viewport.x() + float(t->root->globalRect().x()),
+        t->viewport.y() + float(t->root->globalRect().y()),
+        t->viewport.width(), t->viewport.height());
+
     updateMatrix();
-    YGNodeCalculateLayout(root()->m_node, YGUndefined, YGUndefined, YGDirectionLTR);
 
-    /* NEW DAMAGE */
-    for (std::list<AKNode*>::const_reverse_iterator it = root()->children().crbegin(); it != root()->children().crend(); it++)
+    for (auto it = t->root->children().crbegin(); it != t->root->children().crend(); it++)
         calculateNewDamage(*it);
-    t->m_damage.translate(-t->m_viewport.x(), -t->m_viewport.y());
 
-    /* DAMAGE RING */
-    if (t->age == 0)
-    {
-        t->m_damage.setRect(SkIRect::MakeXYWH(0, 0, t->m_viewport.width(), t->m_viewport.height()));
-        t->m_damageRing[t->m_damageIndex] = t->m_damage;
-    }
-    else
-    {
-        t->m_damageRing[t->m_damageIndex] = t->m_damage;
+    updateDamageRing();
 
-        for (UInt32 i = 1; i < t->age; i++)
-        {
-            Int32 damageIndex = t->m_damageIndex - i;
-
-            if (damageIndex < 0)
-                damageIndex = 4 + damageIndex;
-
-            t->m_damage.op(t->m_damageRing[damageIndex], SkRegion::Op::kUnion_Op);
-        }
-    }
-
-    t->outDamageRegion = t->m_damage;
-    t->outOpaqueRegion = t->m_opaque;
-    t->outOpaqueRegion.translate(-t->m_viewport.x(), -t->m_viewport.y());
-    t->m_damage.translate(t->m_viewport.x(), t->m_viewport.y());
-
-    if (t->m_damageIndex == 3)
-        t->m_damageIndex = 0;
-    else
-        t->m_damageIndex++;
-
-    for (std::list<AKNode*>::const_reverse_iterator it = root()->children().crbegin(); it != root()->children().crend(); it++)
+    for (auto it = t->root->children().crbegin(); it != t->root->children().crend(); it++)
         renderOpaque(*it);
 
     renderBackground();
 
-    for (AKNode *child : root()->children())
+    for (auto *child : t->root->children())
         renderTranslucent(child);
-
-    c->restore();
 
     t->m_damage.setEmpty();
     t->m_opaque.setEmpty();
+
+    c->restore();
     return true;
+}
+
+void AKScene::validateTarget(AKTarget *target) noexcept
+{
+    assert("AKTarget is nullptr" && target);
+    assert("AKTarget wasn't created by this scene" && target->m_scene == this);
+    assert("AKTarget has no surface" && target->surface);
+    assert("Invalid surface size" && target->surface->width() > 0 && target->surface->height() > 0);
+    assert("Invalid buffer age" && target->age <= sizeof(target->m_damageRing)/sizeof(target->m_damageRing[0]));
+    assert("Invalid scale factor" && target->scale > 0.f);
+    assert("Invalid viewport" && !target->viewport.isEmpty());
+    assert("Invalid dstRect" && !target->dstRect.isEmpty());
+    assert("Root node is nullptr" && target->root);
+    t = target;
 }
 
 void AKScene::updateMatrix() noexcept
 {
-    t->m_matrix.setIdentity();
-    t->m_matrix.preScale(t->scale, t->scale);
-    const SkSize size { t->surface->width() / t->scale,  t->surface->height() / t->scale };
-    SkPoint trans { -t->pos };
-
+    SkMatrix viewportMatrix;
+    viewportMatrix.preScale(t->scale, t->scale);
+    SkPoint trans ( -t->viewport.x() - t->root->globalRect().left(), -t->viewport.y() - t->root->globalRect().top());
     switch (t->transform) {
     case AK::AKTransform::Normal:
-        t->m_viewport.setXYWH(
-            t->pos.x(), t->pos.y(),
-            size.width(),  size.height());
         break;
     case AK::AKTransform::Rotated90:
-        t->m_viewport.setXYWH(
-            t->pos.x(), t->pos.y(),
-            size.height(),  size.width());
-        t->m_matrix.preRotate(-90.f);
-        trans.fX -= size.height();
+        viewportMatrix.preRotate(-90.f);
+        trans.fX -= t->viewport.width();
         break;
     case AK::AKTransform::Rotated180:
-        t->m_viewport.setXYWH(
-            t->pos.x(), t->pos.y(),
-            size.width(),  size.height());
-        t->m_matrix.preRotate(-180.f);
-        trans.fX -= size.width();
-        trans.fY -= size.height();
+        viewportMatrix.preRotate(-180.f);
+        trans.fX -= t->viewport.width();
+        trans.fY -= t->viewport.height();
         break;
     case AK::AKTransform::Rotated270:
-        t->m_viewport.setXYWH(
-            t->pos.x(), t->pos.y(),
-            size.height(),  size.width());
-        t->m_matrix.preRotate(90.f);
-        trans.fY -= size.width();
+        viewportMatrix.preRotate(90.f);
+        trans.fY -= t->viewport.height();
         break;
     case AK::AKTransform::Flipped:
-        t->m_viewport.setXYWH(
-            t->pos.x(), t->pos.y(),
-            size.width(),  size.height());
-        t->m_matrix.preScale(-1.f, 1.f);
-        trans.fX -= size.width();
+        viewportMatrix.preScale(-1.f, 1.f);
+        trans.fX -= t->viewport.width();
         break;
     case AK::AKTransform::Flipped90:
-        t->m_viewport.setXYWH(
-            t->pos.x(), t->pos.y(),
-            size.height(),  size.width());
-        t->m_matrix.preRotate(-90.f);
-        t->m_matrix.preScale(-1.f, 1.f);
+        viewportMatrix.preRotate(-90.f);
+        viewportMatrix.preScale(-1.f, 1.f);
         break;
     case AK::AKTransform::Flipped180:
-        t->m_viewport.setXYWH(
-            t->pos.x(), t->pos.y(),
-            size.width(),  size.height());
-        t->m_matrix.preScale(1.f, -1.f);
-        trans.fY -= size.height();
+        viewportMatrix.preScale(1.f, -1.f);
+        trans.fY -= t->viewport.height();
         break;
     case AK::AKTransform::Flipped270:
-        t->m_viewport.setXYWH(
-            t->pos.x(), t->pos.y(),
-            size.height(),  size.width());
-        t->m_matrix.preRotate(90.f);
-        t->m_matrix.preScale(-1.f, 1.f);
-        trans.fY -= size.width();
-        trans.fX -= size.height();
-        break;
-    default:
+        viewportMatrix.preRotate(90.f);
+        viewportMatrix.preScale(-1.f, 1.f);
+        trans.fY -= t->viewport.height();
+        trans.fX -= t->viewport.width();
         break;
     }
 
-    t->m_matrix.preTranslate(trans.x(), trans.y());
+    viewportMatrix.preTranslate(trans.x(), trans.y());
+
+    t->m_matrix.setIdentity();
+
+    if (is90Transform(t->transform))
+        t->m_xyScale = {
+            float(t->dstRect.width())/(t->viewport.height()),
+            float(t->dstRect.height())/(t->viewport.width())};
+    else
+        t->m_xyScale = {
+            float(t->dstRect.width())/(t->viewport.width()),
+            float(t->dstRect.height())/(t->viewport.height())};
+
+    t->m_matrix.preScale(t->m_xyScale.x(), t->m_xyScale.y());
+    t->m_matrix.preTranslate(t->dstRect.x(), t->dstRect.y());
+    t->m_matrix.preConcat(viewportMatrix);
     c->setMatrix(t->m_matrix);
+
+    /*
+    SkRegion exposedViewport;
+
+    exposedViewport.op(
+        SkIRect(
+            t->viewport.fLeft,
+            t->viewport.fTop,
+            t->viewport.fRight,
+            t->viewport.fBottom),
+        SkRegion::Op::kUnion_Op);
+
+    exposedViewport.op(
+        SkIRect(
+            t->m_prevViewport.fLeft,
+            t->m_prevViewport.fTop,
+            t->m_prevViewport.fRight,
+            t->m_prevViewport.fBottom),
+        SkRegion::Op::kDifference_Op);
+
+    t->m_damage.op(exposedViewport, SkRegion::Op::kUnion_Op);*/
+
+    t->m_prevViewport = t->viewport;
 }
 
 void AKScene::calculateNewDamage(AKNode *node)
@@ -178,51 +181,47 @@ void AKScene::calculateNewDamage(AKNode *node)
         node->t->targetLink = t->m_nodes.size() - 1;
     }
 
-    SkIRect parentRect;
-
-    if (node->parent())
-        parentRect = node->parent()->globalRect();
-
     node->m_globalRect = SkIRect::MakeXYWH(
-        node->layoutGetLeft() + parentRect.x(),
-        node->layoutGetTop() + parentRect.y(),
+        node->layoutGetLeft() + node->parent()->globalRect().x(),
+        node->layoutGetTop() + node->parent()->globalRect().y(),
         node->layoutGetWidth(),
         node->layoutGetHeight());
 
-    if ((node->caps() & AKNode::Bake) && !node->m_globalRect.isEmpty())
-    {
-        AKBakeable *bake { static_cast<AKBakeable*>(node) };
-        if (bake->updateBakeStorage() || node->m_globalRect.size() != bake->t->prevRect.size())
-        {
-            SkCanvas *canvas { bake->t->bake.surface->getCanvas() };
-            canvas->save();
-            canvas->clipRect(bake->t->bake.srcRect);
-            canvas->setMatrix(SkMatrix::Scale(t->scale, t->scale));
-            bake->onBake(canvas);
-            canvas->restore();
-        }
-    }
+    SkIRect clip;
 
-    SkIRect clip = node->m_globalRect;
+    if (node->isVisible())
+        clip = node->m_globalRect;
 
     SkIRect localRect = SkIRect::MakeXYWH(
-        node->m_globalRect.x() - t->m_viewport.x(),
-        node->m_globalRect.y() - t->m_viewport.y(),
+        node->m_globalRect.x() - t->m_globalIViewport.x(),
+        node->m_globalRect.y() - t->m_globalIViewport.y(),
         node->m_globalRect.width(),
         node->m_globalRect.height());
 
-    if (node->parent() == root())
+    if (node->parent() == t->root)
     {
-        node->m_insideLastTarget = clip.intersect(t->m_viewport);
-
-        if (!node->m_insideLastTarget)
+        if (!clip.intersect(t->m_globalIViewport))
             clip.setEmpty();
     }
-    else
+    else if (!clip.intersect(node->parent()->t->prevClip))
+        clip.setEmpty();
+
+    node->m_insideLastTarget = SkIRect::Intersects(node->m_globalRect, t->m_globalIViewport);
+
+    if ((node->caps() & AKNode::Bake) && !clip.isEmpty())
     {
-        if (!clip.intersect(node->parent()->t->prevClip))
-            clip.setEmpty();
-        node->m_insideLastTarget = SkIRect::Intersects(node->m_globalRect, t->m_viewport);
+        AKBakeable *bake { static_cast<AKBakeable*>(node) };
+        const bool surfaceChanged { bake->updateBakeStorage() };
+        SkCanvas *canvas { bake->t->bake.surface->getCanvas() };
+        canvas->save();
+        canvas->setMatrix(SkMatrix::Scale(t->m_xyScale.x(), t->m_xyScale.y()));
+        bake->onBake(canvas,
+            SkRect::MakeXYWH(
+                clip.x() - node->m_globalRect.x(),
+                clip.y() - node->m_globalRect.y(),
+                clip.width(), clip.height()),
+            surfaceChanged);
+        canvas->restore();
     }
 
     if (localRect == node->t->prevLocalRect)
@@ -252,8 +251,9 @@ void AKScene::calculateNewDamage(AKNode *node)
     node->t->prevLocalRect = localRect;
     node->t->prevRect = node->m_globalRect;
 
-    for (std::list<AKNode*>::const_reverse_iterator it = node->children().crbegin(); it != node->children().crend(); it++)
-        calculateNewDamage(*it);
+    if (!(node->caps() & AKNode::Scene))
+        for (auto it = node->children().crbegin(); it != node->children().crend(); it++)
+            calculateNewDamage(*it);
 
     if ((node->caps() & AKNode::Caps::Render) == 0)
         return;
@@ -266,27 +266,60 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     rend->t->opaqueOverlay = t->m_opaque;
 
-    if (rend->opaqueRegion())
-    {
-        rend->t->opaque = *rend->opaqueRegion();
-        rend->t->opaque.translate(node->m_globalRect.x(), node->m_globalRect.y());
-        rend->t->opaque.op(clip, SkRegion::kIntersect_Op);
-        t->m_opaque.op(rend->t->opaque, SkRegion::kUnion_Op);
+    rend->t->opaque = rend->opaqueRegion();
+    rend->t->opaque.translate(node->m_globalRect.x(), node->m_globalRect.y());
+    rend->t->opaque.op(clip, SkRegion::kIntersect_Op);
+    t->m_opaque.op(rend->t->opaque, SkRegion::kUnion_Op);
+    rend->t->translucent.setRect(clip);
+    rend->t->translucent.op(rend->t->opaque, SkRegion::kDifference_Op);
+}
 
-        rend->t->translucent.setRect(clip);
-        rend->t->translucent.op(rend->t->opaque, SkRegion::kDifference_Op);
+void AKScene::updateDamageRing() noexcept
+{
+    t->m_damage.translate(-t->m_globalIViewport.x(), -t->m_globalIViewport.y());
+
+    if (t->age == 0)
+    {
+        t->m_damage.setRect(SkIRect::MakeXYWH(0, 0, t->m_globalIViewport.width(), t->m_globalIViewport.height()));
+        t->m_damageRing[t->m_damageIndex] = t->m_damage;
     }
     else
     {
-        rend->t->opaque.setEmpty();
-        rend->t->translucent.setRect(clip);
+        t->m_damageRing[t->m_damageIndex] = t->m_damage;
+
+        for (UInt32 i = 1; i < t->age; i++)
+        {
+            Int32 damageIndex = t->m_damageIndex - i;
+
+            if (damageIndex < 0)
+                damageIndex = 4 + damageIndex;
+
+            t->m_damage.op(t->m_damageRing[damageIndex], SkRegion::Op::kUnion_Op);
+        }
     }
+
+    if (t->outDamageRegion)
+        *t->outDamageRegion = t->m_damage;
+
+    if (t->outOpaqueRegion)
+    {
+        *t->outOpaqueRegion = t->m_opaque;
+        t->outOpaqueRegion->translate(-t->m_globalIViewport.x(), -t->m_globalIViewport.y());
+    }
+
+    t->m_damage.translate(t->m_globalIViewport.x(), t->m_globalIViewport.y());
+
+    if (t->m_damageIndex == 3)
+        t->m_damageIndex = 0;
+    else
+        t->m_damageIndex++;
 }
 
 void AKScene::renderOpaque(AKNode *node)
 {
-    for (std::list<AKNode*>::const_reverse_iterator it = node->children().crbegin(); it != node->children().crend(); it++)
-        renderOpaque(*it);
+    if (!(node->caps() & AKNode::Scene))
+        for (auto it = node->children().crbegin(); it != node->children().crend(); it++)
+            renderOpaque(*it);
 
     if (!node->caps() || node->t->opaque.isEmpty() || !node->m_renderedOnLastTarget)
         return;
@@ -344,6 +377,7 @@ void AKScene::renderTranslucent(AKNode *node)
 
     skip:
 
-    for (AKNode *child : node->children())
-        renderTranslucent(child);
+    if (!(node->caps() & AKNode::Scene))
+        for (AKNode *child : node->children())
+            renderTranslucent(child);
 }

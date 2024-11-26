@@ -6,6 +6,7 @@
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/gl/GrGLTypes.h"
 #include <AKObject.h>
+#include <AKBitset.h>
 
 #include <include/core/SkRegion.h>
 #include <unordered_map>
@@ -21,7 +22,8 @@ public:
     enum Caps : UInt32
     {
         Render  = 1 << 0,
-        Bake    = 1 << 1
+        Bake    = 1 << 1,
+        Scene   = 1 << 2
     };
 
     virtual ~AKNode();
@@ -34,6 +36,9 @@ public:
         return m_parent;
     }
 
+    void insertBefore(AKNode *other) noexcept;
+    void insertAfter(AKNode *other) noexcept;
+
     bool isSubchildOf(AKNode *node) const noexcept
     {
         if (!node || !parent()) return false;
@@ -41,7 +46,7 @@ public:
         return parent() == node || parent()->isSubchildOf(node);
     }
 
-    const std::list<AKNode*> &children() const noexcept
+    const std::vector<AKNode*> &children() const noexcept
     {
         return m_children;
     }
@@ -49,6 +54,21 @@ public:
     UInt32 caps() const noexcept
     {
         return m_caps;
+    }
+
+    AKTarget *currentTarget() const noexcept
+    {
+        return t->target;
+    }
+
+    bool isVisible() const noexcept
+    {
+        return m_flags.check(Visible);
+    }
+
+    void setVisible(bool visible) noexcept
+    {
+        m_flags.setFlag(Visible, visible);
     }
 
     void setInputRegion(SkRegion *region) noexcept
@@ -441,9 +461,15 @@ public:
 private:
     friend class AKRenderable;
     friend class AKBakeable;
-    friend class AKLayout;
+    friend class AKSubScene;
+    friend class AKContainer;
     friend class AKTarget;
     friend class AKScene;
+
+    enum Flags : UInt64
+    {
+        Visible     = 1L << 0
+    };
 
     struct TargetData
     {
@@ -462,30 +488,25 @@ private:
             sk_sp<SkImage> image;
             sk_sp<SkSurface> surface;
             SkRect srcRect;
-        } bake;
+        } bake;        
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
     bool updateBakeStorage() noexcept;
+
+    AKBitset<Flags> m_flags { Visible };
+
     SkIRect m_globalRect;
     UInt32 m_caps { 0 };
-    size_t m_nodeIndex;
     YGNodeRef m_node { nullptr };
     AKNode *m_parent { nullptr };
-    std::list<AKNode*> m_children;
-    std::list<AKNode*>::iterator m_parentLink;
+    std::vector<AKNode*> m_children;
+    size_t m_parentLink;
     std::unique_ptr<SkRegion> m_inputRegion;
     std::unordered_map<AKTarget*, TargetData> m_targets;
     TargetData *t;
     bool m_insideLastTarget { false };
     bool m_renderedOnLastTarget { false };
-
-    size_t m_allNodesIndex;
-    static std::vector<AKNode*> &allNodes() noexcept
-    {
-        static std::vector<AKNode*> nodes;
-        return nodes;
-    }
 };
 
 #endif // AKNODE_H

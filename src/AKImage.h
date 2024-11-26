@@ -55,10 +55,16 @@ public:
         return m_scale;
     }
 
+    void setFilter(sk_sp<SkImageFilter> filter) noexcept
+    {
+        m_filter = filter;
+    }
+
 private:
     virtual void onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque) override;
     void calculateRenderParams(SkMatrix &matrix, SkRect &srcRect, SkRect &dstRect) const noexcept;
     sk_sp<SkImage> m_image;
+    sk_sp<SkImageFilter> m_filter;
     SkRect m_srcRect;
     float m_scale { 1.f };
     AKTransform m_transform { AKTransform::Normal };

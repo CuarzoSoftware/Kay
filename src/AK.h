@@ -6,6 +6,9 @@
 namespace AK
 {
     class AKObject;
+    class AKWeakUtils;
+    template <class T> class AKWeak;
+    template <class T> class AKBitset;
 
     class AKScene;
     class AKTarget;
@@ -13,8 +16,9 @@ namespace AK
     class AKNode;
     class AKRenderable;
     class AKBakeable;
+    class AKSubScene;
 
-    class AKLayout;
+    class AKContainer;
     class AKSolidColor;
     class AKImage;
 
@@ -55,6 +59,9 @@ namespace AK
 
     /// @brief 32 bits float
     typedef float           Float32;
+
+    /// @brief Unsigned integer capable of holding a pointer
+    typedef uintptr_t       UIntPtr;
 };
 
     typedef struct YGNode* YGNodeRef;

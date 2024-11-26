@@ -10,6 +10,7 @@ void AKImage::onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque)
 
     SkPaint paint;
     paint.setBlendMode(opaque ? SkBlendMode::kSrc : SkBlendMode::kSrcOver);
+    paint.setImageFilter(m_filter);
     const SkSamplingOptions samplingOptions { SkFilterMode::kLinear };
     SkMatrix matrix;
     SkRect srcRect, dstRect;

@@ -6,8 +6,21 @@
 
 using namespace AK;
 
-void AKDiv::onBake(SkCanvas *canvas)
+void AKDiv::onBake(SkCanvas *canvas, const SkRect &clip, bool surfaceChanged)
 {
+    auto &data { m_data[currentTarget()] };
+
+    if (surfaceChanged || data.m_prevSize != globalRect().size())
+    {
+        data.m_prevSize = globalRect().size();
+        data.m_baked.setRect(clip.roundIn());
+    }
+    else if (data.m_baked.contains(clip.roundIn()))
+        return;
+    else
+        data.m_baked.op(clip.roundIn(), SkRegion::kUnion_Op);
+
+    canvas->clipRect(clip);
     canvas->clear(SK_ColorTRANSPARENT);
     SkPaint paint;
     paint.setBlendMode(SkBlendMode::kSrc);
@@ -23,18 +36,20 @@ void AKDiv::onBake(SkCanvas *canvas)
         rect, 10.f, 10.f, paint);
 
     paint.setStroke(true);
-    paint.setColor(SkColorSetARGB(128, 0, 0, 0));
-    paint.setAntiAlias(true);
+    paint.setColor(SkColorSetARGB(255, 0, 0, 0));
+    paint.setAntiAlias(false);
     paint.setStrokeWidth(0.25f);
 
     const SkRect borderRect = SkRect::MakeXYWH(
-        paint.getStrokeWidth(),
-        paint.getStrokeWidth(),
-        globalRect().width() - paint.getStrokeWidth() * 2.f,
-        globalRect().height() - paint.getStrokeWidth() * 2.f);
+        paint.getStrokeWidth() * 0.5f,
+        paint.getStrokeWidth() * 0.5f,
+        globalRect().width() - paint.getStrokeWidth(),
+        globalRect().height() - paint.getStrokeWidth());
+
+    float rad = 10.f - paint.getStrokeWidth();
 
     canvas->drawRoundRect(
-        borderRect, 10.f, 10.f, paint);
+        borderRect, rad, rad, paint);
 
     SkRegion region;
     region.op(
@@ -59,5 +74,5 @@ void AKDiv::onBake(SkCanvas *canvas)
 
     // BR
     region.op(SkIRect::MakeXYWH(globalRect().width() - 10.f, globalRect().height() - 10.f, 10.f, 10.f), SkRegion::Op::kDifference_Op);
-    setOpaqueRegion(&region);
+    setOpaqueRegion(region);
 }

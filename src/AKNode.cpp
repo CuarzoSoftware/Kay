@@ -15,16 +15,28 @@ using namespace AK;
 AK::AKNode::AKNode(AKNode *parent) noexcept :
     m_node(YGNodeNew())
 {
-    allNodes().push_back(this);
-    m_allNodesIndex = allNodes().size() - 1;
     setParent(parent);
+}
+
+AKNode::~AKNode()
+{
+    for (auto &t : m_targets)
+    {
+        t.first->m_damage.op(t.second.prevClip, SkRegion::kUnion_Op);
+        t.first->m_nodes[t.second.targetLink] = t.first->m_nodes.back();
+        t.first->m_nodes.back()->m_targets[t.first].targetLink = t.second.targetLink;
+        t.first->m_nodes.pop_back();
+    }
+
+    setParent(nullptr);
+    YGNodeFree(m_node);
 }
 
 bool AKNode::updateBakeStorage() noexcept
 {
     t->bake.srcRect = SkRect::MakeXYWH(0, 0,
-        SkScalarCeilToInt(m_globalRect.width() * t->target->scale),
-        SkScalarCeilToInt(m_globalRect.height() * t->target->scale));
+        SkScalarCeilToInt(m_globalRect.width() * t->target->m_xyScale.x()),
+        SkScalarCeilToInt(m_globalRect.height() * t->target->m_xyScale.y()));
 
     // No resizing required
     if (t->bake.image && t->bake.image->width() >= t->bake.srcRect.width() && t->bake.image->height() >= t->bake.srcRect.height())
@@ -90,24 +102,6 @@ bool AKNode::updateBakeStorage() noexcept
     return true;
 }
 
-AKNode::~AKNode()
-{
-    allNodes()[m_allNodesIndex] = allNodes().back();
-    allNodes()[m_allNodesIndex]->m_allNodesIndex = m_allNodesIndex;
-    allNodes().pop_back();
-
-    for (auto &t : m_targets)
-    {
-        t.first->m_damage.op(t.second.prevClip, SkRegion::kUnion_Op);
-        t.first->m_nodes[t.second.targetLink] = t.first->m_nodes.back();
-        t.first->m_nodes.back()->m_targets[t.first].targetLink = t.second.targetLink;
-        t.first->m_nodes.pop_back();
-    }
-
-    YGNodeFree(m_node);
-    setParent(nullptr);
-}
-
 void AKNode::setParent(AKNode *parent) noexcept
 {
     assert(!parent || (parent != this && !parent->isSubchildOf(this)));
@@ -115,17 +109,82 @@ void AKNode::setParent(AKNode *parent) noexcept
     if (m_parent)
     {
         YGNodeRemoveChild(m_parent->m_node, m_node);
-        m_parent->m_children.erase(m_parentLink);
+        auto next = m_parent->m_children.erase(m_parent->m_children.begin() + m_parentLink);
+        for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLink--;
     }
 
     m_parent = parent;
 
     if (parent)
     {
-        m_nodeIndex = YGNodeGetChildCount(parent->m_node);
-        YGNodeInsertChild(parent->m_node, m_node, m_nodeIndex);
+        m_parentLink = YGNodeGetChildCount(parent->m_node);
+        YGNodeInsertChild(parent->m_node, m_node, m_parentLink);
         parent->m_children.push_back(this);
-        m_parentLink = std::prev(parent->m_children.end());
+    }
+}
+
+void AKNode::insertBefore(AKNode *other) noexcept
+{
+    assert(!other || !other->isSubchildOf(this));
+
+    if (other == this)
+        return;
+
+    if (other)
+    {
+        if (other->parent())
+        {
+            setParent(nullptr);
+            m_parent = other->parent();
+            m_parentLink = other->m_parentLink;
+            YGNodeInsertChild(m_parent->m_node, m_node, m_parentLink);
+            auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLink, this) + 1;
+            for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLink++;
+        }
+        else
+        {
+            setParent(nullptr);
+        }
+    }
+    else if (parent())
+    {
+        setParent(parent());
+    }
+}
+
+void AKNode::insertAfter(AKNode *other) noexcept
+{
+    assert(!other || !other->isSubchildOf(this));
+
+    if (other == this)
+        return;
+
+    if (other)
+    {
+        if (other->parent())
+        {
+            setParent(nullptr);
+
+            if (other->parent()->children().back() == other)
+            {
+                setParent(other->parent());
+                return;
+            }
+
+            m_parent = other->parent();
+            m_parentLink = other->m_parentLink + 1;
+            YGNodeInsertChild(m_parent->m_node, m_node, m_parentLink);
+            auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLink, this) + 1;
+            for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLink++;
+        }
+        else
+        {
+            setParent(nullptr);
+        }
+    }
+    else if (parent())
+    {
+        insertBefore(parent()->children().front());
     }
 }
 

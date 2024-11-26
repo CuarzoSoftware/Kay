@@ -11,27 +11,24 @@ class AK::AKScene : public AKObject
 {
 public:
     AKScene() noexcept;
-
     AKTarget *createTarget() noexcept;
     bool destroyTarget(AKTarget *target);
-
     bool render(AKTarget *target);
-
-    AKNode *root() noexcept
+    void setClearColor(SkColor color) noexcept
     {
-        return &m_root;
+        m_clearColor = color;
     }
-
 private:
     friend class AKTarget;
-    AKNode m_root;
     SkCanvas *c;
     SkMatrix m_matrix;
     AKTarget *t;
     std::vector<AKTarget*> m_targets;
-    SkColor m_clearColor { SK_ColorDKGRAY };
+    SkColor m_clearColor { SK_ColorWHITE };
+    void validateTarget(AKTarget *target) noexcept;
     void updateMatrix() noexcept;
     void calculateNewDamage(AKNode *node);
+    void updateDamageRing() noexcept;
     void renderOpaque(AKNode *node);
     void renderBackground() noexcept;
     void renderTranslucent(AKNode *node);

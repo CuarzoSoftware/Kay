@@ -11,22 +11,23 @@ public:
     void addDamage(const SkRegion &region) noexcept;
     void addDamage(const SkIRect &rect) noexcept;
 
-    void setOpaqueRegion(SkRegion *region) noexcept
+    void setOpaqueRegion(const SkRegion region) noexcept
     {
-        m_opaqueRegion = region ? std::make_unique<SkRegion>(*region) : nullptr;
+        m_opaqueRegion = region;
     }
 
-    SkRegion *opaqueRegion() const noexcept
+    const SkRegion &opaqueRegion() const noexcept
     {
-        return m_opaqueRegion.get();
+        return m_opaqueRegion;
     }
 
 protected:
     friend class AKScene;
+    friend class AKSubScene;
     virtual void onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque) = 0;
 
 private:
-    std::unique_ptr<SkRegion> m_opaqueRegion;
+    SkRegion m_opaqueRegion;
 };
 
 #endif // AKRENDERABLE_H
