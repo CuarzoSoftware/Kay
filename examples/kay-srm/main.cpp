@@ -22,9 +22,9 @@
 #include <include/core/SkCanvas.h>
 #include <include/gpu/gl/GrGLAssembleInterface.h>
 #include <include/core/SkColorSpace.h>
-#include <AKScene.h>
-#include <AKContainer.h>
-#include <AKSolidColor.h>
+#include <AK/AKScene.h>
+#include <AK/Widgets/AKContainer.h>
+#include <AK/Widgets/AKRenderableRect.h>
 
 using namespace AK;
 
@@ -38,9 +38,9 @@ struct ConnectorData
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
-    AKSolidColor background { SK_ColorWHITE, &root };
-    AKSolidColor childLeft  { SK_ColorRED, &background };
-    AKSolidColor childRight { SK_ColorBLUE, &background };
+    AKRenderableRect background { SK_ColorWHITE, &root };
+    AKRenderableRect childLeft  { SK_ColorRED, &background };
+    AKRenderableRect childRight { SK_ColorBLUE, &background };
 };
 
 static int openRestricted(const char *path, int flags, void *userData)
@@ -119,14 +119,14 @@ static void paintGL(SRMConnector *connector, void *userData)
         exit(1);
     }
 
-    data->background.styleSetPadding(YGEdgeAll, 100.f);
-    data->background.styleSetGap(YGGutterAll, 100.f);
-    data->background.styleSetFlexDirection(YGFlexDirectionRow);
-    data->background.styleSetWidth(target.width());
-    data->background.styleSetHeight(target.height());
+    data->background.layout().setPadding(YGEdgeAll, 100.f);
+    data->background.layout().setGap(YGGutterAll, 100.f);
+    data->background.layout().setFlexDirection(YGFlexDirectionRow);
+    data->background.layout().setWidth(target.width());
+    data->background.layout().setHeight(target.height());
 
-    data->childLeft.styleSetFlex(1.f);
-    data->childRight.styleSetFlex(1.f);
+    data->childLeft.layout().setFlex(1.f);
+    data->childRight.layout().setFlex(1.f);
 
     data->target->viewport = { 0.f, 0.f, (float)target.width(), (float)target.height() };
     data->target->scale = 1.f;

@@ -1,16 +1,17 @@
 #include <LLauncher.h>
 #include <LCompositor.h>
 #include <LOutput.h>
+#include <LOutputMode.h>
 #include <LSurface.h>
 #include <LCursor.h>
 #include <LLog.h>
 
-#include <AKSubScene.h>
-#include <AKScene.h>
-#include <AKImage.h>
-#include <AKContainer.h>
-#include <AKSolidColor.h>
-#include <AKDiv.h>
+#include <AK/Widgets/AKSubScene.h>
+#include <AK/Widgets/AKImage.h>
+#include <AK/Widgets/AKContainer.h>
+#include <AK/Widgets/AKRenderableRect.h>
+
+#include <AK/AKScene.h>
 
 #include <include/gpu/gl/GrGLInterface.h>
 #include <include/gpu/gl/GrGLTypes.h>
@@ -24,6 +25,7 @@
 #include <include/gpu/gl/GrGLAssembleInterface.h>
 #include <include/core/SkColorSpace.h>
 #include <include/effects/SkImageFilters.h>
+#include <include/effects/SkGradientShader.h>
 
 using namespace AK;
 using namespace Louvre;
@@ -65,27 +67,59 @@ class Compositor final : public LCompositor
 public:
     Compositor() noexcept
     {
-        root.styleSetWidth(2800 * 100);
-        root.styleSetHeight(2800 * 100);
-        blur.setFilter(blurFx);
-        blur.styleSetPositionType(YGPositionTypeAbsolute);
-        blur.styleSetWidth(300.f);
-        blur.styleSetHeight(300.f);
+        background.layout().setPositionType(YGPositionTypeAbsolute);
+        surfaces.layout().setPositionType(YGPositionTypeAbsolute);
+        overlay.layout().setPositionType(YGPositionTypeAbsolute);
+
+        AKBrush brush { true, false };
+        brush.setBlendMode(SkBlendMode::kClear);
+
+        AKPen pen;
+        pen.setStrokeWidth(10);
+        solidColor.setPen(pen);
+        solidColor.setBrush(brush);
+        solidColor.layout().setPosition(YGEdgeRight, 0.f);
+        solidColor.layout().setPositionType(YGPositionTypeAbsolute);
+        solidColor.layout().setWidth(100.f);
+        solidColor.layout().setHeight(100.f);
+        solidColor.layout().setMargin(YGEdgeAll, 10.f);
+
+        solidColor2.setPen(pen);
+        solidColor2.layout().setPosition(YGEdgeLeft, 0.f);
+        solidColor2.layout().setPositionType(YGPositionTypeAbsolute);
+        solidColor2.layout().setWidth(100.f);
+        solidColor2.layout().setHeight(100.f);
+        solidColor2.layout().setMargin(YGEdgeAll, 10.f);
+
+        subSceneBackground.layout().setWidthPercent(100.f);
+        subSceneBackground.layout().setHeightPercent(100.f);
+
+        subScene.layout().setWidth(300.f);
+        subScene.layout().setHeight(300.f);
+        subScene.layout().setMargin(YGEdgeAll, 50.f);
+
     }
     LFactoryObject *createObjectRequest(LFactoryObject::Type objectType, const void *params) override;
     AKScene scene;
     AKContainer root;
-    AKContainer sub {&root};
-    AKDiv div { nullptr};
-    sk_sp<SkImageFilter> blurFx = SkImageFilters::Blur(6.f, 6.f, SkTileMode::kMirror, nullptr);
-    AKImage blur { &root };
+
+    AKContainer background { YGFlexDirectionColumn, false, &root };
+    AKContainer surfaces { YGFlexDirectionColumn, false, &root };
+    AKContainer overlay { YGFlexDirectionColumn, false, &root };
+
+    AKSubScene subScene { &overlay };
+    AKRenderableRect subSceneBackground { SK_ColorWHITE, &subScene };
+    AKRenderableRect solidColor { SK_ColorRED, &subSceneBackground };
+    AKRenderableRect solidColor2 { SK_ColorYELLOW, &subSceneBackground };
 };
 
 class Surface final : public LSurface
 {
 public:
     using LSurface::LSurface;
-    AKImage node { &static_cast<Compositor*>(compositor())->root };
+    Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
+
+    AKImage node { &comp()->surfaces };
 
     void orderChanged() override
     {
@@ -100,26 +134,33 @@ class Output final : public LOutput
 public:
     using LOutput::LOutput;
 
-    Compositor *comp() const noexcept
+    Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
+
+    void updateGradient() noexcept
     {
-        return static_cast<Compositor*>(compositor());
+        const SkPoint gradientPoints    [2] { SkPoint(0.f, 0.f), SkPoint(size().w(), size().h()) };
+        const SkScalar gradientPositions[2] { 0.f, 1.f };
+        const SkColor gradientColors    [2] { SK_ColorMAGENTA, SK_ColorGREEN };
+        auto gradient = SkGradientShader::MakeLinear(
+            gradientPoints,
+            gradientColors,
+            gradientPositions,
+            2, SkTileMode::kRepeat);
+        AKBrush gradientBrush;
+        gradientBrush.setShader(gradient);
+        backgroundGradient.setBrush(gradientBrush);
+        backgroundGradient.layout().setPositionType(YGPositionTypeAbsolute);
+        backgroundGradient.layout().setPosition(YGEdgeLeft, pos().x());
+        backgroundGradient.layout().setPosition(YGEdgeTop, pos().y());
+        backgroundGradient.layout().setWidth(size().w());
+        backgroundGradient.layout().setHeight(size().h());
+        backgroundGradient.setOpaqueRegion(AK_IRECT_INF);
+        backgroundGradient.addDamage(AK_IRECT_INF);
     }
 
     void initializeGL() override
     {
-        comp()->root.styleSetPosition(YGEdgeLeft, 0);
-        //setScale(1);
-        //setTransform(LTransform::Rotated90);
-        for (Int32 i = 0; i < 15; i++)
-        {
-            solidColors.push_back(new AKSolidColor((rand()) + 0x555555, &divs[0]));
-        }
-
-        for (Int32 i = 0; i < 1; i++)
-        {
-            solidColors.push_back(new AKSolidColor((rand()) + 0x555555, &divs[1]));
-        }
-
+        //setScale(3.1);
         enableFractionalOversampling(false);
         frame = 0;
         auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](void *, const char *p) -> void * {
@@ -143,75 +184,19 @@ public:
 
         target = comp()->scene.createTarget();
         target->root = &comp()->root;
+        updateGradient();
     }
 
     void paintGL() override
     {
-        comp()->blur.setParent(&comp()->root);
-
-        if (LTexture *oTex = bufferTexture(currentBuffer()))
-        {
-            comp()->blur.setImage(louvreTex2SkiaImage(oTex, context.get(), this));
-            comp()->blur.addDamage(SkIRect::MakeWH(2000, 2000));
-            comp()->blur.setSrcRect(
-                SkRect::MakeWH(
-                    comp()->blur.styleGetWidth().value * fractionalScale(),
-                    comp()->blur.styleGetHeight().value * fractionalScale()));
-        }
-
-
-        static Float32 phase { 0.f };
         phase += 0.01f;
 
-        layout.styleSetPositionType(YGPositionTypeAbsolute);
-        layout.styleSetPosition(YGEdgeTop, pos().y());
-        layout.styleSetPosition(YGEdgeLeft, pos().x());
-        layout.styleSetDisplay(YGDisplayFlex);
-        layout.styleSetFlexDirection(YGFlexDirectionColumn);
-        layout.styleSetFlex(1.f);
-        layout.styleSetMaxWidth(size().w());
-        layout.styleSetMinWidth(size().w());
-        layout.styleSetMinHeight(size().h());
-        layout.styleSetPadding(YGEdgeAll, 24.f);
-        layout.styleSetGap(YGGutterRow, 24.f);
+        comp()->subScene.layout().setWidth(300.f + SkScalarCos(phase) * 50.f);
 
-        for (AKSolidColor *sc : solidColors)
-        {
-            sc->styleSetDisplay(YGDisplayFlex);
-            sc->styleSetFlexWrap(YGWrapWrap);
-            sc->styleSetFlex(1.f);
-            sc->styleSetMinWidth(50);
-            sc->styleSetMinHeight(50);
-            sc->styleSetMaxWidth(50);
-            sc->styleSetMaxHeight(50);
-        }
-
-        for (int i = 0; i < 1; i++)
-        {
-            divs[i].styleSetAlignContent(YGAlignCenter);
-            divs[i].styleSetAlignItems(YGAlignCenter);
-            divs[i].styleSetFlex(1.f);
-            divs[i].styleSetFlexGrow(1.f);
-            divs[i].styleSetFlexDirection(YGFlexDirectionRow);
-            divs[i].styleSetFlexWrap(YGWrapWrap);
-            divs[i].styleSetPadding(YGEdgeAll, 24.f);
-            divs[i].styleSetGap(YGGutterColumn, 100.f * (2.f + SkScalarSin(phase)));
-            divs[i].styleSetGap(YGGutterRow, 24.f);
-        }
-
-        comp()->div.styleSetPadding(YGEdgeAll, 24.f);
-        comp()->div.styleSetPositionType(YGPositionTypeAbsolute);
-        comp()->div.styleSetPosition(YGEdgeLeft, cursor()->pos().x());
-        comp()->div.styleSetPosition(YGEdgeTop, cursor()->pos().y());
-        comp()->div.styleSetWidth(200.f);
-        comp()->div.styleSetHeight(200.f);
-
-
-
-
-        //layout.styleSetGap(YGGutterColumn, 50.f * (2.f + SkScalarSin(phase)));
-        //layout.styleSetGap(YGGutterRow, 50.f);
-
+        Int32 n;
+        const LBox *boxes;
+        SkRegion region, outDamage;
+        LRegion damage;
         const GrGLFramebufferInfo fbInfo
         {
             .fFBOID = framebuffer()->id(),
@@ -219,8 +204,8 @@ public:
         };
 
         const GrBackendRenderTarget backendTarget(
-            realBufferSize().w(),
-            realBufferSize().h(),
+            currentMode()->sizeB().w(),
+            currentMode()->sizeB().h(),
             0, 0,
             fbInfo);
 
@@ -242,25 +227,24 @@ public:
         {
             s->node.setVisible(!s->cursorRole() && !s->minimized() && s->mapped());
 
-            if (!s->node.isVisible())
+            if (!s->node.visible())
                 continue;
 
             const LPoint &pos { s->rolePos() };
-            s->node.styleSetPositionType(YGPositionTypeAbsolute);
-            s->node.styleSetPosition(YGEdgeLeft, pos.x());
-            s->node.styleSetPosition(YGEdgeTop, pos.y());
-            s->node.styleSetWidth(s->size().w());
-            s->node.styleSetHeight(s->size().h());
+            s->node.layout().setPositionType(YGPositionTypeAbsolute);
+            s->node.layout().setPosition(YGEdgeLeft, pos.x());
+            s->node.layout().setPosition(YGEdgeTop, pos.y());
+            s->node.layout().setWidth(s->size().w());
+            s->node.layout().setHeight(s->size().h());
             s->node.setImage(louvreTex2SkiaImage(s->texture(), context.get(), this));
-            s->node.setSrcRect(SkRect::MakeXYWH(
+            s->node.setImageSrcRect(SkRect::MakeXYWH(
                 s->srcRect().x(), s->srcRect().y(),
                 s->srcRect().w(), s->srcRect().h()));
-            s->node.setScale(s->bufferScale());
-            s->node.setTransform(static_cast<AKTransform>(s->bufferTransform()));
+            s->node.setImageScale(s->bufferScale());
+            s->node.setImageTransform(static_cast<AKTransform>(s->bufferTransform()));
 
-            Int32 n;
-            const LBox *boxes { s->damage().boxes(&n) };
-            SkRegion region;
+
+            boxes = s->damage().boxes(&n);
             region.setRects((const SkIRect*)boxes, n);
             s->node.addDamage(region);
 
@@ -269,23 +253,31 @@ public:
             s->node.setOpaqueRegion(region);
         }
 
-        if (frame < buffersCount() || buffersCount() == 1)
+        if (needsFullRepaint())
+        {
+            frame = 0;
+            age = 0;
+        }
+        else if (frame < buffersCount() || buffersCount() == 1)
         {
             frame++;
             age = 0;
         }
         else
-        {
             age = buffersCount();
-        }
 
-        SkRegion outDamage;
+        //SkRegion inClip;
+        //inClip.setRect(SkIRect::MakeXYWH(200 + 200 * SkScalarCos(phase), 200, 200, 200));
+        //target->inClipRegion = &inClip;
+
         target->outDamageRegion = &outDamage;
         target->age = age;
         target->viewport = SkRect::MakeXYWH(pos().x(), pos().y(), size().w(), size().h());
         target->transform = static_cast<AKTransform>(transform());
-        target->dstRect = SkIRect::MakeXYWH(0, 0, realBufferSize().w(), realBufferSize().h());
+        target->dstRect = SkIRect::MakeXYWH(0, 0, currentMode()->sizeB().w(), currentMode()->sizeB().h());
 
+
+        //target->surface->getCanvas()->clear(SK_ColorBLUE);
         static_cast<Compositor*>(compositor())->scene.render(target);
         target->surface->flush();
 
@@ -305,7 +297,6 @@ public:
 
         outDamage.translate(pos().x(), pos().y());
 
-        LRegion damage;
         SkRegion::Iterator it(outDamage);
         while (!it.done())
         {
@@ -325,11 +316,15 @@ public:
             o->setPos(pos);
             pos.setX(pos.x() + o->size().w());
         }
+        repaint();
+        updateGradient();
     }
 
     void moveGL() override
     {
         frame = 0;
+        repaint();
+        updateGradient();
     }
 
     void uninitializeGL() override
@@ -337,16 +332,13 @@ public:
         static_cast<Compositor*>(compositor())->scene.destroyTarget(target);
     }
 
-    AKContainer layout { nullptr };//&comp()->root };
-
-    std::vector<AKSolidColor*> solidColors;
-    AKSubScene divs[2] { {&layout}, {&comp()->root} };
-
+    AKRenderableRect backgroundGradient { &comp()->background };
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
     UInt32 age { 0 };
     UInt32 frame { 0 };
+    float phase { 0.f };
 };
 
 LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType, const void *params)
