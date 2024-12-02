@@ -1,6 +1,7 @@
 #include <AK/AKScene.h>
-#include <AK/AKRenderable.h>
-#include <AK/AKBakeable.h>
+#include <AK/nodes/AKRenderable.h>
+#include <AK/nodes/AKBakeable.h>
+#include <AK/AKSurface.h>
 #include <cassert>
 #include <yoga/Yoga.h>
 #include <include/core/SkCanvas.h>
@@ -221,22 +222,48 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     if ((node->caps() & AKNode::Bake) && !clip.isEmpty())
     {
-        // Clip - overlay opaque
+        auto *bakeable { static_cast<AKBakeable*>(node) };
+
         SkRegion clipRegion = clip;
         clipRegion.op(t->m_opaque, SkRegion::Op::kDifference_Op);
         clipRegion.op(t->m_prevClip, SkRegion::Op::kIntersect_Op);
-        clipRegion.translate(-node->m_rect.x(), -node->m_rect.y());
+        clipRegion.translate(-bakeable->m_rect.x(), -bakeable->m_rect.y());
 
         if (!clipRegion.isEmpty())
         {
-            const bool surfaceChanged { node->updateBakeStorage() };
-            SkCanvas *canvas { node->t->bake.surface->getCanvas() };
-            canvas->save();
-            canvas->setMatrix(SkMatrix::Scale(node->t->bake.scale, node->t->bake.scale));
-            static_cast<AKBakeable*>(node)->onBake(canvas,
-                clipRegion,
-                surfaceChanged);
-            canvas->restore();
+            bool surfaceChanged;
+
+            if (bakeable->t->bake)
+            {
+                surfaceChanged = bakeable->t->bake->resize(
+                    SkSize::Make(bakeable->rect().size()),
+                    t->m_xyScale);
+            }
+            else
+            {
+                surfaceChanged = true;
+                bakeable->t->bake = AKSurface::Make(
+                    t->surface->recordingContext(),
+                    SkSize::Make(bakeable->rect().size()),
+                    t->m_xyScale, true);
+            }
+
+            AKBakeable::OnBakeParams params
+            {
+                .clip = &clipRegion,
+                .damage = &bakeable->t->clientDamage,
+                .opaque = &bakeable->opaqueRegion,
+                .surface = bakeable->t->bake
+            };
+
+            if (surfaceChanged)
+                params.damage->setRect(AK_IRECT_INF);
+
+            SkCanvas &canvas { *params.surface->surface()->getCanvas() };
+            canvas.save();
+            canvas.scale(params.surface->scale().x(), params.surface->scale().y());
+            bakeable->onBake(&params);
+            canvas.restore();
         }
     }
 
@@ -279,8 +306,7 @@ void AKScene::calculateNewDamage(AKNode *node)
         return;
 
     rend->t->opaqueOverlay = t->m_opaque;
-    rend->t->opaque = rend->opaqueRegion();
-    rend->t->opaque.translate(node->m_rect.x(), node->m_rect.y());
+    rend->opaqueRegion.translate(node->m_rect.x(), node->m_rect.y(), &rend->t->opaque);
     rend->t->opaque.op(clip, SkRegion::kIntersect_Op);
     t->m_opaque.op(rend->t->opaque, SkRegion::kUnion_Op);
     rend->t->translucent = clip;

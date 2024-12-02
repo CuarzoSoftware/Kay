@@ -1,5 +1,5 @@
 #include <include/core/SkCanvas.h>
-#include <AK/Widgets/AKImage.h>
+#include <AK/nodes/AKImage.h>
 #include <AK/AKPen.h>
 
 using namespace AK;
@@ -10,6 +10,7 @@ void AKImage::onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque)
         return;
 
     p_paint.setBlendMode(opaque ? SkBlendMode::kSrc : SkBlendMode::kSrcOver);
+    p_paint.setAntiAlias(true);
     updateImageMatrix();
     SkRegion::Iterator it(damage);
     while (!it.done())

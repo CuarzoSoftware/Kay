@@ -23,8 +23,8 @@
 #include <include/gpu/gl/GrGLAssembleInterface.h>
 #include <include/core/SkColorSpace.h>
 #include <AK/AKScene.h>
-#include <AK/Widgets/AKContainer.h>
-#include <AK/Widgets/AKRenderableRect.h>
+#include <AK/nodes/AKContainer.h>
+#include <AK/nodes/AKRenderableRect.h>
 
 using namespace AK;
 

@@ -146,21 +146,10 @@ private:
         SkRegion clientDamage,
             opaque, translucent,
             opaqueOverlay;
-        struct {
-            GrGLFramebufferInfo fbInfo { 0 };
-            GrBackendRenderTarget renderTarget;
-            GrGLTextureInfo textureInfo { 0, 0 };
-            GrBackendTexture backendTexture;
-            sk_sp<SkImage> image;
-            sk_sp<SkSurface> surface;
-            SkRect srcRect;
-            SkScalar scale;
-        } bake;        
+        std::shared_ptr<AKSurface> bake;
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
-    bool updateBakeStorage() noexcept;
-
     AKNode *closestClipperParent() const noexcept;
 
     AKLayout m_layout;

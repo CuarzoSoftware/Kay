@@ -1,7 +1,7 @@
 #ifndef AKSOLIDCOLOR_H
 #define AKSOLIDCOLOR_H
 
-#include <AK/AKRenderable.h>
+#include <AK/nodes/AKRenderable.h>
 #include <AK/AKBitset.h>
 #include <AK/AKBrush.h>
 #include <AK/AKPen.h>
@@ -9,11 +9,15 @@
 class AK::AKRenderableRect : public AKRenderable
 {
 public:
-    AKRenderableRect(AKNode *parent = nullptr) noexcept : AKRenderable(parent) {}
+    AKRenderableRect(AKNode *parent = nullptr) noexcept : AKRenderable(parent)
+    {
+        opaqueRegion.setRect(AK_IRECT_INF);
+    }
 
     AKRenderableRect(SkColor brushColor, AKNode *parent = nullptr) noexcept : AKRenderable(parent)
     {
         m_pendingBrush.setColor(brushColor);
+        opaqueRegion.setRect(AK_IRECT_INF);
     }
 
     void setBrush(const AKBrush &brush) noexcept

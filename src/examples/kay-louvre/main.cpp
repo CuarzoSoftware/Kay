@@ -5,11 +5,14 @@
 #include <LSurface.h>
 #include <LCursor.h>
 #include <LLog.h>
+#include <LSeat.h>
+#include <LPointer.h>
 
-#include <AK/Widgets/AKSubScene.h>
-#include <AK/Widgets/AKImage.h>
-#include <AK/Widgets/AKContainer.h>
-#include <AK/Widgets/AKRenderableRect.h>
+#include <AK/nodes/AKSubScene.h>
+#include <AK/nodes/AKImage.h>
+#include <AK/nodes/AKContainer.h>
+#include <AK/nodes/AKRenderableRect.h>
+#include <AK/nodes/AKRoundContainer.h>
 
 #include <AK/AKScene.h>
 
@@ -26,6 +29,7 @@
 #include <include/core/SkColorSpace.h>
 #include <include/effects/SkImageFilters.h>
 #include <include/effects/SkGradientShader.h>
+#include <include/utils/SkParsePath.h>
 
 using namespace AK;
 using namespace Louvre;
@@ -61,6 +65,21 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, GrRecordingContext 
         nullptr,
         nullptr);
 }
+
+class Button : public AKRoundContainer
+{
+public:
+    Button(AKNode *parent) noexcept : AKRoundContainer(AKBorderRadius::Make(20), parent)
+    {
+        layout().setWidth(100);
+        layout().setHeight(100);
+        background.layout().setWidthPercent(100);
+        background.layout().setHeightPercent(100);
+    }
+
+    AKRenderableRect background { SkColorSetARGB(255, rand()%255, rand()%255, rand()%255), this };
+    float rad { 0.f };
+};
 
 class Compositor final : public LCompositor
 {
@@ -107,7 +126,7 @@ public:
     AKContainer surfaces { YGFlexDirectionColumn, false, &root };
     AKContainer overlay { YGFlexDirectionColumn, false, &root };
 
-    AKSubScene subScene { &overlay };
+    AKRoundContainer subScene { AKBorderRadius::Make(40.f), &overlay };
     AKRenderableRect subSceneBackground { SK_ColorWHITE, &subScene };
     AKRenderableRect solidColor { SK_ColorRED, &subSceneBackground };
     AKRenderableRect solidColor2 { SK_ColorYELLOW, &subSceneBackground };
@@ -139,28 +158,32 @@ public:
     void updateGradient() noexcept
     {
         const SkPoint gradientPoints    [2] { SkPoint(0.f, 0.f), SkPoint(size().w(), size().h()) };
-        const SkScalar gradientPositions[2] { 0.f, 1.f };
-        const SkColor gradientColors    [2] { SK_ColorMAGENTA, SK_ColorGREEN };
+        const SkScalar gradientPositions[3] { 0.f, 0.5f, 1.f };
+        const SkColor gradientColors    [3] { 0xFF9CECFB, 0xFF65C7F7, 0xFF0052D4 };
         auto gradient = SkGradientShader::MakeLinear(
             gradientPoints,
             gradientColors,
             gradientPositions,
-            2, SkTileMode::kRepeat);
+            3, SkTileMode::kClamp);
         AKBrush gradientBrush;
         gradientBrush.setShader(gradient);
         backgroundGradient.setBrush(gradientBrush);
+        backgroundGradient.layout().setFlexWrap(YGWrapWrap);
+        backgroundGradient.layout().setPadding(YGEdgeAll, 10.f);
+        backgroundGradient.layout().setGap(YGGutterAll, 10.f);
+        backgroundGradient.layout().setFlexDirection(YGFlexDirectionRow);
         backgroundGradient.layout().setPositionType(YGPositionTypeAbsolute);
         backgroundGradient.layout().setPosition(YGEdgeLeft, pos().x());
         backgroundGradient.layout().setPosition(YGEdgeTop, pos().y());
         backgroundGradient.layout().setWidth(size().w());
         backgroundGradient.layout().setHeight(size().h());
-        backgroundGradient.setOpaqueRegion(AK_IRECT_INF);
+        backgroundGradient.opaqueRegion.setRect(AK_IRECT_INF);
         backgroundGradient.addDamage(AK_IRECT_INF);
     }
 
     void initializeGL() override
     {
-        //setScale(3.1);
+        //setScale(1.f);
         enableFractionalOversampling(false);
         frame = 0;
         auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](void *, const char *p) -> void * {
@@ -185,13 +208,36 @@ public:
         target = comp()->scene.createTarget();
         target->root = &comp()->root;
         updateGradient();
+
+        for (int i = 0; i < 20; i++)
+            buttons.push_back(new Button(&backgroundGradient));
     }
 
     void paintGL() override
     {
-        phase += 0.01f;
+        phase += 0.1f;
 
-        comp()->subScene.layout().setWidth(300.f + SkScalarCos(phase) * 50.f);
+        for (Button *button : buttons)
+        {
+            if (button->globalRect().contains(cursor()->pos().x(), cursor()->pos().y()))
+                button->rad += 0.1f;
+            else
+                button->rad -= 0.1f;
+
+            if (button->rad <= 0.f)
+                button->rad = 0.f;
+            else if (button->rad >= 1.f)
+                button->rad = 1.f;
+            else
+                repaint();
+
+            button->borderRadius().setCorners(AKBorderRadius::Make(button->rad * 50.f));
+        }
+
+        /*comp()->subScene.borderRadius().setCorners(AKBorderRadius::Make(10.f * (1.f + SkScalarCos(phase))));//200.f * (1.5f +  SkScalarCos(phase))));
+        comp()->subScene.layout().setWidth(100.f);// + SkScalarCos(phase) * 50.f);
+        comp()->subScene.layout().setWidth(100.f);*/
+        comp()->subScene.setVisible(false);
 
         Int32 n;
         const LBox *boxes;
@@ -249,8 +295,7 @@ public:
             s->node.addDamage(region);
 
             boxes = s->opaqueRegion().boxes(&n);
-            region.setRects((const SkIRect*)boxes, n);
-            s->node.setOpaqueRegion(region);
+            s->node.opaqueRegion.setRects((const SkIRect*)boxes, n);
         }
 
         if (needsFullRepaint())
@@ -339,6 +384,19 @@ public:
     UInt32 age { 0 };
     UInt32 frame { 0 };
     float phase { 0.f };
+    std::vector<Button*> buttons;
+};
+
+class Pointer final : public LPointer
+{
+public:
+    using LPointer::LPointer;
+
+    void pointerMoveEvent(const LPointerMoveEvent &event) override
+    {
+        LPointer::pointerMoveEvent(event);
+        cursor()->repaintOutputs(false);
+    }
 };
 
 LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType, const void *params)
@@ -348,6 +406,9 @@ LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType,
 
     if (objectType == LFactoryObject::Type::LSurface)
         return new Surface(params);
+
+    if (objectType == LFactoryObject::Type::LPointer)
+        return new Pointer(params);
 
     return nullptr;
 }

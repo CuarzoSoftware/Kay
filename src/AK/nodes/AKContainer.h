@@ -1,8 +1,7 @@
 #ifndef AKCONTAINER_H
 #define AKCONTAINER_H
 
-#include <AK/AKNode.h>
-
+#include <AK/nodes/AKNode.h>
 
 /**
  * @brief Container node that doesn't produce any output on its own.

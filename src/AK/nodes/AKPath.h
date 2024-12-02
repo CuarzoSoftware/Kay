@@ -1,7 +1,7 @@
 #ifndef AKPATH_H
 #define AKPATH_H
 
-#include <AK/AKRenderable.h>
+#include <AK/nodes/AKRenderable.h>
 
 class AKPath
 {

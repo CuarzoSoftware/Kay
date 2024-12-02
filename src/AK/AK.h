@@ -16,6 +16,7 @@ namespace AK
     class AKScene;  /* Renders a root AKNode into an AKTarget */
     class AKTarget; /* An AKScene render destination */
     class AKLayout; /* Yoga layout of an AKNode */
+    class AKSurface;
 
     /*********** CORE NODE TYPES ***********/
 
@@ -36,6 +37,9 @@ namespace AK
     /*********** SUBSCENES ***********/
 
     class AKRoundContainer;
+
+    /************ EFFECTS ************/
+    class AKRoundCornersEffect;
 
     /// @brief 64 bits unsigned integer
     typedef uint64_t        UInt64;
@@ -77,6 +81,6 @@ namespace AK
     typedef uintptr_t       UIntPtr;
 };
 
-#define AK_IRECT_INF SkIRect::MakeWH(10000000, 10000000)
+#define AK_IRECT_INF SkIRect::MakeLTRB(-10000000 , -10000000, 10000000, 10000000)
 
 #endif // AK_H

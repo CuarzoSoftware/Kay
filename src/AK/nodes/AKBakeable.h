@@ -1,14 +1,23 @@
 #ifndef AKBAKEABLE_H
 #define AKBAKEABLE_H
 
-#include <AK/AKRenderable.h>
+#include <AK/nodes/AKRenderable.h>
 
 class AK::AKBakeable : public AKRenderable
 {
+public:
+    struct OnBakeParams
+    {
+        const SkRegion *clip;
+        SkRegion *damage;
+        SkRegion *opaque;
+        std::shared_ptr<AKSurface> surface;
+    };
+
 protected:
     friend class AKScene;
     AKBakeable(AKNode *parent = nullptr) noexcept : AKRenderable(parent) { m_caps |= Bake; }
-    virtual void onBake(SkCanvas *canvas, const SkRegion &clip, bool surfaceChanged) = 0;
+    virtual void onBake(OnBakeParams *params) = 0;
 private:
     virtual void onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque) override;
 };

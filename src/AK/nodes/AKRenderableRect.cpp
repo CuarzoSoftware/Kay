@@ -1,4 +1,4 @@
-#include <AK/Widgets/AKRenderableRect.h>
+#include <AK/nodes/AKRenderableRect.h>
 
 #include <include/core/SkCanvas.h>
 #include <include/core/SkRegion.h>

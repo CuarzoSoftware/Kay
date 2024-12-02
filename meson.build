@@ -16,9 +16,9 @@ glesv2_dep  = dependency('glesv2')
 skia_dep    = dependency('Skia')
 yoga_dep    = dependency('yoga', modules: ['yoga::yogacore'])
 
-headers = run_command('find', './AK', '-type', 'f', '-name', '*[.hpp,.h]', check : false).stdout().strip().split('\n')
-sources = run_command('find', './AK', '-type', 'f', '-name', '*[.cpp,.c]', check : false).stdout().strip().split('\n')
-includes = ['.']
+headers = run_command('find', './src/AK', '-type', 'f', '-name', '*[.hpp,.h]', check : false).stdout().strip().split('\n')
+sources = run_command('find', './src/AK', '-type', 'f', '-name', '*[.cpp,.c]', check : false).stdout().strip().split('\n')
+includes = ['./src']
 
 kay = library(
     'Kay',
@@ -39,5 +39,5 @@ kay_dep = declare_dependency(
 
 # -------------- EXAMPLES --------------
 
-subdir('examples/kay-louvre')
-subdir('examples/kay-srm')
+subdir('src/examples/kay-louvre')
+subdir('src/examples/kay-srm')

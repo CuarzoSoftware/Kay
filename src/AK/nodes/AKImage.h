@@ -1,7 +1,7 @@
 #ifndef AKImage_H
 #define AKImage_H
 
-#include <AK/AKRenderable.h>
+#include <AK/nodes/AKRenderable.h>
 #include <AK/AKTransform.h>
 
 #include <include/core/SkImage.h>

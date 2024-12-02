@@ -1,4 +1,4 @@
-#include <AK/AKRenderable.h>
+#include <AK/nodes/AKRenderable.h>
 #include <AK/AKTarget.h>
 
 using namespace AK;

@@ -1,5 +1,5 @@
 #include <AK/AKTarget.h>
-#include <AK/AKNode.h>
+#include <AK/nodes/AKNode.h>
 #include <AK/AKScene.h>
 
 AK::AKTarget::AKTarget(AKScene *scene) noexcept : m_scene(scene)

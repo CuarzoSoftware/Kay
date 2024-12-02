@@ -3,7 +3,7 @@
 
 #include <AK/AKObject.h>
 #include <AK/AKTarget.h>
-#include <AK/AKNode.h>
+#include <AK/nodes/AKNode.h>
 #include <memory.h>
 #include <vector>
 
