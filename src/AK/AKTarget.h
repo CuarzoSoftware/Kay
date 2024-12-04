@@ -135,6 +135,11 @@ public:
      * If set to `nullptr`, no input region calculation is performed.
      */
     SkRegion* outInputRegion { nullptr };
+
+    const SkVector &xyScale() const noexcept
+    {
+        return m_xyScale;
+    }
 private:
     friend class AKScene;
     friend class AKNode;
@@ -144,7 +149,7 @@ private:
     SkIRect             m_globalIViewport;
     SkIRect             m_prevViewport;     // Rel to root
     SkMatrix            m_matrix;
-    SkPoint             m_xyScale;
+    SkVector            m_xyScale;
     SkRegion            m_prevClip;         // Rel to root
     SkRegion            m_damage;           // Rel to root
     SkRegion            m_opaque;           // Rel to root

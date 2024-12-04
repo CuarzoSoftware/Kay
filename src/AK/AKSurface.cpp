@@ -28,7 +28,7 @@ bool AKSurface::resize(const SkSize &size, const SkVector &scale, bool shrink) n
 {
     m_size = size;
     m_scale = scale;
-    m_imageSrcRect = SkIRect::MakeXYWH(0, 0,
+    m_imageSrcRect = SkIRect::MakeWH(
         size.width() * scale.x(),
         size.height() * scale.y());
 

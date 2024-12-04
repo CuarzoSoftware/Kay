@@ -130,13 +130,16 @@ bool AKRoundCornersEffect::addDamage(const SkSize &nodeSize, const SkRegion *cli
     return damageAdded;
 }
 
-bool AKRoundCornersEffect::clipCorners(SkCanvas *canvas, SkRegion *damage, SkRegion *opaque) noexcept
+bool AKRoundCornersEffect::clipCorners(SkCanvas *canvas, const SkRegion *clip, SkRegion *damage, SkRegion *opaque) noexcept
 {
     bool cornerClipped { false };
 
+    canvas->save();
+    canvas->clipIRect(clip->getBounds());
+
     for (int i = 0; i < CornerLast; i++)
     {
-        if (damage->intersects(m_rect[i]))
+        if (!clip->quickReject(m_rect[i]) && damage->intersects(m_rect[i]))
         {
             canvas->save();
             canvas->translate(
@@ -150,5 +153,6 @@ bool AKRoundCornersEffect::clipCorners(SkCanvas *canvas, SkRegion *damage, SkReg
         opaque->op(m_rect[i], SkRegion::Op::kDifference_Op);
     }
 
+    canvas->restore();
     return cornerClipped;
 }

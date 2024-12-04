@@ -33,7 +33,7 @@ void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
     target->age = isNewTarget ? 0 : 1;
     target->surface = params->surface->surface();
     target->viewport = SkRect::MakeWH(params->surface->size().width(), params->surface->size().height());
-    target->scale = t->target->scale;
+    //target->scale = t->target->scale;
     target->dstRect = params->surface->imageSrcRect();
     target->inClipRegion = params->clip;
     target->inDamageRegion = params->damage;

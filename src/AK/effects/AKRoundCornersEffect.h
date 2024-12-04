@@ -40,7 +40,7 @@ public:
     }
 
     bool addDamage(const SkSize &nodeSize, const SkRegion *clip, SkRegion *damage) noexcept;
-    bool clipCorners(SkCanvas *canvas, SkRegion *damage, SkRegion *opaque) noexcept;
+    bool clipCorners(SkCanvas *canvas, const SkRegion *clip, SkRegion *damage, SkRegion *opaque) noexcept;
 
 private:
     AKBorderRadius m_corners;

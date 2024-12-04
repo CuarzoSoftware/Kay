@@ -40,6 +40,8 @@ namespace AK
 
     /************ EFFECTS ************/
     class AKRoundCornersEffect;
+    class AKBackgroundEffect;
+    class AKBackgroundShadowEffect;
 
     /// @brief 64 bits unsigned integer
     typedef uint64_t        UInt64;

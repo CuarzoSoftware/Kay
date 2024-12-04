@@ -2,10 +2,10 @@
 #define AKNODE_H
 
 #include <AK/AKObject.h>
+#include <AK/AKWeak.h>
 #include <AK/AKBitset.h>
 #include <AK/AKLayout.h>
 
-#include <bitset>
 #include <include/core/SkImage.h>
 #include <include/core/SkSurface.h>
 #include <include/gpu/GrBackendSurface.h>
@@ -22,9 +22,10 @@ public:
 
     enum Caps : UInt32
     {
-        Render  = 1 << 0,
-        Bake    = 1 << 1,
-        Scene   = 1 << 2
+        Render              = 1 << 0,
+        Bake                = 1 << 1,
+        Scene               = 1 << 2,
+        BackgroundEffect    = 1 << 3
     };
 
     virtual ~AKNode();
@@ -118,11 +119,17 @@ public:
         return m_layout;
     }
 
+    /* Effects */
+
+    AKBackgroundEffect *backgroundEffect() const noexcept;
+    void setBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
+
     /* Triggered before the scene starts rendering but
      * after the Yoga layout is updated */
     virtual void onSceneBegin() {}
 
 private:
+    friend class AKBackgroundEffect;
     friend class AKRenderable;
     friend class AKBakeable;
     friend class AKSubScene;
@@ -154,13 +161,13 @@ private:
 
     AKLayout m_layout;
     AKBitset<Flags> m_flags { Visible };
-
+    AKWeak<AKBackgroundEffect> m_backgroundEffect;
     SkIRect m_rect;
     SkIRect m_globalRect;
     UInt32 m_caps { 0 };
     AKNode *m_parent { nullptr };
     std::vector<AKNode*> m_children;
-    size_t m_parentLink;
+    size_t m_parentLinkIndex;
     std::unique_ptr<SkRegion> m_inputRegion;
     mutable std::unordered_map<AKTarget*, TargetData> m_targets;
     TargetData *t;

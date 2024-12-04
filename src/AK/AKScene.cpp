@@ -1,8 +1,10 @@
 #include <AK/AKScene.h>
 #include <AK/nodes/AKRenderable.h>
 #include <AK/nodes/AKBakeable.h>
+#include <AK/effects/AKBackgroundEffect.h>
 #include <AK/AKSurface.h>
 #include <cassert>
+#include <iostream>
 #include <yoga/Yoga.h>
 #include <include/core/SkCanvas.h>
 #include <include/gpu/GrDirectContext.h>
@@ -35,8 +37,15 @@ bool AKScene::render(AKTarget *target)
 
     updateMatrix();
 
-    for (auto it = t->root->children().crbegin(); it != t->root->children().crend(); it++)
-        calculateNewDamage(*it);
+    for (Int64 i = t->root->children().size() - 1; i >= 0;)
+    {
+        const bool noBackroundEffect { t->root->children()[i]->backgroundEffect() == nullptr };
+
+        calculateNewDamage(t->root->children()[i]);
+
+        if (noBackroundEffect)
+            i--;
+    }
 
     updateDamageRing();
 
@@ -45,8 +54,15 @@ bool AKScene::render(AKTarget *target)
 
     renderBackground();
 
-    for (auto *child : t->root->children())
-        renderTranslucent(child);
+    for (size_t i = 0; i < t->root->children().size();)
+    {
+        renderTranslucent(t->root->children()[i]);
+
+        if (t->root->children()[i]->caps() & AKNode::BackgroundEffect)
+            t->root->children()[i]->setParent(nullptr);
+        else
+            i++;
+    }
 
     t->m_damage.setEmpty();
     t->m_opaque.setEmpty();
@@ -192,19 +208,48 @@ void AKScene::calculateNewDamage(AKNode *node)
         node->t->targetLink = t->m_nodes.size() - 1;
     }
 
-    node->m_globalRect = SkRect::MakeXYWH(
-        node->layout().calculatedLeft() + float(node->parent()->globalRect().x()),
-        node->layout().calculatedTop() + float(node->parent()->globalRect().y()),
-        node->layout().calculatedWidth(),
-        node->layout().calculatedHeight()).roundOut();
+    if (node->caps() & AKNode::BackgroundEffect)
+    {
+        AKBackgroundEffect &backgroundEffect { *static_cast<AKBackgroundEffect*>(node) };
 
-    node->onSceneBegin();
+        node->onSceneBegin();
 
-    node->m_rect = SkIRect::MakeXYWH(
-        node->m_globalRect.x() - t->root->m_globalRect.x(),
-        node->m_globalRect.y() - t->root->m_globalRect.y(),
-        node->m_globalRect.width(),
-        node->m_globalRect.height());
+        backgroundEffect.m_globalRect = SkIRect::MakeXYWH(
+            backgroundEffect.rect.x() + backgroundEffect.targetNode()->globalRect().x(),
+            backgroundEffect.rect.y() + backgroundEffect.targetNode()->globalRect().y(),
+            backgroundEffect.rect.width(),
+            backgroundEffect.rect.height());
+
+        backgroundEffect.m_rect = SkIRect::MakeXYWH(
+            backgroundEffect.m_globalRect.x() - t->root->m_globalRect.x(),
+            backgroundEffect.m_globalRect.y() - t->root->m_globalRect.y(),
+            backgroundEffect.m_globalRect.width(),
+            backgroundEffect.m_globalRect.height());
+    }
+    else
+    {
+        node->m_globalRect = SkRect::MakeXYWH(
+            node->layout().calculatedLeft() + float(node->parent()->globalRect().x()),
+            node->layout().calculatedTop() + float(node->parent()->globalRect().y()),
+            node->layout().calculatedWidth(),
+            node->layout().calculatedHeight()).roundOut();
+
+        node->m_rect = SkIRect::MakeXYWH(
+            node->m_globalRect.x() - t->root->m_globalRect.x(),
+            node->m_globalRect.y() - t->root->m_globalRect.y(),
+            node->m_globalRect.width(),
+            node->m_globalRect.height());
+
+        node->onSceneBegin();
+    }
+
+    if (node->backgroundEffect())
+    {
+        if (node->backgroundEffect()->stackPosition() == AKBackgroundEffect::Behind)
+            node->backgroundEffect()->insertBefore(node);
+        else
+            node->backgroundEffect()->insertBefore(node->parent()->children().front());
+    }
 
     SkRegion clip;
 
@@ -293,8 +338,15 @@ void AKScene::calculateNewDamage(AKNode *node)
     node->t->prevRect = node->m_globalRect;
 
     if (!(node->caps() & AKNode::Scene))
-        for (auto it = node->children().crbegin(); it != node->children().crend(); it++)
-            calculateNewDamage(*it);
+        for (Int64 i = node->children().size() - 1; i >= 0;)
+        {
+            const bool noBackroundEffect { node->children()[i]->backgroundEffect() == nullptr };
+
+            calculateNewDamage(node->children()[i]);
+
+            if (noBackroundEffect)
+                i--;
+        }
 
     if ((node->caps() & AKNode::Caps::Render) == 0)
         return;
@@ -434,6 +486,13 @@ void AKScene::renderTranslucent(AKNode *node)
     skip:
 
     if (!(node->caps() & AKNode::Scene))
-        for (AKNode *child : node->children())
-            renderTranslucent(child);
+        for (size_t i = 0; i < node->children().size();)
+        {
+            renderTranslucent(node->children()[i]);
+
+            if (node->children()[i]->caps() & AKNode::BackgroundEffect)
+                node->children()[i]->setParent(nullptr);
+            else
+                i++;
+        }
 }

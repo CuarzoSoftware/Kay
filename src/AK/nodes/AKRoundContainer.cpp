@@ -16,6 +16,7 @@ void AKRoundContainer::onBake(OnBakeParams *params)
 
     borderRadius().clipCorners(
         params->surface->surface()->getCanvas(),
+        params->clip,
         params->damage,
         params->opaque);    
 }

@@ -13,6 +13,7 @@
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKRenderableRect.h>
 #include <AK/nodes/AKRoundContainer.h>
+#include <AK/effects/AKBackgroundShadowEffect.h>
 
 #include <AK/AKScene.h>
 
@@ -36,7 +37,6 @@ using namespace Louvre;
 
 static sk_sp<SkColorSpace> colorSpace = SkColorSpace::MakeSRGB();
 static SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
-
 
 static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, GrRecordingContext *ctx, LOutput *o)
 {
@@ -78,6 +78,8 @@ public:
     }
 
     AKRenderableRect background { SkColorSetARGB(255, rand()%255, rand()%255, rand()%255), this };
+    AKBackgroundShadowEffect shadowEffect { AKBackgroundShadowEffect::Box,
+        100.f, {10, 10}, SK_ColorBLACK, true, this };
     float rad { 0.f };
 };
 
@@ -166,11 +168,13 @@ public:
             gradientPositions,
             3, SkTileMode::kClamp);
         AKBrush gradientBrush;
+
         gradientBrush.setShader(gradient);
+        //gradientBrush.setColor(SK_ColorWHITE);
         backgroundGradient.setBrush(gradientBrush);
         backgroundGradient.layout().setFlexWrap(YGWrapWrap);
-        backgroundGradient.layout().setPadding(YGEdgeAll, 10.f);
-        backgroundGradient.layout().setGap(YGGutterAll, 10.f);
+        backgroundGradient.layout().setPadding(YGEdgeAll, 40.f);
+        backgroundGradient.layout().setGap(YGGutterAll, 40.f);
         backgroundGradient.layout().setFlexDirection(YGFlexDirectionRow);
         backgroundGradient.layout().setPositionType(YGPositionTypeAbsolute);
         backgroundGradient.layout().setPosition(YGEdgeLeft, pos().x());
@@ -210,7 +214,10 @@ public:
         updateGradient();
 
         for (int i = 0; i < 20; i++)
+        {
             buttons.push_back(new Button(&backgroundGradient));
+            buttons.back()->shadowEffect.setRadius(2 * i);
+        }
     }
 
     void paintGL() override
@@ -232,6 +239,7 @@ public:
                 repaint();
 
             button->borderRadius().setCorners(AKBorderRadius::Make(button->rad * 50.f));
+            button->shadowEffect.setOffset(10 * SkScalarCos(phase), 10 * SkScalarSin(phase));
         }
 
         /*comp()->subScene.borderRadius().setCorners(AKBorderRadius::Make(10.f * (1.f + SkScalarCos(phase))));//200.f * (1.5f +  SkScalarCos(phase))));
@@ -317,6 +325,7 @@ public:
 
         target->outDamageRegion = &outDamage;
         target->age = age;
+        target->scale = 1.f;
         target->viewport = SkRect::MakeXYWH(pos().x(), pos().y(), size().w(), size().h());
         target->transform = static_cast<AKTransform>(transform());
         target->dstRect = SkIRect::MakeXYWH(0, 0, currentMode()->sizeB().w(), currentMode()->sizeB().h());

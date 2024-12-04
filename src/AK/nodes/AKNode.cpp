@@ -5,6 +5,7 @@
 #include <AK/AKTarget.h>
 #include <AK/nodes/AKNode.h>
 #include <AK/AKSurface.h>
+#include <AK/effects/AKBackgroundEffect.h>
 #include <GL/gl.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -20,6 +21,8 @@ AK::AKNode::AKNode(AKNode *parent) noexcept
 
 AKNode::~AKNode()
 {
+    setBackgroundEffect(nullptr);
+
     for (auto &t : m_targets)
     {
         t.second.target->m_damage.op(t.second.prevLocalClip, SkRegion::kUnion_Op);
@@ -48,16 +51,16 @@ void AKNode::setParent(AKNode *parent) noexcept
     if (m_parent)
     {
         YGNodeRemoveChild(m_parent->layout().m_node, layout().m_node);
-        auto next = m_parent->m_children.erase(m_parent->m_children.begin() + m_parentLink);
-        for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLink--;
+        auto next = m_parent->m_children.erase(m_parent->m_children.begin() + m_parentLinkIndex);
+        for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex--;
     }
 
     m_parent = parent;
 
     if (parent)
     {
-        m_parentLink = YGNodeGetChildCount(parent->layout().m_node);
-        YGNodeInsertChild(parent->layout().m_node, layout().m_node, m_parentLink);
+        m_parentLinkIndex = YGNodeGetChildCount(parent->layout().m_node);
+        YGNodeInsertChild(parent->layout().m_node, layout().m_node, m_parentLinkIndex);
         parent->m_children.push_back(this);
     }
 }
@@ -75,10 +78,14 @@ void AKNode::insertBefore(AKNode *other) noexcept
         {
             setParent(nullptr);
             m_parent = other->parent();
-            m_parentLink = other->m_parentLink;
-            YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLink);
-            auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLink, this) + 1;
-            for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLink++;
+            m_parentLinkIndex = other->m_parentLinkIndex;
+            YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLinkIndex);
+            auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLinkIndex, this) + 1;
+            for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex++;
+
+            assert(m_parent->m_children[m_parentLinkIndex] == this);
+            assert(m_parent->m_children[m_parentLinkIndex+1] == other);
+            assert(m_parent->m_children[other->m_parentLinkIndex] == other);
         }
         else
         {
@@ -111,10 +118,10 @@ void AKNode::insertAfter(AKNode *other) noexcept
             }
 
             m_parent = other->parent();
-            m_parentLink = other->m_parentLink + 1;
-            YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLink);
-            auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLink, this) + 1;
-            for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLink++;
+            m_parentLinkIndex = other->m_parentLinkIndex + 1;
+            YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLinkIndex);
+            auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLinkIndex, this) + 1;
+            for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex++;
         }
         else
         {
@@ -124,6 +131,31 @@ void AKNode::insertAfter(AKNode *other) noexcept
     else if (parent())
     {
         insertBefore(parent()->children().front());
+    }
+}
+
+AKBackgroundEffect *AKNode::backgroundEffect() const noexcept
+{
+    return m_backgroundEffect;
+}
+
+void AKNode::setBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept
+{
+    if (backgroundEffect == m_backgroundEffect)
+        return;
+
+    if (m_backgroundEffect)
+    {
+        m_backgroundEffect->m_targetNode.reset();
+        m_backgroundEffect->onTargetNodeChanged();
+    }
+
+    m_backgroundEffect.reset(backgroundEffect);
+
+    if (m_backgroundEffect)
+    {
+        m_backgroundEffect->m_targetNode.reset(this);
+        m_backgroundEffect->onTargetNodeChanged();
     }
 }
 
