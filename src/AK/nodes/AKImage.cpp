@@ -1,125 +1,39 @@
 #include <include/core/SkCanvas.h>
 #include <AK/nodes/AKImage.h>
 #include <AK/AKPen.h>
+#include <AK/AKTarget.h>
+#include <AK/AKPainter.h>
 
 using namespace AK;
 
-void AKImage::onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque)
+void AKImage::onRender(AKPainter *painter, const SkRegion &damage)
 {
     if (!image())
         return;
 
-    p_paint.setBlendMode(opaque ? SkBlendMode::kSrc : SkBlendMode::kSrcOver);
-    p_paint.setAntiAlias(true);
-    updateImageMatrix();
-    SkRegion::Iterator it(damage);
-    while (!it.done())
-    {
-        canvas->save();
-        canvas->clipIRect(it.rect());
-        canvas->concat(p_imageMatrix);
-        canvas->drawImageRect(u_image,
-                              p_imageSrcRect,
-                              p_imageDstRect,
-                              SkFilterMode::kLinear,
-                              &p_paint,
-                              SkCanvas::kStrict_SrcRectConstraint);
-        canvas->restore();
-        it.next();
-    }
+    painter->bindTextureMode({
+        .texture = image(),
+        .pos = { rect().x(), rect().y() },
+        .srcRect = srcRect(),
+        .dstSize = rect().size(),
+        .srcTransform = transform(),
+        .srcScale = scale()
+    });
+
+    painter->drawRegion(damage);
 }
 
-void AKImage::updateImageMatrix() noexcept
+void AKImage::onSceneBegin()
 {
-    const SkRect rect { SkRect::MakeWH(layout().calculatedWidth(), layout().calculatedHeight()) };
+    const auto &c { changes() };
 
-    p_imageMatrix.setIdentity();
+    if (c.test(Chg_Opacity) ||
+        c.test(Chg_ColorFactor) ||
+        c.test(Chg_CustomBlendFuncEnabled) ||
+        c.test(Chg_CustomTextureColorEnabled) ||
+        (customTextureColorEnabled() && c.test(Chg_Color)) ||
+        (customBlendFuncEnabled() && c.test(Chg_CustomBlendFunc)))
+        addDamage(AK_IRECT_INF);
 
-    const SkRect src {
-        u_imageSrcRect.left() * imageScale(),
-        u_imageSrcRect.top() * imageScale(),
-        u_imageSrcRect.right() * imageScale(),
-        u_imageSrcRect.bottom() * imageScale() };
-
-    switch (imageTransform())
-    {
-    case AKTransform::Normal:
-        p_imageMatrix.preTranslate(rect.x(), rect.y());
-        p_imageSrcRect = src;
-        p_imageDstRect.setXYWH(0, 0, rect.width(), rect.height());
-        break;
-    case AKTransform::Rotated90:
-        p_imageMatrix.preTranslate(rect.x() + rect.width(), rect.y());
-        p_imageMatrix.preRotate(90.f);
-        p_imageSrcRect.setLTRB(
-            src.top(),
-            image()->height() - src.right(),
-            src.bottom(),
-            src.right());
-        p_imageDstRect.setXYWH(0, 0, rect.height(), rect.width());
-        break;
-    case AKTransform::Rotated180:
-        p_imageMatrix.preTranslate(rect.x() + rect.width(), rect.y() + rect.height());
-        p_imageMatrix.preRotate(180.f);
-        p_imageSrcRect.setLTRB(
-            image()->width() - src.right(),
-            image()->height() - src.bottom(),
-            src.right(),
-            src.bottom());
-        p_imageDstRect.setXYWH(0, 0, rect.width(), rect.height());
-        break;
-    case AKTransform::Rotated270:
-        p_imageMatrix.preTranslate(rect.x(), rect.y() + rect.height());
-        p_imageMatrix.preRotate(-90.f);
-        p_imageSrcRect.setLTRB(
-            src.top(),
-            src.left(),
-            src.bottom(),
-            src.right());
-        p_imageDstRect.setXYWH(0, 0, rect.height(), rect.width());
-        break;
-    case AKTransform::Flipped:
-        p_imageMatrix.preTranslate(rect.x() + rect.width(), rect.y());
-        p_imageMatrix.preScale(-1.f, 1.f);
-        p_imageSrcRect.setLTRB(
-            image()->width() - src.right(),
-            image()->height() - src.bottom(),
-            src.right(),
-            src.bottom());
-        p_imageDstRect.setXYWH(0, 0, rect.width(), rect.height());
-        break;
-    case AKTransform::Flipped90:
-        p_imageMatrix.preTranslate(rect.x(), rect.y());
-        p_imageMatrix.preScale(-1.f, 1.f);
-        p_imageMatrix.preRotate(90.f);
-        p_imageSrcRect.setLTRB(
-            src.top(),
-            src.left(),
-            src.bottom(),
-            src.right());
-        p_imageDstRect.setXYWH(0, 0, rect.height(), rect.width());
-        break;
-    case AKTransform::Flipped180:
-        p_imageMatrix.preTranslate(rect.x(), rect.y() + rect.height());
-        p_imageMatrix.preScale(1.f, -1.f);
-        p_imageSrcRect.setLTRB(
-            src.left(),
-            image()->height() - src.bottom(),
-            src.right(),
-            src.bottom());
-        p_imageDstRect.setXYWH(0, 0, rect.width(), rect.height());
-        break;
-    case AKTransform::Flipped270:
-        p_imageMatrix.preTranslate(rect.x() + rect.width(), rect.y() + rect.height());
-        p_imageMatrix.preScale(-1.f, 1.f);
-        p_imageMatrix.preRotate(-90.f);
-        p_imageSrcRect.setLTRB(
-            src.top(),
-            src.left(),
-            src.bottom(),
-            src.right());
-        p_imageDstRect.setXYWH(0, 0, rect.height(), rect.width());
-        break;
-    }
+    setColorHint(opacity() < 1.f || colorFactor().fA < 1.f ? ColorHint::Translucent : ColorHint::UseOpaqueRegion);
 }
-

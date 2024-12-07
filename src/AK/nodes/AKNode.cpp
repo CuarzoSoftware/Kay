@@ -14,7 +14,7 @@
 
 using namespace AK;
 
-AK::AKNode::AKNode(AKNode *parent) noexcept
+AKNode::AKNode(AKNode *parent) noexcept
 {
     setParent(parent);
 }
@@ -34,7 +34,19 @@ AKNode::~AKNode()
     setParent(nullptr);
 }
 
-AK::AKNode *AKNode::closestClipperParent() const noexcept
+void AKNode::addChange(Change change) noexcept
+{
+    for (auto &t : m_targets)
+        t.second.changes.set(change);
+}
+
+const std::bitset<128> &AKNode::changes() const noexcept
+{
+    static std::bitset<128> emptyChanges;
+    return currentTarget() == nullptr ? emptyChanges: m_targets[currentTarget()].changes;
+}
+
+AKNode *AKNode::closestClipperParent() const noexcept
 {
     assert(parent() != nullptr);
 

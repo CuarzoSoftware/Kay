@@ -19,76 +19,159 @@ using namespace AK;
 
 void AKBackgroundShadowEffect::onSceneBegin()
 {
-    if (type() == Box)
+    if (shadowType() == Box)
         onSceneBeginBox();
 }
 
 void AKBackgroundShadowEffect::onSceneBeginBox() noexcept
 {
-    opaqueRegion.setEmpty();
-
     bool needsNewSurface { m_targets.find(currentTarget()) == m_targets.end() };
     bool needsFullDamage { needsNewSurface };
+    const auto &chg { changes() };
+
     m_currentData = &m_targets[currentTarget()];
 
-    /* TODO: type change */
+    if (m_currentData->prevScale != currentTarget()->xyScale())
+    {
+        needsNewSurface = needsFullDamage = true;
+        m_currentData->prevScale = currentTarget()->xyScale();
+    }
+
+    rect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
+    rect.outset(shadowRadius(), shadowRadius());
+    rect.offset(offset().x(), offset().y());
+
+    const SkIPoint finalPos { rect.x() + targetNode()->rect().x(), rect.y() + targetNode()->rect().y() };
 
     /* TODO: border radius change */
 
     /* Shadow radius change */
-    if (radius() != m_currentData->radius)
-    {
+    if (chg.test(Chg_ShadowType) || chg.test(Chg_ShadowRadius))
         needsFullDamage = needsNewSurface = true;
-        m_currentData->radius = radius();
-    }
 
-    /* Color change */
-    if (!m_currentData->brush.getColorFilter() || color() != m_currentData->brush.getColor())
-    {
-        needsFullDamage = true;
-        m_currentData->brush.setColor(color());
-        m_currentData->brush.setColorFilter(SkColorFilters::Blend(color(), SkBlendMode::kSrcIn));
-    }
+    const SkScalar centerSize { std::max(shadowRadius() * 0.5f, 64.f) };
 
-    /* Clip change */
-    if (m_currentData->flags.test(Clipping) != clippingEnabled())
-    {
-        needsFullDamage = true;
-        m_currentData->flags.set(Clipping, clippingEnabled());
-    }
+    // TL
+    m_currentData->dstRects[0] = SkIRect::MakeXYWH(
+        finalPos.x(), finalPos.y(),
+        shadowRadius(), shadowRadius());
 
-    rect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
-    rect.outset(radius(), radius());
-    rect.offset(offset().x(), offset().y());
+    // T
+    m_currentData->dstRects[1] = SkIRect::MakeXYWH(
+        finalPos.x() + shadowRadius(), finalPos.y(),
+        targetNode()->rect().width(), shadowRadius());
+
+    // TR
+    m_currentData->dstRects[2] = SkIRect::MakeXYWH(
+        finalPos.x() + shadowRadius() + targetNode()->rect().width(), finalPos.y(),
+        shadowRadius(), shadowRadius());
+
+    // L
+    m_currentData->dstRects[3] = SkIRect::MakeXYWH(
+        finalPos.x(), finalPos.y() + shadowRadius(),
+        shadowRadius(), targetNode()->rect().height());
+
+    // Center
+    m_currentData->dstRects[4] = SkIRect::MakeXYWH(
+        finalPos.x() + shadowRadius(), finalPos.y() + shadowRadius(),
+        targetNode()->rect().width(), targetNode()->rect().height());
+
+    // R
+    m_currentData->dstRects[5] = SkIRect::MakeXYWH(
+        finalPos.x() + targetNode()->rect().width() + shadowRadius(), finalPos.y() + shadowRadius(),
+        shadowRadius(), targetNode()->rect().height());
+
+    // BL
+    m_currentData->dstRects[6] = SkIRect::MakeXYWH(
+        finalPos.x(), finalPos.y() + shadowRadius() + targetNode()->rect().height(),
+        shadowRadius(), shadowRadius());
+
+    // B
+    m_currentData->dstRects[7] = SkIRect::MakeXYWH(
+        finalPos.x() + shadowRadius(), finalPos.y() + shadowRadius() + targetNode()->rect().height(),
+        targetNode()->rect().width(), shadowRadius());
+
+    // BR
+    m_currentData->dstRects[8] = SkIRect::MakeXYWH(
+        finalPos.x() + shadowRadius() + targetNode()->rect().width(),
+        finalPos.y() + shadowRadius() + targetNode()->rect().height(),
+        shadowRadius(), shadowRadius());
+
+    needsFullDamage |= chg.test(Chg_Color) || chg.test(Chg_ShadowClippingEnabled);
 
     if (needsNewSurface)
     {
-        const SkScalar nineCenterSize { std::max(radius() * 0.5f, 64.f) };
-        const SkScalar surfaceSize { (radius() * 2.f) + nineCenterSize };
+        // TL
+        m_currentData->srcRects[0] = SkRect::MakeWH(
+            shadowRadius(),
+            shadowRadius());
 
-        m_currentData->shadowSurface = AKSurface::Make(
-            currentTarget()->surface->recordingContext(),
-            SkSize::Make(surfaceSize, surfaceSize),
-            currentTarget()->xyScale(),
-            true);
+        // T
+        m_currentData->srcRects[1] = SkRect::MakeXYWH(
+            shadowRadius(), 0.f,
+            centerSize, shadowRadius());
 
-        m_currentData->nineCenter = SkIRect::MakeXYWH(
-            radius() * currentTarget()->xyScale().x(),
-            radius() * currentTarget()->xyScale().y(),
-            nineCenterSize * currentTarget()->xyScale().x(),
-            nineCenterSize * currentTarget()->xyScale().y());
+        // TR
+        m_currentData->srcRects[2] = SkRect::MakeXYWH(
+            shadowRadius() + centerSize, 0.f,
+            shadowRadius(), shadowRadius());
 
-        SkCanvas &canvas { *m_currentData->shadowSurface->surface()->getCanvas() };
+        // L
+        m_currentData->srcRects[3] = SkRect::MakeXYWH(
+            0.f, shadowRadius(),
+            shadowRadius(), centerSize);
+
+        // Center
+        m_currentData->srcRects[4] = SkRect::MakeXYWH(
+            shadowRadius(), shadowRadius(),
+            centerSize, centerSize);
+
+        // R
+        m_currentData->srcRects[5] = SkRect::MakeXYWH(
+            shadowRadius() + centerSize, shadowRadius(),
+            shadowRadius(), centerSize);
+
+        // BL
+        m_currentData->srcRects[6] = SkRect::MakeXYWH(
+            0, shadowRadius() + centerSize,
+            shadowRadius(), shadowRadius());
+
+        // B
+        m_currentData->srcRects[7] = SkRect::MakeXYWH(
+            shadowRadius(), shadowRadius() + centerSize,
+            centerSize, shadowRadius());
+
+        // BR
+        m_currentData->srcRects[8] = SkRect::MakeXYWH(
+            centerSize + shadowRadius(),
+            centerSize + shadowRadius(),
+            shadowRadius(),
+            shadowRadius());
+
+        const SkSize surfaceSize { 2.f * shadowRadius() + centerSize, 2.f * shadowRadius() + centerSize };
+
+        if (m_currentData->surface)
+            m_currentData->surface->resize(surfaceSize, currentTarget()->xyScale());
+        else
+        {
+            m_currentData->surface = AKSurface::Make(
+                currentTarget()->surface->recordingContext(),
+                surfaceSize,
+                currentTarget()->xyScale(),
+                true);
+        }
+
+        SkCanvas &canvas { *m_currentData->surface->surface()->getCanvas() };
+        AKBrush brush;
         canvas.save();
-        canvas.clear(SK_ColorTRANSPARENT);
         canvas.scale(
             currentTarget()->xyScale().x(),
             currentTarget()->xyScale().y());
-
-        AKBrush brush;
+        canvas.clear(SK_ColorTRANSPARENT);
+        brush.setBlendMode(SkBlendMode::kSrc);
         brush.setColor(SK_ColorWHITE);
-        brush.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, radius()/3.f));
-        canvas.drawRect(SkRect::MakeXYWH(radius(), radius(), nineCenterSize, nineCenterSize), brush);
+        brush.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, shadowRadius()/3.f));
+        canvas.drawRect(SkRect::MakeXYWH(shadowRadius(), shadowRadius(), centerSize, centerSize), brush);
         canvas.restore();
     }
 
@@ -96,45 +179,34 @@ void AKBackgroundShadowEffect::onSceneBeginBox() noexcept
         addDamage(AK_IRECT_INF);
 }
 
-void AKBackgroundShadowEffect::onRender(SkCanvas *canvas, const SkRegion &damage, bool /*opaque*/)
+void AKBackgroundShadowEffect::onRender(AKPainter *painter, const SkRegion &damage)
 {
-    if (type() == Box)
-        onRenderBox(canvas, damage);
+    if (shadowType() == Box)
+        onRenderBox(painter, damage);
 }
 
-void AKBackgroundShadowEffect::onRenderBox(SkCanvas *canvas, const SkRegion &damage) noexcept
+void AKBackgroundShadowEffect::onRenderBox(AKPainter *painter, const SkRegion &damage) noexcept
 {
-    const SkVector xyInvScale {
-        1.f/m_currentData->shadowSurface->scale().x(),
-        1.f/m_currentData->shadowSurface->scale().y() };
+    SkRegion fullDamage { damage };
 
-    SkRegion finalDamage { damage };
+    if (shadowClippingEnabled())
+        fullDamage.op(targetNode()->rect(), SkRegion::Op::kDifference_Op);
 
-    if (m_currentData->flags.test(Clipping))
+    for (int i = 0; i < 9; i++)
     {
-        finalDamage.op(SkIRect::MakeXYWH(
-            targetNode()->rect().x() - AKNode::rect().x(),
-            targetNode()->rect().y() - AKNode::rect().y(),
-            targetNode()->rect().width(),
-            targetNode()->rect().height()),
-            SkRegion::Op::kDifference_Op);
-    }
+        SkRegion clippedDamage { fullDamage };
+        clippedDamage.op(m_currentData->dstRects[i], SkRegion::Op::kIntersect_Op);
 
-    SkRegion::Iterator it(finalDamage);
-    while (!it.done())
-    {
-        canvas->save();
-        canvas->clipIRect(it.rect());
-        canvas->scale(xyInvScale.x(), xyInvScale.y());
-        canvas->drawImageNine(
-            m_currentData->shadowSurface->image().get(),
-            m_currentData->nineCenter,
-            SkRect::MakeWH(
-                rect.width() * m_currentData->shadowSurface->scale().x(),
-                rect.height()* m_currentData->shadowSurface->scale().y()),
-            SkFilterMode::kLinear, &m_currentData->brush);
-        canvas->restore();
-        it.next();
+        painter->bindTextureMode({
+            .texture = m_currentData->surface->image(),
+            .pos = { m_currentData->dstRects[i].x(), m_currentData->dstRects[i].y() },
+            .srcRect = m_currentData->srcRects[i],
+            .dstSize = m_currentData->dstRects[i].size(),
+            .srcTransform = AKTransform::Normal,
+            .srcScale = m_currentData->surface->scale().x()
+        });
+
+        painter->drawRegion(clippedDamage);
     }
 }
 

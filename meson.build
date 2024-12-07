@@ -11,6 +11,7 @@ project(
 cpp = meson.get_compiler('cpp')
 
 pkg         = import('pkgconfig')
+egl_dep     = dependency('egl')
 gl_dep      = dependency('gl')
 glesv2_dep  = dependency('glesv2')
 skia_dep    = dependency('Skia')
@@ -26,6 +27,7 @@ kay = library(
     include_directories : includes,
     dependencies : [
         skia_dep,
+        egl_dep,
         gl_dep,
         glesv2_dep,
         yoga_dep

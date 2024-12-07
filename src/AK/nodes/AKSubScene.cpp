@@ -19,7 +19,7 @@ void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
 
     if (m_targets.find(t->target) == m_targets.end())
     {
-        target = m_scene.createTarget();
+        target = m_scene.createTarget(parentTargetData->target->painter());
         target->root = this;
         target->m_isSubScene = true;
         m_targets[t->target] = target;
@@ -29,6 +29,7 @@ void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
         target = m_targets[t->target];
         isNewTarget = false;
     }
+
 
     target->age = isNewTarget ? 0 : 1;
     target->surface = params->surface->surface();

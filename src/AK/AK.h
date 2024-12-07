@@ -1,6 +1,7 @@
 #ifndef AK_H
 #define AK_H
 
+#include <GLES2/gl2.h>
 #include <cstdint>
 
 namespace AK
@@ -12,6 +13,7 @@ namespace AK
 
     class AKPen;
     class AKBrush;
+    class AKPainter;
 
     class AKScene;  /* Renders a root AKNode into an AKTarget */
     class AKTarget; /* An AKScene render destination */
@@ -28,7 +30,7 @@ namespace AK
 
     /*********** RENDERABLES ***********/
 
-    class AKRenderableRect;
+    class AKSolidColor;
     class AKImage;
     class AKPath;
 
@@ -42,6 +44,29 @@ namespace AK
     class AKRoundCornersEffect;
     class AKBackgroundEffect;
     class AKBackgroundShadowEffect;
+
+    struct AKBlendFunc
+    {
+        /// Source RGB factor for blending
+        GLenum sRGBFactor;
+
+        /// Destination RGB factor for blending
+        GLenum dRGBFactor;
+
+        /// Source alpha factor for blending
+        GLenum sAlphaFactor;
+
+        /// Destination alpha factor for blendin
+        GLenum dAlphaFactor;
+
+        constexpr bool operator==(const AKBlendFunc &other) const
+        {
+            return sRGBFactor == other.sRGBFactor &&
+                   dRGBFactor == other.dRGBFactor &&
+                   sAlphaFactor == other.sAlphaFactor &&
+                   dAlphaFactor == other.dAlphaFactor;
+        }
+    };
 
     /// @brief 64 bits unsigned integer
     typedef uint64_t        UInt64;
@@ -83,6 +108,6 @@ namespace AK
     typedef uintptr_t       UIntPtr;
 };
 
-#define AK_IRECT_INF SkIRect::MakeLTRB(-10000000 , -10000000, 10000000, 10000000)
+#define AK_IRECT_INF SkIRect::MakeLTRB(-2147483, -2147483, 2147483, 2147483)
 
 #endif // AK_H

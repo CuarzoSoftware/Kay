@@ -1,5 +1,4 @@
 louvre_dep = dependency('Louvre')
-egl_dep = dependency('egl')
 pixmap_dep = dependency('pixman-1')
 
 executable(
@@ -9,6 +8,7 @@ executable(
         kay_dep,
         louvre_dep,
         pixmap_dep,
+        glesv2_dep,
         egl_dep
     ],
     install : true)

@@ -28,6 +28,7 @@
 class AK::AKTarget : public AKObject
 {
 public:
+
     /**
      * @brief The destination surface for rendering.
      *
@@ -140,11 +141,21 @@ public:
     {
         return m_xyScale;
     }
+
+    std::shared_ptr<AKPainter> painter() const noexcept
+    {
+        return m_painter;
+    }
+
+    UInt32 fbId() const noexcept
+    {
+        return m_fbId;
+    }
 private:
     friend class AKScene;
     friend class AKNode;
     friend class AKSubScene;
-    AKTarget(AKScene *scene) noexcept;
+    AKTarget(AKScene *scene, std::shared_ptr<AKPainter> painter) noexcept;
     ~AKTarget();
     SkIRect             m_globalIViewport;
     SkIRect             m_prevViewport;     // Rel to root
@@ -159,7 +170,9 @@ private:
     AKScene *           m_scene;
     size_t              m_sceneLink;
     std::vector<AKNode*>m_nodes;
+    UInt32              m_fbId;
     bool                m_isSubScene { false };
+    std::shared_ptr<AKPainter> m_painter;
 };
 
 #endif // AKTARGET_H

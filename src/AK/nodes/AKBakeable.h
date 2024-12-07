@@ -19,7 +19,7 @@ protected:
     AKBakeable(AKNode *parent = nullptr) noexcept : AKRenderable(parent) { m_caps |= Bake; }
     virtual void onBake(OnBakeParams *params) = 0;
 private:
-    virtual void onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque) override;
+    virtual void onRender(AKPainter *, const SkRegion &damage) override;
 };
 
 #endif // AKBAKEABLE_H

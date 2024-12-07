@@ -6,6 +6,7 @@
 #include <AK/AKBitset.h>
 #include <AK/AKLayout.h>
 
+#include <bitset>
 #include <include/core/SkImage.h>
 #include <include/core/SkSurface.h>
 #include <include/gpu/GrBackendSurface.h>
@@ -29,6 +30,16 @@ public:
     };
 
     virtual ~AKNode();
+
+    typedef UInt32 Change;
+
+    enum Changes : Change
+    {
+        Chg_Last
+    };
+
+    void addChange(Change change) noexcept;
+    const std::bitset<128> &changes() const noexcept;
 
     /* Insert at the end, nullptr unsets */
     void setParent(AKNode *parent) noexcept;
@@ -127,7 +138,6 @@ public:
     /* Triggered before the scene starts rendering but
      * after the Yoga layout is updated */
     virtual void onSceneBegin() {}
-
 private:
     friend class AKBackgroundEffect;
     friend class AKRenderable;
@@ -145,6 +155,7 @@ private:
 
     struct TargetData
     {
+        TargetData() noexcept { changes.set(); }
         AKTarget *target { nullptr };
         size_t targetLink;
         SkRegion prevLocalClip; // Rel to root
@@ -154,6 +165,7 @@ private:
             opaque, translucent,
             opaqueOverlay;
         std::shared_ptr<AKSurface> bake;
+        std::bitset<128> changes;
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;

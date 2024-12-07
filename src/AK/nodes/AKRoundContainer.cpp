@@ -18,5 +18,7 @@ void AKRoundContainer::onBake(OnBakeParams *params)
         params->surface->surface()->getCanvas(),
         params->clip,
         params->damage,
-        params->opaque);    
+        params->opaque);
+
+    setColorHint(ColorHint::UseOpaqueRegion);
 }

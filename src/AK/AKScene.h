@@ -11,20 +11,20 @@ class AK::AKScene : public AKObject
 {
 public:
     AKScene() noexcept = default;
-    AKTarget *createTarget() noexcept;
+    AKTarget *createTarget(std::shared_ptr<AKPainter> painter = nullptr) noexcept;
     bool destroyTarget(AKTarget *target);
     bool render(AKTarget *target);
     void setClearColor(SkColor color) noexcept
     {
-        m_clearColor = color;
+        m_clearColor = SkColor4f::FromColor(color);
     }
 private:
     friend class AKTarget;
     SkCanvas *c;
-    SkMatrix m_matrix;
     AKTarget *t;
+    SkMatrix m_matrix;
     std::vector<AKTarget*> m_targets;
-    SkColor m_clearColor { SK_ColorTRANSPARENT };
+    SkColor4f m_clearColor { 0.f, 0.f, 0.f, 0.f };
     void validateTarget(AKTarget *target) noexcept;
     void updateMatrix() noexcept;
     void calculateNewDamage(AKNode *node);

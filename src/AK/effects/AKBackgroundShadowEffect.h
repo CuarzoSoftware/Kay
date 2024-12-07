@@ -16,104 +16,120 @@ public:
         Box
     };
 
+    enum Changes
+    {
+        Chg_ShadowType = AKBackgroundEffect::Chg_Last,
+        Chg_ShadowRadius,
+        Chg_ShadowOffset,
+        Chg_ShadowClippingEnabled,
+
+        Chg_Last
+    };
+
     explicit AKBackgroundShadowEffect(ShadowType type, SkScalar radius,
                              const SkIPoint &offset, SkColor color,
                              bool clipping, AKNode *targetNode = nullptr) noexcept :
-        AKBackgroundEffect(Background),
-        m_offset(offset),
-        m_radius(radius),
-        m_color(color),
-        m_type(type)
+        AKBackgroundEffect(Background)
     {
-        enableClipping(clipping);
+        setColorHint(ColorHint::Translucent);
+        enableCustomTextureColor(true);
+        setShadowType(type);
+        setShadowRadius(radius);
+        setShadowOffset(offset);
+        setColor(SkColor4f::FromColor(color));
+        enableShadowClipping(clipping);
+
         if (targetNode)
             targetNode->setBackgroundEffect(this);
     };
 
-    void setType(ShadowType type) noexcept
+    void setShadowType(ShadowType type) noexcept
     {
-        m_type = type;
+        if (m_shadowType == type)
+            return;
+
+        addChange(Chg_ShadowType);
+        m_shadowType = type;
     }
 
-    ShadowType type() const noexcept
+    ShadowType shadowType() const noexcept
     {
-        return m_type;
+        return m_shadowType;
     }
 
-    void setRadius(SkScalar radius) noexcept
+    void setShadowRadius(SkScalar radius) noexcept
     {
-        m_radius = radius;
+        if (m_shadowRadius == radius)
+            return;
+
+        addChange(Chg_ShadowRadius);
+        m_shadowRadius = radius;
     }
 
-    SkScalar radius() const noexcept
+    SkScalar shadowRadius() const noexcept
     {
-        return m_radius;
+        return m_shadowRadius;
     }
 
-    void setOffset(const SkIPoint &offset) noexcept
+    void setShadowOffset(const SkIPoint &offset) noexcept
     {
-        m_offset = offset;
+        if (m_shadowOffset == offset)
+            return;
+
+        addChange(Chg_ShadowOffset);
+        m_shadowOffset = offset;
     }
 
-    void setOffset(Int32 x, Int32 y) noexcept
+    void setShadowOffset(Int32 x, Int32 y) noexcept
     {
-        m_offset = {x, y};
+        setShadowOffset({x, y});
     }
 
     const SkIPoint &offset() const noexcept
     {
-        return m_offset;
+        return m_shadowOffset;
     }
 
-    void setColor(SkColor color) noexcept
+    void enableShadowClipping(bool enabled) noexcept
     {
-        m_color = color;
+        if (m_shadowClippingEnabled == enabled)
+            return;
+
+        addChange(Chg_ShadowClippingEnabled);
+        m_shadowClippingEnabled = enabled;
     }
 
-    SkColor color() const noexcept
+    bool shadowClippingEnabled() const noexcept
     {
-        return m_color;
+        return m_shadowClippingEnabled;
     }
 
-    void enableClipping(bool enabled) noexcept
-    {
-        m_flags.set(Clipping, enabled);
-    }
 
-    bool clippingEnabled() const noexcept
-    {
-        return m_flags.test(Clipping);
-    }
+protected:
+    using AKRenderable::enableCustomTextureColor;
+    using AKRenderable::setColorHint;
 
-private:
-    enum Flags
-    {
-        Clipping,
-        FlagsLast
-    };
     void onSceneBegin() override;
     void onSceneBeginBox() noexcept;
 
-    void onRender(SkCanvas *canvas, const SkRegion &damage, bool opaque) override;
-    void onRenderBox(SkCanvas *canvas, const SkRegion &damage) noexcept;
+    void onRender(AKPainter *painter, const SkRegion &damage) override;
+    void onRenderBox(AKPainter *painter, const SkRegion &damage) noexcept;
 
     void onTargetNodeChanged() override;
     struct ShadowData
     {
-        std::shared_ptr<AKSurface> shadowSurface;
-        SkIRect nineCenter;
-        SkScalar radius;
-        AKBrush brush;
-        std::bitset<FlagsLast> flags;
+        std::shared_ptr<AKSurface> surface;
+        SkVector prevScale;
+        SkRect srcRects[9];
+        SkIRect dstRects[9];
     };
 
     std::unordered_map<AKTarget*, ShadowData> m_targets;
     ShadowData *m_currentData;
-    SkIPoint m_offset;
-    SkScalar m_radius;
-    SkColor m_color;
-    ShadowType m_type;
-    std::bitset<FlagsLast> m_flags;
+    SkIPoint m_shadowOffset;
+    SkScalar m_shadowRadius;
+    ShadowType m_shadowType;
+    bool m_shadowClippingEnabled;
 };
 
 #endif // AKSHADOWEFFECT_H

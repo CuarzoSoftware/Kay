@@ -16,6 +16,13 @@ public:
         Background
     };
 
+    enum Changes
+    {
+        Chg_StackPosition = AKRenderable::Chg_Last,
+
+        Chg_Last
+    };
+
 protected:
     AKBackgroundEffect(StackPosition stackPosition) noexcept : m_stackPosition(stackPosition)
     {
@@ -45,6 +52,10 @@ protected:
 
     void setStackPosition(StackPosition stackPosition) noexcept
     {
+        if (m_stackPosition == stackPosition)
+            return;
+
+        addChange(Chg_StackPosition);
         m_stackPosition = stackPosition;
     }
 

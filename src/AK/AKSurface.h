@@ -23,6 +23,11 @@ public:
         return m_surface;
     }
 
+    const GrGLFramebufferInfo& fbInfo() const noexcept
+    {
+        return m_fbInfo;
+    }
+
     sk_sp<SkImage> image() const noexcept
     {
         return m_image;

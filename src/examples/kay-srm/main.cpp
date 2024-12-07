@@ -24,7 +24,7 @@
 #include <include/core/SkColorSpace.h>
 #include <AK/AKScene.h>
 #include <AK/nodes/AKContainer.h>
-#include <AK/nodes/AKRenderableRect.h>
+#include <AK/nodes/AKSolidColor.h>
 
 using namespace AK;
 
@@ -38,9 +38,9 @@ struct ConnectorData
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
-    AKRenderableRect background { SK_ColorWHITE, &root };
-    AKRenderableRect childLeft  { SK_ColorRED, &background };
-    AKRenderableRect childRight { SK_ColorBLUE, &background };
+    AKSolidColor background { SK_ColorWHITE, &root };
+    AKSolidColor childLeft  { SK_ColorRED, &background };
+    AKSolidColor childRight { SK_ColorBLUE, &background };
 };
 
 static int openRestricted(const char *path, int flags, void *userData)
@@ -132,7 +132,6 @@ static void paintGL(SRMConnector *connector, void *userData)
     data->target->scale = 1.f;
     data->target->transform = AKTransform::Rotated180;
     scene.render(data->target);
-    data->target->surface->flush();
     srmConnectorRepaint(connector);
 }
 
