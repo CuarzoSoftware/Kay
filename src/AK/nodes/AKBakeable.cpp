@@ -4,6 +4,12 @@
 
 using namespace AK;
 
+std::shared_ptr<AKSurface> AKBakeable::getSurface(AKTarget *target) const noexcept
+{
+    auto it = m_targets.find(target);
+    return it == m_targets.end() ? nullptr : it->second.bake;
+}
+
 void AKBakeable::onRender(AKPainter *painter, const SkRegion &damage)
 {
     if (!t || !t->bake->image())

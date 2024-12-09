@@ -14,6 +14,7 @@ public:
         std::shared_ptr<AKSurface> surface;
     };
 
+    std::shared_ptr<AKSurface> getSurface(AKTarget *target) const noexcept;
 protected:
     friend class AKScene;
     AKBakeable(AKNode *parent = nullptr) noexcept : AKRenderable(parent) { m_caps |= Bake; }

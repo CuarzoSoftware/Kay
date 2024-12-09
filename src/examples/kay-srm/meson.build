@@ -6,6 +6,7 @@ executable(
     sources : ['main.cpp'],
     dependencies : [
         kay_dep,
+        skia_dep,
         srm_dep,
         egl_dep
     ],

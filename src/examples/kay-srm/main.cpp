@@ -10,6 +10,7 @@
 #include <GLES2/gl2.h>
 
 #include <fcntl.h>
+#include <iostream>
 #include <unistd.h>
 
 #include <include/gpu/gl/GrGLInterface.h>
@@ -128,9 +129,14 @@ static void paintGL(SRMConnector *connector, void *userData)
     data->childLeft.layout().setFlex(1.f);
     data->childRight.layout().setFlex(1.f);
 
-    data->target->viewport = { 0.f, 0.f, (float)target.width(), (float)target.height() };
+    data->target->root = &root;
+    data->target->viewport = SkRect::MakeWH(target.width(), target.height());
+    data->target->dstRect = SkIRect::MakeWH(target.width(), target.height());
     data->target->scale = 1.f;
-    data->target->transform = AKTransform::Rotated180;
+    data->target->transform = AKTransform::Normal;
+    data->target->age = srmConnectorGetCurrentBufferAge(connector);
+    std::cout << "Buffer age:" << data->target->age << std::endl;
+
     scene.render(data->target);
     srmConnectorRepaint(connector);
 }

@@ -4,6 +4,8 @@
 #include <GLES2/gl2.h>
 #include <cstdint>
 
+#define AK_MAX_BUFFER_AGE 5
+
 namespace AK
 {
     class AKObject;

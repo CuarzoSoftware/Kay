@@ -31,12 +31,14 @@ public:
                              bool clipping, AKNode *targetNode = nullptr) noexcept :
         AKBackgroundEffect(Background)
     {
+        const auto color4 { SkColor4f::FromColor(color) };
         setColorHint(ColorHint::Translucent);
         enableCustomTextureColor(true);
         setShadowType(type);
         setShadowRadius(radius);
         setShadowOffset(offset);
-        setColor(SkColor4f::FromColor(color));
+        setColor(color4);
+        setOpacity(color4.fA);
         enableShadowClipping(clipping);
 
         if (targetNode)

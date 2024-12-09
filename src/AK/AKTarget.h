@@ -165,7 +165,7 @@ private:
     SkRegion            m_damage;           // Rel to root
     SkRegion            m_opaque;           // Rel to root
     SkRegion            m_translucent;      // Rel to root
-    SkRegion            m_damageRing[4];    // Rel to root
+    SkRegion            m_damageRing[AK_MAX_BUFFER_AGE];    // Rel to root
     UInt32              m_damageIndex { 0 };
     AKScene *           m_scene;
     size_t              m_sceneLink;

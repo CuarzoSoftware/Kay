@@ -43,3 +43,4 @@ kay_dep = declare_dependency(
 
 subdir('src/examples/kay-louvre')
 subdir('src/examples/kay-srm')
+subdir('src/examples/kay-wayland-client')

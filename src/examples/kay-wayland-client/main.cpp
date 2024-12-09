@@ -1,0 +1,429 @@
+#include <include/gpu/GrBackendSurface.h>
+#include <include/gpu/GrDirectContext.h>
+#include <include/core/SkSurface.h>
+#include <include/gpu/GrContextOptions.h>
+#include <include/gpu/gl/GrGLAssembleInterface.h>
+#include <include/gpu/ganesh/SkSurfaceGanesh.h>
+#include <include/core/SkColorSpace.h>
+
+#include <wayland-client.h>
+#include <wayland-egl.h>
+#include <xdg-shell-client-protocol.h>
+#include <xdg-decoration-unstable-v1-client-protocol.h>
+
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#include <cassert>
+#include <cstring>
+#include <iostream>
+#include <linux/input-event-codes.h>
+
+#include <AK/AKScene.h>
+#include <AK/effects/AKBackgroundShadowEffect.h>
+#include <AK/nodes/AKRoundContainer.h>
+#include <AK/nodes/AKContainer.h>
+#include <AK/nodes/AKSolidColor.h>
+
+using namespace AK;
+
+static SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
+
+static struct
+{
+    wl_display *wlDisplay;
+    wl_registry *wlRegistry;
+    wl_compositor *wlCompositor { nullptr };
+    xdg_wm_base *xdgWmBase { nullptr };
+    zxdg_decoration_manager_v1 *xdgDecorationManager { nullptr };
+    wl_seat *wlSeat { nullptr };
+    wl_pointer *wlPointer { nullptr };
+    wl_keyboard *wlKeyboard { nullptr };
+
+    EGLDisplay eglDisplay;
+    EGLConfig eglConfig;
+    EGLContext eglContext;
+
+    // TODO: Check extension
+    PFNEGLSWAPBUFFERSWITHDAMAGEKHRPROC eglSwapBuffersWithDamageKHR;
+
+    sk_sp<GrDirectContext> skContext;
+} app;
+
+class Topbar : public AKSolidColor
+{
+public:
+    Topbar(AKNode *parent) noexcept : AKSolidColor(0xff003049, parent)
+    {
+        layout().setHeight(32);
+        layout().setWidthPercent(100);
+    }
+
+    AKBackgroundShadowEffect shadow {
+        AKBackgroundShadowEffect::Box,
+        32.f, { 0, 0 }, SkColorSetARGB(250, 0, 0, 0),
+        true, this };
+};
+
+struct Window
+{
+    Window() noexcept;
+    void update() noexcept;
+
+    AKScene scene;
+    AKContainer root;
+    Topbar topbar { &root };
+    AKContainer bottom { YGFlexDirectionRow, true, &root };
+    AKRoundContainer roundContainer { AKBorderRadius::Make(16), &bottom };
+    AKSolidColor redBackground { 0xffc1121f, &roundContainer };
+
+    AKTarget *target { nullptr };
+
+    wl_callback *wlCallback { nullptr };
+    wl_surface *wlSurface;
+    xdg_surface *xdgSurface;
+    xdg_toplevel *xdgToplevel;
+    zxdg_toplevel_decoration_v1 *xdgToplevelDecoration;
+    wl_egl_window *wlEGLWindow { nullptr };
+    EGLSurface eglSurface;
+    sk_sp<SkSurface> skSurface;
+
+    SkISize size;
+    SkISize bufferSize;
+    int32_t scale { 1 };
+    bool needsNewSurface { true };
+};
+
+static wl_surface_listener wlSurfaceLis
+{
+    .enter = [](auto, auto, auto){},
+    .leave = [](auto, auto, auto){},
+    .preferred_buffer_scale = [](void *data, wl_surface */*wlSurface*/, int32_t factor)
+    {
+        Window &window { *static_cast<Window*>(data) };
+
+        if (factor == window.scale)
+            return;
+
+        window.scale = factor;
+        window.needsNewSurface = true;
+    },
+    .preferred_buffer_transform = [](auto, auto, auto){}
+};
+
+static xdg_surface_listener xdgSurfaceLis
+{
+    .configure = [](void *data, xdg_surface *xdgSurface, uint32_t serial)
+    {
+        Window &window { *static_cast<Window*>(data) };
+        xdg_surface_ack_configure(xdgSurface, serial);
+        window.update();
+    }
+};
+
+static xdg_toplevel_listener xdgToplevelLis
+{
+    .configure = [](void *data, xdg_toplevel */*xdgToplevel*/, int32_t width, int32_t height, wl_array */*states*/)
+    {
+        Window &window { *static_cast<Window*>(data) };
+        if (width < 256) width = 256;
+        if (height < 256) height = 256;
+        if (window.size.width() != width || window.size.height() != height)
+        {
+            window.size = { width, height };
+            window.needsNewSurface = true;
+        }
+    },
+    .close = [](auto, auto){ exit(0); }
+};
+
+Window::Window() noexcept
+{
+    scene.setClearColor(0xfffdf0d5);
+    root.layout().setDirection(YGDirectionRTL);
+    bottom.layout().setFlex(1);
+    bottom.layout().setWidthAuto();
+    bottom.layout().setHeightAuto();
+    bottom.layout().setPadding(YGEdgeAll, 48.f);
+    roundContainer.layout().setWidthPercent(100);
+    roundContainer.layout().setHeightPercent(100);
+    redBackground.layout().setWidthPercent(100);
+    redBackground.layout().setHeightPercent(100);
+
+    wlSurface = wl_compositor_create_surface(app.wlCompositor);
+    wl_surface_add_listener(wlSurface, &wlSurfaceLis, this);
+    xdgSurface = xdg_wm_base_get_xdg_surface(app.xdgWmBase, wlSurface);
+    xdg_surface_add_listener(xdgSurface, &xdgSurfaceLis, this);
+    xdgToplevel = xdg_surface_get_toplevel(xdgSurface);
+    xdg_toplevel_add_listener(xdgToplevel, &xdgToplevelLis, this);
+
+    if (app.xdgDecorationManager)
+        xdgToplevelDecoration = zxdg_decoration_manager_v1_get_toplevel_decoration(app.xdgDecorationManager, xdgToplevel);
+
+    wl_surface_commit(wlSurface);
+}
+
+static wl_callback_listener wlCallbackLis
+{
+    .done = [](void *data, wl_callback *wlCallback, uint32_t)
+    {
+        std::cout << "wl_callback::done" << std::endl;
+        Window &window { *static_cast<Window*>(data) };
+        window.wlCallback = nullptr;
+        window.update();
+        wl_callback_destroy(wlCallback);
+    }
+};
+
+void Window::update() noexcept
+{
+    bufferSize = { size.width() * scale, size.height() * scale };
+
+    if (!wlEGLWindow)
+    {
+        wlEGLWindow = wl_egl_window_create(wlSurface, bufferSize.width(), bufferSize.height());
+        eglSurface = eglCreateWindowSurface(app.eglDisplay, app.eglConfig, wlEGLWindow, NULL);
+        assert("Failed to create EGLSurface" && eglSurface != EGL_NO_SURFACE);
+        eglMakeCurrent(app.eglDisplay, eglSurface, eglSurface, app.eglContext);
+        eglSwapInterval(app.eglDisplay, 0);
+    }
+
+    if (needsNewSurface)
+    {
+        needsNewSurface = false;
+        wl_egl_window_resize(wlEGLWindow, bufferSize.width(), bufferSize.height(), 0, 0);
+
+        const GrGLFramebufferInfo fbInfo
+        {
+            .fFBOID = 0,
+            .fFormat = GL_RGBA8_OES
+        };
+
+        const GrBackendRenderTarget backendTarget(
+            bufferSize.width(),
+            bufferSize.height(),
+            0, 0,
+            fbInfo);
+
+        skSurface = SkSurfaces::WrapBackendRenderTarget(
+            app.skContext.get(),
+            backendTarget,
+            GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin,
+            SkColorType::kRGBA_8888_SkColorType,
+            SkColorSpace::MakeSRGB(),
+            &skSurfaceProps);
+
+        assert("Failed to create SkSurface" && skSurface.get());
+    }
+
+    EGLint bufferAge;
+    eglQuerySurface(app.eglDisplay, eglSurface, EGL_BUFFER_AGE_EXT, &bufferAge);
+
+    root.layout().setWidth(size.width());
+    root.layout().setHeight(size.height());
+    static float phase = 0;
+    phase += 0.01f;
+    topbar.layout().setHeight(0.5f * size.height() * SkScalarAbs(SkScalarCos(phase)));
+
+    if (!target)
+        target = scene.createTarget();
+
+    SkRegion damage, opaque;
+    target->outDamageRegion = &damage;
+    target->outOpaqueRegion = &opaque;
+    target->root = &root;
+    target->surface = skSurface;
+    target->transform = AKTransform::Normal;
+    target->viewport = SkRect::MakeSize(SkSize::Make(size));
+    target->dstRect = SkIRect::MakeSize(bufferSize);
+    target->age = bufferAge;
+    std::cout << "Buffer age: " << bufferAge << std::endl;
+    scene.render(target);
+
+    wl_region *wlOpaqueRegion = wl_compositor_create_region(app.wlCompositor);
+    SkRegion::Iterator it(opaque);
+    while (!it.done())
+    {
+        wl_region_add(wlOpaqueRegion, it.rect().x(), it.rect().y(), it.rect().width(), it.rect().height());
+        it.next();
+    }
+    wl_surface_set_opaque_region(wlSurface, wlOpaqueRegion);
+    wl_region_destroy(wlOpaqueRegion);
+
+    wl_region *wlInputRegion = wl_compositor_create_region(app.wlCompositor);
+    wl_region_add(wlInputRegion, 0, 0, 100000, 100000);
+    wl_surface_set_input_region(wlSurface, wlInputRegion);
+    wl_region_destroy(wlInputRegion);
+
+    wl_surface_set_buffer_scale(wlSurface, scale);
+
+    if (!wlCallback)
+    {
+        std::cout << "wl_surface::frame" << std::endl;
+        wlCallback = wl_surface_frame(wlSurface);
+        wl_callback_add_listener(wlCallback, &wlCallbackLis ,this);
+    }
+
+    if (damage.computeRegionComplexity() > 0)
+    {
+        EGLint *damageRects { new EGLint[damage.computeRegionComplexity() * 4] };
+        EGLint *rectsIt = damageRects;
+        SkRegion::Iterator damageIt(damage);
+        while (!damageIt.done())
+        {
+            std::cout << "DAMAGE " << damageIt.rect().x() << "," << damageIt.rect().y() << "," << damageIt.rect().width() << "," << damageIt.rect().height() << std::endl;
+            *rectsIt = damageIt.rect().x() * scale;
+            rectsIt++;
+            *rectsIt = (size.height() - damageIt.rect().height() - damageIt.rect().y()) * scale;
+            rectsIt++;
+            *rectsIt = damageIt.rect().width() * scale;
+            rectsIt++;
+            *rectsIt = damageIt.rect().height() * scale;
+            rectsIt++;
+            damageIt.next();
+        }
+
+        assert(app.eglSwapBuffersWithDamageKHR(app.eglDisplay, eglSurface, damageRects, damage.computeRegionComplexity()) == EGL_TRUE);
+        delete []damageRects;
+    }
+    else
+        wl_surface_commit(wlSurface);
+}
+
+static xdg_wm_base_listener xdgWmBaseLis
+{
+    .ping = [](void */*data*/, xdg_wm_base *xdgWmBase, uint32_t serial) { xdg_wm_base_pong(xdgWmBase, serial); }
+};
+
+static wl_keyboard_listener wlKeyboardLis
+{
+    .keymap = [](auto, auto, auto, auto, auto){},
+    .enter = [](auto, auto, auto, auto, auto){},
+    .leave = [](auto, auto, auto, auto){},
+    .key = [](void */*data*/, wl_keyboard */*wlKeyboard*/, uint32_t /*serial*/, uint32_t /*time*/, uint32_t /*key*/, uint32_t /*state*/)
+    {
+        exit(0);
+    },
+    .modifiers = [](auto, auto, auto, auto, auto, auto, auto){}
+};
+
+static wl_seat_listener wlSeatLis
+{
+    .capabilities = [](void */*data*/, struct wl_seat *wlSeat, uint32_t capabilities)
+    {
+        if (!app.wlPointer && (capabilities & WL_SEAT_CAPABILITY_POINTER))
+            app.wlPointer = wl_seat_get_pointer(wlSeat);
+        else if (!app.wlKeyboard && (capabilities & WL_SEAT_CAPABILITY_KEYBOARD))
+        {
+            app.wlKeyboard = wl_seat_get_keyboard(wlSeat);
+            wl_keyboard_add_listener(app.wlKeyboard, &wlKeyboardLis, NULL);
+        }
+    },
+    .name = [](auto, auto, auto){}
+};
+
+static wl_registry_listener wlRegistryLis
+{
+    .global = [](void */*data*/, wl_registry *wl_registry, uint32_t name, const char *interface, uint32_t version)
+    {
+        if (version >= 6 && !app.wlCompositor && strcmp(interface, wl_compositor_interface.name) == 0)
+            app.wlCompositor = (wl_compositor*)wl_registry_bind(wl_registry, name, &wl_compositor_interface, 6);
+        if (!app.wlSeat && strcmp(interface, wl_seat_interface.name) == 0)
+        {
+            app.wlSeat = (wl_seat*)wl_registry_bind(wl_registry, name, &wl_seat_interface, 1);
+            wl_seat_add_listener(app.wlSeat, &wlSeatLis, NULL);
+        }
+        else if (!app.xdgWmBase && strcmp(interface, xdg_wm_base_interface.name) == 0)
+        {
+            app.xdgWmBase = (xdg_wm_base*)wl_registry_bind(wl_registry, name, &xdg_wm_base_interface, 1);
+            xdg_wm_base_add_listener(app.xdgWmBase, &xdgWmBaseLis, NULL);
+        }
+        else if (!app.xdgDecorationManager && strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0)
+        {
+            app.xdgDecorationManager = (zxdg_decoration_manager_v1*)wl_registry_bind(wl_registry, name, &zxdg_decoration_manager_v1_interface, 1);
+        }
+    },
+    .global_remove = [](auto, auto, auto){}
+};
+
+static void initEGL() noexcept
+{
+    app.eglDisplay = eglGetDisplay(app.wlDisplay);
+
+    assert("Failed to create EGLDisplay" && app.eglDisplay != EGL_NO_DISPLAY);
+    assert("Failed to initialize EGLDisplay." && eglInitialize(app.eglDisplay, NULL, NULL) == EGL_TRUE);
+    assert("Failed to bind GL_OPENGL_ES_API." && eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
+
+    EGLint numConfigs;
+    assert("Failed to get EGL configurations." &&
+           eglGetConfigs(app.eglDisplay, NULL, 0, &numConfigs) == EGL_TRUE && numConfigs > 0);
+
+    const EGLint fbAttribs[]
+    {
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+        EGL_RED_SIZE,        8,
+        EGL_GREEN_SIZE,      8,
+        EGL_BLUE_SIZE,       8,
+        EGL_ALPHA_SIZE,      8,
+        EGL_NONE
+    };
+
+    assert("Failed to choose EGL configuration." &&
+           eglChooseConfig(app.eglDisplay, fbAttribs, &app.eglConfig, 1, &numConfigs) == EGL_TRUE && numConfigs == 1);
+
+    const EGLint contextAttribs[] { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE };
+    app.eglContext = eglCreateContext(app.eglDisplay, app.eglConfig, EGL_NO_CONTEXT, contextAttribs);
+    assert("Failed to create EGL context." && app.eglContext != EGL_NO_CONTEXT);
+    eglMakeCurrent(app.eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, app.eglContext);
+    app.eglSwapBuffersWithDamageKHR = (PFNEGLSWAPBUFFERSWITHDAMAGEKHRPROC)eglGetProcAddress("eglSwapBuffersWithDamageKHR");
+}
+
+static void initSkia() noexcept
+{
+    auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](void *, const char *p) -> void * {
+        return (void *)eglGetProcAddress(p);
+    });
+
+    GrContextOptions contextOptions;
+    contextOptions.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kBackendBinary;
+    contextOptions.fAvoidStencilBuffers = true;
+    contextOptions.fPreferExternalImagesOverES3 = true;
+    contextOptions.fDisableGpuYUVConversion = true;
+    contextOptions.fReducedShaderVariations = false;
+    contextOptions.fSuppressPrints = true;
+    contextOptions.fSuppressMipmapSupport = true;
+    contextOptions.fSkipGLErrorChecks = GrContextOptions::Enable::kYes;
+    contextOptions.fBufferMapThreshold = -1;
+    contextOptions.fDisableDistanceFieldPaths = true;
+    contextOptions.fAllowPathMaskCaching = false;
+    contextOptions.fGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
+    contextOptions.fUseDrawInsteadOfClear = GrContextOptions::Enable::kYes;
+    contextOptions.fReduceOpsTaskSplitting = GrContextOptions::Enable::kYes;
+    contextOptions.fDisableDriverCorrectnessWorkarounds = true;
+    contextOptions.fRuntimeProgramCacheSize = 256;
+    contextOptions.fInternalMultisampleCount = 4;
+    contextOptions.fDisableTessellationPathRenderer = false;
+    contextOptions.fAllowMSAAOnNewIntel = true;
+    contextOptions.fAlwaysUseTexStorageWhenAvailable = false;
+    app.skContext = GrDirectContext::MakeGL(interface, contextOptions);
+    assert("Failed to create Skia context." && app.skContext.get());
+}
+
+int main(void)
+{
+    app.wlDisplay = wl_display_connect(NULL);
+    assert("wl_display_connect failed" && app.wlDisplay);
+    app.wlRegistry = wl_display_get_registry(app.wlDisplay);
+    wl_registry_add_listener(app.wlRegistry, &wlRegistryLis, NULL);
+    wl_display_roundtrip(app.wlDisplay);
+    assert("Failed to get wl_compositor v6" && app.wlCompositor);
+    assert("Failed to get xdg_wm_base" && app.wlCompositor);
+    initEGL();
+    initSkia();
+
+    Window window;
+    while (wl_display_dispatch(app.wlDisplay) != -1) {}
+    return 0;
+}

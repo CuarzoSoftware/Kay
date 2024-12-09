@@ -52,14 +52,10 @@ bool AKScene::render(AKTarget *target)
 
     updateDamageRing();
 
-    glDisable(GL_BLEND);
-
     for (auto it = t->root->children().crbegin(); it != t->root->children().crend(); it++)
         renderOpaque(*it);
 
     renderBackground();
-
-    glEnable(GL_BLEND);
 
     for (size_t i = 0; i < t->root->children().size();)
     {
@@ -85,12 +81,14 @@ void AKScene::validateTarget(AKTarget *target) noexcept
     assert("AKTarget wasn't created by this scene" && target->m_scene == this);
     assert("AKTarget has no surface" && target->surface);
     assert("Invalid surface size" && target->surface->width() > 0 && target->surface->height() > 0);
-    assert("Invalid buffer age" && target->age <= sizeof(target->m_damageRing)/sizeof(target->m_damageRing[0]));
     assert("Invalid scale factor" && target->scale > 0.f);
     assert("Invalid viewport" && !target->viewport.isEmpty());
     assert("Invalid dstRect" && !target->dstRect.isEmpty());
     assert("Root node is nullptr" && target->root);
     t = target;
+
+    if (target->age > AK_MAX_BUFFER_AGE)
+        target->age = 0;
 
     auto skTarget = SkSurfaces::GetBackendRenderTarget(t->surface.get(), SkSurfaces::BackendHandleAccess::kFlushRead);
     GrGLFramebufferInfo fbInfo;
@@ -197,7 +195,7 @@ void AKScene::updateMatrix() noexcept
     UInt32 prevDamageIndex;
 
     if (t->m_damageIndex == 0)
-        prevDamageIndex = 3;
+        prevDamageIndex = AK_MAX_BUFFER_AGE - 1;
     else
         prevDamageIndex = t->m_damageIndex - 1;
 
@@ -343,7 +341,7 @@ void AKScene::calculateNewDamage(AKNode *node)
         }
     }
 
-    if (node->m_rect.fLeft == node->t->prevLocalRect.fLeft && node->m_rect.fTop == node->t->prevLocalRect.fTop)
+    if (node->m_rect == node->t->prevLocalRect)
     {
         node->t->prevLocalClip.op(clip, SkRegion::Op::kXOR_Op);
         t->m_damage.op(node->t->prevLocalClip, SkRegion::Op::kUnion_Op);
@@ -427,7 +425,7 @@ void AKScene::updateDamageRing() noexcept
             Int32 damageIndex = t->m_damageIndex - i;
 
             if (damageIndex < 0)
-                damageIndex = 4 + damageIndex;
+                damageIndex = AK_MAX_BUFFER_AGE + damageIndex;
 
             t->m_damage.op(t->m_damageRing[damageIndex], SkRegion::Op::kUnion_Op);
         }
@@ -445,7 +443,7 @@ void AKScene::updateDamageRing() noexcept
     if (t->outOpaqueRegion)
         *t->outOpaqueRegion = t->m_opaque;
 
-    if (t->m_damageIndex == 3)
+    if (t->m_damageIndex == AK_MAX_BUFFER_AGE - 1)
         t->m_damageIndex = 0;
     else
         t->m_damageIndex++;
@@ -468,6 +466,7 @@ void AKScene::renderOpaque(AKNode *node)
         return;
 
     t->painter()->setParamsFromRenderable(rend);
+    glDisable(GL_BLEND);
     rend->onRender(t->painter().get(), node->t->opaque);
 }
 
@@ -480,6 +479,7 @@ void AKScene::renderBackground() noexcept
     t->painter()->setAlpha(m_clearColor.fA);
     t->painter()->setColor(m_clearColor);
     t->painter()->bindColorMode();
+    glDisable(GL_BLEND);
     t->painter()->drawRegion(background);
 }
 
@@ -498,6 +498,7 @@ void AKScene::renderTranslucent(AKNode *node)
         goto skip;
 
     t->painter()->setParamsFromRenderable(rend);
+    glEnable(GL_BLEND);
     rend->onRender(t->painter().get(), node->t->translucent);
 
     skip:
