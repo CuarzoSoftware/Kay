@@ -9,7 +9,7 @@ void AKSolidColor::onRender(AKPainter *painter, const SkRegion &damage)
     painter->drawRegion(damage);
 }
 
-void AKSolidColor::onSceneBegin()
+void AKSolidColor::onLayoutUpdate()
 {
     const auto &c { changes() };
 

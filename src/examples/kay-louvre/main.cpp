@@ -1,3 +1,5 @@
+#include "AK/nodes/AKSimpleText.h"
+#include "include/core/SkMaskFilter.h"
 #include <LLauncher.h>
 #include <LCompositor.h>
 #include <LOutput.h>
@@ -8,6 +10,7 @@
 #include <LSeat.h>
 #include <LPointer.h>
 #include <LKeyboard.h>
+#include <LAnimation.h>
 
 #include <AK/nodes/AKSubScene.h>
 #include <AK/nodes/AKImage.h>
@@ -17,6 +20,7 @@
 #include <AK/effects/AKBackgroundShadowEffect.h>
 
 #include <AK/AKScene.h>
+#include <AK/AKSurface.h>
 
 #include <cassert>
 #include <include/gpu/gl/GrGLInterface.h>
@@ -33,14 +37,21 @@
 #include <include/effects/SkImageFilters.h>
 #include <include/effects/SkGradientShader.h>
 #include <include/utils/SkParsePath.h>
-#include <iostream>
+#include <include/effects/SkBlurMaskFilter.h>
 
 using namespace AK;
 using namespace Louvre;
 
+enum NodeTypeFlags
+{
+    MENU_ITEM = 1 << 1
+};
+
 static sk_sp<SkColorSpace> colorSpace = SkColorSpace::MakeSRGB();
 static SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
 
+// Creates an SkImage from an LTexture (its just a wrapper, there is no copy involved)
+// Todo: properly handle other formats
 static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, GrRecordingContext *ctx, LOutput *o)
 {
     if (!texture || !ctx)
@@ -69,22 +80,273 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, GrRecordingContext 
         nullptr);
 }
 
-class Button : public AKRoundContainer
+/**
+ * @brief Example Context Menu Component
+ *
+ * The menu only renders the container and shadow (see onBake()).
+ * Menu items are composited by the scene and clipped by itemsContainer.
+ */
+class Menu : public AKBakeable
 {
 public:
-    Button(AKNode *parent) noexcept : AKRoundContainer(AKBorderRadius::Make(0), parent)
+
+    // Each node has its own changes flags
+    // They're used to prevent re-doing stuff as demostrated below
+    // By default all flags are true, and are cleared after
+    // a scene render pass
+    enum Changes
     {
-        shadowEffect.enableShadowClipping(true);
-        layout().setWidth(100);
-        layout().setHeight(100);
-        background.layout().setWidthPercent(100);
-        background.layout().setHeightPercent(100);
+        Chg_ShadowRadius = AKBakeable::Chg_Last,
+        Chg_ShadowOffset,
+        Chg_ShadowColor,
+        Chg_BorderRadius,
+        Chg_Brush,
+        Chg_Pen,
+        Chg_Last
+    };
+
+    Menu(AKNode *parent = nullptr) noexcept : AKBakeable(parent)
+    {
+        setClipsChildren(true);
+        setVisible(false);
+
+        // Default styles
+        m_brush.setAntiAlias(true);
+        m_pen.setAntiAlias(true);
+        m_brush.setColor(0xFFFAFAFA); // ARGB
+        m_pen.setStrokeWidth(0.25f);
+        m_pen.setColor(0xAA000000);
+        m_shadowBrush.setColor(0x66000000);
+
+        // Tell the scene to use opaqueRegion(), by default all nodes have the fully opaque color hint.
+        setColorHint(ColorHint::UseOpaqueRegion);
+
+        layout().setPositionType(YGPositionTypeAbsolute);
+        layout().setPosition(YGEdgeLeft, 100);
+        layout().setPosition(YGEdgeTop, 100);
+
+        // Fill menu
+        itemsContainer.layout().setFlex(1.f);
+        itemsContainer.layout().setPadding(YGEdgeAll, m_borderRadius);
     }
 
-    AKSolidColor background { SkColorSetARGB(255, rand()%255, rand()%255, rand()%255), this };
-    AKBackgroundShadowEffect shadowEffect { AKBackgroundShadowEffect::Box,
-        50.f, {-10, 10}, SkColorSetARGB(255, rand()%255, rand()%255, rand()%255), true, this };
-    float rad { 0.f };
+    void showAt(Int32 x, Int32 y) noexcept
+    {
+        layout().setPosition(YGEdgeLeft, x - m_shadowRadius + m_shadowOffset.x());
+        layout().setPosition(YGEdgeTop, y - m_shadowRadius + m_shadowOffset.y());
+        setVisible(true);
+        cursor()->repaintOutputs(false);
+    }
+
+    void hide() noexcept
+    {
+        setVisible(false);
+        cursor()->repaintOutputs(false);
+    }
+
+    void setShadowColor(SkColor color) noexcept
+    {
+        if (m_shadowBrush.getColor() == color)
+            return;
+
+        m_shadowBrush.setColor(color);
+        addChange(Chg_ShadowColor);
+    }
+
+    void setShadowRadius(SkScalar radius) noexcept
+    {
+        if (m_shadowRadius == radius)
+            return;
+
+        m_shadowRadius = radius;
+        addChange(Chg_ShadowRadius);
+    }
+
+    void setShadowOffset(const SkPoint &offset) noexcept
+    {
+        if (m_shadowOffset == offset)
+            return;
+
+        m_shadowOffset = offset;
+        addChange(Chg_ShadowOffset);
+    }
+
+    void setBrush(const AKBrush &brush) noexcept
+    {
+        if (m_brush == brush)
+            return;
+
+        m_brush = brush;
+        addChange(Chg_Brush);
+    }
+
+    void setPen(const AKPen &pen) noexcept
+    {
+        if (m_pen == pen)
+            return;
+
+        m_pen = pen;
+        addChange(Chg_Pen);
+    }
+
+    AKContainer itemsContainer { YGFlexDirectionColumn, true, this };
+protected:
+    AKBrush m_shadowBrush; // Shadow style (color basically)
+    AKBrush m_brush; // Fill style
+    AKPen m_pen; // Stroke style
+    SkScalar m_borderRadius = 8.f;
+    SkScalar m_shadowRadius = 24.f;
+    SkPoint m_shadowOffset { 0.f, 8.f };
+    LAnimation m_fadeInAnimation, m_fadeOutAnimation;
+
+    // Called right before the scene calculates the layout
+    void onSceneBegin() override
+    {
+        const bool needsShadowUpdate { changes().test(Chg_ShadowRadius) };
+        const bool needsPaddingUpdate { needsShadowUpdate || changes().test(Chg_ShadowOffset) };
+
+        // Add padding to prevent itemsContainer from overlapping the shadow
+        if (needsPaddingUpdate)
+        {
+            layout().setPadding(YGEdgeLeft, m_shadowRadius - m_shadowOffset.x());
+            layout().setPadding(YGEdgeTop, m_shadowRadius - m_shadowOffset.y());
+            layout().setPadding(YGEdgeRight, m_shadowRadius + m_shadowOffset.x());
+            layout().setPadding(YGEdgeBottom, m_shadowRadius + m_shadowOffset.x());
+        }
+
+        if (needsShadowUpdate)
+            m_shadowBrush.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, m_shadowRadius/3.f));
+    }
+
+    // Always called by the scene except if the node is invisible or completly ocludded
+    // Here the component renders into its own framebuffer.
+    // Its the component's responsibility to avoid re-baking itself each time
+    void onBake(OnBakeParams *params) override
+    {
+        const bool needsRebake {
+            !params->damage->isEmpty() || // If the scene explicitly adds damage it means the node's size changed
+            changes().test(Chg_ShadowRadius) ||
+            changes().test(Chg_ShadowColor) ||
+            changes().test(Chg_ShadowOffset) ||
+            changes().test(Chg_BorderRadius) ||
+            changes().test(Chg_Brush) ||
+            changes().test(Chg_Pen)
+        };
+
+        if (!needsRebake) // Nothing to do
+            return;
+
+        SkCanvas &c { *params->surface->surface()->getCanvas() };
+
+        // To improve performance the framebuffer isn't automatically shrinked
+        // when the node is resized, but since menus aren't constatly resizing
+        // calling shrink can free up some GPU memory
+        params->surface->shrink();
+
+        // Ensure previus content or artifacts of newly created framebuffers are cleared
+        c.clear(SK_ColorTRANSPARENT);
+
+        // Calculated layout params are relative to the parent node
+        const SkRect rect {SkRect::MakeXYWH(
+            itemsContainer.layout().calculatedLeft(),
+            itemsContainer.layout().calculatedTop(),
+            itemsContainer.layout().calculatedWidth(),
+            itemsContainer.layout().calculatedHeight())};
+
+        const SkRect shadowRect { rect.makeOffset(m_shadowOffset) };
+
+        // Draw shadow
+        c.drawRoundRect(shadowRect, m_borderRadius, m_borderRadius, m_shadowBrush);
+
+        // Draw container fill
+        m_brush.setBlendMode(SkBlendMode::kSrc);
+        c.drawRoundRect(rect, m_borderRadius, m_borderRadius, m_brush);
+
+        // Draw container stroke
+        c.drawRoundRect(rect, m_borderRadius, m_borderRadius, m_pen);
+
+        // Mark node as dirty
+        params->damage->setRect(AK_IRECT_INF);
+
+        // Set the opaque region (to optimize composition)
+        if (SkColorGetA(m_brush.getColor()) == 255) // Opaque
+        {
+            // Make entire rect opaque
+            params->opaque->setRect(rect.roundIn());
+
+            // But exclude round corners
+
+            // Top Left
+            SkIRect borderRadiusRect = SkRect::MakeXYWH(rect.x(), rect.y(), m_borderRadius, m_borderRadius).roundOut();
+            params->opaque->op(borderRadiusRect, SkRegion::Op::kDifference_Op);
+
+            // Top Right
+            borderRadiusRect.offset(rect.width() - borderRadiusRect.width(), 0);
+            params->opaque->op(borderRadiusRect, SkRegion::Op::kDifference_Op);
+
+            // Bottom Right
+            borderRadiusRect.offset(0, rect.height() - borderRadiusRect.height());
+            params->opaque->op(borderRadiusRect, SkRegion::Op::kDifference_Op);
+
+            // Bottom Left
+            borderRadiusRect.offsetTo(rect.x(), borderRadiusRect.y());
+            params->opaque->op(borderRadiusRect, SkRegion::Op::kDifference_Op);
+        }
+        // Make fully translucent
+        else
+            params->opaque->setEmpty();
+    }
+
+    // Keep the default onRender() implementation
+    // That's where the scene blits the component onto the screen
+};
+
+class MenuItem : public AKRoundContainer
+{
+public:
+    MenuItem( const std::string &text, AKNode *parent = nullptr) noexcept :
+        AKRoundContainer( { 4, 4, 4, 4 }, parent),
+        m_text(text, &m_backgroundColor)
+    {
+        userFlags |= MENU_ITEM;
+        layout().setDisplay(YGDisplayFlex);
+        layout().setWidthPercent(100.f);
+        m_backgroundColor.setOpacity(0.f);
+        m_backgroundColor.layout().setPadding(YGEdgeAll, 6.f);
+        SkFont font;
+        font.setEmbolden(true);
+        m_text.setFont(font);
+    }
+
+    void onPointerEnter()
+    {
+        m_backgroundColor.setOpacity(1.f);
+        m_text.setColor(SkColors::kWhite);
+        cursor()->repaintOutputs(false);
+    }
+
+    void onPointerLeave()
+    {
+        m_backgroundColor.setOpacity(0.f);
+        m_text.setColor(SkColors::kBlack);
+        cursor()->repaintOutputs(false);
+    }
+
+    void onPress()
+    {
+        setOpacity(0.75f);
+        cursor()->repaintOutputs(false);
+    }
+
+    void onRelease()
+    {
+        setOpacity(1.f);
+        cursor()->repaintOutputs(false);
+    }
+
+protected:
+    AKSolidColor m_backgroundColor { 0xFF2196F3, this };
+    AKSimpleText m_text;
 };
 
 class Compositor final : public LCompositor
@@ -102,6 +364,11 @@ public:
     AKContainer background { YGFlexDirectionColumn, false, &root };
     AKContainer surfaces { YGFlexDirectionColumn, false, &root };
     AKContainer overlay { YGFlexDirectionColumn, false, &root };
+    Menu menu { &overlay };
+    MenuItem item1 { "Menu Item 1 - And More Text", &menu.itemsContainer };
+    MenuItem item2 { "Menu Item 2 - And More Text", &menu.itemsContainer };
+    MenuItem item3 { "Menu Item 3 - And More Text", &menu.itemsContainer };
+    MenuItem item4 { "Menu Item 4 - And More Text", &menu.itemsContainer };
 };
 
 class Surface final : public LSurface
@@ -129,10 +396,9 @@ public:
     Output(const void *params) noexcept : LOutput(params)
     {
         enableFractionalOversampling(false);
-        background.layout().setFlexWrap(YGWrapWrap);
-        background.layout().setPadding(YGEdgeAll, 40.f);
-        background.layout().setGap(YGGutterAll, 40.f);
-        background.layout().setFlexDirection(YGFlexDirectionRow);
+        background.layout().setDisplay(YGDisplayFlex);
+        background.layout().setJustifyContent(YGJustifyCenter);
+        background.layout().setAlignItems(YGAlignCenter);
         background.layout().setPositionType(YGPositionTypeAbsolute);
     }
 
@@ -148,7 +414,9 @@ public:
 
     void initializeGL() override
     {
-        frame = 0;
+        // Louvre creates an OpenGL context for each output
+        // here we are wrapping it into a GrDirectContext.
+
         static auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](void *, const char *p) -> void * {
             return (void *)eglGetProcAddress(p);
         });
@@ -182,24 +450,26 @@ public:
             exit(1);
         }
 
+        // All outputs share the same scene but we still need to create a
+        // specific target for each.
+        // A target contains information about the viewport, destination
+        // framebuffer, transform, etc, and is used by the scene and
+        // nodes to keep track of damage, previous dimensions, and other properties.
         target = comp()->scene.createTarget();
         target->root = &comp()->root;
         updateBackground();
-
-        for (int i = 0; i < 20; i++)
-        {
-            buttons.push_back(new Button(&background));
-        }
     }
 
     void paintGL() override
     {
-        phase += 0.1f;
-
         Int32 n;
         const LBox *boxes;
         SkRegion region, outDamage;
         LRegion damage;
+
+        // Create an SkSurface for the current screen framebuffer
+        // Depending on the backend this can change each frame, but luckly
+        // since its just a wrapper re-creating it has no performance cost
         const GrGLFramebufferInfo fbInfo
         {
             .fFBOID = framebuffer()->id(),
@@ -220,19 +490,7 @@ public:
             colorSpace,
             &skSurfaceProps);
 
-        if (!target->surface)
-        {
-            LLog::fatal("No SkSurface.");
-            exit(1);
-        }
-
-        /*
-        for (auto *btn : buttons)
-        {
-            btn->shadowEffect.setShadowRadius(50.f + SkScalarCos(phase) * 50.f);
-            btn->shadowEffect.setShadowOffset(SkScalarCos(phase) * 20.f, SkScalarSin(phase) * 20.f);
-        }*/
-
+        // We need to manually update each surface node
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
         {
             s->node.setVisible(!s->cursorRole() && !s->minimized() && s->mapped());
@@ -262,32 +520,29 @@ public:
             s->node.opaqueRegion.setRects((const SkIRect*)boxes, n);
         }
 
-        if (needsFullRepaint())
-        {
-            frame = 0;
-            age = 0;
-        }
-        else if (frame < buffersCount() || buffersCount() == 1)
-        {
-            frame++;
-            age = 0;
-        }
-        else
-            age = buffersCount();
+        // We can ask the scene which region was repainted
+        if (hasBufferDamageSupport())
+            target->outDamageRegion = &outDamage;
 
-        target->outDamageRegion = &outDamage;
-        target->age = age;
-        target->scale = 1.f;
+        // Required for damage tracking
+        target->age = currentBufferAge();
+
+        // Rect of the scene to capture relative to the root node
         target->viewport = SkRect::MakeXYWH(pos().x(), pos().y(), size().w(), size().h());
+
+        // If the screen is rotated/flipped
         target->transform = static_cast<AKTransform>(transform());
+
+        // Rect within the screen fb to render the viewport to (in this case the entire screen)
         target->dstRect = SkIRect::MakeXYWH(0, 0, currentMode()->sizeB().w(), currentMode()->sizeB().h());
 
-        //glScissor(0, 0, 10000000, 1000000);
-        //glClear(GL_COLOR_BUFFER_BIT);
-        static_cast<Compositor*>(compositor())->scene.render(target);
+        // Here the scene calculates the layout and performs all the rendering
+        comp()->scene.render(target);
 
+        // Allow visible apps to update
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
         {
+            // If not, it means the surface was ocluded
             if (s->node.renderedOnLastTarget())
                 s->requestNextFrame();
 
@@ -300,51 +555,44 @@ public:
             }
         }
 
-        outDamage.translate(pos().x(), pos().y());
-
-        SkRegion::Iterator it(outDamage);
-        while (!it.done())
+        // This allows optimizations in the Wayland backend, or the DRM backend in some hybrid GPU cases
+        if (hasBufferDamageSupport())
         {
-            damage.addRect(it.rect().x(), it.rect().y(), it.rect().width(), it.rect().height());
-            it.next();
-        }
+            outDamage.translate(pos().x(), pos().y());
 
-        setBufferDamage(&damage);
+            SkRegion::Iterator it(outDamage);
+            while (!it.done())
+            {
+                damage.addRect(it.rect().x(), it.rect().y(), it.rect().width(), it.rect().height());
+                it.next();
+            }
+
+            setBufferDamage(&damage);
+        }
     }
 
     void resizeGL() override
     {
-        frame = 0;
-        LPoint pos;
-        for (LOutput *o : compositor()->outputs())
-        {
-            o->setPos(pos);
-            pos.setX(pos.x() + o->size().w());
-        }
         repaint();
         updateBackground();
     }
 
     void moveGL() override
     {
-        frame = 0;
         repaint();
         updateBackground();
     }
 
     void uninitializeGL() override
     {
-        static_cast<Compositor*>(compositor())->scene.destroyTarget(target);
+        comp()->scene.destroyTarget(target);
     }
 
     AKContainer background { YGFlexDirectionRow, true, &comp()->background };
+    AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
-    UInt32 age { 0 };
-    UInt32 frame { 0 };
-    float phase { 0.f };
-    std::vector<Button*> buttons;
 };
 
 class Pointer final : public LPointer
@@ -352,24 +600,84 @@ class Pointer final : public LPointer
 public:
     using LPointer::LPointer;
 
+    AKWeak<MenuItem> focus;
+
+    AKNode *nodeAt(const SkIPoint &globalPos, UInt64 filter) const noexcept
+    {
+        return findNode(&static_cast<Compositor*>(compositor())->root, globalPos, filter);
+    }
+
     void pointerMoveEvent(const LPointerMoveEvent &event) override
     {
         LPointer::pointerMoveEvent(event);
-        cursor()->repaintOutputs(false);
+
+        MenuItem *newFocus { (MenuItem*)nodeAt(SkIPoint(cursor()->pos().x(), cursor()->pos().y()), MENU_ITEM) };
+
+        if (newFocus)
+        {
+            if (focus)
+            {
+                if (focus != newFocus)
+                {
+                    focus->onRelease();
+                    focus->onPointerLeave();
+                    focus = newFocus;
+                    focus->onPointerEnter();
+                }
+            }
+            else
+            {
+                focus = newFocus;
+                focus->onPointerEnter();
+            }
+        }
+        else
+        {
+            if (focus)
+            {
+                focus->onRelease();
+                focus->onPointerLeave();
+                focus.reset();
+            }
+        }
     }
 
     void pointerButtonEvent(const LPointerButtonEvent &event) override
     {
         LPointer::pointerButtonEvent(event);
 
-        if (event.button() == BTN_LEFT && event.state() == LPointerButtonEvent::Released)
+        if (event.button() == BTN_RIGHT && event.state() == LPointerButtonEvent::Pressed)
         {
-            if (seat()->keyboard()->isKeyCodePressed(KEY_S))
-            {
-                for (LOutput *o : compositor()->outputs())
-                    o->setScale(o->scale() == 1 ? 2.f : 1.f);
-            }
+            static_cast<Compositor*>(compositor())->menu.showAt(cursor()->pos().x(), cursor()->pos().y());
+            return;
         }
+
+        if (event.button() == BTN_LEFT)
+        {
+            if (!focus)
+            {
+                if (event.state() == LPointerButtonEvent::Released)
+                    static_cast<Compositor*>(compositor())->menu.hide();
+                return;
+            }
+
+            if (event.state() == LPointerButtonEvent::Pressed)
+                focus->onPress();
+            else
+                focus->onRelease();
+        }
+    }
+private:
+    static AKNode *findNode(AKNode *node, const SkIPoint &globalPos, UInt64 filter) noexcept
+    {
+        for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
+            if (AKNode *child = findNode(*it, globalPos, filter))
+                return child;
+
+        if ((node->userFlags & filter) && node->globalRect().contains(globalPos.x(), globalPos.y()))
+            return node;
+
+        return nullptr;
     }
 };
 
@@ -392,11 +700,8 @@ int main(void)
     setenv("LOUVRE_WAYLAND_DISPLAY", "louvre", 0);
 
     LLauncher::startDaemon();
-
     Compositor compositor;
-
-    if (!compositor.start())
-        exit(1);
+    assert("Compositor failed to start" && compositor.start());
 
     while (compositor.state() != LCompositor::Uninitialized)
         compositor.processLoop(-1);

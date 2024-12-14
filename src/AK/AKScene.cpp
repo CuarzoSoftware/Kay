@@ -31,11 +31,33 @@ bool AKScene::render(AKTarget *target)
 {
     validateTarget(target);
 
-    target->surface->recordingContext()->asDirectContext()->resetContext();
     c = target->surface->getCanvas();
     c->save();
 
     updateMatrix();
+
+    for (auto it = t->root->children().rbegin(); it != t->root->children().rend(); it++)
+        notifyBegin(*it);
+
+    const bool isNestedScene = (t->root->parent() && t->m_isSubScene);
+
+    if (!isNestedScene)
+    {
+        YGConfigSetPointScaleFactor(t->m_yogaConfig, t->xyScale().x());
+        YGNodeSetConfig(t->root->layout().m_node, t->m_yogaConfig);
+        YGNodeCalculateLayout(t->root->layout().m_node,
+                              YGUndefined,
+                              YGUndefined,
+                              YGDirectionInherit);
+
+        t->root->m_globalRect = SkRect::MakeWH(t->viewport.width(), t->viewport.height()).roundOut();
+        t->root->m_rect = t->root->m_globalRect;
+    }
+
+    t->m_globalIViewport = SkRect::MakeXYWH(
+                               t->viewport.x() + float(t->root->globalRect().x()),
+                               t->viewport.y() + float(t->root->globalRect().y()),
+                               t->viewport.width(), t->viewport.height()).roundOut();
 
     for (Int64 i = t->root->children().size() - 1; i >= 0;)
     {
@@ -46,7 +68,9 @@ bool AKScene::render(AKTarget *target)
         if (noBackroundEffect)
             i--;
     }
-    target->surface->recordingContext()->asDirectContext()->flushAndSubmit();
+
+    target->surface->recordingContext()->asDirectContext()->resetContext();
+    target->surface->recordingContext()->asDirectContext()->flush();
     target->painter()->bindProgram();
     target->painter()->bindTarget(t);
 
@@ -116,24 +140,6 @@ static void addMargin(SkRegion &region, Int32 margin) noexcept
 
 void AKScene::updateMatrix() noexcept
 {
-    const bool isNestedScene = (t->root->parent() && t->m_isSubScene);
-
-    if (!isNestedScene)
-    {
-        YGNodeCalculateLayout(t->root->layout().m_node,
-                              YGUndefined,
-                              YGUndefined,
-                              YGDirectionInherit);
-
-        t->root->m_globalRect = SkRect::MakeWH(t->viewport.width(), t->viewport.height()).roundOut();
-        t->root->m_rect = t->root->m_globalRect;
-    }
-
-    t->m_globalIViewport = SkRect::MakeXYWH(
-        t->viewport.x() + float(t->root->globalRect().x()),
-        t->viewport.y() + float(t->root->globalRect().y()),
-        t->viewport.width(), t->viewport.height()).roundOut();
-
     SkMatrix viewportMatrix;
     viewportMatrix.preScale(t->scale, t->scale);
     SkPoint trans ( -t->viewport.x(), -t->viewport.y());
@@ -213,6 +219,23 @@ void AKScene::updateMatrix() noexcept
         t->m_prevClip.setRect(t->viewport.roundOut());
 }
 
+void AKScene::notifyBegin(AKNode *node)
+{
+    node->t = &node->m_targets[t];
+
+    if (!node->t->target)
+    {
+        node->t->target = t;
+        t->m_nodes.push_back(node);
+        node->t->targetLink = t->m_nodes.size() - 1;
+    }
+
+    for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
+        notifyBegin(*it);
+
+    node->onSceneBegin();
+}
+
 void AKScene::calculateNewDamage(AKNode *node)
 {
     node->t = &node->m_targets[t];
@@ -228,7 +251,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     {
         AKBackgroundEffect &backgroundEffect { *static_cast<AKBackgroundEffect*>(node) };
 
-        node->onSceneBegin();
+        node->onLayoutUpdate();
 
         backgroundEffect.m_globalRect = SkIRect::MakeXYWH(
             backgroundEffect.rect.x() + backgroundEffect.targetNode()->globalRect().x(),
@@ -246,19 +269,17 @@ void AKScene::calculateNewDamage(AKNode *node)
     {
         if (node->layout().display() == YGDisplayNone)
         {
-            node->m_globalRect = SkRect::MakeXYWH(
-                node->layout().position(YGEdgeLeft).value + float(node->parent()->globalRect().x()),
-                node->layout().position(YGEdgeTop).value + float(node->parent()->globalRect().y()),
-                node->layout().width().value,
-                node->layout().height().value).roundOut();
+            node->m_globalRect.fLeft =  node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().position(YGEdgeLeft).value);
+            node->m_globalRect.fTop = node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().position(YGEdgeTop).value);
+            node->m_globalRect.fRight = node->m_globalRect.fLeft + SkScalarFloorToInt(node->layout().width().value);
+            node->m_globalRect.fBottom = node->m_globalRect.fTop + SkScalarFloorToInt(node->layout().height().value);
         }
         else
         {
-            node->m_globalRect = SkRect::MakeXYWH(
-                 node->layout().calculatedLeft() + float(node->parent()->globalRect().x()),
-                 node->layout().calculatedTop() + float(node->parent()->globalRect().y()),
-                 node->layout().calculatedWidth(),
-                 node->layout().calculatedHeight()).roundOut();
+            node->m_globalRect.fLeft = node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().calculatedLeft());
+            node->m_globalRect.fTop = node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().calculatedTop());
+            node->m_globalRect.fRight = node->m_globalRect.fLeft + SkScalarFloorToInt(node->layout().calculatedWidth());
+            node->m_globalRect.fBottom = node->m_globalRect.fTop + SkScalarFloorToInt(node->layout().calculatedHeight());
         }
 
         node->m_rect = SkIRect::MakeXYWH(
@@ -267,7 +288,7 @@ void AKScene::calculateNewDamage(AKNode *node)
             node->m_globalRect.width(),
             node->m_globalRect.height());
 
-        node->onSceneBegin();
+        node->onLayoutUpdate();
     }
 
     if (node->backgroundEffect())
@@ -337,8 +358,19 @@ void AKScene::calculateNewDamage(AKNode *node)
             canvas.scale(params.surface->scale().x(), params.surface->scale().y());
             bakeable->onBake(&params);
             canvas.restore();
-            //params.surface->surface()->flush();
         }
+    }
+
+    if (node->caps() & AKNode::Render)
+    {
+        AKRenderable *rend { static_cast<AKRenderable*>(node) };
+
+        if (rend->changes().test(AKRenderable::Chg_Opacity) ||
+            (rend->changes().test(AKRenderable::Chg_Color)))
+            rend->addDamage(AK_IRECT_INF);
+
+        if (rend->opacity() < 1.f)
+            rend->setColorHint(AKRenderable::ColorHint::Translucent);
     }
 
     if (node->m_rect == node->t->prevLocalRect)

@@ -40,7 +40,7 @@ protected:
 
     virtual void onTargetNodeChanged() = 0;
 
-    void onSceneBegin() override
+    void onLayoutUpdate() override
     {
         rect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
     }

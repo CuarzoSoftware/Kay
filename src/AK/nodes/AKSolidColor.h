@@ -22,7 +22,7 @@ protected:
     using AKRenderable::opaqueRegion;
     using AKRenderable::setColorHint;
     void onRender(AKPainter *painter, const SkRegion &damage) override;
-    void onSceneBegin() override;
+    void onLayoutUpdate() override;
 };
 
 #endif // AKSOLIDCOLOR_H

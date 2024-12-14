@@ -5,6 +5,7 @@
 #include <include/gpu/gl/GrGLAssembleInterface.h>
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
 #include <include/core/SkColorSpace.h>
+#include <include/utils/SkParsePath.h>
 
 #include <wayland-client.h>
 #include <wayland-egl.h>
@@ -25,11 +26,17 @@
 #include <AK/nodes/AKRoundContainer.h>
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKSolidColor.h>
+#include <AK/nodes/AKSimpleText.h>
+#include <AK/nodes/AKPath.h>
 
 using namespace AK;
 
 static SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
 
+static const std::string message { "Hello World!" };
+static const std::string starSVG { "M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" };
+static const std::string happySVG { "M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16M7 6.5C7 7.328 6.552 8 6 8s-1-.672-1-1.5S5.448 5 6 5s1 .672 1 1.5M4.285 9.567a.5.5 0 0 1 .683.183A3.5 3.5 0 0 0 8 11.5a3.5 3.5 0 0 0 3.032-1.75.5.5 0 1 1 .866.5A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1-3.898-2.25.5.5 0 0 1 .183-.683M10 8c-.552 0-1-.672-1-1.5S9.448 5 10 5s1 .672 1 1.5S10.552 8 10 8" };
+static const std::string heartSVG { "M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1" };
 static struct
 {
     wl_display *wlDisplay;
@@ -54,16 +61,27 @@ static struct
 class Topbar : public AKSolidColor
 {
 public:
-    Topbar(AKNode *parent) noexcept : AKSolidColor(0xff003049, parent)
+    Topbar(AKNode *parent) noexcept : AKSolidColor(0xFFEEEEEE, parent)
     {
+        SkFont font = title.font();
+        font.setEmbolden(true);
+        font.setSize(32);
+        title.setFont(font);
+        setClipsChildren(true);
         layout().setHeight(32);
         layout().setWidthPercent(100);
+        layout().setDisplay(YGDisplayFlex);
+        layout().setJustifyContent(YGJustifyCenter);
+        layout().setAlignItems(YGAlignCenter);
     }
 
     AKBackgroundShadowEffect shadow {
         AKBackgroundShadowEffect::Box,
         32.f, { 0, 0 }, SkColorSetARGB(250, 0, 0, 0),
         true, this };
+
+    AKSimpleText title { "Hello Kay!", this };
+
 };
 
 struct Window
@@ -76,7 +94,11 @@ struct Window
     Topbar topbar { &root };
     AKContainer bottom { YGFlexDirectionRow, true, &root };
     AKRoundContainer roundContainer { AKBorderRadius::Make(16), &bottom };
-    AKSolidColor redBackground { 0xffc1121f, &roundContainer };
+    AKSolidColor redBackground { 0xFE444444, &roundContainer };
+    AKPath heart { SkPath(), &redBackground };
+    AKPath star { SkPath(), &redBackground };
+    AKPath happy { SkPath(), &redBackground };
+
 
     AKTarget *target { nullptr };
 
@@ -150,6 +172,37 @@ Window::Window() noexcept
     roundContainer.layout().setHeightPercent(100);
     redBackground.layout().setWidthPercent(100);
     redBackground.layout().setHeightPercent(100);
+    redBackground.layout().setDisplay(YGDisplayFlex);
+    redBackground.layout().setFlexDirection(YGFlexDirectionRow);
+    redBackground.layout().setAlignItems(YGAlignCenter);
+    redBackground.layout().setJustifyContent(YGJustifySpaceEvenly);
+
+    SkPath path;
+    const SkScalar size { 32.f };
+    SkParsePath::FromSVGString(starSVG.c_str(), &path);
+    star.setPath(path);
+    star.layout().setWidth(size);
+    star.layout().setHeight(size);
+    star.setColor(SkColors::kWhite);
+    star.enableCustomBlendFunc(true);
+    star.setCustomBlendFunc({
+        .sRGBFactor = GL_ZERO,
+        .dRGBFactor = GL_ONE_MINUS_SRC_ALPHA,
+        .sAlphaFactor = GL_ZERO,
+        .dAlphaFactor = GL_ONE_MINUS_SRC_ALPHA,
+    });
+
+    SkParsePath::FromSVGString(happySVG.c_str(), &path);
+    happy.setPath(path);
+    happy.layout().setWidth(size);
+    happy.layout().setHeight(size);
+    happy.setColor(SkColors::kGreen);
+
+    SkParsePath::FromSVGString(heartSVG.c_str(), &path);
+    heart.setPath(path);
+    heart.layout().setWidth(size);
+    heart.layout().setHeight(size);
+    heart.setColor(SkColors::kRed);
 
     wlSurface = wl_compositor_create_surface(app.wlCompositor);
     wl_surface_add_listener(wlSurface, &wlSurfaceLis, this);
@@ -225,6 +278,8 @@ void Window::update() noexcept
     static float phase = 0;
     phase += 0.01f;
     topbar.layout().setHeight(0.5f * size.height() * SkScalarAbs(SkScalarCos(phase)));
+    topbar.title.setColor({SkScalarAbs(SkScalarCos(phase)), SkScalarAbs(SkScalarSin(phase)), 1.f, 1.f});
+    topbar.title.setText(message.substr(0, SkScalarAbs(SkScalarSin(phase)) * (message.size() +  1)));
 
     if (!target)
         target = scene.createTarget();

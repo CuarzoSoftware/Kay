@@ -111,8 +111,8 @@ protected:
     using AKRenderable::enableCustomTextureColor;
     using AKRenderable::setColorHint;
 
-    void onSceneBegin() override;
-    void onSceneBeginBox() noexcept;
+    void onLayoutUpdate() override;
+    void onLayoutUpdateBox() noexcept;
 
     void onRender(AKPainter *painter, const SkRegion &damage) override;
     void onRenderBox(AKPainter *painter, const SkRegion &damage) noexcept;

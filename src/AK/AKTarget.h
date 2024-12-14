@@ -173,6 +173,7 @@ private:
     UInt32              m_fbId;
     bool                m_isSubScene { false };
     std::shared_ptr<AKPainter> m_painter;
+    YGConfigRef         m_yogaConfig;
 };
 
 #endif // AKTARGET_H

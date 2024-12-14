@@ -27,6 +27,7 @@ private:
     SkColor4f m_clearColor { 0.f, 0.f, 0.f, 0.f };
     void validateTarget(AKTarget *target) noexcept;
     void updateMatrix() noexcept;
+    void notifyBegin(AKNode *node);
     void calculateNewDamage(AKNode *node);
     void updateDamageRing() noexcept;
     void renderOpaque(AKNode *node);

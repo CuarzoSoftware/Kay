@@ -17,13 +17,13 @@
 
 using namespace AK;
 
-void AKBackgroundShadowEffect::onSceneBegin()
+void AKBackgroundShadowEffect::onLayoutUpdate()
 {
     if (shadowType() == Box)
-        onSceneBeginBox();
+        onLayoutUpdateBox();
 }
 
-void AKBackgroundShadowEffect::onSceneBeginBox() noexcept
+void AKBackgroundShadowEffect::onLayoutUpdateBox() noexcept
 {
     bool needsNewSurface { m_targets.find(currentTarget()) == m_targets.end() };
     bool needsFullDamage { needsNewSurface };

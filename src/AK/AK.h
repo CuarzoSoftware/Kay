@@ -27,7 +27,7 @@ namespace AK
     class AKNode;       /* Base class for nodes */
     class AKContainer;  /* Container for other nodes. Doesn't produce any output on its own */
     class AKRenderable; /* A node that draws directly into an AKTarget */
-    class AKBakeable;   /* A node that draws into its own buffer, which is then rendered into an AKTarget */
+    class AKBakeable;   /* A node that draws into its own buffer, which is then blitted into an AKTarget */
     class AKSubScene;   /* A node whose children are drawn into its own buffer and then rendered into an AKTarget */
 
     /*********** RENDERABLES ***********/
@@ -37,6 +37,8 @@ namespace AK
     class AKPath;
 
     /*********** BAKEABLES ***********/
+
+    class AKSimpleText;
 
     /*********** SUBSCENES ***********/
 

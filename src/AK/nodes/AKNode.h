@@ -135,9 +135,15 @@ public:
     AKBackgroundEffect *backgroundEffect() const noexcept;
     void setBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
 
+    /* Triggered before the scene starts */
+    virtual void onSceneBegin() {}
+
     /* Triggered before the scene starts rendering but
      * after the Yoga layout is updated */
-    virtual void onSceneBegin() {}
+    virtual void onLayoutUpdate() {}
+
+    UInt64 userFlags { 0 };
+    void *userData { nullptr };
 private:
     friend class AKBackgroundEffect;
     friend class AKRenderable;

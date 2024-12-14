@@ -80,7 +80,7 @@ public:
 protected:
     using AKRenderable::setColorHint;
     virtual void onRender(AKPainter *painter, const SkRegion &damage) override;
-    void onSceneBegin() override;
+    void onLayoutUpdate() override;
     sk_sp<SkImage> m_image;
     SkRect m_srcRect;
     SkScalar m_scale { 1.f };

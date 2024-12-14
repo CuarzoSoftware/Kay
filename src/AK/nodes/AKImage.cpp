@@ -23,7 +23,7 @@ void AKImage::onRender(AKPainter *painter, const SkRegion &damage)
     painter->drawRegion(damage);
 }
 
-void AKImage::onSceneBegin()
+void AKImage::onLayoutUpdate()
 {
     const auto &c { changes() };
 

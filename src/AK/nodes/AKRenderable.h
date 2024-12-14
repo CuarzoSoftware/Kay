@@ -15,8 +15,13 @@ public:
 
     enum class ColorHint
     {
+        /// Fully paque (default)
         Opaque,
+
+        /// Fully translucent
         Translucent,
+
+        /// User defined region (see opaqueRegion)
         UseOpaqueRegion
     };
 
