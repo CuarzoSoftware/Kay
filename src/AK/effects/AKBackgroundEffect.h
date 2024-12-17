@@ -23,28 +23,6 @@ public:
         Chg_Last
     };
 
-protected:
-    AKBackgroundEffect(StackPosition stackPosition) noexcept : m_stackPosition(stackPosition)
-    {
-        m_caps |= BackgroundEffect;
-        layout().setDisplay(YGDisplayNone);
-    };
-
-    AKNode *targetNode() const noexcept
-    {
-        return m_targetNode;
-    }
-
-    // Rect relative to target
-    SkIRect rect;
-
-    virtual void onTargetNodeChanged() = 0;
-
-    void onLayoutUpdate() override
-    {
-        rect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
-    }
-
     StackPosition stackPosition() const noexcept
     {
         return m_stackPosition;
@@ -57,6 +35,30 @@ protected:
 
         addChange(Chg_StackPosition);
         m_stackPosition = stackPosition;
+    }
+
+    AKNode *targetNode() const noexcept
+    {
+        return m_targetNode;
+    }
+
+protected:
+    AKBackgroundEffect(StackPosition stackPosition) noexcept :
+        AKRenderable(Texture),
+        m_stackPosition(stackPosition)
+    {
+        m_caps |= BackgroundEffect;
+        layout().setDisplay(YGDisplayNone);
+    };
+
+    // Rect relative to target
+    SkIRect rect;
+
+    virtual void onTargetNodeChanged() = 0;
+
+    void onLayoutUpdate() override
+    {
+        rect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
     }
 
     using AKRenderable::onRender;

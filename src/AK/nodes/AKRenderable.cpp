@@ -20,3 +20,31 @@ const SkRegion &AKRenderable::damage() const noexcept
     static const SkRegion emptyRegion;
     return currentTarget() == nullptr ? emptyRegion : m_targets[currentTarget()].clientDamage;
 }
+
+void AKRenderable::handleCommonChanges() noexcept
+{
+    const auto &c { changes() };
+
+    if (m_renderableHint == SolidColor)
+    {
+        if (c.test(Chg_Opacity) ||
+            c.test(Chg_ColorFactor) ||
+            c.test(Chg_CustomBlendFuncEnabled) ||
+            (customBlendFuncEnabled() && c.test(Chg_CustomBlendFunc)))
+            addDamage(AK_IRECT_INF);
+
+        m_colorHint = opacity() < 1.f || colorFactor().fA < 1.f ? ColorHint::Translucent : ColorHint::Opaque;
+    }
+    else
+    {
+        if (c.test(Chg_Opacity) ||
+            c.test(Chg_ColorFactor) ||
+            c.test(Chg_CustomBlendFuncEnabled) ||
+            c.test(Chg_CustomTextureColorEnabled) ||
+            (customTextureColorEnabled() && c.test(Chg_Color)) ||
+            (customBlendFuncEnabled() && c.test(Chg_CustomBlendFunc)))
+            addDamage(AK_IRECT_INF);
+
+        m_colorHint = opacity() < 1.f || colorFactor().fA < 1.f ? ColorHint::Translucent : ColorHint::UseRegion;
+    }
+}

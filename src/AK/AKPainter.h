@@ -292,7 +292,7 @@ private:
         SkRect srcRect;
         GLuint activeTexture;
         ShaderMode mode;
-        SkColor4f color;
+        SkColor4f color { SkColors::kBlack };
         GLfloat alpha;
         GLfloat scale;
         bool colorFactorEnabled { false };

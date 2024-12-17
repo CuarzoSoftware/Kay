@@ -58,7 +58,6 @@ public:
     {
         m_brush.setAntiAlias(true);
         m_pen.setAntiAlias(true);
-        setColorHint(ColorHint::Translucent);
         enableCustomTextureColor(true);
     };
 
@@ -71,7 +70,6 @@ public:
     {
         m_brush.setAntiAlias(true);
         m_pen.setAntiAlias(true);
-        setColorHint(ColorHint::Translucent);
         enableCustomTextureColor(true);
     };
 

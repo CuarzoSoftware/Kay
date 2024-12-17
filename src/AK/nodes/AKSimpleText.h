@@ -22,10 +22,9 @@ public:
     AKSimpleText(const std::string &text, AKNode *parent = nullptr) noexcept :
         AKBakeable(parent)
     {
-        m_brush.setAntiAlias(true);
+        m_brush.setAntiAlias(false);
         m_pen.setAntiAlias(true);
-        setColor(SkColors::kBlack);
-        setColorHint(ColorHint::Translucent);
+        setColorWithAlpha(SkColors::kBlack);
         setText(text);
         enableCustomTextureColor(true);
     }

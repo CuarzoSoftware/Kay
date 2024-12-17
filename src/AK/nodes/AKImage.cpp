@@ -8,32 +8,19 @@ using namespace AK;
 
 void AKImage::onRender(AKPainter *painter, const SkRegion &damage)
 {
-    if (!image())
-        return;
-
-    painter->bindTextureMode({
-        .texture = image(),
-        .pos = { rect().x(), rect().y() },
-        .srcRect = srcRect(),
-        .dstSize = rect().size(),
-        .srcTransform = transform(),
-        .srcScale = scale()
-    });
+    if (image())
+    {
+        painter->bindTextureMode({
+            .texture = image(),
+            .pos = { rect().x(), rect().y() },
+            .srcRect = srcRect(),
+            .dstSize = rect().size(),
+            .srcTransform = transform(),
+            .srcScale = scale()
+        });
+    }
+    else
+        painter->bindColorMode();
 
     painter->drawRegion(damage);
-}
-
-void AKImage::onLayoutUpdate()
-{
-    const auto &c { changes() };
-
-    if (c.test(Chg_Opacity) ||
-        c.test(Chg_ColorFactor) ||
-        c.test(Chg_CustomBlendFuncEnabled) ||
-        c.test(Chg_CustomTextureColorEnabled) ||
-        (customTextureColorEnabled() && c.test(Chg_Color)) ||
-        (customBlendFuncEnabled() && c.test(Chg_CustomBlendFunc)))
-        addDamage(AK_IRECT_INF);
-
-    setColorHint(opacity() < 1.f || colorFactor().fA < 1.f ? ColorHint::Translucent : ColorHint::UseOpaqueRegion);
 }

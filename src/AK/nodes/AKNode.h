@@ -7,6 +7,7 @@
 #include <AK/AKLayout.h>
 
 #include <bitset>
+#include <cassert>
 #include <include/core/SkImage.h>
 #include <include/core/SkSurface.h>
 #include <include/gpu/GrBackendSurface.h>
@@ -39,6 +40,8 @@ public:
     };
 
     void addChange(Change change) noexcept;
+
+    [[nodiscard]]
     const std::bitset<128> &changes() const noexcept;
 
     /* Insert at the end, nullptr unsets */
@@ -68,6 +71,7 @@ public:
 
     AKTarget *currentTarget() const noexcept
     {
+        assert(t);
         return t->target;
     }
 
@@ -142,6 +146,14 @@ public:
      * after the Yoga layout is updated */
     virtual void onLayoutUpdate() {}
 
+    /**
+     * @brief Reactive Region.
+     *
+     * This is a special region that causes damage to the scene
+     * only when overlay or background damage from other nodes intersects with it.
+     */
+    SkRegion reactiveRegion;
+
     UInt64 userFlags { 0 };
     void *userData { nullptr };
 private:
@@ -159,7 +171,7 @@ private:
         ClipsChildren       = 1L << 1,
     };
 
-    struct TargetData
+    struct TargetData : public AKObject
     {
         TargetData() noexcept { changes.set(); }
         AKTarget *target { nullptr };
@@ -172,6 +184,7 @@ private:
             opaqueOverlay;
         std::shared_ptr<AKSurface> bake;
         std::bitset<128> changes;
+        bool visible;
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
@@ -188,7 +201,7 @@ private:
     size_t m_parentLinkIndex;
     std::unique_ptr<SkRegion> m_inputRegion;
     mutable std::unordered_map<AKTarget*, TargetData> m_targets;
-    TargetData *t;
+    AKWeak<TargetData> t;
     bool m_insideLastTarget { false };
     bool m_renderedOnLastTarget { false };
 };

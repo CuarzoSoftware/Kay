@@ -183,7 +183,7 @@ Window::Window() noexcept
     star.setPath(path);
     star.layout().setWidth(size);
     star.layout().setHeight(size);
-    star.setColor(SkColors::kWhite);
+    star.setColorWithAlpha(SkColors::kWhite);
     star.enableCustomBlendFunc(true);
     star.setCustomBlendFunc({
         .sRGBFactor = GL_ZERO,
@@ -196,13 +196,13 @@ Window::Window() noexcept
     happy.setPath(path);
     happy.layout().setWidth(size);
     happy.layout().setHeight(size);
-    happy.setColor(SkColors::kGreen);
+    happy.setColorWithAlpha(SkColors::kGreen);
 
     SkParsePath::FromSVGString(heartSVG.c_str(), &path);
     heart.setPath(path);
     heart.layout().setWidth(size);
     heart.layout().setHeight(size);
-    heart.setColor(SkColors::kRed);
+    heart.setColorWithAlpha(SkColors::kRed);
 
     wlSurface = wl_compositor_create_surface(app.wlCompositor);
     wl_surface_add_listener(wlSurface, &wlSurfaceLis, this);
@@ -278,7 +278,7 @@ void Window::update() noexcept
     static float phase = 0;
     phase += 0.01f;
     topbar.layout().setHeight(0.5f * size.height() * SkScalarAbs(SkScalarCos(phase)));
-    topbar.title.setColor({SkScalarAbs(SkScalarCos(phase)), SkScalarAbs(SkScalarSin(phase)), 1.f, 1.f});
+    topbar.title.setColorWithAlpha({SkScalarAbs(SkScalarCos(phase)), SkScalarAbs(SkScalarSin(phase)), 1.f, 1.f});
     topbar.title.setText(message.substr(0, SkScalarAbs(SkScalarSin(phase)) * (message.size() +  1)));
 
     if (!target)

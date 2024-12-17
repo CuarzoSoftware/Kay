@@ -7,22 +7,10 @@
 class AK::AKRenderable : public AKNode
 {
 public:
-    AKRenderable(AKNode *parent = nullptr) noexcept : AKNode(parent) { m_caps |= Render; }
-    void addDamage(const SkRegion &region) noexcept;
-    void addDamage(const SkIRect &rect) noexcept;
-    const SkRegion &damage() const noexcept;
-    SkRegion opaqueRegion;
-
-    enum class ColorHint
+    enum RenderableHint
     {
-        /// Fully paque (default)
-        Opaque,
-
-        /// Fully translucent
-        Translucent,
-
-        /// User defined region (see opaqueRegion)
-        UseOpaqueRegion
+        SolidColor,
+        Texture
     };
 
     enum Changes
@@ -31,26 +19,21 @@ public:
         Chg_CustomTextureColorEnabled,
         Chg_Color,
         Chg_ColorFactor,
-        Chg_ColorHint,
         Chg_CustomBlendFuncEnabled,
         Chg_CustomBlendFunc,
-
+        Chg_Size,
         Chg_Last
     };
 
-    void setColorHint(ColorHint hint) noexcept
-    {
-        if (m_colorHint == hint)
-            return;
+    AKRenderable(RenderableHint hint, AKNode *parent = nullptr) noexcept :
+        AKNode(parent),
+        m_renderableHint(hint)
+    { m_caps |= Render; }
 
-        addChange(Chg_ColorHint);
-        m_colorHint = hint;
-    }
-
-    ColorHint colorHint() const noexcept
-    {
-        return m_colorHint;
-    }
+    void addDamage(const SkRegion &region) noexcept;
+    void addDamage(const SkIRect &rect) noexcept;
+    const SkRegion &damage() const noexcept;
+    SkRegion opaqueRegion;
 
     void setOpacity(SkScalar alpha) noexcept
     {
@@ -80,7 +63,31 @@ public:
         return m_customTextureColorEnabled;
     }
 
-    void setColor(const SkColor4f &color) noexcept
+    void setColorWithAlpha(const SkColor4f &color) noexcept
+    {
+        if (color.fR != m_color.fR ||
+            color.fG != m_color.fG ||
+            color.fB != m_color.fB)
+        {
+            m_color.fR = color.fR;
+            m_color.fG = color.fG;
+            m_color.fB = color.fB;
+            addChange(Chg_Color);
+        }
+
+        if (color.fA != m_color.fA)
+        {
+            m_color.fA = color.fA;
+            addChange(Chg_Opacity);
+        }
+    }
+
+    void setColorWithAlpha(SkColor color) noexcept
+    {
+        setColorWithAlpha(SkColor4f::FromColor(color));
+    }
+
+    void setColorWithoutAlpha(const SkColor4f &color) noexcept
     {
         if (color.fR == m_color.fR &&
             color.fG == m_color.fG &&
@@ -91,6 +98,11 @@ public:
         m_color.fG = color.fG;
         m_color.fB = color.fB;
         addChange(Chg_Color);
+    }
+
+    void setColorWithoutAlpha(SkColor color) noexcept
+    {
+        setColorWithoutAlpha(SkColor4f::FromColor(color));
     }
 
     const SkColor4f &color() const noexcept
@@ -105,6 +117,11 @@ public:
 
         m_colorFactor = colorFactor;
         addChange(Chg_ColorFactor);
+    }
+
+    void setColorFactor(SkColor colorFactor) noexcept
+    {
+        setColorFactor(SkColor4f::FromColor(colorFactor));
     }
 
     const SkColor4f &colorFactor() const noexcept
@@ -141,15 +158,24 @@ public:
     }
 
 protected:
+    enum ColorHint
+    {
+        UseRegion,
+        Opaque,
+        Translucent
+    };
     friend class AKScene;
     friend class AKSubScene;
-    SkColor4f m_color { 1.f, 1.f, 1.f, 1.f }; // fA used for opacity
+    SkColor4f m_color { SkColors::kBlack }; // fA used for opacity
     SkColor4f m_colorFactor { 1.f, 1.f, 1.f, 1.f };
     AKBlendFunc m_customBlendFunc { GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA };
-    ColorHint m_colorHint;
+    RenderableHint m_renderableHint;
+    ColorHint m_colorHint { UseRegion };
     bool m_customBlendFuncEnabled { false };
     bool m_customTextureColorEnabled { false };
     virtual void onRender(AKPainter *painter, const SkRegion &damage) = 0;
+private:
+    void handleCommonChanges() noexcept;
 };
 
 #endif // AKRENDERABLE_H

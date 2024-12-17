@@ -30,9 +30,8 @@ private:
     void notifyBegin(AKNode *node);
     void calculateNewDamage(AKNode *node);
     void updateDamageRing() noexcept;
-    void renderOpaque(AKNode *node);
     void renderBackground() noexcept;
-    void renderTranslucent(AKNode *node);
+    void renderNodes(AKNode *node);
 };
 
 #endif // AKSCENE_H

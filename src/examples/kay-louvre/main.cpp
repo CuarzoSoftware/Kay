@@ -1,3 +1,4 @@
+#include "AK/nodes/AKPath.h"
 #include "AK/nodes/AKSimpleText.h"
 #include "include/core/SkMaskFilter.h"
 #include <LLauncher.h>
@@ -11,6 +12,9 @@
 #include <LPointer.h>
 #include <LKeyboard.h>
 #include <LAnimation.h>
+#include <LOpenGL.h>
+#include <LScreenshotRequest.h>
+#include <LExclusiveZone.h>
 
 #include <AK/nodes/AKSubScene.h>
 #include <AK/nodes/AKImage.h>
@@ -18,6 +22,7 @@
 #include <AK/nodes/AKSolidColor.h>
 #include <AK/nodes/AKRoundContainer.h>
 #include <AK/effects/AKBackgroundShadowEffect.h>
+#include <AK/effects/AKBackgroundBlurEffect.h>
 
 #include <AK/AKScene.h>
 #include <AK/AKSurface.h>
@@ -38,6 +43,9 @@
 #include <include/effects/SkGradientShader.h>
 #include <include/utils/SkParsePath.h>
 #include <include/effects/SkBlurMaskFilter.h>
+#include <include/core/SkRRect.h>
+#include <include/utils/SkParsePath.h>
+#include <iostream>
 
 using namespace AK;
 using namespace Louvre;
@@ -49,6 +57,7 @@ enum NodeTypeFlags
 
 static sk_sp<SkColorSpace> colorSpace = SkColorSpace::MakeSRGB();
 static SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
+static const std::string logoSVG { "M9.05.435c-.58-.58-1.52-.58-2.1 0L.436 6.95c-.58.58-.58 1.519 0 2.098l6.516 6.516c.58.58 1.519.58 2.098 0l6.516-6.516c.58-.58.58-1.519 0-2.098zM8 .989c.127 0 .253.049.35.145l6.516 6.516a.495.495 0 0 1 0 .7L8.35 14.866a.5.5 0 0 1-.35.145z" };
 
 // Creates an SkImage from an LTexture (its just a wrapper, there is no copy involved)
 // Todo: properly handle other formats
@@ -107,19 +116,38 @@ public:
 
     Menu(AKNode *parent = nullptr) noexcept : AKBakeable(parent)
     {
+        blur.onLayoutUpdateSignal.subscribe(this, [this](){
+            const auto &chgs { changes() };
+            bool blurNeedsUpdate { chgs.test(Chg_Size) };
+
+            for (UInt32 flag = Chg_ShadowRadius; flag <= Chg_BorderRadius; flag++)
+                blurNeedsUpdate |= chgs.test(flag);
+
+            if (!blurNeedsUpdate)
+                return;
+
+            blur.rect.setXYWH(
+                itemsContainer.layout().calculatedLeft(),
+                itemsContainer.layout().calculatedTop(),
+                itemsContainer.layout().calculatedWidth(),
+                itemsContainer.layout().calculatedHeight());
+            blur.clip.reset();
+            blur.clip.addRRect(SkRRect::MakeRectXY(
+                SkRect::MakeWH(blur.rect.size().width(), blur.rect.size().height()),
+                m_borderRadius,
+                m_borderRadius));
+        });
+
         setClipsChildren(true);
         setVisible(false);
 
         // Default styles
         m_brush.setAntiAlias(true);
         m_pen.setAntiAlias(true);
-        m_brush.setColor(0xFFFAFAFA); // ARGB
+        m_brush.setColor(0x99FAFAFA); // ARGB
         m_pen.setStrokeWidth(0.25f);
         m_pen.setColor(0xAA000000);
         m_shadowBrush.setColor(0x66000000);
-
-        // Tell the scene to use opaqueRegion(), by default all nodes have the fully opaque color hint.
-        setColorHint(ColorHint::UseOpaqueRegion);
 
         layout().setPositionType(YGPositionTypeAbsolute);
         layout().setPosition(YGEdgeLeft, 100);
@@ -135,13 +163,13 @@ public:
         layout().setPosition(YGEdgeLeft, x - m_shadowRadius + m_shadowOffset.x());
         layout().setPosition(YGEdgeTop, y - m_shadowRadius + m_shadowOffset.y());
         setVisible(true);
-        cursor()->repaintOutputs(false);
+        compositor()->repaintAllOutputs();
     }
 
     void hide() noexcept
     {
         setVisible(false);
-        cursor()->repaintOutputs(false);
+        compositor()->repaintAllOutputs();
     }
 
     void setShadowColor(SkColor color) noexcept
@@ -190,6 +218,7 @@ public:
     }
 
     AKContainer itemsContainer { YGFlexDirectionColumn, true, this };
+    AKBackgroundBlurEffect blur { this };
 protected:
     AKBrush m_shadowBrush; // Shadow style (color basically)
     AKBrush m_brush; // Fill style
@@ -202,8 +231,9 @@ protected:
     // Called right before the scene calculates the layout
     void onSceneBegin() override
     {
-        const bool needsShadowUpdate { changes().test(Chg_ShadowRadius) };
-        const bool needsPaddingUpdate { needsShadowUpdate || changes().test(Chg_ShadowOffset) };
+        const auto chgs { changes() };
+        const bool needsShadowUpdate { chgs.test(Chg_ShadowRadius) };
+        const bool needsPaddingUpdate { needsShadowUpdate || chgs.test(Chg_ShadowOffset) };
 
         // Add padding to prevent itemsContainer from overlapping the shadow
         if (needsPaddingUpdate)
@@ -223,14 +253,16 @@ protected:
     // Its the component's responsibility to avoid re-baking itself each time
     void onBake(OnBakeParams *params) override
     {
+        const auto chgs { changes() };
+
         const bool needsRebake {
             !params->damage->isEmpty() || // If the scene explicitly adds damage it means the node's size changed
-            changes().test(Chg_ShadowRadius) ||
-            changes().test(Chg_ShadowColor) ||
-            changes().test(Chg_ShadowOffset) ||
-            changes().test(Chg_BorderRadius) ||
-            changes().test(Chg_Brush) ||
-            changes().test(Chg_Pen)
+            chgs.test(Chg_ShadowRadius) ||
+            chgs.test(Chg_ShadowColor) ||
+            chgs.test(Chg_ShadowOffset) ||
+            chgs.test(Chg_BorderRadius) ||
+            chgs.test(Chg_Brush) ||
+            chgs.test(Chg_Pen)
         };
 
         if (!needsRebake) // Nothing to do
@@ -310,7 +342,6 @@ public:
     {
         userFlags |= MENU_ITEM;
         layout().setDisplay(YGDisplayFlex);
-        layout().setWidthPercent(100.f);
         m_backgroundColor.setOpacity(0.f);
         m_backgroundColor.layout().setPadding(YGEdgeAll, 6.f);
         SkFont font;
@@ -321,14 +352,14 @@ public:
     void onPointerEnter()
     {
         m_backgroundColor.setOpacity(1.f);
-        m_text.setColor(SkColors::kWhite);
+        m_text.setColorWithAlpha(SkColors::kWhite);
         cursor()->repaintOutputs(false);
     }
 
     void onPointerLeave()
     {
         m_backgroundColor.setOpacity(0.f);
-        m_text.setColor(SkColors::kBlack);
+        m_text.setColorWithAlpha(SkColors::kBlack);
         cursor()->repaintOutputs(false);
     }
 
@@ -358,6 +389,11 @@ public:
         surfaces.layout().setPositionType(YGPositionTypeAbsolute);
     }
 
+    void initialized() override
+    {
+        LCompositor::initialized();
+    }
+
     LFactoryObject *createObjectRequest(LFactoryObject::Type objectType, const void *params) override;
     AKScene scene;
     AKContainer root;
@@ -365,10 +401,19 @@ public:
     AKContainer surfaces { YGFlexDirectionColumn, false, &root };
     AKContainer overlay { YGFlexDirectionColumn, false, &root };
     Menu menu { &overlay };
-    MenuItem item1 { "Menu Item 1 - And More Text", &menu.itemsContainer };
-    MenuItem item2 { "Menu Item 2 - And More Text", &menu.itemsContainer };
-    MenuItem item3 { "Menu Item 3 - And More Text", &menu.itemsContainer };
-    MenuItem item4 { "Menu Item 4 - And More Text", &menu.itemsContainer };
+    MenuItem item1 { "New Folder", &menu.itemsContainer };
+    MenuItem item2 { "Open Terminal", &menu.itemsContainer };
+    MenuItem item3 { "Change Wallpaper", &menu.itemsContainer };
+    MenuItem item4 { "Properties", &menu.itemsContainer };
+    MenuItem item5 { "Empty Trash", &menu.itemsContainer };
+    MenuItem item6 { "Empty Trash Bla Bla Bla Bla Bla Bla Bla Bla Bla Bla", &menu.itemsContainer };
+    MenuItem item7 { "Empty Trash", &menu.itemsContainer };
+    MenuItem item8 { "Empty Trash", &menu.itemsContainer };
+    MenuItem item9 { "Empty Trash", &menu.itemsContainer };
+    MenuItem item10 { "Empty Trash", &menu.itemsContainer };
+    MenuItem item11 { "Empty Trash", &menu.itemsContainer };
+    MenuItem item12 { "Empty Trash", &menu.itemsContainer };
+
 };
 
 class Surface final : public LSurface
@@ -400,16 +445,44 @@ public:
         background.layout().setJustifyContent(YGJustifyCenter);
         background.layout().setAlignItems(YGAlignCenter);
         background.layout().setPositionType(YGPositionTypeAbsolute);
+
+        topbar.layout().setPositionType(YGPositionTypeAbsolute);
+        topbarBackground.userFlags = 5;
+
+        topbarBackground.layout().setWidthPercent(100);
+        topbarBackground.layout().setHeightPercent(100);
+        topbarBackground.layout().setJustifyContent(YGJustifyCenter);
+        topbarBackground.layout().setPadding(YGEdgeHorizontal, 8.f);
+
+        SkPath path;
+        SkParsePath::FromSVGString(logoSVG.c_str(), &path);
+        logo.setPath(path);
+        logo.setColorWithAlpha(0xAA000000);
+        logo.setSizeMode(AKPath::ScalePath);
+        logo.layout().setWidth(16);
+        logo.layout().setHeight(16);
+
+        topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
+            topbar.layout().setPosition(YGEdgeLeft, zone->rect().x());
+            topbar.layout().setPosition(YGEdgeTop, zone->rect().y());
+            topbar.layout().setWidth(zone->rect().w());
+            topbar.layout().setHeight(zone->rect().h());
+            repaint();
+        });
     }
 
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
 
     void updateBackground() noexcept
     {
+        background.opaqueRegion.setRect(AK_IRECT_INF);
         background.layout().setPosition(YGEdgeLeft, pos().x());
         background.layout().setPosition(YGEdgeTop, pos().y());
         background.layout().setWidth(size().w());
         background.layout().setHeight(size().h());
+
+        if (wallpaper)
+            background.setSrcRect(SkRect::MakeWH(wallpaper->sizeB().w(), wallpaper->sizeB().h()));
     }
 
     void initializeGL() override
@@ -425,22 +498,22 @@ public:
         contextOptions.fAvoidStencilBuffers = true;
         contextOptions.fPreferExternalImagesOverES3 = true;
         contextOptions.fDisableGpuYUVConversion = true;
-        contextOptions.fReducedShaderVariations = false;
+        contextOptions.fReducedShaderVariations = true;
         contextOptions.fSuppressPrints = true;
         contextOptions.fSuppressMipmapSupport = true;
         contextOptions.fSkipGLErrorChecks = GrContextOptions::Enable::kYes;
         contextOptions.fBufferMapThreshold = -1;
         contextOptions.fDisableDistanceFieldPaths = true;
-        contextOptions.fAllowPathMaskCaching = false;
+        contextOptions.fAllowPathMaskCaching = true;
         contextOptions.fGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
         contextOptions.fUseDrawInsteadOfClear = GrContextOptions::Enable::kYes;
         contextOptions.fReduceOpsTaskSplitting = GrContextOptions::Enable::kYes;
         contextOptions.fDisableDriverCorrectnessWorkarounds = true;
-        contextOptions.fRuntimeProgramCacheSize = 256;
+        contextOptions.fRuntimeProgramCacheSize = 1024;
         contextOptions.fInternalMultisampleCount = 4;
         contextOptions.fDisableTessellationPathRenderer = false;
         contextOptions.fAllowMSAAOnNewIntel = true;
-        contextOptions.fAlwaysUseTexStorageWhenAvailable = false;
+        contextOptions.fAlwaysUseTexStorageWhenAvailable = true;
 
         context = GrDirectContext::MakeGL(interface, contextOptions);
 
@@ -457,6 +530,9 @@ public:
         // nodes to keep track of damage, previous dimensions, and other properties.
         target = comp()->scene.createTarget();
         target->root = &comp()->root;
+
+        wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
+        background.setImage(louvreTex2SkiaImage(wallpaper.get(), context.get(), this));
         updateBackground();
     }
 
@@ -466,6 +542,7 @@ public:
         const LBox *boxes;
         SkRegion region, outDamage;
         LRegion damage;
+        SkRegion cursorDamage;
 
         // Create an SkSurface for the current screen framebuffer
         // Depending on the backend this can change each frame, but luckly
@@ -489,6 +566,8 @@ public:
             SkColorType::kRGB_888x_SkColorType,
             colorSpace,
             &skSurfaceProps);
+
+        target->image = louvreTex2SkiaImage(bufferTexture(currentBuffer()), context.get(), this);
 
         // We need to manually update each surface node
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
@@ -524,6 +603,12 @@ public:
         if (hasBufferDamageSupport())
             target->outDamageRegion = &outDamage;
 
+        // If hw cursor is disabled or during screen captures
+        const LRegion &softwareCursorDamage = cursor()->damage(this);
+        boxes = softwareCursorDamage.boxes(&n);
+        cursorDamage.setRects((SkIRect*)boxes, n);
+        target->inDamageRegion = &cursorDamage;
+
         // Required for damage tracking
         target->age = currentBufferAge();
 
@@ -535,6 +620,9 @@ public:
 
         // Rect within the screen fb to render the viewport to (in this case the entire screen)
         target->dstRect = SkIRect::MakeXYWH(0, 0, currentMode()->sizeB().w(), currentMode()->sizeB().h());
+
+        //glScissor(0,0,100000,100000);
+        //glClear(GL_COLOR_BUFFER_BIT);
 
         // Here the scene calculates the layout and performs all the rendering
         comp()->scene.render(target);
@@ -569,6 +657,9 @@ public:
 
             setBufferDamage(&damage);
         }
+
+        for (auto *shReq : screenshotRequests())
+            shReq->accept(true);
     }
 
     void resizeGL() override
@@ -586,13 +677,24 @@ public:
     void uninitializeGL() override
     {
         comp()->scene.destroyTarget(target);
+
+        if (wallpaper)
+            delete wallpaper.get();
     }
 
-    AKContainer background { YGFlexDirectionRow, true, &comp()->background };
+    AKImage background { &comp()->background };
     AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
+    LWeak<LTexture> wallpaper;
+
+    AKSubScene topbar { &comp()->overlay };
+    AKSolidColor topbarBackground { 0xAAFFFFFF, &topbar };
+    AKBackgroundShadowEffect topbarShadow {
+        AKBackgroundShadowEffect::Box, 16, {0, 0}, 0xAA000000, true, &topbar};
+    AKPath logo { &topbarBackground };
+    LExclusiveZone topbarExclusiveZone { LEdgeTop, 24, this };
 };
 
 class Pointer final : public LPointer
@@ -698,6 +800,7 @@ LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType,
 int main(void)
 {
     setenv("LOUVRE_WAYLAND_DISPLAY", "louvre", 0);
+    setenv("SRM_RENDER_MODE_ITSELF_FB_COUNT", "3", 1);
 
     LLauncher::startDaemon();
     Compositor compositor;

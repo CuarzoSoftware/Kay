@@ -79,7 +79,7 @@ protected:
     /**
      * @brief Constructor
      */
-    AKBakeable(AKNode *parent = nullptr) noexcept : AKRenderable(parent) { m_caps |= Bake; }
+    AKBakeable(AKNode *parent = nullptr) noexcept : AKRenderable(Texture, parent) { m_caps |= Bake; }
 
     /**
      * @brief Bake event

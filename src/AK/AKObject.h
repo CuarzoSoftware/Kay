@@ -73,6 +73,8 @@ protected:
 
 private:
     friend class AKWeakUtils;
+    friend class AKListener;
+    std::vector<AKListener*> m_listeners;
     mutable std::vector<void*> m_weakRefs;
     mutable UIntPtr m_userData { 0 };
     bool m_destroyed { false };

@@ -1,5 +1,6 @@
 #include <AK/AKObject.h>
 #include <AK/AKWeak.h>
+#include <AK/AKSignal.h>
 
 using namespace AK;
 
@@ -14,6 +15,9 @@ void AKObject::notifyDestruction() noexcept
         return;
 
     m_destroyed = true;
+
+    while (!m_listeners.empty())
+        delete m_listeners.back();
 
     while (!m_weakRefs.empty())
     {

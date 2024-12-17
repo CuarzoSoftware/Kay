@@ -31,14 +31,11 @@ public:
                              bool clipping, AKNode *targetNode = nullptr) noexcept :
         AKBackgroundEffect(Background)
     {
-        const auto color4 { SkColor4f::FromColor(color) };
-        setColorHint(ColorHint::Translucent);
         enableCustomTextureColor(true);
         setShadowType(type);
         setShadowRadius(radius);
         setShadowOffset(offset);
-        setColor(color4);
-        setOpacity(color4.fA);
+        setColorWithAlpha(color);
         enableShadowClipping(clipping);
 
         if (targetNode)
@@ -109,7 +106,6 @@ public:
 
 protected:
     using AKRenderable::enableCustomTextureColor;
-    using AKRenderable::setColorHint;
 
     void onLayoutUpdate() override;
     void onLayoutUpdateBox() noexcept;

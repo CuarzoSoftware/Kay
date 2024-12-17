@@ -14,7 +14,7 @@ protected:
     void onBake(OnBakeParams *params) override;
 private:
     AKScene m_scene;
-    std::unordered_map<AKTarget*, AKTarget*> m_targets;
+    std::unordered_map<AKTarget*, AKTarget*> m_sceneTargets;
     using AKNode::setClipsChildren;
 };
 

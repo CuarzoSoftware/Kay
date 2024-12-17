@@ -61,36 +61,12 @@ void AKPainter::bindTextureMode(const TextureParams &p) noexcept
         needsBlendFuncUpdate = true;
     }
 
-    if (!userState.texture) // TODO || userState.texture->premultipliedAlpha() != p.texture->premultipliedAlpha())
+    if (!userState.texture || userState.texture->imageInfo().alphaType() != p.texture->imageInfo().alphaType())
         needsBlendFuncUpdate = true;
 
     userState.texture = p.texture;
 
     Float32 fbScale;
-
-    /*
-    if (fb->type() == LFramebuffer::Output)
-    {
-        LOutputFramebuffer *outputFB = (LOutputFramebuffer*)fb;
-
-        if (outputFB->output()->usingFractionalScale())
-        {
-            if (outputFB->output()->fractionalOversamplingEnabled())
-            {
-                fbScale = fb->scale();
-            }
-            else
-            {
-                fbScale = outputFB->output()->fractionalScale();
-            }
-        }
-        else
-        {
-            fbScale = fb->scale();
-        }
-    }
-    else*/
-
     fbScale = t->xyScale().x();
 
     SkIPoint pos = p.pos - SkIPoint::Make(t->viewport.x(), t->viewport.y());
@@ -901,24 +877,7 @@ void AKPainter::setViewport(Int32 x, Int32 y, Int32 w, Int32 h) noexcept
 
     Float32 fbScale;
 
-    /*
-    if (t->type() == LFramebuffer::Output)
-    {
-        LOutputFramebuffer *outputFB = (LOutputFramebuffer*)fb;
-
-        if (outputFB->output()->usingFractionalScale())
-        {
-            if (outputFB->output()->fractionalOversamplingEnabled())
-                fbScale = t->scale();
-            else
-                fbScale = outputFB->output()->fractionalScale();
-        }
-        else
-            fbScale = t->scale();
-    }
-    else*/
-
-    // TODO
+    // TODO: Separate x and y
     fbScale = t->xyScale().x();
 
     const Int32 x2 = floorf(Float32(x + w) * fbScale);

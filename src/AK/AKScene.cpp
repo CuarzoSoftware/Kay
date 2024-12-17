@@ -43,8 +43,8 @@ bool AKScene::render(AKTarget *target)
 
     if (!isNestedScene)
     {
-        YGConfigSetPointScaleFactor(t->m_yogaConfig, t->xyScale().x());
-        YGNodeSetConfig(t->root->layout().m_node, t->m_yogaConfig);
+        //YGConfigSetPointScaleFactor(t->m_yogaConfig, t->xyScale().x());
+        //YGNodeSetConfig(t->root->layout().m_node, t->m_yogaConfig);
         YGNodeCalculateLayout(t->root->layout().m_node,
                               YGUndefined,
                               YGUndefined,
@@ -75,15 +75,11 @@ bool AKScene::render(AKTarget *target)
     target->painter()->bindTarget(t);
 
     updateDamageRing();
-
-    for (auto it = t->root->children().crbegin(); it != t->root->children().crend(); it++)
-        renderOpaque(*it);
-
     renderBackground();
 
     for (size_t i = 0; i < t->root->children().size();)
     {
-        renderTranslucent(t->root->children()[i]);
+        renderNodes(t->root->children()[i]);
 
         t->root->children()[i]->t->changes.reset();
 
@@ -119,23 +115,6 @@ void AKScene::validateTarget(AKTarget *target) noexcept
     skTarget.getGLFramebufferInfo(&fbInfo);
     t->m_fbId = fbInfo.fFBOID;
     t->painter()->bindTarget(t);
-}
-
-static void addMargin(SkRegion &region, Int32 margin) noexcept
-{
-    SkRegion damage = region;
-    region.setEmpty();
-
-    SkRegion::Iterator it(damage);
-    while (!it.done())
-    {
-        region.op(
-            SkIRect(it.rect().fLeft - margin,
-                    it.rect().fTop - margin,
-                    it.rect().fRight + margin,
-                    it.rect().fBottom + margin), SkRegion::Op::kUnion_Op);
-        it.next();
-    }
 }
 
 void AKScene::updateMatrix() noexcept
@@ -197,20 +176,6 @@ void AKScene::updateMatrix() noexcept
     t->m_matrix.preConcat(viewportMatrix);
     c->setMatrix(t->m_matrix);
 
-    /*
-    UInt32 prevDamageIndex;
-
-    if (t->m_damageIndex == 0)
-        prevDamageIndex = AK_MAX_BUFFER_AGE - 1;
-    else
-        prevDamageIndex = t->m_damageIndex - 1;
-
-    // Damage exposed region that has never been painted
-    const SkRegion removedNodesDamage { t->m_damage };
-    t->m_damage = t->m_damageRing[prevDamageIndex];
-    t->m_damage.op(t->m_prevClip, SkRegion::Op::kDifference_Op);
-    t->m_damage.op(removedNodesDamage, SkRegion::Op::kUnion_Op);*/
-
     t->m_prevViewport = t->viewport.roundOut();
 
     if (t->inClipRegion)
@@ -228,10 +193,12 @@ void AKScene::notifyBegin(AKNode *node)
         node->t->target = t;
         t->m_nodes.push_back(node);
         node->t->targetLink = t->m_nodes.size() - 1;
+        node->t->clientDamage.setRect(AK_IRECT_INF);
     }
 
-    for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
-        notifyBegin(*it);
+    if (!t->m_isSubScene)
+        for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
+            notifyBegin(*it);
 
     node->onSceneBegin();
 }
@@ -264,9 +231,11 @@ void AKScene::calculateNewDamage(AKNode *node)
             backgroundEffect.m_globalRect.y() - t->root->m_globalRect.y(),
             backgroundEffect.m_globalRect.width(),
             backgroundEffect.m_globalRect.height());
+
+        node->t->visible = node->visible() && backgroundEffect.targetNode()->t->visible;
     }
     else
-    {
+    {        
         if (node->layout().display() == YGDisplayNone)
         {
             node->m_globalRect.fLeft =  node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().position(YGEdgeLeft).value);
@@ -289,19 +258,25 @@ void AKScene::calculateNewDamage(AKNode *node)
             node->m_globalRect.height());
 
         node->onLayoutUpdate();
+
+        bool parentIsVisible { node->parent() && !node->parent()->parent() && node->parent()->visible() };
+        if (node->parent() && node->parent()->parent())
+            parentIsVisible = node->parent()->t->visible;
+        node->t->visible = node->visible() && parentIsVisible;
     }
 
-    if (node->backgroundEffect())
+    if (!node->reactiveRegion.isEmpty())
     {
-        if (node->backgroundEffect()->stackPosition() == AKBackgroundEffect::Behind)
-            node->backgroundEffect()->insertBefore(node);
-        else
-            node->backgroundEffect()->insertBefore(node->parent()->children().front());
+        SkRegion reactive;
+        node->reactiveRegion.translate(node->m_rect.x(), node->m_rect.y(), &reactive);
+        //reactive.op(clip, SkRegion::Op::kIntersect_Op);
+        t->m_reactive.push_back(reactive);
+        t->m_opaque.op(reactive, SkRegion::Op::kDifference_Op);
     }
 
     SkRegion clip;
 
-    if (node->visible())
+    if (node->t->visible)
         clip.setRect(node->m_rect);
 
     AKNode *clipper { node->closestClipperParent() };
@@ -351,7 +326,10 @@ void AKScene::calculateNewDamage(AKNode *node)
             };
 
             if (surfaceChanged)
+            {
+                bakeable->t->changes.set(AKRenderable::Chg_Size);
                 params.damage->setRect(AK_IRECT_INF);
+            }
 
             SkCanvas &canvas { *params.surface->surface()->getCanvas() };
             canvas.save();
@@ -361,21 +339,17 @@ void AKScene::calculateNewDamage(AKNode *node)
         }
     }
 
-    if (node->caps() & AKNode::Render)
-    {
-        AKRenderable *rend { static_cast<AKRenderable*>(node) };
+    const bool isRenderable { (node->caps() & AKNode::Render) != 0 };
 
-        if (rend->changes().test(AKRenderable::Chg_Opacity) ||
-            (rend->changes().test(AKRenderable::Chg_Color)))
-            rend->addDamage(AK_IRECT_INF);
-
-        if (rend->opacity() < 1.f)
-            rend->setColorHint(AKRenderable::ColorHint::Translucent);
-    }
+    if (isRenderable)
+        static_cast<AKRenderable*>(node)->handleCommonChanges();
+    else
+        goto skipDamage;
 
     if (node->m_rect == node->t->prevLocalRect)
     {
         node->t->prevLocalClip.op(clip, SkRegion::Op::kXOR_Op);
+
         t->m_damage.op(node->t->prevLocalClip, SkRegion::Op::kUnion_Op);
 
         node->t->clientDamage.translate(
@@ -390,12 +364,22 @@ void AKScene::calculateNewDamage(AKNode *node)
         // Both current and prev clip need to be repainted
         t->m_damage.op(node->t->prevLocalClip, SkRegion::Op::kUnion_Op);
         t->m_damage.op(clip, SkRegion::Op::kUnion_Op);
+        node->t->changes.set(AKRenderable::Chg_Size);
     }
 
+skipDamage:
     node->t->clientDamage.setEmpty();
     node->t->prevLocalClip = clip;
     node->t->prevLocalRect = node->m_rect;
     node->t->prevRect = node->m_globalRect;
+
+    if (node->backgroundEffect())
+    {
+        if (node->backgroundEffect()->stackPosition() == AKBackgroundEffect::Behind)
+            node->backgroundEffect()->insertBefore(node);
+        else
+            node->backgroundEffect()->insertBefore(node->parent()->children().front());
+    }
 
     if (!(node->caps() & AKNode::Scene))
         for (Int64 i = node->children().size() - 1; i >= 0;)
@@ -408,7 +392,7 @@ void AKScene::calculateNewDamage(AKNode *node)
                 i--;
         }
 
-    if ((node->caps() & AKNode::Caps::Render) == 0)
+    if (!isRenderable)
         return;
 
     AKRenderable *rend { static_cast<AKRenderable*>(node) };
@@ -419,7 +403,7 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     rend->t->opaqueOverlay = t->m_opaque;
 
-    switch (rend->colorHint())
+    switch (rend->m_colorHint)
     {
     case AKRenderable::ColorHint::Opaque:
         rend->t->opaque = clip;
@@ -427,7 +411,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     case AKRenderable::ColorHint::Translucent:
         rend->t->opaque.setEmpty();
         break;
-    case AKRenderable::ColorHint::UseOpaqueRegion:
+    case AKRenderable::ColorHint::UseRegion:
         rend->opaqueRegion.translate(node->m_rect.x(), node->m_rect.y(), &rend->t->opaque);
         rend->t->opaque.op(clip, SkRegion::kIntersect_Op);
         break;
@@ -439,7 +423,7 @@ void AKScene::calculateNewDamage(AKNode *node)
 }
 
 void AKScene::updateDamageRing() noexcept
-{
+{       
     if (t->age == 0)
     {
         t->m_damage.setRect(AK_IRECT_INF);
@@ -449,6 +433,24 @@ void AKScene::updateDamageRing() noexcept
     {
         if (t->inDamageRegion)
             t->m_damage.op(*t->inDamageRegion, SkRegion::Op::kUnion_Op);
+
+        for (auto it = t->m_reactive.begin(); it != t->m_reactive.end(); it++)
+        {
+            if (t->m_damage.intersects(*it))
+            {
+                t->m_damage.op(*it, SkRegion::Op::kUnion_Op);
+                (*it).setEmpty();
+            }
+        }
+
+        for (auto it = t->m_reactive.rbegin(); it != t->m_reactive.rend(); it++)
+        {
+            if (t->m_damage.intersects(*it))
+            {
+                t->m_damage.op(*it, SkRegion::Op::kUnion_Op);
+                (*it).setEmpty();
+            }
+        }
 
         t->m_damageRing[t->m_damageIndex] = t->m_damage;
 
@@ -463,6 +465,7 @@ void AKScene::updateDamageRing() noexcept
         }
     }
 
+    t->m_reactive.clear();
     t->m_damage.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
     t->m_opaque.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
 
@@ -481,27 +484,6 @@ void AKScene::updateDamageRing() noexcept
         t->m_damageIndex++;
 }
 
-void AKScene::renderOpaque(AKNode *node)
-{
-    if (!(node->caps() & AKNode::Scene))
-        for (auto it = node->children().crbegin(); it != node->children().crend(); it++)
-            renderOpaque(*it);
-
-    if (!node->caps() || node->t->opaque.isEmpty() || !node->m_renderedOnLastTarget)
-        return;
-
-    AKRenderable *rend { static_cast<AKRenderable*>(node) };
-    rend->t->opaque.op(t->m_damage, SkRegion::kIntersect_Op);
-    rend->t->opaque.op(rend->t->opaqueOverlay, SkRegion::kDifference_Op);
-
-    if (rend->t->opaque.isEmpty())
-        return;
-
-    t->painter()->setParamsFromRenderable(rend);
-    glDisable(GL_BLEND);
-    rend->onRender(t->painter().get(), node->t->opaque);
-}
-
 void AKScene::renderBackground() noexcept
 {
     SkRegion background { t->m_damage };
@@ -515,30 +497,49 @@ void AKScene::renderBackground() noexcept
     t->painter()->drawRegion(background);
 }
 
-void AKScene::renderTranslucent(AKNode *node)
+void AKScene::renderNodes(AKNode *node)
 {
     AKRenderable *rend;
 
-    if (!node->caps() || node->t->translucent.isEmpty() || !node->m_renderedOnLastTarget)
-        goto skip;
+    if (!node->caps() || !node->m_renderedOnLastTarget)
+        goto renderChildren;
 
     rend = static_cast<AKRenderable*>(node);
+
+    if (node->t->translucent.isEmpty())
+        goto renderOpaque;
+
     rend->t->translucent.op(t->m_damage, SkRegion::kIntersect_Op);
     rend->t->translucent.op(rend->t->opaqueOverlay, SkRegion::kDifference_Op);
 
     if (node->t->translucent.isEmpty())
-        goto skip;
+        goto renderOpaque;
 
     t->painter()->setParamsFromRenderable(rend);
     glEnable(GL_BLEND);
     rend->onRender(t->painter().get(), node->t->translucent);
 
-    skip:
+    renderOpaque:
+
+    if (node->t->opaque.isEmpty())
+        goto renderChildren;
+
+    rend->t->opaque.op(t->m_damage, SkRegion::kIntersect_Op);
+    rend->t->opaque.op(rend->t->opaqueOverlay, SkRegion::kDifference_Op);
+
+    if (rend->t->opaque.isEmpty())
+        goto renderChildren;
+
+    t->painter()->setParamsFromRenderable(rend);
+    glDisable(GL_BLEND);
+    rend->onRender(t->painter().get(), node->t->opaque);
+
+    renderChildren:
 
     if (!(node->caps() & AKNode::Scene))
         for (size_t i = 0; i < node->children().size();)
         {
-            renderTranslucent(node->children()[i]);
+            renderNodes(node->children()[i]);
 
             node->children()[i]->t->changes.reset();
 

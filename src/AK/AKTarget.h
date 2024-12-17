@@ -36,6 +36,7 @@ public:
      * Providing an invalid surface will trigger an internal assertion failure in `AKScene::render()`.
      */
     sk_sp<SkSurface> surface;
+    sk_sp<SkImage> image;
 
     /**
      * @brief Buffer age for damage tracking.
@@ -151,6 +152,11 @@ public:
     {
         return m_fbId;
     }
+
+    const SkRegion &accumulatedDamage() const noexcept
+    {
+        return m_damage;
+    }
 private:
     friend class AKScene;
     friend class AKNode;
@@ -174,6 +180,7 @@ private:
     bool                m_isSubScene { false };
     std::shared_ptr<AKPainter> m_painter;
     YGConfigRef         m_yogaConfig;
+    std::vector<SkRegion> m_reactive;
 };
 
 #endif // AKTARGET_H

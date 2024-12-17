@@ -19,6 +19,4 @@ void AKRoundContainer::onBake(OnBakeParams *params)
         params->clip,
         params->damage,
         params->opaque);
-
-    setColorHint(ColorHint::UseOpaqueRegion);
 }

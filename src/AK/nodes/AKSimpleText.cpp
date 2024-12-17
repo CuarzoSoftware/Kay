@@ -7,7 +7,9 @@ using namespace AK;
 
 void AKSimpleText::onSceneBegin()
 {
-    if (changes().test(Chg_Text) || changes().test(Chg_Font))
+    const auto &chgs { changes() };
+
+    if (chgs.test(Chg_Text) || chgs.test(Chg_Font))
         updateDimensions();
 }
 
@@ -45,8 +47,11 @@ void AKSimpleText::onBake(OnBakeParams *params)
 
 void AKSimpleText::updateDimensions() noexcept
 {
+    SkFontMetrics metrics;
+    font().getMetrics(&metrics);
     font().measureText(text().c_str(), text().size(), SkTextEncoding::kUTF8, &m_bounds);
-    m_bounds.outset(1.f, 1.f);
+    m_bounds.fTop = metrics.fTop;
+    m_bounds.fBottom = metrics.fBottom;
     layout().setWidth(m_bounds.width());
     layout().setMinWidth(m_bounds.width());
     layout().setMaxWidth(m_bounds.width());

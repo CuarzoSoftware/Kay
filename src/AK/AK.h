@@ -12,6 +12,10 @@ namespace AK
     class AKWeakUtils;
     template <class T> class AKWeak;
     template <class T> class AKBitset;
+    class AKSignalBase;
+    template<typename...Args> class AKSignal;
+    class AKListener;
+    template<typename...Args> class AKListenerTemplate;
 
     class AKPen;
     class AKBrush;
@@ -45,9 +49,11 @@ namespace AK
     class AKRoundContainer;
 
     /************ EFFECTS ************/
+
     class AKRoundCornersEffect;
     class AKBackgroundEffect;
     class AKBackgroundShadowEffect;
+    class AKBackgroundBlurEffect;
 
     struct AKBlendFunc
     {

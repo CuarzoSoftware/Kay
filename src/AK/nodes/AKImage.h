@@ -11,8 +11,8 @@
 class AK::AKImage : public AKRenderable
 {
 public:
-    AKImage(AKNode *parent = nullptr) noexcept : AKRenderable(parent) {}
-    AKImage(sk_sp<SkImage> image, AKNode *parent = nullptr) noexcept : AKRenderable(parent), m_image(image) {}
+    AKImage(AKNode *parent = nullptr) noexcept : AKRenderable(Texture, parent) {}
+    AKImage(sk_sp<SkImage> image, AKNode *parent = nullptr) noexcept : AKRenderable(Texture, parent), m_image(image) {}
 
     enum Changes
     {
@@ -78,9 +78,7 @@ public:
     }
 
 protected:
-    using AKRenderable::setColorHint;
     virtual void onRender(AKPainter *painter, const SkRegion &damage) override;
-    void onLayoutUpdate() override;
     sk_sp<SkImage> m_image;
     SkRect m_srcRect;
     SkScalar m_scale { 1.f };

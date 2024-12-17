@@ -1,3 +1,4 @@
+#include "include/gpu/GrDirectContext.h"
 #include <AK/AKSurface.h>
 #include <AK/nodes/AKPath.h>
 #include <include/core/SkCanvas.h>
@@ -25,9 +26,9 @@ void AKPath::onSceneBegin()
 
 void AKPath::onLayoutUpdate()
 {
-    m_bounds = path().getBounds();
+    m_bounds = m_path.getBounds();
     m_bounds.outset(1.f, 1.f);
-    m_matrix.reset();
+    m_matrix.setIdentity();
     m_matrix.preScale(SkScalar(rect().width())/m_bounds.width(), SkScalar(rect().height())/m_bounds.height());
     m_matrix.preTranslate(-m_bounds.x() + 1.f, -m_bounds.y() + 1.f);
 }
