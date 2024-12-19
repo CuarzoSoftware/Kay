@@ -45,7 +45,6 @@
 #include <include/effects/SkBlurMaskFilter.h>
 #include <include/core/SkRRect.h>
 #include <include/utils/SkParsePath.h>
-#include <iostream>
 
 using namespace AK;
 using namespace Louvre;
@@ -126,14 +125,14 @@ public:
             if (!blurNeedsUpdate)
                 return;
 
-            blur.rect.setXYWH(
+            blur.effectRect.setXYWH(
                 itemsContainer.layout().calculatedLeft(),
                 itemsContainer.layout().calculatedTop(),
                 itemsContainer.layout().calculatedWidth(),
                 itemsContainer.layout().calculatedHeight());
             blur.clip.reset();
             blur.clip.addRRect(SkRRect::MakeRectXY(
-                SkRect::MakeWH(blur.rect.size().width(), blur.rect.size().height()),
+                SkRect::MakeWH(blur.effectRect.size().width(), blur.effectRect.size().height()),
                 m_borderRadius,
                 m_borderRadius));
         });
@@ -218,7 +217,7 @@ public:
     }
 
     AKContainer itemsContainer { YGFlexDirectionColumn, true, this };
-    AKBackgroundBlurEffect blur { this };
+    AKBackgroundBlurEffect blur { AKBackgroundBlurEffect::Manual, { 16.f, 16.f },this };
 protected:
     AKBrush m_shadowBrush; // Shadow style (color basically)
     AKBrush m_brush; // Fill style
@@ -406,13 +405,19 @@ public:
     MenuItem item3 { "Change Wallpaper", &menu.itemsContainer };
     MenuItem item4 { "Properties", &menu.itemsContainer };
     MenuItem item5 { "Empty Trash", &menu.itemsContainer };
-    MenuItem item6 { "Empty Trash Bla Bla Bla Bla Bla Bla Bla Bla Bla Bla", &menu.itemsContainer };
-    MenuItem item7 { "Empty Trash", &menu.itemsContainer };
-    MenuItem item8 { "Empty Trash", &menu.itemsContainer };
-    MenuItem item9 { "Empty Trash", &menu.itemsContainer };
-    MenuItem item10 { "Empty Trash", &menu.itemsContainer };
-    MenuItem item11 { "Empty Trash", &menu.itemsContainer };
-    MenuItem item12 { "Empty Trash", &menu.itemsContainer };
+    MenuItem item6 { "Menu with very very very very very very very very very long text", &menu.itemsContainer };
+    MenuItem item7 { "Extra menu item 1", &menu.itemsContainer };
+    MenuItem item8 { "Extra menu item 2", &menu.itemsContainer };
+    MenuItem item9 { "Extra menu item 3", &menu.itemsContainer };
+    MenuItem item10 { "Extra menu item 4", &menu.itemsContainer };
+    MenuItem item11 { "Extra menu item 5", &menu.itemsContainer };
+    MenuItem item12 { "Extra menu item 6", &menu.itemsContainer };
+    MenuItem item13 { "Extra menu item 7", &menu.itemsContainer };
+    MenuItem item14 { "Extra menu item 8", &menu.itemsContainer };
+    MenuItem item15 { "Extra menu item 9", &menu.itemsContainer };
+    MenuItem item16 { "Extra menu item 10", &menu.itemsContainer };
+    MenuItem item17 { "Extra menu item 11", &menu.itemsContainer };
+    MenuItem item18 { "Extra menu item 12", &menu.itemsContainer };
 
 };
 
@@ -449,10 +454,13 @@ public:
         topbar.layout().setPositionType(YGPositionTypeAbsolute);
         topbarBackground.userFlags = 5;
 
+        topbarBackground.layout().setGap(YGGutterAll, 16);
         topbarBackground.layout().setWidthPercent(100);
         topbarBackground.layout().setHeightPercent(100);
-        topbarBackground.layout().setJustifyContent(YGJustifyCenter);
+        topbarBackground.layout().setAlignItems(YGAlignCenter);
+        topbarBackground.layout().setJustifyContent(YGJustifyFlexStart);
         topbarBackground.layout().setPadding(YGEdgeHorizontal, 8.f);
+        topbarBackground.layout().setFlexDirection(YGFlexDirectionRow);
 
         SkPath path;
         SkParsePath::FromSVGString(logoSVG.c_str(), &path);
@@ -461,6 +469,8 @@ public:
         logo.setSizeMode(AKPath::ScalePath);
         logo.layout().setWidth(16);
         logo.layout().setHeight(16);
+        logo.layout().setMargin(YGEdgeLeft, 8.f);
+        logo.layout().setMargin(YGEdgeRight, 4.f);
 
         topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
             topbar.layout().setPosition(YGEdgeLeft, zone->rect().x());
@@ -469,6 +479,28 @@ public:
             topbar.layout().setHeight(zone->rect().h());
             repaint();
         });
+
+        const std::vector<std::string> topbarMenuNames
+        {
+            "File",
+            "Edit",
+            "View",
+            "Build",
+            "Debug",
+            "Analyze",
+            "Tools",
+            "Window",
+            "Help"
+        };
+
+        SkFont font;
+        font.setEmbolden(true);
+        for (auto &name : topbarMenuNames)
+        {
+            topbarMenus.push_back(new AKSimpleText(name, &topbarBackground));
+            topbarMenus.back()->setFont(font);
+            topbarMenus.back()->setOpacity(0.75f);
+        }
     }
 
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
@@ -493,6 +525,8 @@ public:
         static auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](void *, const char *p) -> void * {
             return (void *)eglGetProcAddress(p);
         });
+
+        cursor()->enableHwCompositing(this, false);
 
         contextOptions.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kBackendBinary;
         contextOptions.fAvoidStencilBuffers = true;
@@ -684,17 +718,21 @@ public:
 
     AKImage background { &comp()->background };
     AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
+    AKSimpleText instructions2 { "Note: Blur only works if launched from a TTY (DRM backend)", &background};
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
     LWeak<LTexture> wallpaper;
 
     AKSubScene topbar { &comp()->overlay };
-    AKSolidColor topbarBackground { 0xAAFFFFFF, &topbar };
-    AKBackgroundShadowEffect topbarShadow {
-        AKBackgroundShadowEffect::Box, 16, {0, 0}, 0xAA000000, true, &topbar};
+    AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
+    AKSolidColor topbarBackground { 0x22FFFFFF, &topbar };
+    /*AKBackgroundShadowEffect topbarShadow {
+        AKBackgroundShadowEffect::Box, 16, {0, 0}, 0xAA000000, true, &topbar};*/
     AKPath logo { &topbarBackground };
-    LExclusiveZone topbarExclusiveZone { LEdgeTop, 24, this };
+
+    std::vector<AKSimpleText*>topbarMenus;
+    LExclusiveZone topbarExclusiveZone { LEdgeTop, 28, this };
 };
 
 class Pointer final : public LPointer

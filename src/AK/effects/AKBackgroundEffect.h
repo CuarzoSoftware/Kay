@@ -52,13 +52,13 @@ protected:
     };
 
     // Rect relative to target
-    SkIRect rect;
+    SkIRect effectRect;
 
     virtual void onTargetNodeChanged() = 0;
 
     void onLayoutUpdate() override
     {
-        rect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
+        effectRect = SkIRect::MakeSize(targetNode()->rect().size());
     }
 
     using AKRenderable::onRender;

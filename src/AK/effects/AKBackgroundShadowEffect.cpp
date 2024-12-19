@@ -37,11 +37,11 @@ void AKBackgroundShadowEffect::onLayoutUpdateBox() noexcept
         m_currentData->prevScale = currentTarget()->xyScale();
     }
 
-    rect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
-    rect.outset(shadowRadius(), shadowRadius());
-    rect.offset(offset().x(), offset().y());
+    effectRect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
+    effectRect.outset(shadowRadius(), shadowRadius());
+    effectRect.offset(offset().x(), offset().y());
 
-    const SkIPoint finalPos { rect.x() + targetNode()->rect().x(), rect.y() + targetNode()->rect().y() };
+    const SkIPoint finalPos { effectRect.x() + targetNode()->rect().x(), effectRect.y() + targetNode()->rect().y() };
 
     /* TODO: border radius change */
 

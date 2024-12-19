@@ -7,21 +7,30 @@
 
 using namespace AK;
 
-static const float BLUR = 16.f;
-
 void AKBackgroundBlurEffect::onLayoutUpdate()
 {
     if (!currentTarget()->image)
         return;
 
-    //rect = SkIRect::MakeSize(targetNode()->rect().size());
-    onLayoutUpdateSignal.notify();
-    reactiveRegion.setRect(SkIRect::MakeSize(rect.size()));
+    if (clipMode() == Automatic)
+        effectRect = SkIRect::MakeSize(targetNode()->rect().size());
+    else
+        onLayoutUpdateSignal.notify();
+
+    reactiveRegion.setRect(SkIRect::MakeSize(effectRect.size()));
+
+    const auto &chgs { changes() };
+
+    if (chgs.test(Chg_Sigma) || chgs.test(Chg_ClipMode))
+        addDamage(AK_IRECT_INF);
+
+    if (!m_brush.getImageFilter() || chgs.test(Chg_Sigma))
+        m_brush.setImageFilter(SkImageFilters::Blur(m_sigma.x(), m_sigma.y(), SkTileMode::kMirror, nullptr));
 }
 
 void AKBackgroundBlurEffect::onRender(AKPainter *, const SkRegion &damage)
 {
-    if (!currentTarget()->image)
+    if (!currentTarget()->image || damage.isEmpty())
         return;
 
     currentTarget()->surface->recordingContext()->asDirectContext()->resetContext();
@@ -30,31 +39,33 @@ void AKBackgroundBlurEffect::onRender(AKPainter *, const SkRegion &damage)
     c.save();
 
     SkPath path;
+    path.setIsVolatile(true);
     damage.getBoundaryPath(&path);
+    c.clipPath(path);
 
-    c.clipIRect(AKNode::rect());
+    const SkRect dstRect { SkRect::Make(rect()) };
 
-    SkRect dstRect = SkRect::Make(AKNode::rect());
+    if (clipMode() == Manual)
+    {
+        c.translate(dstRect.x(), dstRect.y());
+        c.clipPath(clip);
+        c.translate(-dstRect.x(), -dstRect.y());
+    }
 
-    c.translate(dstRect.x(), dstRect.y());
-    c.clipPath(clip);
-    c.translate(-dstRect.x(), -dstRect.y());
+    // TODO: Handle AKTarget srcRect and custom transforms
 
-    if (!brush.getImageFilter())
-        brush.setImageFilter(SkImageFilters::Blur(BLUR, BLUR, SkTileMode::kMirror, nullptr));
-
-    SkRect srcRect = SkRect::MakeXYWH(
-        (dstRect.x() -currentTarget()->viewport.x()) * currentTarget()->xyScale().x(),
-        (dstRect.y()- currentTarget()->viewport.y()) * currentTarget()->xyScale().y(),
-         dstRect.width() * currentTarget()->xyScale().x(),
-         dstRect.height() * currentTarget()->xyScale().y());
+    const SkRect srcRect { SkRect::MakeXYWH(
+        (dstRect.x() - currentTarget()->viewport.x()) * currentTarget()->xyScale().x(),
+        (dstRect.y() - currentTarget()->viewport.y()) * currentTarget()->xyScale().y(),
+        dstRect.width() * currentTarget()->xyScale().x(),
+        dstRect.height() * currentTarget()->xyScale().y()) };
 
     c.drawImageRect(currentTarget()->image,
                     srcRect,
                     dstRect,
                     SkFilterMode::kLinear,
-                    &brush,
-                    SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint);
+                    &m_brush,
+                    SkCanvas::kFast_SrcRectConstraint);
     currentTarget()->surface->flush();
     c.restore();
 }

@@ -221,10 +221,10 @@ void AKScene::calculateNewDamage(AKNode *node)
         node->onLayoutUpdate();
 
         backgroundEffect.m_globalRect = SkIRect::MakeXYWH(
-            backgroundEffect.rect.x() + backgroundEffect.targetNode()->globalRect().x(),
-            backgroundEffect.rect.y() + backgroundEffect.targetNode()->globalRect().y(),
-            backgroundEffect.rect.width(),
-            backgroundEffect.rect.height());
+            backgroundEffect.effectRect.x() + backgroundEffect.targetNode()->globalRect().x(),
+            backgroundEffect.effectRect.y() + backgroundEffect.targetNode()->globalRect().y(),
+            backgroundEffect.effectRect.width(),
+            backgroundEffect.effectRect.height());
 
         backgroundEffect.m_rect = SkIRect::MakeXYWH(
             backgroundEffect.m_globalRect.x() - t->root->m_globalRect.x(),
