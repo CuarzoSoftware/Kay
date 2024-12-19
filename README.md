@@ -37,4 +37,4 @@ Core node types:
 
 Example running on top of [Louvre](https://github.com/CuarzoSoftware/Louvre) (everything being rendered and composited by Kay):
 
-![](https://lh3.googleusercontent.com/pw/AP1GczPe_4h170fkQwQ6tPfxGGHoLv00X2eHpdg8Ggnq4Gyx4DOsi0Z6eQ7bpZNvVN778wuakYI-ArsJmzeVvZiJARsvgw5VTkl-9Bt9xZpQl5Sjyf59Kpc=w2400)
+<img src="https://lh3.googleusercontent.com/pw/AP1GczPe_4h170fkQwQ6tPfxGGHoLv00X2eHpdg8Ggnq4Gyx4DOsi0Z6eQ7bpZNvVN778wuakYI-ArsJmzeVvZiJARsvgw5VTkl-9Bt9xZpQl5Sjyf59Kpc=w1800"/>
