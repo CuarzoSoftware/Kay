@@ -45,6 +45,7 @@
 #include <include/effects/SkBlurMaskFilter.h>
 #include <include/core/SkRRect.h>
 #include <include/utils/SkParsePath.h>
+#include <iostream>
 
 using namespace AK;
 using namespace Louvre;
@@ -269,7 +270,7 @@ protected:
 
         SkCanvas &c { *params->surface->surface()->getCanvas() };
 
-        // To improve performance the framebuffer isn't automatically shrinked
+        // To improve performance the framebuffer isn't automatically shrank
         // when the node is resized, but since menus aren't constatly resizing
         // calling shrink can free up some GPU memory
         params->surface->shrink();
@@ -452,6 +453,8 @@ public:
         background.layout().setPositionType(YGPositionTypeAbsolute);
 
         topbar.layout().setPositionType(YGPositionTypeAbsolute);
+        topbar.layout().setPosition(YGEdgeLeft, pos().x());
+        topbar.layout().setPosition(YGEdgeTop, pos().x());
         topbarBackground.userFlags = 5;
 
         topbarBackground.layout().setGap(YGGutterAll, 16);
@@ -471,14 +474,6 @@ public:
         logo.layout().setHeight(16);
         logo.layout().setMargin(YGEdgeLeft, 8.f);
         logo.layout().setMargin(YGEdgeRight, 4.f);
-
-        topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
-            topbar.layout().setPosition(YGEdgeLeft, zone->rect().x());
-            topbar.layout().setPosition(YGEdgeTop, zone->rect().y());
-            topbar.layout().setWidth(zone->rect().w());
-            topbar.layout().setHeight(zone->rect().h());
-            repaint();
-        });
 
         const std::vector<std::string> topbarMenuNames
         {
@@ -501,6 +496,17 @@ public:
             topbarMenus.back()->setFont(font);
             topbarMenus.back()->setOpacity(0.75f);
         }
+
+        topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
+            topbar.setParent(&comp()->overlay);
+            topbar.layout().setPosition(YGEdgeLeft, pos().x() + zone->rect().x());
+            topbar.layout().setPosition(YGEdgeTop, pos().y() + zone->rect().y());
+            topbar.layout().setWidth(zone->rect().w());
+            topbar.layout().setHeight(zone->rect().h());
+            compositor()->repaintAllOutputs();
+
+            std::cout << "Topbar: Exclusive zone changed " << zone->rect().x() << "," << zone->rect().y() << "," << zone->rect().w() << "," << zone->rect().h() << std::endl;
+        });
     }
 
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
@@ -525,8 +531,6 @@ public:
         static auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](void *, const char *p) -> void * {
             return (void *)eglGetProcAddress(p);
         });
-
-        cursor()->enableHwCompositing(this, false);
 
         contextOptions.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kBackendBinary;
         contextOptions.fAvoidStencilBuffers = true;
@@ -568,6 +572,7 @@ public:
         wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
         background.setImage(louvreTex2SkiaImage(wallpaper.get(), context.get(), this));
         updateBackground();
+        topbarExclusiveZone.setOutput(this);
     }
 
     void paintGL() override
@@ -724,7 +729,7 @@ public:
     AKTarget *target { nullptr };
     LWeak<LTexture> wallpaper;
 
-    AKSubScene topbar { &comp()->overlay };
+    AKSubScene topbar { };
     AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
     AKSolidColor topbarBackground { 0x22FFFFFF, &topbar };
     /*AKBackgroundShadowEffect topbarShadow {
@@ -732,7 +737,7 @@ public:
     AKPath logo { &topbarBackground };
 
     std::vector<AKSimpleText*>topbarMenus;
-    LExclusiveZone topbarExclusiveZone { LEdgeTop, 28, this };
+    LExclusiveZone topbarExclusiveZone { LEdgeTop, 28 };
 };
 
 class Pointer final : public LPointer

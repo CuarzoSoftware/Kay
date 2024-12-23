@@ -1,6 +1,3 @@
-louvre_dep = dependency('Louvre')
-pixmap_dep = dependency('pixman-1')
-
 executable(
     'kay-louvre',
     sources : ['main.cpp'],

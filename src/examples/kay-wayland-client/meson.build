@@ -1,7 +1,3 @@
-wl_mod              = import('unstable-wayland')
-wayland_client_dep  = dependency('wayland-client')
-wayland_egl_dep     = dependency('wayland-egl')
-
 executable(
     'kay-wayland-client',
     sources : ['main.cpp',

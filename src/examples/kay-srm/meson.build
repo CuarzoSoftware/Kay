@@ -1,6 +1,3 @@
-srm_dep = dependency('SRM')
-egl_dep = dependency('egl')
-
 executable(
     'kay-srm',
     sources : ['main.cpp'],

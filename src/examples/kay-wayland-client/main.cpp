@@ -157,7 +157,9 @@ static xdg_toplevel_listener xdgToplevelLis
             window.needsNewSurface = true;
         }
     },
-    .close = [](auto, auto){ exit(0); }
+    .close = [](auto, auto){ exit(0); },
+    .configure_bounds = [](auto, auto, auto, auto){},
+    .wm_capabilities = [](auto, auto, auto){}
 };
 
 Window::Window() noexcept
@@ -360,7 +362,8 @@ static wl_keyboard_listener wlKeyboardLis
     {
         exit(0);
     },
-    .modifiers = [](auto, auto, auto, auto, auto, auto, auto){}
+    .modifiers = [](auto, auto, auto, auto, auto, auto, auto){},
+    .repeat_info = [](auto, auto, auto, auto){}
 };
 
 static wl_seat_listener wlSeatLis
