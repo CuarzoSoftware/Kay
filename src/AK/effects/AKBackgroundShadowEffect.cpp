@@ -31,6 +31,14 @@ void AKBackgroundShadowEffect::onLayoutUpdateBox() noexcept
 
     m_currentData = &m_targets[currentTarget()];
 
+    if (!m_currentData->surface)
+    {
+        currentTarget()->AKObject::on.destroyed.subscribe(this, [this](AKObject *obj){
+            AKTarget *target { static_cast<AKTarget*>(obj) };
+            m_targets.erase(target);
+        });
+    }
+
     if (m_currentData->prevScale != currentTarget()->xyScale())
     {
         needsNewSurface = needsFullDamage = true;
@@ -155,7 +163,7 @@ void AKBackgroundShadowEffect::onLayoutUpdateBox() noexcept
         else
         {
             m_currentData->surface = AKSurface::Make(
-                currentTarget()->surface->recordingContext(),
+                currentTarget()->surface()->recordingContext(),
                 surfaceSize,
                 currentTarget()->xyScale(),
                 true);

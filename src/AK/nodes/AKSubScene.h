@@ -15,7 +15,7 @@ protected:
 private:
     AKScene m_scene;
     std::unordered_map<AKTarget*, AKTarget*> m_sceneTargets;
-    using AKNode::setClipsChildren;
+    using AKNode::enableChildrenClipping; // Always true
 };
 
 #endif // AKSUBSCENE_H

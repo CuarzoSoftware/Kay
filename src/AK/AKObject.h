@@ -1,8 +1,7 @@
 #ifndef AKOBJECT_H
 #define AKOBJECT_H
 
-#include <AK/AK.h>
-#include <vector>
+#include <AK/AKSignal.h>
 
 /**
  * @brief Base class for AK objects.
@@ -48,6 +47,11 @@ public:
     {
         return m_userData;
     }
+
+    struct
+    {
+        AKSignal<AKObject*> destroyed;
+    } on;
 
 protected:
 

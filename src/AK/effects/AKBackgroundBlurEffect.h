@@ -105,13 +105,16 @@ public:
         return m_sigma;
     }
 
-    /**
-     * @brief Signal triggered after the target node layout has been calculated.
-     *
-     * This signal is triggered only when using ClipMode::Manual.
-     * During the callback, both effectRect and clipPath should be specified.
-     */
-    AKSignal<> onLayoutUpdateSignal;
+    struct
+    {
+        /**
+         * @brief Signal triggered after the target node layout has been calculated.
+         *
+         * This signal is triggered only when using ClipMode::Manual.
+         * During the callback, both effectRect and clipPath should be specified.
+         */
+        AKSignal<> targetLayoutUpdated;
+    } on;
 
     /**
      * @brief Clip path for the blur area.

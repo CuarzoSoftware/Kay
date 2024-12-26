@@ -67,11 +67,13 @@ public:
     void copyStyle(const AKLayout &from) noexcept
     {
         YGNodeCopyStyle(m_node, from.m_node);
+        checkIsDirty();
     }
 
     void setDirection(YGDirection direction) noexcept
     {
         YGNodeStyleSetDirection(m_node, direction);
+        checkIsDirty();
     }
 
     YGDirection direction() const noexcept
@@ -82,6 +84,7 @@ public:
     void setFlexDirection(YGFlexDirection flexDirection) noexcept
     {
         YGNodeStyleSetFlexDirection(m_node, flexDirection);
+        checkIsDirty();
     }
 
     YGFlexDirection flexDirection() const noexcept
@@ -92,6 +95,7 @@ public:
     void setJustifyContent(YGJustify justifyContent) noexcept
     {
         YGNodeStyleSetJustifyContent(m_node, justifyContent);
+        checkIsDirty();
     }
 
     YGJustify justifyContent() const noexcept
@@ -102,6 +106,7 @@ public:
     void setAlignContent(YGAlign alignContent) noexcept
     {
         YGNodeStyleSetAlignContent(m_node, alignContent);
+        checkIsDirty();
     }
 
     YGAlign alignContent() const noexcept
@@ -112,6 +117,7 @@ public:
     void setAlignItems(YGAlign alignItems) noexcept
     {
         YGNodeStyleSetAlignItems(m_node, alignItems);
+        checkIsDirty();
     }
 
     YGAlign alignItems() const noexcept
@@ -122,6 +128,7 @@ public:
     void setAlignSelf(YGAlign alignSelf) noexcept
     {
         YGNodeStyleSetAlignSelf(m_node, alignSelf);
+        checkIsDirty();
     }
 
     YGAlign alignSelf() const noexcept
@@ -132,6 +139,7 @@ public:
     void setPositionType(YGPositionType positionType) noexcept
     {
         YGNodeStyleSetPositionType(m_node, positionType);
+        checkIsDirty();
     }
 
     YGPositionType positionType() const noexcept
@@ -142,6 +150,7 @@ public:
     void setPosition(YGEdge edge, float position) noexcept
     {
         YGNodeStyleSetPosition(m_node, edge, position);
+        checkIsDirty();
     }
 
     void positionPercent(YGEdge edge, float position) noexcept
@@ -162,16 +171,19 @@ public:
     void setWidth(float width) noexcept
     {
         YGNodeStyleSetWidth(m_node, width);
+        checkIsDirty();
     }
 
     void setWidthPercent(float width) noexcept
     {
         YGNodeStyleSetWidthPercent(m_node, width);
+        checkIsDirty();
     }
 
     void setWidthAuto() noexcept
     {
         YGNodeStyleSetWidthAuto(m_node);
+        checkIsDirty();
     }
 
     YGValue height() const noexcept
@@ -182,26 +194,31 @@ public:
     void setHeight(float height) noexcept
     {
         YGNodeStyleSetHeight(m_node, height);
+        checkIsDirty();
     }
 
     void setHeightPercent(float height) noexcept
     {
         YGNodeStyleSetHeightPercent(m_node, height);
+        checkIsDirty();
     }
 
     void setHeightAuto() noexcept
     {
         YGNodeStyleSetHeightAuto(m_node);
+        checkIsDirty();
     }
 
     void setMinWidth(float minWidth) noexcept
     {
         YGNodeStyleSetMinWidth(m_node, minWidth);
+        checkIsDirty();
     }
 
     void setMinWidthPercent(float minWidth) noexcept
     {
         YGNodeStyleSetMinWidthPercent(m_node, minWidth);
+        checkIsDirty();
     }
 
     YGValue minWidth() const noexcept
@@ -212,11 +229,13 @@ public:
     void setMinHeight(float minHeight) noexcept
     {
         YGNodeStyleSetMinHeight(m_node, minHeight);
+        checkIsDirty();
     }
 
     void setMinHeightPercent(float minHeight) noexcept
     {
         YGNodeStyleSetMinHeightPercent(m_node, minHeight);
+        checkIsDirty();
     }
 
     YGValue minHeight() const noexcept
@@ -227,11 +246,13 @@ public:
     void setMaxWidth(float maxWidth) noexcept
     {
         YGNodeStyleSetMaxWidth(m_node, maxWidth);
+        checkIsDirty();
     }
 
     void setMaxWidthPercent(float maxWidth) noexcept
     {
         YGNodeStyleSetMaxWidthPercent(m_node, maxWidth);
+        checkIsDirty();
     }
 
     YGValue maxWidth() const noexcept
@@ -242,11 +263,13 @@ public:
     void setMaxHeight(float maxHeight) noexcept
     {
         YGNodeStyleSetMaxHeight(m_node, maxHeight);
+        checkIsDirty();
     }
 
     void setMaxHeightPercent(float maxHeight) noexcept
     {
         YGNodeStyleSetMaxHeightPercent(m_node, maxHeight);
+        checkIsDirty();
     }
 
     YGValue maxHeight() const noexcept
@@ -257,6 +280,7 @@ public:
     void setFlexWrap(YGWrap flexWrap) noexcept
     {
         YGNodeStyleSetFlexWrap(m_node, flexWrap);
+        checkIsDirty();
     }
 
     YGWrap flexWrap() const noexcept
@@ -267,6 +291,7 @@ public:
     void setOverflow(YGOverflow overflow) noexcept
     {
         YGNodeStyleSetOverflow(m_node, overflow);
+        checkIsDirty();
     }
 
     YGOverflow overflow() const noexcept
@@ -277,6 +302,7 @@ public:
     void setDisplay(YGDisplay display) noexcept
     {
         YGNodeStyleSetDisplay(m_node, display);
+        checkIsDirty();
     }
 
     YGDisplay display() const noexcept
@@ -287,6 +313,7 @@ public:
     void setFlex(float flex) noexcept
     {
         YGNodeStyleSetFlex(m_node, flex);
+        checkIsDirty();
     }
 
     float flex() const noexcept
@@ -297,6 +324,7 @@ public:
     void setFlexGrow(float flexGrow) noexcept
     {
         YGNodeStyleSetFlexGrow(m_node, flexGrow);
+        checkIsDirty();
     }
 
     float flexGrow() const noexcept
@@ -307,6 +335,7 @@ public:
     void setFlexShrink(float flexShrink) noexcept
     {
         YGNodeStyleSetFlexShrink(m_node, flexShrink);
+        checkIsDirty();
     }
 
     float flexShrink() const noexcept
@@ -317,16 +346,19 @@ public:
     void setFlexBasis(float flexBasis) noexcept
     {
         YGNodeStyleSetFlexBasis(m_node, flexBasis);
+        checkIsDirty();
     }
 
     void setFlexBasisPercent(float flexBasis) noexcept
     {
         YGNodeStyleSetFlexBasisPercent(m_node, flexBasis);
+        checkIsDirty();
     }
 
     void setFlexBasisAuto() noexcept
     {
         YGNodeStyleSetFlexBasisAuto(m_node);
+        checkIsDirty();
     }
 
     YGValue flexBasis() const noexcept
@@ -337,16 +369,19 @@ public:
     void setMargin(YGEdge edge, float margin) noexcept
     {
         YGNodeStyleSetMargin(m_node, edge, margin);
+        checkIsDirty();
     }
 
     void setMarginPercent(YGEdge edge, float margin) noexcept
     {
         YGNodeStyleSetMarginPercent(m_node, edge, margin);
+        checkIsDirty();
     }
 
     void setMarginAuto(YGEdge edge) noexcept
     {
         YGNodeStyleSetMarginAuto(m_node, edge);
+        checkIsDirty();
     }
 
     YGValue margin(YGEdge edge) const noexcept
@@ -357,11 +392,13 @@ public:
     void setPadding(YGEdge edge, float padding) noexcept
     {
         YGNodeStyleSetPadding(m_node, edge, padding);
+        checkIsDirty();
     }
 
     void setPaddingPercent(YGEdge edge, float padding) noexcept
     {
         YGNodeStyleSetPaddingPercent(m_node, edge, padding);
+        checkIsDirty();
     }
 
     YGValue padding(YGEdge edge) const noexcept
@@ -372,6 +409,7 @@ public:
     void setBorder(YGEdge edge, float border) noexcept
     {
         YGNodeStyleSetBorder(m_node, edge, border);
+        checkIsDirty();
     }
 
     float border(YGEdge edge) const noexcept
@@ -382,11 +420,13 @@ public:
     void setGap(YGGutter gutter, float gapLength) noexcept
     {
         YGNodeStyleSetGap(m_node, gutter, gapLength);
+        checkIsDirty();
     }
 
     void setGapPercent(YGGutter gutter, float gapLength) noexcept
     {
         YGNodeStyleSetGapPercent(m_node, gutter, gapLength);
+        checkIsDirty();
     }
 
     float gap(YGGutter gutter) const noexcept
@@ -397,6 +437,7 @@ public:
     void setAspectRatio(float aspectRatio) noexcept
     {
         YGNodeStyleSetAspectRatio(m_node, aspectRatio);
+        checkIsDirty();
     }
 
     float aspectRatio() const noexcept
@@ -406,9 +447,11 @@ public:
 private:
     friend class AKNode;
     friend class AKScene;
-    AKLayout() noexcept : m_node(YGNodeNew()) {}
+    AKLayout(AKNode &akNode) noexcept : m_node(YGNodeNew()), m_akNode(akNode) {}
     ~AKLayout() { YGNodeFree(m_node); }
+    void checkIsDirty() noexcept;
     YGNodeRef m_node { nullptr };
+    AKNode &m_akNode;
 };
 
 #endif // AKLAYOUT_H

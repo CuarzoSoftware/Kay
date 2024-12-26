@@ -36,6 +36,10 @@ public:
 
     enum Changes : Change
     {
+        Chg_Layout,
+        Chg_Parent,
+        Chg_Visibility,
+        Chg_ChildrenClipping,
         Chg_Last
     };
 
@@ -75,6 +79,11 @@ public:
         return t->target;
     }
 
+    const std::vector<AKTarget*> &intersectedTargets() const noexcept
+    {
+        return m_intersectedTargets;
+    }
+
     bool visible() const noexcept
     {
         return m_flags.check(Visible);
@@ -82,17 +91,25 @@ public:
 
     void setVisible(bool visible) noexcept
     {
+        if (visible == this->visible())
+            return;
+
         m_flags.setFlag(Visible, visible);
+        addChange(Chg_Visibility);
     }
 
-    bool clipsChildren() const noexcept
+    bool childrenClippingEnabled() const noexcept
     {
-        return m_flags.check(ClipsChildren);
+        return m_flags.check(ChildrenClipping);
     }
 
-    void setClipsChildren(bool clip) noexcept
+    void enableChildrenClipping(bool enable) noexcept
     {
-        m_flags.setFlag(ClipsChildren, clip);
+        if (childrenClippingEnabled() == enable)
+            return;
+
+        m_flags.setFlag(ChildrenClipping, enable);
+        addChange(Chg_ChildrenClipping);
     }
 
     void setInputRegion(SkRegion *region) noexcept
@@ -168,7 +185,7 @@ private:
     enum Flags : UInt64
     {
         Visible             = 1L << 0,
-        ClipsChildren       = 1L << 1,
+        ChildrenClipping    = 1L << 1,
     };
 
     struct TargetData : public AKObject
@@ -190,7 +207,8 @@ private:
     AKNode(AKNode *parent = nullptr) noexcept;
     AKNode *closestClipperParent() const noexcept;
 
-    AKLayout m_layout;
+    AKWeak<TargetData> t;
+    AKLayout m_layout { *this };
     AKBitset<Flags> m_flags { Visible };
     AKWeak<AKBackgroundEffect> m_backgroundEffect;
     SkIRect m_rect;
@@ -200,8 +218,8 @@ private:
     std::vector<AKNode*> m_children;
     size_t m_parentLinkIndex;
     std::unique_ptr<SkRegion> m_inputRegion;
+    std::vector<AKTarget*> m_intersectedTargets;
     mutable std::unordered_map<AKTarget*, TargetData> m_targets;
-    AKWeak<TargetData> t;
     bool m_insideLastTarget { false };
     bool m_renderedOnLastTarget { false };
 };

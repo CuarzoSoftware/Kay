@@ -67,7 +67,7 @@ public:
         font.setEmbolden(true);
         font.setSize(32);
         title.setFont(font);
-        setClipsChildren(true);
+        enableChildrenClipping(true);
         layout().setHeight(32);
         layout().setWidthPercent(100);
         layout().setDisplay(YGDisplayFlex);
@@ -164,7 +164,6 @@ static xdg_toplevel_listener xdgToplevelLis
 
 Window::Window() noexcept
 {
-    scene.setClearColor(0xfffdf0d5);
     root.layout().setDirection(YGDirectionRTL);
     bottom.layout().setFlex(1);
     bottom.layout().setWidthAuto();
@@ -287,14 +286,15 @@ void Window::update() noexcept
         target = scene.createTarget();
 
     SkRegion damage, opaque;
+    target->setClearColor(0xfffdf0d5);
     target->outDamageRegion = &damage;
     target->outOpaqueRegion = &opaque;
-    target->root = &root;
-    target->surface = skSurface;
-    target->transform = AKTransform::Normal;
-    target->viewport = SkRect::MakeSize(SkSize::Make(size));
-    target->dstRect = SkIRect::MakeSize(bufferSize);
-    target->age = bufferAge;
+    target->setRoot(&root);
+    target->setSurface(skSurface);
+    target->setTransform(AKTransform::Normal);
+    target->setViewport(SkRect::MakeSize(SkSize::Make(size)));
+    target->setDstRect(SkIRect::MakeSize(bufferSize));
+    target->setAge(bufferAge);
     std::cout << "Buffer age: " << bufferAge << std::endl;
     scene.render(target);
 

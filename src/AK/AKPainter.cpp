@@ -69,7 +69,7 @@ void AKPainter::bindTextureMode(const TextureParams &p) noexcept
     Float32 fbScale;
     fbScale = t->xyScale().x();
 
-    SkIPoint pos = p.pos - SkIPoint::Make(t->viewport.x(), t->viewport.y());
+    SkIPoint pos = p.pos - SkIPoint::Make(t->viewport().x(), t->viewport().y());
     Float32 srcDstX, srcDstY;
     Float32 srcW, srcH;
     Float32 srcDstW, srcDstH;
@@ -81,7 +81,7 @@ void AKPainter::bindTextureMode(const TextureParams &p) noexcept
     bool xFlip = false;
     bool yFlip = false;
 
-    AKTransform invTrans = AK::requiredTransform(p.srcTransform, t->transform);
+    AKTransform invTrans = AK::requiredTransform(p.srcTransform, t->transform());
     bool rotate = AK::is90Transform(invTrans);
 
     if (AK::is90Transform(p.srcTransform))
@@ -132,10 +132,10 @@ void AKPainter::bindTextureMode(const TextureParams &p) noexcept
         return;
     }
 
-    Float32 screenW = Float32(t->viewport.width());
-    Float32 screenH = Float32(t->viewport.height());
+    Float32 screenW = Float32(t->viewport().width());
+    Float32 screenH = Float32(t->viewport().height());
 
-    switch (t->transform)
+    switch (t->transform())
     {
     case AKTransform::Normal:
         srcFbX1 = pos.x() - srcDstX;
@@ -423,7 +423,7 @@ void AKPainter::clearScreen() noexcept
         return;
 
     glDisable(GL_BLEND);
-    setViewport(t->viewport.x(), t->viewport.y(), t->viewport.width(), t->viewport.height());
+    setViewport(t->viewport().x(), t->viewport().y(), t->viewport().width(), t->viewport().height());
     glClear(GL_COLOR_BUFFER_BIT);
     glEnable(GL_BLEND);
 }
@@ -812,51 +812,51 @@ void AKPainter::switchTarget(GLenum target) noexcept
 
 void AKPainter::setViewport(Int32 x, Int32 y, Int32 w, Int32 h) noexcept
 {
-    x -= t->viewport.x();
-    y -= t->viewport.y();
+    x -= t->viewport().x();
+    y -= t->viewport().y();
 
-    if (t->transform == AKTransform::Normal) {}
-    else if (t->transform == AKTransform::Rotated270)
+    if (t->transform() == AKTransform::Normal) {}
+    else if (t->transform() == AKTransform::Rotated270)
     {
         Float32 tmp = x;
-        x = t->viewport.height() - y - h;
+        x = t->viewport().height() - y - h;
         y = tmp;
         tmp = w;
         w = h;
         h = tmp;
     }
-    else if (t->transform == AKTransform::Rotated180)
+    else if (t->transform() == AKTransform::Rotated180)
     {
-        x = t->viewport.width() - x - w;
-        y = t->viewport.height() - y - h;
+        x = t->viewport().width() - x - w;
+        y = t->viewport().height() - y - h;
     }
-    else if (t->transform == AKTransform::Rotated90)
+    else if (t->transform() == AKTransform::Rotated90)
     {
         Float32 tmp = x;
         x = y;
-        y = t->viewport.width() - tmp - w;
+        y = t->viewport().width() - tmp - w;
         tmp = w;
         w = h;
         h = tmp;
     }
-    else if (t->transform == AKTransform::Flipped)
+    else if (t->transform() == AKTransform::Flipped)
     {
-        x = t->viewport.width() - x - w;
+        x = t->viewport().width() - x - w;
     }
-    else if (t->transform == AKTransform::Flipped270)
+    else if (t->transform() == AKTransform::Flipped270)
     {
         Float32 tmp = x;
-        x = t->viewport.height() - y - h;
-        y = t->viewport.width() - tmp - w;
+        x = t->viewport().height() - y - h;
+        y = t->viewport().width() - tmp - w;
         tmp = w;
         w = h;
         h = tmp;
     }
-    else if (t->transform == AKTransform::Flipped180)
+    else if (t->transform() == AKTransform::Flipped180)
     {
-        y = t->viewport.height() - y - h;
+        y = t->viewport().height() - y - h;
     }
-    else if (t->transform == AKTransform::Flipped90)
+    else if (t->transform() == AKTransform::Flipped90)
     {
         Float32 tmp = x;
         x = y;
@@ -869,10 +869,10 @@ void AKPainter::setViewport(Int32 x, Int32 y, Int32 w, Int32 h) noexcept
     // TODO: use skia info
     if (fbId == 0)
     {
-        if (AK::is90Transform(t->transform))
-            y = t->viewport.width() - y - h;
+        if (AK::is90Transform(t->transform()))
+            y = t->viewport().width() - y - h;
         else
-            y = t->viewport.height() - y - h;
+            y = t->viewport().height() - y - h;
     }
 
     Float32 fbScale;

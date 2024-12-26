@@ -106,15 +106,15 @@ static void paintGL(SRMConnector *connector, void *userData)
         0, 0,
         fbInfo);
 
-    data->target->surface = SkSurfaces::WrapBackendRenderTarget(
+    data->target->setSurface(SkSurfaces::WrapBackendRenderTarget(
         data->context.get(),
         target,
         GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
         SkColorType::kRGB_888x_SkColorType,
         colorSpace,
-        &skSurfaceProps);
+        &skSurfaceProps));
 
-    if (!data->target->surface)
+    if (!data->target->surface())
     {
         SRMFatal("No SkSurface.");
         exit(1);
@@ -129,13 +129,12 @@ static void paintGL(SRMConnector *connector, void *userData)
     data->childLeft.layout().setFlex(1.f);
     data->childRight.layout().setFlex(1.f);
 
-    data->target->root = &root;
-    data->target->viewport = SkRect::MakeWH(target.width(), target.height());
-    data->target->dstRect = SkIRect::MakeWH(target.width(), target.height());
-    data->target->scale = 1.f;
-    data->target->transform = AKTransform::Normal;
-    data->target->age = srmConnectorGetCurrentBufferAge(connector);
-    std::cout << "Buffer age:" << data->target->age << std::endl;
+    data->target->setRoot(&root);
+    data->target->setViewport(SkRect::MakeWH(target.width(), target.height()));
+    data->target->setDstRect(SkIRect::MakeWH(target.width(), target.height()));
+    data->target->setTransform(AKTransform::Normal);
+    data->target->setAge(srmConnectorGetCurrentBufferAge(connector));
+    std::cout << "Buffer age:" << data->target->age() << std::endl;
 
     scene.render(data->target);
     srmConnectorRepaint(connector);

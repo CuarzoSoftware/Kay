@@ -31,64 +31,66 @@ bool AKScene::render(AKTarget *target)
 {
     validateTarget(target);
 
-    c = target->surface->getCanvas();
+    c = target->surface()->getCanvas();
     c->save();
 
     updateMatrix();
 
-    for (auto it = t->root->children().rbegin(); it != t->root->children().rend(); it++)
+    for (auto it = t->root()->children().rbegin(); it != t->root()->children().rend(); it++)
         notifyBegin(*it);
 
-    const bool isNestedScene = (t->root->parent() && t->m_isSubScene);
+    const bool isNestedScene = (t->root()->parent() && t->m_isSubScene);
 
     if (!isNestedScene)
     {
         //YGConfigSetPointScaleFactor(t->m_yogaConfig, t->xyScale().x());
-        //YGNodeSetConfig(t->root->layout().m_node, t->m_yogaConfig);
-        YGNodeCalculateLayout(t->root->layout().m_node,
+        //YGNodeSetConfig(t->root()->layout().m_node, t->m_yogaConfig);
+        YGNodeCalculateLayout(t->root()->layout().m_node,
                               YGUndefined,
                               YGUndefined,
                               YGDirectionInherit);
 
-        t->root->m_globalRect = SkRect::MakeWH(t->viewport.width(), t->viewport.height()).roundOut();
-        t->root->m_rect = t->root->m_globalRect;
+        t->root()->m_globalRect = SkRect::MakeWH(t->viewport().width(), t->viewport().height()).roundOut();
+        t->root()->m_rect = t->root()->m_globalRect;
     }
 
     t->m_globalIViewport = SkRect::MakeXYWH(
-                               t->viewport.x() + float(t->root->globalRect().x()),
-                               t->viewport.y() + float(t->root->globalRect().y()),
-                               t->viewport.width(), t->viewport.height()).roundOut();
+                               t->viewport().x() + float(t->root()->globalRect().x()),
+                               t->viewport().y() + float(t->root()->globalRect().y()),
+                               t->viewport().width(), t->viewport().height()).roundOut();
 
-    for (Int64 i = t->root->children().size() - 1; i >= 0;)
+    for (Int64 i = t->root()->children().size() - 1; i >= 0;)
     {
-        const bool noBackroundEffect { t->root->children()[i]->backgroundEffect() == nullptr };
+        const bool noBackroundEffect { t->root()->children()[i]->backgroundEffect() == nullptr };
 
-        calculateNewDamage(t->root->children()[i]);
+        calculateNewDamage(t->root()->children()[i]);
 
         if (noBackroundEffect)
             i--;
     }
 
-    target->surface->recordingContext()->asDirectContext()->resetContext();
-    target->surface->recordingContext()->asDirectContext()->flush();
+    target->surface()->recordingContext()->asDirectContext()->resetContext();
+    target->surface()->recordingContext()->asDirectContext()->flush();
     target->painter()->bindProgram();
     target->painter()->bindTarget(t);
 
     updateDamageRing();
     renderBackground();
 
-    for (size_t i = 0; i < t->root->children().size();)
+    for (size_t i = 0; i < t->root()->children().size();)
     {
-        renderNodes(t->root->children()[i]);
+        renderNodes(t->root()->children()[i]);
 
-        t->root->children()[i]->t->changes.reset();
+        t->root()->children()[i]->t->changes.reset();
 
-        if (t->root->children()[i]->caps() & AKNode::BackgroundEffect)
-            t->root->children()[i]->setParent(nullptr);
+        if (t->root()->children()[i]->caps() & AKNode::BackgroundEffect)
+            t->root()->children()[i]->setParent(nullptr);
         else
             i++;
     }
 
+    t->m_isDirty = false;
+    t->m_needsFullRepaint = false;
     t->m_damage.setEmpty();
     t->m_opaque.setEmpty();
     c->restore();
@@ -99,18 +101,17 @@ void AKScene::validateTarget(AKTarget *target) noexcept
 {
     assert("AKTarget is nullptr" && target);
     assert("AKTarget wasn't created by this scene" && target->m_scene == this);
-    assert("AKTarget has no surface" && target->surface);
-    assert("Invalid surface size" && target->surface->width() > 0 && target->surface->height() > 0);
-    assert("Invalid scale factor" && target->scale > 0.f);
-    assert("Invalid viewport" && !target->viewport.isEmpty());
-    assert("Invalid dstRect" && !target->dstRect.isEmpty());
-    assert("Root node is nullptr" && target->root);
+    assert("AKTarget has no surface" && target->m_surface);
+    assert("Invalid surface size" && target->m_surface->width() > 0 && target->m_surface->height() > 0);
+    assert("Invalid viewport" && !target->viewport().isEmpty());
+    assert("Invalid dstRect" && !target->dstRect().isEmpty());
+    assert("Root node is nullptr" && target->root());
     t = target;
 
-    if (target->age > AK_MAX_BUFFER_AGE)
-        target->age = 0;
+    if (target->age() > AK_MAX_BUFFER_AGE || target->m_needsFullRepaint)
+        target->setAge(0);
 
-    auto skTarget = SkSurfaces::GetBackendRenderTarget(t->surface.get(), SkSurfaces::BackendHandleAccess::kFlushRead);
+    auto skTarget = SkSurfaces::GetBackendRenderTarget(t->m_surface.get(), SkSurfaces::BackendHandleAccess::kFlushRead);
     GrGLFramebufferInfo fbInfo;
     skTarget.getGLFramebufferInfo(&fbInfo);
     t->m_fbId = fbInfo.fFBOID;
@@ -120,27 +121,26 @@ void AKScene::validateTarget(AKTarget *target) noexcept
 void AKScene::updateMatrix() noexcept
 {
     SkMatrix viewportMatrix;
-    viewportMatrix.preScale(t->scale, t->scale);
-    SkPoint trans ( -t->viewport.x(), -t->viewport.y());
-    switch (t->transform) {
+    SkPoint trans ( -t->viewport().x(), -t->viewport().y());
+    switch (t->transform()) {
     case AK::AKTransform::Normal:
         break;
     case AK::AKTransform::Rotated90:
         viewportMatrix.preRotate(-90.f);
-        trans.fX -= t->viewport.width();
+        trans.fX -= t->viewport().width();
         break;
     case AK::AKTransform::Rotated180:
         viewportMatrix.preRotate(-180.f);
-        trans.fX -= t->viewport.width();
-        trans.fY -= t->viewport.height();
+        trans.fX -= t->viewport().width();
+        trans.fY -= t->viewport().height();
         break;
     case AK::AKTransform::Rotated270:
         viewportMatrix.preRotate(90.f);
-        trans.fY -= t->viewport.height();
+        trans.fY -= t->viewport().height();
         break;
     case AK::AKTransform::Flipped:
         viewportMatrix.preScale(-1.f, 1.f);
-        trans.fX -= t->viewport.width();
+        trans.fX -= t->viewport().width();
         break;
     case AK::AKTransform::Flipped90:
         viewportMatrix.preRotate(-90.f);
@@ -148,13 +148,13 @@ void AKScene::updateMatrix() noexcept
         break;
     case AK::AKTransform::Flipped180:
         viewportMatrix.preScale(1.f, -1.f);
-        trans.fY -= t->viewport.height();
+        trans.fY -= t->viewport().height();
         break;
     case AK::AKTransform::Flipped270:
         viewportMatrix.preRotate(90.f);
         viewportMatrix.preScale(-1.f, 1.f);
-        trans.fY -= t->viewport.height();
-        trans.fX -= t->viewport.width();
+        trans.fY -= t->viewport().height();
+        trans.fX -= t->viewport().width();
         break;
     }
 
@@ -162,26 +162,26 @@ void AKScene::updateMatrix() noexcept
 
     t->m_matrix.setIdentity();
 
-    if (is90Transform(t->transform))
+    if (is90Transform(t->transform()))
         t->m_xyScale = {
-            float(t->dstRect.width())/(t->viewport.height()),
-            float(t->dstRect.height())/(t->viewport.width())};
+            float(t->dstRect().width())/(t->viewport().height()),
+            float(t->dstRect().height())/(t->viewport().width())};
     else
         t->m_xyScale = {
-            float(t->dstRect.width())/(t->viewport.width()),
-            float(t->dstRect.height())/(t->viewport.height())};
+            float(t->dstRect().width())/(t->viewport().width()),
+            float(t->dstRect().height())/(t->viewport().height())};
 
-    t->m_matrix.preTranslate(t->dstRect.x(), t->dstRect.y());
+    t->m_matrix.preTranslate(t->dstRect().x(), t->dstRect().y());
     t->m_matrix.preScale(t->m_xyScale.x(), t->m_xyScale.y());
     t->m_matrix.preConcat(viewportMatrix);
     c->setMatrix(t->m_matrix);
 
-    t->m_prevViewport = t->viewport.roundOut();
+    t->m_prevViewport = t->viewport().roundOut();
 
     if (t->inClipRegion)
         t->m_prevClip = *t->inClipRegion;
     else
-        t->m_prevClip.setRect(t->viewport.roundOut());
+        t->m_prevClip.setRect(t->viewport().roundOut());
 }
 
 void AKScene::notifyBegin(AKNode *node)
@@ -191,8 +191,10 @@ void AKScene::notifyBegin(AKNode *node)
     if (!node->t->target)
     {
         node->t->target = t;
-        t->m_nodes.push_back(node);
-        node->t->targetLink = t->m_nodes.size() - 1;
+        t->AKObject::on.destroyed.subscribe(node, [node](AKObject *object){
+            AKTarget *target { static_cast<AKTarget*>(object) };
+            node->m_targets.erase(target);
+        });
         node->t->clientDamage.setRect(AK_IRECT_INF);
     }
 
@@ -210,8 +212,11 @@ void AKScene::calculateNewDamage(AKNode *node)
     if (!node->t->target)
     {
         node->t->target = t;
-        t->m_nodes.push_back(node);
-        node->t->targetLink = t->m_nodes.size() - 1;
+        t->AKObject::on.destroyed.subscribe(node, [node](AKObject *object){
+            AKTarget *target { static_cast<AKTarget*>(object) };
+            node->m_targets.erase(target);
+        });
+        node->t->clientDamage.setRect(AK_IRECT_INF);
     }
 
     if (node->caps() & AKNode::BackgroundEffect)
@@ -227,8 +232,8 @@ void AKScene::calculateNewDamage(AKNode *node)
             backgroundEffect.effectRect.height());
 
         backgroundEffect.m_rect = SkIRect::MakeXYWH(
-            backgroundEffect.m_globalRect.x() - t->root->m_globalRect.x(),
-            backgroundEffect.m_globalRect.y() - t->root->m_globalRect.y(),
+            backgroundEffect.m_globalRect.x() - t->root()->m_globalRect.x(),
+            backgroundEffect.m_globalRect.y() - t->root()->m_globalRect.y(),
             backgroundEffect.m_globalRect.width(),
             backgroundEffect.m_globalRect.height());
 
@@ -252,8 +257,8 @@ void AKScene::calculateNewDamage(AKNode *node)
         }
 
         node->m_rect = SkIRect::MakeXYWH(
-            node->m_globalRect.x() - t->root->m_globalRect.x(),
-            node->m_globalRect.y() - t->root->m_globalRect.y(),
+            node->m_globalRect.x() - t->root()->m_globalRect.x(),
+            node->m_globalRect.y() - t->root()->m_globalRect.y(),
             node->m_globalRect.width(),
             node->m_globalRect.height());
 
@@ -281,14 +286,19 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     AKNode *clipper { node->closestClipperParent() };
 
-    if (clipper == t->root)
-        clip.op(t->viewport.roundOut(), SkRegion::Op::kIntersect_Op);
+    if (clipper == t->root())
+        clip.op(t->viewport().roundOut(), SkRegion::Op::kIntersect_Op);
     else
         clip.op(clipper->t->prevLocalClip, SkRegion::Op::kIntersect_Op);
 
     clip.op(t->m_opaque, SkRegion::Op::kDifference_Op);
     node->t->prevLocalClip.op(t->m_opaque, SkRegion::Op::kDifference_Op);
-    node->m_insideLastTarget = SkIRect::Intersects(node->m_rect, t->viewport.roundOut());
+    node->m_insideLastTarget = SkIRect::Intersects(node->m_rect, t->viewport().roundOut());
+
+    node->m_intersectedTargets.clear();
+    for (AKTarget *target : targets())
+        if (SkIRect::Intersects(node->globalRect(), target->m_globalIViewport))
+            node->m_intersectedTargets.push_back(target);
 
     if ((node->caps() & AKNode::Bake) && !clip.isEmpty())
     {
@@ -312,7 +322,7 @@ void AKScene::calculateNewDamage(AKNode *node)
             {
                 surfaceChanged = true;
                 bakeable->t->bake = AKSurface::Make(
-                    t->surface->recordingContext(),
+                    t->surface()->recordingContext(),
                     SkSize::Make(bakeable->rect().size()),
                     t->m_xyScale, true);
             }
@@ -423,8 +433,8 @@ skipDamage:
 }
 
 void AKScene::updateDamageRing() noexcept
-{       
-    if (t->age == 0)
+{
+    if (t->age() == 0)
     {
         t->m_damage.setRect(AK_IRECT_INF);
         t->m_damageRing[t->m_damageIndex] = t->m_damage;
@@ -454,7 +464,7 @@ void AKScene::updateDamageRing() noexcept
 
         t->m_damageRing[t->m_damageIndex] = t->m_damage;
 
-        for (UInt32 i = 1; i < t->age; i++)
+        for (UInt32 i = 1; i < t->age(); i++)
         {
             Int32 damageIndex = t->m_damageIndex - i;
 
@@ -487,11 +497,12 @@ void AKScene::updateDamageRing() noexcept
 void AKScene::renderBackground() noexcept
 {
     SkRegion background { t->m_damage };
+    const SkColor4f clearColor { SkColor4f::FromColor(t->clearColor()) };
     background.op(t->m_opaque, SkRegion::Op::kDifference_Op);
     t->painter()->enableAutoBlendFunc(true);
     t->painter()->setColorFactor(1.f, 1.f, 1.f, 1.f);
-    t->painter()->setAlpha(m_clearColor.fA);
-    t->painter()->setColor(m_clearColor);
+    t->painter()->setAlpha(clearColor.fA);
+    t->painter()->setColor(clearColor);
     t->painter()->bindColorMode();
     glDisable(GL_BLEND);
     t->painter()->drawRegion(background);

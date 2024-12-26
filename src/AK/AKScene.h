@@ -14,9 +14,10 @@ public:
     AKTarget *createTarget(std::shared_ptr<AKPainter> painter = nullptr) noexcept;
     bool destroyTarget(AKTarget *target);
     bool render(AKTarget *target);
-    void setClearColor(SkColor color) noexcept
+
+    const std::vector<AKTarget*> &targets() const noexcept
     {
-        m_clearColor = SkColor4f::FromColor(color);
+        return m_targets;
     }
 private:
     friend class AKTarget;
@@ -24,7 +25,6 @@ private:
     AKTarget *t;
     SkMatrix m_matrix;
     std::vector<AKTarget*> m_targets;
-    SkColor4f m_clearColor { 0.f, 0.f, 0.f, 0.f };
     void validateTarget(AKTarget *target) noexcept;
     void updateMatrix() noexcept;
     void notifyBegin(AKNode *node);

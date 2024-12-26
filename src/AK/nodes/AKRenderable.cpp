@@ -27,7 +27,8 @@ void AKRenderable::handleCommonChanges() noexcept
 
     if (m_renderableHint == SolidColor)
     {
-        if (c.test(Chg_Opacity) ||
+        if (c.test(Chg_Color) ||
+            c.test(Chg_Opacity) ||
             c.test(Chg_ColorFactor) ||
             c.test(Chg_CustomBlendFuncEnabled) ||
             (customBlendFuncEnabled() && c.test(Chg_CustomBlendFunc)))

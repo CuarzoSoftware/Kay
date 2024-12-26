@@ -116,7 +116,7 @@ public:
 
     Menu(AKNode *parent = nullptr) noexcept : AKBakeable(parent)
     {
-        blur.onLayoutUpdateSignal.subscribe(this, [this](){
+        blur.on.targetLayoutUpdated.subscribe(this, [this](){
             const auto &chgs { changes() };
             bool blurNeedsUpdate { chgs.test(Chg_Size) };
 
@@ -138,7 +138,7 @@ public:
                 m_borderRadius));
         });
 
-        setClipsChildren(true);
+        enableChildrenClipping(true);
         setVisible(false);
 
         // Default styles
@@ -163,13 +163,11 @@ public:
         layout().setPosition(YGEdgeLeft, x - m_shadowRadius + m_shadowOffset.x());
         layout().setPosition(YGEdgeTop, y - m_shadowRadius + m_shadowOffset.y());
         setVisible(true);
-        compositor()->repaintAllOutputs();
     }
 
     void hide() noexcept
     {
         setVisible(false);
-        compositor()->repaintAllOutputs();
     }
 
     void setShadowColor(SkColor color) noexcept
@@ -353,26 +351,22 @@ public:
     {
         m_backgroundColor.setOpacity(1.f);
         m_text.setColorWithAlpha(SkColors::kWhite);
-        cursor()->repaintOutputs(false);
     }
 
     void onPointerLeave()
     {
         m_backgroundColor.setOpacity(0.f);
         m_text.setColorWithAlpha(SkColors::kBlack);
-        cursor()->repaintOutputs(false);
     }
 
     void onPress()
     {
         setOpacity(0.75f);
-        cursor()->repaintOutputs(false);
     }
 
     void onRelease()
     {
         setOpacity(1.f);
-        cursor()->repaintOutputs(false);
     }
 
 protected:
@@ -385,7 +379,6 @@ class Compositor final : public LCompositor
 public:
     Compositor() noexcept
     {
-        scene.setClearColor(SK_ColorWHITE);
         surfaces.layout().setPositionType(YGPositionTypeAbsolute);
     }
 
@@ -437,7 +430,6 @@ public:
     {
         AKNode *prev { prevSurface() ? &static_cast<Surface*>(prevSurface())->node : nullptr };
         node.insertAfter(prev);
-        repaintOutputs();
     }
 };
 
@@ -503,7 +495,6 @@ public:
             topbar.layout().setPosition(YGEdgeTop, pos().y() + zone->rect().y());
             topbar.layout().setWidth(zone->rect().w());
             topbar.layout().setHeight(zone->rect().h());
-            compositor()->repaintAllOutputs();
 
             std::cout << "Topbar: Exclusive zone changed " << zone->rect().x() << "," << zone->rect().y() << "," << zone->rect().w() << "," << zone->rect().h() << std::endl;
         });
@@ -548,7 +539,7 @@ public:
         contextOptions.fReduceOpsTaskSplitting = GrContextOptions::Enable::kYes;
         contextOptions.fDisableDriverCorrectnessWorkarounds = true;
         contextOptions.fRuntimeProgramCacheSize = 1024;
-        contextOptions.fInternalMultisampleCount = 4;
+        contextOptions.fInternalMultisampleCount = 0;
         contextOptions.fDisableTessellationPathRenderer = false;
         contextOptions.fAllowMSAAOnNewIntel = true;
         contextOptions.fAlwaysUseTexStorageWhenAvailable = true;
@@ -567,7 +558,17 @@ public:
         // framebuffer, transform, etc, and is used by the scene and
         // nodes to keep track of damage, previous dimensions, and other properties.
         target = comp()->scene.createTarget();
-        target->root = &comp()->root;
+        target->setRoot(&comp()->root);
+        target->setClearColor(SK_ColorWHITE);
+        target->on.markedDirty.subscribe(target, [this](AKTarget &){
+
+            if (inPaintGL)
+                return;
+            static int count = 0;
+            std::cout << "SCENE IS DIRTY " << count << std::endl;
+            count++;
+            repaint();
+        });
 
         wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
         background.setImage(louvreTex2SkiaImage(wallpaper.get(), context.get(), this));
@@ -577,6 +578,7 @@ public:
 
     void paintGL() override
     {
+        inPaintGL = true;
         Int32 n;
         const LBox *boxes;
         SkRegion region, outDamage;
@@ -598,15 +600,15 @@ public:
             0, 0,
             fbInfo);
 
-        target->surface = SkSurfaces::WrapBackendRenderTarget(
+        target->setSurface(SkSurfaces::WrapBackendRenderTarget(
             context.get(),
             backendTarget,
             fbInfo.fFBOID == 0 ? GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin : GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
             SkColorType::kRGB_888x_SkColorType,
             colorSpace,
-            &skSurfaceProps);
+            &skSurfaceProps));
 
-        target->image = louvreTex2SkiaImage(bufferTexture(currentBuffer()), context.get(), this);
+        target->setImage(louvreTex2SkiaImage(bufferTexture(currentBuffer()), context.get(), this));
 
         // We need to manually update each surface node
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
@@ -649,16 +651,16 @@ public:
         target->inDamageRegion = &cursorDamage;
 
         // Required for damage tracking
-        target->age = currentBufferAge();
+        target->setAge(currentBufferAge());
 
         // Rect of the scene to capture relative to the root node
-        target->viewport = SkRect::MakeXYWH(pos().x(), pos().y(), size().w(), size().h());
+        target->setViewport(SkRect::MakeXYWH(pos().x(), pos().y(), size().w(), size().h()));
 
         // If the screen is rotated/flipped
-        target->transform = static_cast<AKTransform>(transform());
+        target->setTransform(static_cast<AKTransform>(transform()));
 
         // Rect within the screen fb to render the viewport to (in this case the entire screen)
-        target->dstRect = SkIRect::MakeXYWH(0, 0, currentMode()->sizeB().w(), currentMode()->sizeB().h());
+        target->setDstRect(SkIRect::MakeXYWH(0, 0, currentMode()->sizeB().w(), currentMode()->sizeB().h()));
 
         //glScissor(0,0,100000,100000);
         //glClear(GL_COLOR_BUFFER_BIT);
@@ -699,17 +701,17 @@ public:
 
         for (auto *shReq : screenshotRequests())
             shReq->accept(true);
+
+        inPaintGL = false;
     }
 
     void resizeGL() override
     {
-        repaint();
         updateBackground();
     }
 
     void moveGL() override
     {
-        repaint();
         updateBackground();
     }
 
@@ -721,6 +723,7 @@ public:
             delete wallpaper.get();
     }
 
+    bool inPaintGL { false };
     AKImage background { &comp()->background };
     AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
     AKSimpleText instructions2 { "Note: Blur only works if launched from a TTY (DRM backend)", &background};

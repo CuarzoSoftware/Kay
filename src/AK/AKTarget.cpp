@@ -8,7 +8,6 @@ AK::AKTarget::AKTarget(AKScene *scene, std::shared_ptr<AKPainter> painter) noexc
     m_painter(painter)
 {
     m_yogaConfig = YGConfigNew();
-    m_nodes.reserve(64);
     m_sceneLink = scene->m_targets.size();
 
     if (!m_painter)
@@ -17,9 +16,6 @@ AK::AKTarget::AKTarget(AKScene *scene, std::shared_ptr<AKPainter> painter) noexc
 
 AK::AKTarget::~AKTarget()
 {
-    for (auto *node : m_nodes)
-        node->m_targets.erase(this);
-
     m_scene->m_targets[m_sceneLink] = m_scene->m_targets.back();
     m_scene->m_targets.back()->m_sceneLink = m_sceneLink;
     m_scene->m_targets.pop_back();

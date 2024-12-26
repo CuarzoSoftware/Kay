@@ -24,12 +24,7 @@ AKNode::~AKNode()
     setBackgroundEffect(nullptr);
 
     for (auto &t : m_targets)
-    {
         t.second.target->m_damage.op(t.second.prevLocalClip, SkRegion::kUnion_Op);
-        t.second.target->m_nodes[t.second.targetLink] = t.second.target->m_nodes.back();
-        t.second.target->m_nodes.back()->m_targets[t.first].targetLink = t.second.targetLink;
-        t.second.target->m_nodes.pop_back();
-    }
 
     setParent(nullptr);
 }
@@ -38,6 +33,9 @@ void AKNode::addChange(Change change) noexcept
 {
     for (auto &t : m_targets)
         t.second.changes.set(change);
+
+    for (auto *t : m_intersectedTargets)
+        t->markDirty();
 }
 
 const std::bitset<128> &AKNode::changes() const noexcept
@@ -50,7 +48,7 @@ AKNode *AKNode::closestClipperParent() const noexcept
 {
     assert(parent() != nullptr);
 
-    if (parent()->clipsChildren() || parent() == t->target->root)
+    if (parent()->childrenClippingEnabled() || parent() == t->target->root())
         return parent();
 
     return parent()->closestClipperParent();
@@ -62,6 +60,7 @@ void AKNode::setParent(AKNode *parent) noexcept
 
     if (m_parent)
     {
+        addChange(Chg_Parent);
         YGNodeRemoveChild(m_parent->layout().m_node, layout().m_node);
         auto next = m_parent->m_children.erase(m_parent->m_children.begin() + m_parentLinkIndex);
         for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex--;
@@ -74,6 +73,7 @@ void AKNode::setParent(AKNode *parent) noexcept
         m_parentLinkIndex = YGNodeGetChildCount(parent->layout().m_node);
         YGNodeInsertChild(parent->layout().m_node, layout().m_node, m_parentLinkIndex);
         parent->m_children.push_back(this);
+        parent->addChange(Chg_Layout);
     }
 }
 
@@ -88,6 +88,7 @@ void AKNode::insertBefore(AKNode *other) noexcept
     {
         if (other->parent())
         {
+            other->parent()->addChange(Chg_Layout);
             setParent(nullptr);
             m_parent = other->parent();
             m_parentLinkIndex = other->m_parentLinkIndex;
@@ -129,6 +130,7 @@ void AKNode::insertAfter(AKNode *other) noexcept
                 return;
             }
 
+            other->parent()->addChange(Chg_Layout);
             m_parent = other->parent();
             m_parentLinkIndex = other->m_parentLinkIndex + 1;
             YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLinkIndex);

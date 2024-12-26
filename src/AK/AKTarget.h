@@ -3,6 +3,8 @@
 
 #include <AK/AKObject.h>
 #include <AK/AKTransform.h>
+#include <AK/AKSignal.h>
+#include <AK/AKWeak.h>
 #include <include/core/SkSurface.h>
 #include <include/core/SkMatrix.h>
 #include <include/core/SkRegion.h>
@@ -30,23 +32,60 @@ class AK::AKTarget : public AKObject
 public:
 
     /**
-     * @brief The destination surface for rendering.
+     * @brief The destination surface.
      *
-     * This is the surface where the rendered content will be stored.
      * Providing an invalid surface will trigger an internal assertion failure in `AKScene::render()`.
      */
-    sk_sp<SkSurface> surface;
-    sk_sp<SkImage> image;
+    void setSurface(sk_sp<SkSurface> surface) noexcept
+    {
+        m_surface = surface;
+    }
+
+    sk_sp<SkSurface> surface() const noexcept
+    {
+        return m_surface;
+    }
+
+    void setImage(sk_sp<SkImage> image) noexcept
+    {
+        m_image = image;
+    }
+
+    sk_sp<SkImage> image() const noexcept
+    {
+        return m_image;
+    }
+
+    void setClearColor(SkColor color) noexcept
+    {
+        if (m_clearColor == color)
+            return;
+
+        m_clearColor = color;
+        m_needsFullRepaint = true;
+        markDirty();
+    }
+
+    SkColor clearColor() const noexcept
+    {
+        return m_clearColor;
+    }
 
     /**
-     * @brief Buffer age for damage tracking.
+     * @brief Buffer age.
      *
-     * Used to track the age of the buffer, as specified by the
+     * Used for damage tracking, as specified by the
      * [EGL_EXT_buffer_age](https://registry.khronos.org/EGL/extensions/EXT/EGL_EXT_buffer_age.txt) specification.
-     *
-     * Passing a value greater than 4 will trigger an internal assertion failure in `AKScene::render()`.
      */
-    UInt32 age { 0 };
+    void setAge(UInt32 age) noexcept
+    {
+        m_age = age;
+    }
+
+    UInt32 age() const noexcept
+    {
+        return m_age;
+    }
 
     /**
      * @brief Root node.
@@ -54,22 +93,40 @@ public:
      * Only the children of the root node are rendered.
      * The root node's bounds do not clip its children, but its layout properties affect them.
      */
-    AKNode* root { nullptr };
+    void setRoot(AKNode *node) noexcept
+    {
+        if (node == m_root)
+            return;
+
+        m_root.reset(node);
+        m_needsFullRepaint = true;
+        markDirty();
+    }
+
+    AKNode *root() const noexcept
+    {
+        return m_root;
+    }
 
     /**
      * @brief Viewport in logical coordinates relative to the root node.
      *
      * This defines the visible area in the scene that will be rendered, expressed in logical coordinates.
      */
-    SkRect viewport { 0.f, 0.f, 0.f, 0.f };
+    void setViewport(const SkRect &viewport) noexcept
+    {
+        if (m_viewport == viewport)
+            return;
 
-    /**
-     * @brief Scaling factor for the rendered content.
-     *
-     * By default, this is set to 1.0. The scaling factor is automatically determined based on the ratio between the destination rectangle and the viewport.
-     * You can adjust this value to apply additional scaling to the content along both the X and Y axes.
-     */
-    Float32 scale { 1.f };
+        m_viewport = viewport;
+        m_needsFullRepaint = true;
+        markDirty();
+    }
+
+    const SkRect &viewport() const noexcept
+    {
+        return m_viewport;
+    }
 
     /**
      * @brief Destination rectangle on the surface to render the viewport.
@@ -78,15 +135,41 @@ public:
      * The aspect ratio between the destination rectangle and the viewport determines the scaling factor for both axes.
      * Any pixels outside this rectangle remain unchanged.
      */
-    SkIRect dstRect { 0, 0, 0, 0 };
+    void setDstRect(const SkIRect &rect) noexcept
+    {
+        if (m_dstRect == rect)
+            return;
+
+        m_dstRect = rect;
+        m_needsFullRepaint = true;
+        markDirty();
+    }
+
+    const SkIRect &dstRect() const noexcept
+    {
+        return m_dstRect;
+    }
 
     /**
-     * @brief Viewport transformation.
+     * @brief Viewport transform.
      *
      * For instance, if `dstRect` covers the entire surface and a rotation of 90 degrees is applied (via `AKTransform::Rotated90`),
      * the viewport will be rotated 90° counterclockwise, and the top-left corner of the viewport will be rendered in the surface's bottom-left corner.
      */
-    AKTransform transform { AKTransform::Normal };
+    void setTransform(AKTransform transform) noexcept
+    {
+        if (m_transform == transform)
+            return;
+
+        m_transform = transform;
+        m_needsFullRepaint = true;
+        markDirty();
+    }
+
+    AKTransform transform() const noexcept
+    {
+        return m_transform;
+    }
 
     /**
      * @brief Additional damage.
@@ -157,12 +240,51 @@ public:
     {
         return m_damage;
     }
+
+    /**
+     * @brief Indicates if a node visible on the target has changed one of its properties.
+     *
+     * Use the on.markedDirty() signal to detect when this property changes to true.
+     * Nodes modify this property when they invoke the AKNode::addChange() method, or
+     * when they are added to or removed from the scene. After the target is rendered
+     * by its scene, the property is reset to false.
+     */
+    bool isDirty() const noexcept
+    {
+        return m_isDirty;
+    }
+
+    void markDirty() noexcept
+    {
+        if (isDirty())
+            return;
+
+        m_isDirty = true;
+        on.markedDirty.notify(*this);
+    }
+
+    struct
+    {
+        /**
+         * @brief Needs Repaint Signal
+         *
+         * This signal is triggered whenever the AKTarget::isDirty() property changes
+         * from false to true. Nodes keep track of which targets they are visible on during an AKScene::render() call,
+         * meaning this signal is only triggered by nodes that have been rendered at least once by a scene.
+         */
+        AKSignal<AKTarget&> markedDirty;
+    } on;
+
 private:
     friend class AKScene;
     friend class AKNode;
     friend class AKSubScene;
     AKTarget(AKScene *scene, std::shared_ptr<AKPainter> painter) noexcept;
     ~AKTarget();
+    AKWeak<AKNode>      m_root;
+    sk_sp<SkSurface>    m_surface;
+    sk_sp<SkImage>      m_image;
+    SkRect              m_viewport { 0.f, 0.f, 0.f, 0.f };
     SkIRect             m_globalIViewport;
     SkIRect             m_prevViewport;     // Rel to root
     SkMatrix            m_matrix;
@@ -175,12 +297,17 @@ private:
     UInt32              m_damageIndex { 0 };
     AKScene *           m_scene;
     size_t              m_sceneLink;
-    std::vector<AKNode*>m_nodes;
+    AKTransform         m_transform { AKTransform::Normal };
     UInt32              m_fbId;
+    SkIRect             m_dstRect { 0, 0, 0, 0 };
+    bool                m_isDirty { false };
     bool                m_isSubScene { false };
+    bool                m_needsFullRepaint { true };
     std::shared_ptr<AKPainter> m_painter;
     YGConfigRef         m_yogaConfig;
     std::vector<SkRegion> m_reactive;
+    SkColor             m_clearColor { SK_ColorTRANSPARENT };
+    UInt32              m_age { 0 };
 };
 
 #endif // AKTARGET_H

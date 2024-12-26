@@ -6,9 +6,11 @@ using namespace AK;
 AKListener::~AKListener()
 {
     signal->listeners[signalLink] = signal->listeners.back();
+    signal->listeners[signalLink]->signalLink = signalLink;
     signal->listeners.pop_back();
 
     object->m_listeners[objectLink] = object->m_listeners.back();
+    object->m_listeners[objectLink]->objectLink = objectLink;
     object->m_listeners.pop_back();
 }
 

@@ -9,13 +9,13 @@ using namespace AK;
 
 void AKBackgroundBlurEffect::onLayoutUpdate()
 {
-    if (!currentTarget()->image)
+    if (!currentTarget()->image())
         return;
 
     if (clipMode() == Automatic)
         effectRect = SkIRect::MakeSize(targetNode()->rect().size());
     else
-        onLayoutUpdateSignal.notify();
+        on.targetLayoutUpdated.notify();
 
     reactiveRegion.setRect(SkIRect::MakeSize(effectRect.size()));
 
@@ -30,12 +30,12 @@ void AKBackgroundBlurEffect::onLayoutUpdate()
 
 void AKBackgroundBlurEffect::onRender(AKPainter *, const SkRegion &damage)
 {
-    if (!currentTarget()->image || damage.isEmpty())
+    if (!currentTarget()->image() || damage.isEmpty())
         return;
 
-    currentTarget()->surface->recordingContext()->asDirectContext()->resetContext();
+    currentTarget()->surface()->recordingContext()->asDirectContext()->resetContext();
 
-    SkCanvas &c { *currentTarget()->surface->getCanvas() };
+    SkCanvas &c { *currentTarget()->surface()->getCanvas() };
     c.save();
 
     SkPath path;
@@ -55,17 +55,17 @@ void AKBackgroundBlurEffect::onRender(AKPainter *, const SkRegion &damage)
     // TODO: Handle AKTarget srcRect and custom transforms
 
     const SkRect srcRect { SkRect::MakeXYWH(
-        (dstRect.x() - currentTarget()->viewport.x()) * currentTarget()->xyScale().x(),
-        (dstRect.y() - currentTarget()->viewport.y()) * currentTarget()->xyScale().y(),
+        (dstRect.x() - currentTarget()->viewport().x()) * currentTarget()->xyScale().x(),
+        (dstRect.y() - currentTarget()->viewport().y()) * currentTarget()->xyScale().y(),
         dstRect.width() * currentTarget()->xyScale().x(),
         dstRect.height() * currentTarget()->xyScale().y()) };
 
-    c.drawImageRect(currentTarget()->image,
+    c.drawImageRect(currentTarget()->image(),
                     srcRect,
                     dstRect,
                     SkFilterMode::kLinear,
                     &m_brush,
                     SkCanvas::kFast_SrcRectConstraint);
-    currentTarget()->surface->flush();
+    currentTarget()->surface()->flush();
     c.restore();
 }

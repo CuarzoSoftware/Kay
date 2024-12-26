@@ -11,7 +11,7 @@ class AK::AKContainer : public AKNode
 public:
     AKContainer(YGFlexDirection flexDirection = YGFlexDirectionColumn, bool clipsChildren = false, AKNode *parent = nullptr) noexcept : AKNode(parent)
     {
-        setClipsChildren(clipsChildren);
+        enableChildrenClipping(clipsChildren);
         layout().setFlexDirection(flexDirection);
     }
 };
