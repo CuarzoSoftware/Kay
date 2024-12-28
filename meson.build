@@ -42,7 +42,7 @@ endforeach
 
 kay = library(
     'Kay',
-    sources : run_command('find', './src/AK', '-type', 'f', '-name', '*[.cpp,.c]', check : false).stdout().strip().split('\n'),
+    sources : run_command('find', './src/AK', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n'),
     include_directories : ['./src'],
     dependencies : [
         skia_dep,

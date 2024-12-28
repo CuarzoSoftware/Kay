@@ -4,6 +4,7 @@
 #include <AK/AKObject.h>
 #include <AK/AKBorderRadius.h>
 #include <AK/AKBrush.h>
+#include <AK/AKPen.h>
 #include <include/core/SkPath.h>
 #include <include/core/SkRegion.h>
 #include <include/core/SkBlendMode.h>
@@ -39,6 +40,11 @@ public:
         return m_corners;
     }
 
+    void setPen(const AKPen &pen) noexcept
+    {
+        m_pen = pen;
+    }
+
     bool addDamage(const SkSize &nodeSize, const SkRegion *clip, SkRegion *damage) noexcept;
     bool clipCorners(SkCanvas *canvas, const SkRegion *clip, SkRegion *damage, SkRegion *opaque) noexcept;
 
@@ -47,6 +53,7 @@ private:
     SkPath m_mask[4];
     SkIRect m_rect[4];
     AKBrush m_brush;
+    AKPen m_pen { AKPen::NoPen() };
 };
 
 #endif // AKROUNDCORNERSEFFECT_H

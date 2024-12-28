@@ -22,7 +22,7 @@
 #include <linux/input-event-codes.h>
 
 #include <AK/AKScene.h>
-#include <AK/effects/AKBackgroundShadowEffect.h>
+#include <AK/effects/AKBackgroundBoxShadowEffect.h>
 #include <AK/nodes/AKRoundContainer.h>
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKSolidColor.h>
@@ -75,8 +75,7 @@ public:
         layout().setAlignItems(YGAlignCenter);
     }
 
-    AKBackgroundShadowEffect shadow {
-        AKBackgroundShadowEffect::Box,
+    AKBackgroundBoxShadowEffect shadow {
         32.f, { 0, 0 }, SkColorSetARGB(250, 0, 0, 0),
         true, this };
 

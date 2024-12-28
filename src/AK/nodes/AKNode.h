@@ -14,6 +14,7 @@
 #include <include/gpu/gl/GrGLTypes.h>
 #include <include/core/SkRegion.h>
 
+#include <unordered_set>
 #include <unordered_map>
 #include <memory>
 #include <vector>
@@ -38,7 +39,6 @@ public:
     {
         Chg_Layout,
         Chg_Parent,
-        Chg_Visibility,
         Chg_ChildrenClipping,
         Chg_Last
     };
@@ -48,12 +48,24 @@ public:
     [[nodiscard]]
     const std::bitset<128> &changes() const noexcept;
 
+    void setVisible(bool visible) noexcept
+    {
+        layout().setDisplay(visible ? YGDisplayFlex : YGDisplayNone);
+    }
+
+    bool visible() const noexcept
+    {
+        return layout().display() != YGDisplayNone;
+    }
+
     /* Insert at the end, nullptr unsets */
     void setParent(AKNode *parent) noexcept;
     AKNode *parent() const noexcept
     {
         return m_parent;
     }
+
+    AKNode *topmostParent() const noexcept;
 
     void insertBefore(AKNode *other) noexcept;
     void insertAfter(AKNode *other) noexcept;
@@ -82,20 +94,6 @@ public:
     const std::vector<AKTarget*> &intersectedTargets() const noexcept
     {
         return m_intersectedTargets;
-    }
-
-    bool visible() const noexcept
-    {
-        return m_flags.check(Visible);
-    }
-
-    void setVisible(bool visible) noexcept
-    {
-        if (visible == this->visible())
-            return;
-
-        m_flags.setFlag(Visible, visible);
-        addChange(Chg_Visibility);
     }
 
     bool childrenClippingEnabled() const noexcept
@@ -146,6 +144,11 @@ public:
         return m_globalRect;
     }
 
+    const AKLayout &layout() const noexcept
+    {
+        return m_layout;
+    }
+
     AKLayout &layout() noexcept
     {
         return m_layout;
@@ -153,8 +156,13 @@ public:
 
     /* Effects */
 
-    AKBackgroundEffect *backgroundEffect() const noexcept;
-    void setBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
+    const std::unordered_set<AKBackgroundEffect*> &backgroundEffects() const noexcept
+    {
+        return m_backgroundEffects;
+    }
+
+    void addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
+    void removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
 
     /* Triggered before the scene starts */
     virtual void onSceneBegin() {}
@@ -181,11 +189,11 @@ private:
     friend class AKContainer;
     friend class AKTarget;
     friend class AKScene;
+    friend class AKLayout;
 
     enum Flags : UInt64
     {
-        Visible             = 1L << 0,
-        ChildrenClipping    = 1L << 1,
+        ChildrenClipping    = 1L << 0,
     };
 
     struct TargetData : public AKObject
@@ -209,8 +217,8 @@ private:
 
     AKWeak<TargetData> t;
     AKLayout m_layout { *this };
-    AKBitset<Flags> m_flags { Visible };
-    AKWeak<AKBackgroundEffect> m_backgroundEffect;
+    AKBitset<Flags> m_flags { 0 };
+    std::unordered_set<AKBackgroundEffect*> m_backgroundEffects;
     SkIRect m_rect;
     SkIRect m_globalRect;
     UInt32 m_caps { 0 };

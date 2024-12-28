@@ -42,14 +42,19 @@ public:
         return m_targetNode;
     }
 
+    ~AKBackgroundEffect()
+    {
+        if (targetNode())
+            targetNode()->m_backgroundEffects.erase(this);
+    }
+
 protected:
     AKBackgroundEffect(StackPosition stackPosition) noexcept :
         AKRenderable(Texture),
         m_stackPosition(stackPosition)
     {
         m_caps |= BackgroundEffect;
-        layout().setDisplay(YGDisplayNone);
-    };
+    }
 
     // Rect relative to target
     SkIRect effectRect;
@@ -68,7 +73,8 @@ private:
     friend class AKScene;
     using AKRenderable::layout;
     using AKRenderable::setParent;
-    using AKRenderable::setBackgroundEffect;
+    using AKRenderable::addBackgroundEffect;
+    using AKRenderable::removeBackgroundEffect;
     StackPosition m_stackPosition;
     AKWeak<AKNode> m_targetNode;
 };

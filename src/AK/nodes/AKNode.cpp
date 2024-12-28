@@ -21,7 +21,8 @@ AKNode::AKNode(AKNode *parent) noexcept
 
 AKNode::~AKNode()
 {
-    setBackgroundEffect(nullptr);
+    while (!m_backgroundEffects.empty())
+        removeBackgroundEffect(*m_backgroundEffects.begin());
 
     for (auto &t : m_targets)
         t.second.target->m_damage.op(t.second.prevLocalClip, SkRegion::kUnion_Op);
@@ -58,6 +59,9 @@ void AKNode::setParent(AKNode *parent) noexcept
 {
     assert(!parent || (parent != this && !parent->isSubchildOf(this)));
 
+    if (m_parent && m_parent == parent && m_parent->children().back() == this)
+        return;
+
     if (m_parent)
     {
         addChange(Chg_Parent);
@@ -75,6 +79,16 @@ void AKNode::setParent(AKNode *parent) noexcept
         parent->m_children.push_back(this);
         parent->addChange(Chg_Layout);
     }
+}
+
+AKNode *AKNode::topmostParent() const noexcept
+{
+    AKNode *par { parent() };
+
+    while (par && par->parent())
+        par = par->parent();
+
+    return par;
 }
 
 void AKNode::insertBefore(AKNode *other) noexcept
@@ -148,28 +162,27 @@ void AKNode::insertAfter(AKNode *other) noexcept
     }
 }
 
-AKBackgroundEffect *AKNode::backgroundEffect() const noexcept
+void AKNode::addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept
 {
-    return m_backgroundEffect;
-}
-
-void AKNode::setBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept
-{
-    if (backgroundEffect == m_backgroundEffect)
+    if (!backgroundEffect || m_backgroundEffects.contains(backgroundEffect))
         return;
 
-    if (m_backgroundEffect)
-    {
-        m_backgroundEffect->m_targetNode.reset();
-        m_backgroundEffect->onTargetNodeChanged();
-    }
+    if (backgroundEffect->targetNode())
+        backgroundEffect->targetNode()->m_backgroundEffects.erase(backgroundEffect);
 
-    m_backgroundEffect.reset(backgroundEffect);
-
-    if (m_backgroundEffect)
-    {
-        m_backgroundEffect->m_targetNode.reset(this);
-        m_backgroundEffect->onTargetNodeChanged();
-    }
+    m_backgroundEffects.insert(backgroundEffect);
+    backgroundEffect->m_targetNode.reset(this);
+    backgroundEffect->onTargetNodeChanged();
 }
+
+void AKNode::removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept
+{
+    if (!backgroundEffect || !m_backgroundEffects.contains(backgroundEffect))
+        return;
+
+    m_backgroundEffects.erase(backgroundEffect);
+    backgroundEffect->m_targetNode.reset(nullptr);
+    backgroundEffect->onTargetNodeChanged();
+}
+
 

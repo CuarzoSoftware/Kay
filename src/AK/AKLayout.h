@@ -299,11 +299,7 @@ public:
         return YGNodeStyleGetOverflow(m_node);
     }
 
-    void setDisplay(YGDisplay display) noexcept
-    {
-        YGNodeStyleSetDisplay(m_node, display);
-        checkIsDirty();
-    }
+    void setDisplay(YGDisplay display) noexcept;
 
     YGDisplay display() const noexcept
     {

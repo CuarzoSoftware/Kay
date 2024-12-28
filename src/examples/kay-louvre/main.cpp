@@ -21,7 +21,7 @@
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKSolidColor.h>
 #include <AK/nodes/AKRoundContainer.h>
-#include <AK/effects/AKBackgroundShadowEffect.h>
+#include <AK/effects/AKBackgroundBoxShadowEffect.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
 
 #include <AK/AKScene.h>
@@ -139,7 +139,7 @@ public:
         });
 
         enableChildrenClipping(true);
-        setVisible(false);
+        layout().setDisplay(YGDisplayNone);
 
         // Default styles
         m_brush.setAntiAlias(true);
@@ -162,12 +162,12 @@ public:
     {
         layout().setPosition(YGEdgeLeft, x - m_shadowRadius + m_shadowOffset.x());
         layout().setPosition(YGEdgeTop, y - m_shadowRadius + m_shadowOffset.y());
-        setVisible(true);
+        layout().setDisplay(YGDisplayFlex);
     }
 
     void hide() noexcept
     {
-        setVisible(false);
+        layout().setDisplay(YGDisplayNone);
     }
 
     void setShadowColor(SkColor color) noexcept
@@ -420,7 +420,6 @@ class Surface final : public LSurface
 public:
     Surface(const void *data) noexcept : LSurface(data) {
         node.layout().setPositionType(YGPositionTypeAbsolute);
-        node.layout().setDisplay(YGDisplayNone);
     }
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
 
@@ -504,6 +503,59 @@ public:
 
     void updateBackground() noexcept
     {
+        if (compositor()->graphicBackendId() == LGraphicBackendDRM)
+        {
+            LSize bufferSize;
+
+            if (is90Transform(transform()))
+            {
+                bufferSize.setW(currentMode()->sizeB().h());
+                bufferSize.setH(currentMode()->sizeB().w());
+            }
+            else
+                bufferSize = currentMode()->sizeB();
+
+            if (wallpaper && wallpaper->sizeB() == bufferSize)
+                return;
+
+            if (wallpaper)
+                delete wallpaper.get();
+
+            wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
+
+            if (!wallpaper)
+                goto skipScale;
+
+            LRect srcB;
+            const Float32 w { Float32(bufferSize.w() * wallpaper->sizeB().h()) / Float32(bufferSize.h()) };
+
+            /* Clip and scale the wallpaper texture */
+
+            if (w >= wallpaper->sizeB().w())
+            {
+                srcB.setX(0);
+                srcB.setW(wallpaper->sizeB().w());
+                srcB.setH((wallpaper->sizeB().w() * bufferSize.h()) / bufferSize.w());
+                srcB.setY((wallpaper->sizeB().h() - srcB.h()) / 2);
+            }
+            else
+            {
+                srcB.setY(0);
+                srcB.setH(wallpaper->sizeB().h());
+                srcB.setW((wallpaper->sizeB().h() * bufferSize.w()) / bufferSize.h());
+                srcB.setX((wallpaper->sizeB().w() - srcB.w()) / 2);
+            }
+            LTexture *scaledWallpaper = wallpaper->copy(bufferSize, srcB);
+            delete wallpaper.get();
+            wallpaper.reset(scaledWallpaper);
+        }
+        else if (!wallpaper)
+        {
+            wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
+        }
+
+    skipScale:
+        background.setImage(louvreTex2SkiaImage(wallpaper.get(), context.get(), this));
         background.opaqueRegion.setRect(AK_IRECT_INF);
         background.layout().setPosition(YGEdgeLeft, pos().x());
         background.layout().setPosition(YGEdgeTop, pos().y());
@@ -565,13 +617,10 @@ public:
             if (inPaintGL)
                 return;
             static int count = 0;
-            std::cout << "SCENE IS DIRTY " << count << std::endl;
             count++;
             repaint();
         });
 
-        wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
-        background.setImage(louvreTex2SkiaImage(wallpaper.get(), context.get(), this));
         updateBackground();
         topbarExclusiveZone.setOutput(this);
     }
@@ -735,8 +784,8 @@ public:
     AKSubScene topbar { };
     AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
     AKSolidColor topbarBackground { 0x22FFFFFF, &topbar };
-    /*AKBackgroundShadowEffect topbarShadow {
-        AKBackgroundShadowEffect::Box, 16, {0, 0}, 0xAA000000, true, &topbar};*/
+    AKBackgroundBoxShadowEffect topbarShadow {
+        16, {0, 0}, 0x45000000, false, &topbar};
     AKPath logo { &topbarBackground };
 
     std::vector<AKSimpleText*>topbarMenus;

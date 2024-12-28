@@ -60,7 +60,7 @@ public:
         m_clipMode(clipMode)
     {
         if (target)
-            target->setBackgroundEffect(this);
+            target->addBackgroundEffect(this);
     }
 
     /**

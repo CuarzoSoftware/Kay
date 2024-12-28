@@ -61,12 +61,9 @@ bool AKScene::render(AKTarget *target)
 
     for (Int64 i = t->root()->children().size() - 1; i >= 0;)
     {
-        const bool noBackroundEffect { t->root()->children()[i]->backgroundEffect() == nullptr };
-
+        const int skip = t->root()->children()[i]->backgroundEffects().size();
         calculateNewDamage(t->root()->children()[i]);
-
-        if (noBackroundEffect)
-            i--;
+        i -= 1 - skip;
     }
 
     target->surface()->recordingContext()->asDirectContext()->resetContext();
@@ -241,20 +238,10 @@ void AKScene::calculateNewDamage(AKNode *node)
     }
     else
     {        
-        if (node->layout().display() == YGDisplayNone)
-        {
-            node->m_globalRect.fLeft =  node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().position(YGEdgeLeft).value);
-            node->m_globalRect.fTop = node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().position(YGEdgeTop).value);
-            node->m_globalRect.fRight = node->m_globalRect.fLeft + SkScalarFloorToInt(node->layout().width().value);
-            node->m_globalRect.fBottom = node->m_globalRect.fTop + SkScalarFloorToInt(node->layout().height().value);
-        }
-        else
-        {
-            node->m_globalRect.fLeft = node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().calculatedLeft());
-            node->m_globalRect.fTop = node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().calculatedTop());
-            node->m_globalRect.fRight = node->m_globalRect.fLeft + SkScalarFloorToInt(node->layout().calculatedWidth());
-            node->m_globalRect.fBottom = node->m_globalRect.fTop + SkScalarFloorToInt(node->layout().calculatedHeight());
-        }
+        node->m_globalRect.fLeft = node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().calculatedLeft());
+        node->m_globalRect.fTop = node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().calculatedTop());
+        node->m_globalRect.fRight = node->m_globalRect.fLeft + SkScalarFloorToInt(node->layout().calculatedWidth());
+        node->m_globalRect.fBottom = node->m_globalRect.fTop + SkScalarFloorToInt(node->layout().calculatedHeight());
 
         node->m_rect = SkIRect::MakeXYWH(
             node->m_globalRect.x() - t->root()->m_globalRect.x(),
@@ -383,23 +370,20 @@ skipDamage:
     node->t->prevLocalRect = node->m_rect;
     node->t->prevRect = node->m_globalRect;
 
-    if (node->backgroundEffect())
+    for (auto *backgroundEffect : node->backgroundEffects())
     {
-        if (node->backgroundEffect()->stackPosition() == AKBackgroundEffect::Behind)
-            node->backgroundEffect()->insertBefore(node);
+        if (backgroundEffect->stackPosition() == AKBackgroundEffect::Behind)
+            backgroundEffect->insertBefore(node);
         else
-            node->backgroundEffect()->insertBefore(node->parent()->children().front());
+            backgroundEffect->insertBefore(node->parent()->children().front());
     }
 
     if (!(node->caps() & AKNode::Scene))
         for (Int64 i = node->children().size() - 1; i >= 0;)
         {
-            const bool noBackroundEffect { node->children()[i]->backgroundEffect() == nullptr };
-
+            const int skip = node->children()[i]->backgroundEffects().size();
             calculateNewDamage(node->children()[i]);
-
-            if (noBackroundEffect)
-                i--;
+            i -= 1 - skip;
         }
 
     if (!isRenderable)
