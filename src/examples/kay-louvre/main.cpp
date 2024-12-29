@@ -22,6 +22,7 @@
 #include <AK/nodes/AKSolidColor.h>
 #include <AK/nodes/AKRoundContainer.h>
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
+#include <AK/effects/AKBackgroundImageShadowEffect.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
 
 #include <AK/AKScene.h>
@@ -616,8 +617,6 @@ public:
 
             if (inPaintGL)
                 return;
-            static int count = 0;
-            count++;
             repaint();
         });
 
@@ -787,7 +786,6 @@ public:
     AKBackgroundBoxShadowEffect topbarShadow {
         16, {0, 0}, 0x45000000, false, &topbar};
     AKPath logo { &topbarBackground };
-
     std::vector<AKSimpleText*>topbarMenus;
     LExclusiveZone topbarExclusiveZone { LEdgeTop, 28 };
 };

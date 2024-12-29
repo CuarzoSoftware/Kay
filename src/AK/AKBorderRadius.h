@@ -22,6 +22,22 @@ namespace AK
             return AKBorderRadius{left, right, left, right};
         }
 
+        constexpr bool operator==(const AKBorderRadius &other) noexcept
+        {
+            return fTL == other.fTL &&
+                   fTR == other.fTR &&
+                   fBL == other.fBL &&
+                   fBR == other.fBR;
+        }
+
+        constexpr bool operator!=(const AKBorderRadius &other) noexcept
+        {
+            return fTL != other.fTL ||
+                   fTR != other.fTR ||
+                   fBL != other.fBL ||
+                   fBR != other.fBR;
+        }
+
         Int32 fTL;
         Int32 fTR;
         Int32 fBL;

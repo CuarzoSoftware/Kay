@@ -216,6 +216,8 @@ void AKScene::calculateNewDamage(AKNode *node)
         node->t->clientDamage.setRect(AK_IRECT_INF);
     }
 
+    node->t->onBakeGeneratedDamage = false;
+
     if (node->caps() & AKNode::BackgroundEffect)
     {
         AKBackgroundEffect &backgroundEffect { *static_cast<AKBackgroundEffect*>(node) };
@@ -333,6 +335,7 @@ void AKScene::calculateNewDamage(AKNode *node)
             canvas.scale(params.surface->scale().x(), params.surface->scale().y());
             bakeable->onBake(&params);
             canvas.restore();
+            bakeable->t->onBakeGeneratedDamage = !params.damage->isEmpty();
         }
     }
 

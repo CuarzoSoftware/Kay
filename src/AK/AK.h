@@ -53,6 +53,7 @@ namespace AK
     class AKRoundCornersEffect;
     class AKBackgroundEffect;
     class AKBackgroundBoxShadowEffect;
+    class AKBackgroundImageShadowEffect;
     class AKBackgroundBlurEffect;
 
     struct AKBlendFunc

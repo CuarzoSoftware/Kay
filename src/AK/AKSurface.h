@@ -14,7 +14,7 @@
 class AK::AKSurface : public AKObject
 {
 public:
-    ~AKSurface() { destroyStorage(); };
+    ~AKSurface() { destroyStorage(); }
 
     static std::shared_ptr<AKSurface> Make(GrRecordingContext *context, const SkSize &size, const SkVector &scale, bool hasAlpha = true) noexcept;
 
@@ -61,7 +61,7 @@ private:
         m_context(context)
     {
         m_fbInfo.fFormat = hasAlpha ? GL_RGBA8 : GL_RGB8;
-    };
+    }
     void destroyStorage() noexcept;
     sk_sp<SkSurface> m_surface;
     sk_sp<SkImage> m_image;

@@ -23,6 +23,7 @@
 
 #include <AK/AKScene.h>
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
+#include <AK/effects/AKBackgroundImageShadowEffect.h>
 #include <AK/nodes/AKRoundContainer.h>
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKSolidColor.h>
@@ -67,8 +68,9 @@ public:
         font.setEmbolden(true);
         font.setSize(32);
         title.setFont(font);
+        title.layout().setMargin(YGEdgeAll, 16);
         enableChildrenClipping(true);
-        layout().setHeight(32);
+        layout().setHeightAuto();
         layout().setWidthPercent(100);
         layout().setDisplay(YGDisplayFlex);
         layout().setJustifyContent(YGJustifyCenter);
@@ -80,7 +82,7 @@ public:
         true, this };
 
     AKSimpleText title { "Hello Kay!", this };
-
+    AKBackgroundImageShadowEffect titleShadow { 8, {4, 4}, 0x88000000, &title };
 };
 
 struct Window
@@ -97,6 +99,10 @@ struct Window
     AKPath heart { SkPath(), &redBackground };
     AKPath star { SkPath(), &redBackground };
     AKPath happy { SkPath(), &redBackground };
+
+    AKBackgroundBoxShadowEffect roundContainerShadow {10,
+                                            {0,0}, SK_ColorBLACK,
+                                            false, &roundContainer};
 
 
     AKTarget *target { nullptr };
@@ -163,6 +169,9 @@ static xdg_toplevel_listener xdgToplevelLis
 
 Window::Window() noexcept
 {
+    //roundContainerShadow.setBorderRadius({10, 0, 0, 0});
+    roundContainerShadow.setOffset(0, 4);
+    roundContainerShadow.setBorderRadius(roundContainer.borderRadius().corners());
     root.layout().setDirection(YGDirectionRTL);
     bottom.layout().setFlex(1);
     bottom.layout().setWidthAuto();
@@ -221,7 +230,6 @@ static wl_callback_listener wlCallbackLis
 {
     .done = [](void *data, wl_callback *wlCallback, uint32_t)
     {
-        std::cout << "wl_callback::done" << std::endl;
         Window &window { *static_cast<Window*>(data) };
         window.wlCallback = nullptr;
         window.update();
@@ -277,7 +285,7 @@ void Window::update() noexcept
     root.layout().setHeight(size.height());
     static float phase = 0;
     phase += 0.01f;
-    topbar.layout().setHeight(0.5f * size.height() * SkScalarAbs(SkScalarCos(phase)));
+    //topbar.layout().setHeight(0.5f * size.height() * SkScalarAbs(SkScalarCos(phase)));
     topbar.title.setColorWithAlpha({SkScalarAbs(SkScalarCos(phase)), SkScalarAbs(SkScalarSin(phase)), 1.f, 1.f});
     topbar.title.setText(message.substr(0, SkScalarAbs(SkScalarSin(phase)) * (message.size() +  1)));
 
@@ -285,7 +293,7 @@ void Window::update() noexcept
         target = scene.createTarget();
 
     SkRegion damage, opaque;
-    target->setClearColor(0xfffdf0d5);
+    target->setClearColor(SkColorSetARGB(255, 255, 50, 255 * SkScalarAbs(SkScalarCos(phase * 5.f))));
     target->outDamageRegion = &damage;
     target->outOpaqueRegion = &opaque;
     target->setRoot(&root);
@@ -294,7 +302,7 @@ void Window::update() noexcept
     target->setViewport(SkRect::MakeSize(SkSize::Make(size)));
     target->setDstRect(SkIRect::MakeSize(bufferSize));
     target->setAge(bufferAge);
-    std::cout << "Buffer age: " << bufferAge << std::endl;
+    //std::cout << "Buffer age: " << bufferAge << std::endl;
     scene.render(target);
 
     wl_region *wlOpaqueRegion = wl_compositor_create_region(app.wlCompositor);
@@ -316,7 +324,7 @@ void Window::update() noexcept
 
     if (!wlCallback)
     {
-        std::cout << "wl_surface::frame" << std::endl;
+        //std::cout << "wl_surface::frame" << std::endl;
         wlCallback = wl_surface_frame(wlSurface);
         wl_callback_add_listener(wlCallback, &wlCallbackLis ,this);
     }
@@ -328,7 +336,7 @@ void Window::update() noexcept
         SkRegion::Iterator damageIt(damage);
         while (!damageIt.done())
         {
-            std::cout << "DAMAGE " << damageIt.rect().x() << "," << damageIt.rect().y() << "," << damageIt.rect().width() << "," << damageIt.rect().height() << std::endl;
+            //std::cout << "DAMAGE " << damageIt.rect().x() << "," << damageIt.rect().y() << "," << damageIt.rect().width() << "," << damageIt.rect().height() << std::endl;
             *rectsIt = damageIt.rect().x() * scale;
             rectsIt++;
             *rectsIt = (size.height() - damageIt.rect().height() - damageIt.rect().y()) * scale;

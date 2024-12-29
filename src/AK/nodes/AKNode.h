@@ -23,6 +23,23 @@ class AK::AKNode : public AKObject
 {
 public:
 
+    struct TargetData : public AKObject
+    {
+        TargetData() noexcept { changes.set(); }
+        AKTarget *target { nullptr };
+        size_t targetLink;
+        SkRegion prevLocalClip; // Rel to root
+        SkIRect prevLocalRect,
+            prevRect;
+        SkRegion clientDamage,
+            opaque, translucent,
+            opaqueOverlay;
+        std::shared_ptr<AKSurface> bake;
+        std::bitset<128> changes;
+        bool visible;
+        bool onBakeGeneratedDamage;
+    };
+
     enum Caps : UInt32
     {
         Render              = 1 << 0,
@@ -30,7 +47,6 @@ public:
         Scene               = 1 << 2,
         BackgroundEffect    = 1 << 3
     };
-
     virtual ~AKNode();
 
     typedef UInt32 Change;
@@ -42,7 +58,6 @@ public:
         Chg_ChildrenClipping,
         Chg_Last
     };
-
     void addChange(Change change) noexcept;
 
     [[nodiscard]]
@@ -181,6 +196,12 @@ public:
 
     UInt64 userFlags { 0 };
     void *userData { nullptr };
+
+    TargetData *targetData(AKTarget *target) const noexcept
+    {
+        auto it = m_targets.find(target);
+        return it == m_targets.end() ? nullptr : &it->second;
+    }
 private:
     friend class AKBackgroundEffect;
     friend class AKRenderable;
@@ -194,22 +215,6 @@ private:
     enum Flags : UInt64
     {
         ChildrenClipping    = 1L << 0,
-    };
-
-    struct TargetData : public AKObject
-    {
-        TargetData() noexcept { changes.set(); }
-        AKTarget *target { nullptr };
-        size_t targetLink;
-        SkRegion prevLocalClip; // Rel to root
-        SkIRect prevLocalRect,
-            prevRect;
-        SkRegion clientDamage,
-            opaque, translucent,
-            opaqueOverlay;
-        std::shared_ptr<AKSurface> bake;
-        std::bitset<128> changes;
-        bool visible;
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
