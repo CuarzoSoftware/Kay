@@ -29,10 +29,10 @@ void AKBackgroundImageShadowEffect::onLayoutUpdate()
         });
     }
 
-    if (m_currentData->prevScale != currentTarget()->xyScale())
+    if (m_currentData->prevScale != currentTarget()->bakedComponentsScale())
     {
         needsNewSurface = needsFullDamage = true;
-        m_currentData->prevScale = currentTarget()->xyScale();
+        m_currentData->prevScale = currentTarget()->bakedComponentsScale();
     }
 
     const SkISize prevSize { effectRect.size() };
@@ -48,13 +48,13 @@ void AKBackgroundImageShadowEffect::onLayoutUpdate()
         const SkSize surfaceSize { SkSize::Make(effectRect.size()) };
 
         if (m_currentData->surface)
-            m_currentData->surface->resize(surfaceSize, currentTarget()->xyScale(), true);
+            m_currentData->surface->resize(surfaceSize, currentTarget()->bakedComponentsScale(), true);
         else
         {
             m_currentData->surface = AKSurface::Make(
                 currentTarget()->surface()->recordingContext(),
                 surfaceSize,
-                currentTarget()->xyScale(),
+                currentTarget()->bakedComponentsScale(),
                 true);
         }
 
@@ -62,16 +62,16 @@ void AKBackgroundImageShadowEffect::onLayoutUpdate()
         AKBrush brush;
         canvas.save();
         canvas.scale(
-            currentTarget()->xyScale().x(),
-            currentTarget()->xyScale().y());
+            currentTarget()->bakedComponentsScale(),
+            currentTarget()->bakedComponentsScale());
         canvas.clear(SK_ColorTRANSPARENT);
         brush.setBlendMode(SkBlendMode::kSrc);
         brush.setImageFilter(SkImageFilters::DropShadowOnly(0, 0, m_radius/3.f, m_radius/3.f, SK_ColorBLACK, nullptr));
         canvas.drawImageRect(
             targetNodeData->bake->image(),
             SkRect::MakeXYWH(0, 0,
-                             targetNode()->rect().width() * currentTarget()->xyScale().x(),
-                             targetNode()->rect().height() * currentTarget()->xyScale().y()),
+                             targetNode()->rect().width() * currentTarget()->bakedComponentsScale(),
+                             targetNode()->rect().height() * currentTarget()->bakedComponentsScale()),
             SkRect::MakeXYWH(m_radius, m_radius, targetNode()->rect().width(), targetNode()->rect().height()),
             SkFilterMode::kLinear,
             &brush,
@@ -99,7 +99,7 @@ void AKBackgroundImageShadowEffect::onRender(AKPainter *painter, const SkRegion 
         .srcRect = src,
         .dstSize = rect().size(),
         .srcTransform = AKTransform::Normal,
-        .srcScale = m_currentData->surface->scale().x()
+        .srcScale = SkScalar(m_currentData->surface->scale())
     });
 
     painter->drawRegion(damage);

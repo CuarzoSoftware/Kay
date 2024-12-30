@@ -105,7 +105,7 @@ protected:
     struct ShadowData
     {
         std::shared_ptr<AKSurface> surface;
-        SkVector prevScale;
+        Int32 prevScale;
         SkRect srcRects[9];
         SkIRect dstRects[9];
     };

@@ -21,7 +21,7 @@ void AKBakeable::onRender(AKPainter *painter, const SkRegion &damage)
         .srcRect = SkRect::MakeWH(rect().width(), rect().height()),
         .dstSize = rect().size(),
         .srcTransform = AKTransform::Normal,
-        .srcScale = t->bake->scale().x()
+        .srcScale = SkScalar(t->bake->scale())
     });
 
     painter->drawRegion(damage);

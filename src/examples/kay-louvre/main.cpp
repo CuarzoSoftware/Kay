@@ -15,6 +15,7 @@
 #include <LOpenGL.h>
 #include <LScreenshotRequest.h>
 #include <LExclusiveZone.h>
+#include <private/LOutputPrivate.h>
 
 #include <AK/nodes/AKSubScene.h>
 #include <AK/nodes/AKImage.h>
@@ -380,6 +381,7 @@ class Compositor final : public LCompositor
 public:
     Compositor() noexcept
     {
+        scene.setRoot(&root);
         surfaces.layout().setPositionType(YGPositionTypeAbsolute);
     }
 
@@ -433,12 +435,18 @@ public:
     }
 };
 
+class Text final : public AKSimpleText
+{
+public:
+    using AKSimpleText::AKSimpleText;
+    AKBackgroundImageShadowEffect shadow { 6, {0,0}, 0x66000000, this };
+};
+
 class Output final : public LOutput
 {
 public:
     Output(const void *params) noexcept : LOutput(params)
     {
-        enableFractionalOversampling(false);
         background.layout().setDisplay(YGDisplayFlex);
         background.layout().setJustifyContent(YGJustifyCenter);
         background.layout().setAlignItems(YGAlignCenter);
@@ -460,7 +468,7 @@ public:
         SkPath path;
         SkParsePath::FromSVGString(logoSVG.c_str(), &path);
         logo.setPath(path);
-        logo.setColorWithAlpha(0xAA000000);
+        logo.setColorWithAlpha(SK_ColorWHITE);
         logo.setSizeMode(AKPath::ScalePath);
         logo.layout().setWidth(16);
         logo.layout().setHeight(16);
@@ -484,7 +492,8 @@ public:
         font.setEmbolden(true);
         for (auto &name : topbarMenuNames)
         {
-            topbarMenus.push_back(new AKSimpleText(name, &topbarBackground));
+            topbarMenus.push_back(new Text(name, &topbarBackground));
+            topbarMenus.back()->setColorWithAlpha(SK_ColorWHITE);
             topbarMenus.back()->setFont(font);
             topbarMenus.back()->setOpacity(0.75f);
         }
@@ -569,6 +578,7 @@ public:
 
     void initializeGL() override
     {
+        //setScale(1.5f);
         // Louvre creates an OpenGL context for each output
         // here we are wrapping it into a GrDirectContext.
 
@@ -611,7 +621,6 @@ public:
         // framebuffer, transform, etc, and is used by the scene and
         // nodes to keep track of damage, previous dimensions, and other properties.
         target = comp()->scene.createTarget();
-        target->setRoot(&comp()->root);
         target->setClearColor(SK_ColorWHITE);
         target->on.markedDirty.subscribe(target, [this](AKTarget &){
 
@@ -643,8 +652,10 @@ public:
         };
 
         const GrBackendRenderTarget backendTarget(
-            currentMode()->sizeB().w(),
-            currentMode()->sizeB().h(),
+            realBufferSize().w(),
+            realBufferSize().h(),
+            //currentMode()->sizeB().w(),
+            //currentMode()->sizeB().h(),
             0, 0,
             fbInfo);
 
@@ -656,7 +667,9 @@ public:
             colorSpace,
             &skSurfaceProps));
 
-        target->setImage(louvreTex2SkiaImage(bufferTexture(currentBuffer()), context.get(), this));
+        target->setImage(louvreTex2SkiaImage(
+            usingFractionalScale() && fractionalOversamplingEnabled() ?
+            imp()->fractionalFb.texture(0) : bufferTexture(currentBuffer()), context.get(), this));
 
         // We need to manually update each surface node
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
@@ -689,7 +702,7 @@ public:
         }
 
         // We can ask the scene which region was repainted
-        if (hasBufferDamageSupport())
+        if (hasBufferDamageSupport() || usingFractionalScale())
             target->outDamageRegion = &outDamage;
 
         // If hw cursor is disabled or during screen captures
@@ -708,7 +721,8 @@ public:
         target->setTransform(static_cast<AKTransform>(transform()));
 
         // Rect within the screen fb to render the viewport to (in this case the entire screen)
-        target->setDstRect(SkIRect::MakeXYWH(0, 0, currentMode()->sizeB().w(), currentMode()->sizeB().h()));
+        target->setDstRect(SkIRect::MakeXYWH(0, 0, backendTarget.width(), backendTarget.height()));
+        target->setBakedComponentsScale(scale());
 
         //glScissor(0,0,100000,100000);
         //glClear(GL_COLOR_BUFFER_BIT);
@@ -733,7 +747,7 @@ public:
         }
 
         // This allows optimizations in the Wayland backend, or the DRM backend in some hybrid GPU cases
-        if (hasBufferDamageSupport())
+        if (hasBufferDamageSupport() || usingFractionalScale())
         {
             outDamage.translate(pos().x(), pos().y());
 
@@ -786,7 +800,8 @@ public:
     AKBackgroundBoxShadowEffect topbarShadow {
         16, {0, 0}, 0x45000000, false, &topbar};
     AKPath logo { &topbarBackground };
-    std::vector<AKSimpleText*>topbarMenus;
+    AKBackgroundImageShadowEffect logoShadow { 6, {0,0}, 0x66000000, &logo };
+    std::vector<Text*>topbarMenus;
     LExclusiveZone topbarExclusiveZone { LEdgeTop, 28 };
 };
 

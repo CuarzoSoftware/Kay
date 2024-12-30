@@ -31,10 +31,10 @@ void AKBackgroundBoxShadowEffect::onLayoutUpdate()
         });
     }
 
-    if (m_currentData->prevScale != currentTarget()->xyScale())
+    if (m_currentData->prevScale != currentTarget()->bakedComponentsScale())
     {
         needsNewSurface = needsFullDamage = true;
-        m_currentData->prevScale = currentTarget()->xyScale();
+        m_currentData->prevScale = currentTarget()->bakedComponentsScale();
     }
 
     effectRect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
@@ -148,13 +148,13 @@ void AKBackgroundBoxShadowEffect::onLayoutUpdate()
         const SkSize surfaceSize { 2.f * m_radius + centerSize, 2.f * m_radius + centerSize };
 
         if (m_currentData->surface)
-            m_currentData->surface->resize(surfaceSize, currentTarget()->xyScale());
+            m_currentData->surface->resize(surfaceSize, currentTarget()->bakedComponentsScale());
         else
         {
             m_currentData->surface = AKSurface::Make(
                 currentTarget()->surface()->recordingContext(),
                 surfaceSize,
-                currentTarget()->xyScale(),
+                currentTarget()->bakedComponentsScale(),
                 true);
         }
 
@@ -162,8 +162,8 @@ void AKBackgroundBoxShadowEffect::onLayoutUpdate()
         AKBrush brush;
         canvas.save();
         canvas.scale(
-            currentTarget()->xyScale().x(),
-            currentTarget()->xyScale().y());
+            m_currentData->surface->scale(),
+            m_currentData->surface->scale());
         canvas.clear(SK_ColorTRANSPARENT);
         brush.setBlendMode(SkBlendMode::kSrc);
         brush.setColor(SK_ColorWHITE);
@@ -193,10 +193,10 @@ void AKBackgroundBoxShadowEffect::onLayoutUpdateWithBorderRadius() noexcept
         });
     }
 
-    if (m_currentData->prevScale != currentTarget()->xyScale())
+    if (m_currentData->prevScale != currentTarget()->bakedComponentsScale())
     {
         needsNewSurface = needsFullDamage = true;
-        m_currentData->prevScale = currentTarget()->xyScale();
+        m_currentData->prevScale = currentTarget()->bakedComponentsScale();
     }
 
     const SkISize prevSize { effectRect.size() };
@@ -213,13 +213,13 @@ void AKBackgroundBoxShadowEffect::onLayoutUpdateWithBorderRadius() noexcept
         const SkSize surfaceSize { SkSize::Make(effectRect.size()) };
 
         if (m_currentData->surface)
-            m_currentData->surface->resize(surfaceSize, currentTarget()->xyScale());
+            m_currentData->surface->resize(surfaceSize, currentTarget()->bakedComponentsScale());
         else
         {
             m_currentData->surface = AKSurface::Make(
                 currentTarget()->surface()->recordingContext(),
                 surfaceSize,
-                currentTarget()->xyScale(),
+                currentTarget()->bakedComponentsScale(),
                 true);
         }
 
@@ -227,8 +227,8 @@ void AKBackgroundBoxShadowEffect::onLayoutUpdateWithBorderRadius() noexcept
         AKBrush brush;
         canvas.save();
         canvas.scale(
-            currentTarget()->xyScale().x(),
-            currentTarget()->xyScale().y());
+            m_currentData->surface->scale(),
+            m_currentData->surface->scale());
         canvas.clipIRect(SkIRect::MakeWH(effectRect.size().width() + 1, effectRect.size().height() + 1));
         canvas.clear(SK_ColorTRANSPARENT);
         brush.setBlendMode(SkBlendMode::kSrc);
@@ -294,7 +294,7 @@ void AKBackgroundBoxShadowEffect::onRender(AKPainter *painter, const SkRegion &d
             .srcRect = m_currentData->srcRects[i],
             .dstSize = m_currentData->dstRects[i].size(),
             .srcTransform = AKTransform::Normal,
-            .srcScale = m_currentData->surface->scale().x()
+            .srcScale = SkScalar(m_currentData->surface->scale())
         });
 
         painter->drawRegion(clippedDamage);
@@ -342,7 +342,7 @@ void AKBackgroundBoxShadowEffect::onRenderWithBorderRadius(AKPainter *painter, c
         .srcRect = src,
         .dstSize = rect().size(),
         .srcTransform = AKTransform::Normal,
-        .srcScale = m_currentData->surface->scale().x()
+        .srcScale = SkScalar(m_currentData->surface->scale())
     });
 
     painter->drawRegion(finalDamage);

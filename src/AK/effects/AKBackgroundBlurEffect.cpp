@@ -55,10 +55,10 @@ void AKBackgroundBlurEffect::onRender(AKPainter *, const SkRegion &damage)
     // TODO: Handle AKTarget srcRect and custom transforms
 
     const SkRect srcRect { SkRect::MakeXYWH(
-        (dstRect.x() - currentTarget()->viewport().x()) * currentTarget()->xyScale().x(),
-        (dstRect.y() - currentTarget()->viewport().y()) * currentTarget()->xyScale().y(),
-        dstRect.width() * currentTarget()->xyScale().x(),
-        dstRect.height() * currentTarget()->xyScale().y()) };
+        (dstRect.x() - currentTarget()->viewport().x()) * currentTarget()->bakedComponentsScale(),
+        (dstRect.y() - currentTarget()->viewport().y()) * currentTarget()->bakedComponentsScale(),
+        dstRect.width() * currentTarget()->bakedComponentsScale(),
+        dstRect.height() * currentTarget()->bakedComponentsScale()) };
 
     c.drawImageRect(currentTarget()->image(),
                     srcRect,

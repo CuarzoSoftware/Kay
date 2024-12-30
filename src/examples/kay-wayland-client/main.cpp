@@ -104,7 +104,6 @@ struct Window
                                             {0,0}, SK_ColorBLACK,
                                             false, &roundContainer};
 
-
     AKTarget *target { nullptr };
 
     wl_callback *wlCallback { nullptr };
@@ -296,13 +295,14 @@ void Window::update() noexcept
     target->setClearColor(SkColorSetARGB(255, 255, 50, 255 * SkScalarAbs(SkScalarCos(phase * 5.f))));
     target->outDamageRegion = &damage;
     target->outOpaqueRegion = &opaque;
-    target->setRoot(&root);
     target->setSurface(skSurface);
     target->setTransform(AKTransform::Normal);
     target->setViewport(SkRect::MakeSize(SkSize::Make(size)));
     target->setDstRect(SkIRect::MakeSize(bufferSize));
     target->setAge(bufferAge);
+    target->setBakedComponentsScale(scale);
     //std::cout << "Buffer age: " << bufferAge << std::endl;
+    scene.setRoot(&root);
     scene.render(target);
 
     wl_region *wlOpaqueRegion = wl_compositor_create_region(app.wlCompositor);

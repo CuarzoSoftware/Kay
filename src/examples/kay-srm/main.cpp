@@ -129,13 +129,13 @@ static void paintGL(SRMConnector *connector, void *userData)
     data->childLeft.layout().setFlex(1.f);
     data->childRight.layout().setFlex(1.f);
 
-    data->target->setRoot(&root);
     data->target->setViewport(SkRect::MakeWH(target.width(), target.height()));
     data->target->setDstRect(SkIRect::MakeWH(target.width(), target.height()));
     data->target->setTransform(AKTransform::Normal);
     data->target->setAge(srmConnectorGetCurrentBufferAge(connector));
     std::cout << "Buffer age:" << data->target->age() << std::endl;
 
+    scene.setRoot(&root);
     scene.render(data->target);
     srmConnectorRepaint(connector);
 }

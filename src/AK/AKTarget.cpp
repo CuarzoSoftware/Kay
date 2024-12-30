@@ -7,7 +7,6 @@ AK::AKTarget::AKTarget(AKScene *scene, std::shared_ptr<AKPainter> painter) noexc
     m_scene(scene),
     m_painter(painter)
 {
-    m_yogaConfig = YGConfigNew();
     m_sceneLink = scene->m_targets.size();
 
     if (!m_painter)

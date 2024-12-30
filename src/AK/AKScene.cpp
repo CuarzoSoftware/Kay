@@ -36,33 +36,31 @@ bool AKScene::render(AKTarget *target)
 
     updateMatrix();
 
-    for (auto it = t->root()->children().rbegin(); it != t->root()->children().rend(); it++)
+    for (auto it = root()->children().rbegin(); it != root()->children().rend(); it++)
         notifyBegin(*it);
 
-    const bool isNestedScene = (t->root()->parent() && t->m_isSubScene);
+    const bool isNestedScene = (root()->parent() && t->m_isSubScene);
 
     if (!isNestedScene)
     {
-        //YGConfigSetPointScaleFactor(t->m_yogaConfig, t->xyScale().x());
-        //YGNodeSetConfig(t->root()->layout().m_node, t->m_yogaConfig);
-        YGNodeCalculateLayout(t->root()->layout().m_node,
+        YGNodeCalculateLayout(root()->layout().m_node,
                               YGUndefined,
                               YGUndefined,
                               YGDirectionInherit);
 
-        t->root()->m_globalRect = SkRect::MakeWH(t->viewport().width(), t->viewport().height()).roundOut();
-        t->root()->m_rect = t->root()->m_globalRect;
+        root()->m_globalRect = SkRect::MakeWH(t->viewport().width(), t->viewport().height()).roundOut();
+        root()->m_rect = root()->m_globalRect;
     }
 
     t->m_globalIViewport = SkRect::MakeXYWH(
-                               t->viewport().x() + float(t->root()->globalRect().x()),
-                               t->viewport().y() + float(t->root()->globalRect().y()),
+                               t->viewport().x() + float(root()->globalRect().x()),
+                               t->viewport().y() + float(root()->globalRect().y()),
                                t->viewport().width(), t->viewport().height()).roundOut();
 
-    for (Int64 i = t->root()->children().size() - 1; i >= 0;)
+    for (Int64 i = root()->children().size() - 1; i >= 0;)
     {
-        const int skip = t->root()->children()[i]->backgroundEffects().size();
-        calculateNewDamage(t->root()->children()[i]);
+        const int skip = root()->children()[i]->backgroundEffects().size();
+        calculateNewDamage(root()->children()[i]);
         i -= 1 - skip;
     }
 
@@ -74,14 +72,14 @@ bool AKScene::render(AKTarget *target)
     updateDamageRing();
     renderBackground();
 
-    for (size_t i = 0; i < t->root()->children().size();)
+    for (size_t i = 0; i < root()->children().size();)
     {
-        renderNodes(t->root()->children()[i]);
+        renderNodes(root()->children()[i]);
 
-        t->root()->children()[i]->t->changes.reset();
+        root()->children()[i]->t->changes.reset();
 
-        if (t->root()->children()[i]->caps() & AKNode::BackgroundEffect)
-            t->root()->children()[i]->setParent(nullptr);
+        if (root()->children()[i]->caps() & AKNode::BackgroundEffect)
+            root()->children()[i]->setParent(nullptr);
         else
             i++;
     }
@@ -102,7 +100,7 @@ void AKScene::validateTarget(AKTarget *target) noexcept
     assert("Invalid surface size" && target->m_surface->width() > 0 && target->m_surface->height() > 0);
     assert("Invalid viewport" && !target->viewport().isEmpty());
     assert("Invalid dstRect" && !target->dstRect().isEmpty());
-    assert("Root node is nullptr" && target->root());
+    assert("Root node is nullptr" && root());
     t = target;
 
     if (target->age() > AK_MAX_BUFFER_AGE || target->m_needsFullRepaint)
@@ -231,8 +229,8 @@ void AKScene::calculateNewDamage(AKNode *node)
             backgroundEffect.effectRect.height());
 
         backgroundEffect.m_rect = SkIRect::MakeXYWH(
-            backgroundEffect.m_globalRect.x() - t->root()->m_globalRect.x(),
-            backgroundEffect.m_globalRect.y() - t->root()->m_globalRect.y(),
+            backgroundEffect.m_globalRect.x() - root()->m_globalRect.x(),
+            backgroundEffect.m_globalRect.y() - root()->m_globalRect.y(),
             backgroundEffect.m_globalRect.width(),
             backgroundEffect.m_globalRect.height());
 
@@ -246,8 +244,8 @@ void AKScene::calculateNewDamage(AKNode *node)
         node->m_globalRect.fBottom = node->m_globalRect.fTop + SkScalarFloorToInt(node->layout().calculatedHeight());
 
         node->m_rect = SkIRect::MakeXYWH(
-            node->m_globalRect.x() - t->root()->m_globalRect.x(),
-            node->m_globalRect.y() - t->root()->m_globalRect.y(),
+            node->m_globalRect.x() - root()->m_globalRect.x(),
+            node->m_globalRect.y() - root()->m_globalRect.y(),
             node->m_globalRect.width(),
             node->m_globalRect.height());
 
@@ -275,7 +273,7 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     AKNode *clipper { node->closestClipperParent() };
 
-    if (clipper == t->root())
+    if (clipper == root())
         clip.op(t->viewport().roundOut(), SkRegion::Op::kIntersect_Op);
     else
         clip.op(clipper->t->prevLocalClip, SkRegion::Op::kIntersect_Op);
@@ -305,7 +303,7 @@ void AKScene::calculateNewDamage(AKNode *node)
             {
                 surfaceChanged = bakeable->t->bake->resize(
                     SkSize::Make(bakeable->rect().size()),
-                    t->m_xyScale);
+                    t->bakedComponentsScale());
             }
             else
             {
@@ -313,7 +311,7 @@ void AKScene::calculateNewDamage(AKNode *node)
                 bakeable->t->bake = AKSurface::Make(
                     t->surface()->recordingContext(),
                     SkSize::Make(bakeable->rect().size()),
-                    t->m_xyScale, true);
+                    t->bakedComponentsScale(), true);
             }
 
             AKBakeable::OnBakeParams params
@@ -332,7 +330,7 @@ void AKScene::calculateNewDamage(AKNode *node)
 
             SkCanvas &canvas { *params.surface->surface()->getCanvas() };
             canvas.save();
-            canvas.scale(params.surface->scale().x(), params.surface->scale().y());
+            canvas.scale(params.surface->scale(), params.surface->scale());
             bakeable->onBake(&params);
             canvas.restore();
             bakeable->t->onBakeGeneratedDamage = !params.damage->isEmpty();

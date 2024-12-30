@@ -8,6 +8,7 @@ using namespace AK;
 
 AKSubScene::AKSubScene(AKNode *parent) noexcept : AKBakeable(parent)
 {
+    m_scene.setRoot(this);
     enableChildrenClipping(true);
     m_caps |= Scene;
 }
@@ -29,7 +30,6 @@ void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
         target->on.markedDirty.subscribe(this, [this](AKTarget &){
             addChange(Chg_Layout);
         });
-        target->setRoot(this);
         target->m_isSubScene = true;
         m_sceneTargets[t->target] = target;
         isNewTarget = true;
@@ -42,6 +42,7 @@ void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
     target->setAge((isNewTarget) ? 0 : 1);
     target->setSurface(params->surface->surface());
     target->setViewport(SkRect::MakeWH(params->surface->size().width(), params->surface->size().height()));
+    target->setBakedComponentsScale(parentTargetData->target->bakedComponentsScale());
     target->setDstRect(params->surface->imageSrcRect());
     //target->inClipRegion = params->clip;
     target->inDamageRegion = params->damage;

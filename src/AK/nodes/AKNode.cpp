@@ -3,6 +3,7 @@
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
 
 #include <AK/AKTarget.h>
+#include <AK/AKScene.h>
 #include <AK/nodes/AKNode.h>
 #include <AK/AKSurface.h>
 #include <AK/effects/AKBackgroundEffect.h>
@@ -49,7 +50,7 @@ AKNode *AKNode::closestClipperParent() const noexcept
 {
     assert(parent() != nullptr);
 
-    if (parent()->childrenClippingEnabled() || parent() == t->target->root())
+    if (parent()->childrenClippingEnabled() || parent() == t->target->scene().root())
         return parent();
 
     return parent()->closestClipperParent();

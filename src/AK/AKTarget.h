@@ -88,27 +88,6 @@ public:
     }
 
     /**
-     * @brief Root node.
-     *
-     * Only the children of the root node are rendered.
-     * The root node's bounds do not clip its children, but its layout properties affect them.
-     */
-    void setRoot(AKNode *node) noexcept
-    {
-        if (node == m_root)
-            return;
-
-        m_root.reset(node);
-        m_needsFullRepaint = true;
-        markDirty();
-    }
-
-    AKNode *root() const noexcept
-    {
-        return m_root;
-    }
-
-    /**
      * @brief Viewport in logical coordinates relative to the root node.
      *
      * This defines the visible area in the scene that will be rendered, expressed in logical coordinates.
@@ -221,7 +200,21 @@ public:
      */
     SkRegion* outInputRegion { nullptr };
 
-    const SkVector &xyScale() const noexcept
+    void setBakedComponentsScale(SkScalar scale) noexcept
+    {
+        if (scale == m_bakedComponentsScale)
+            return;
+
+        m_bakedComponentsScale = scale;
+        markDirty();
+    }
+
+    SkScalar bakedComponentsScale() const noexcept
+    {
+        return m_bakedComponentsScale;
+    }
+
+    const SkVector &scale() const noexcept
     {
         return m_xyScale;
     }
@@ -239,6 +232,11 @@ public:
     const SkRegion &accumulatedDamage() const noexcept
     {
         return m_damage;
+    }
+
+    AKScene &scene() const noexcept
+    {
+        return *m_scene;
     }
 
     /**
@@ -281,7 +279,6 @@ private:
     friend class AKSubScene;
     AKTarget(AKScene *scene, std::shared_ptr<AKPainter> painter) noexcept;
     ~AKTarget();
-    AKWeak<AKNode>      m_root;
     sk_sp<SkSurface>    m_surface;
     sk_sp<SkImage>      m_image;
     SkRect              m_viewport { 0.f, 0.f, 0.f, 0.f };
@@ -289,6 +286,7 @@ private:
     SkIRect             m_prevViewport;     // Rel to root
     SkMatrix            m_matrix;
     SkVector            m_xyScale;
+    SkScalar            m_bakedComponentsScale { 1.f };
     SkRegion            m_prevClip;         // Rel to root
     SkRegion            m_damage;           // Rel to root
     SkRegion            m_opaque;           // Rel to root
@@ -304,7 +302,6 @@ private:
     bool                m_isSubScene { false };
     bool                m_needsFullRepaint { true };
     std::shared_ptr<AKPainter> m_painter;
-    YGConfigRef         m_yogaConfig;
     std::vector<SkRegion> m_reactive;
     SkColor             m_clearColor { SK_ColorTRANSPARENT };
     UInt32              m_age { 0 };

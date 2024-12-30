@@ -7,7 +7,7 @@
 
 using namespace AK;
 
-std::shared_ptr<AKSurface> AKSurface::Make(GrRecordingContext *context, const SkSize &size, const SkVector &scale, bool hasAlpha) noexcept
+std::shared_ptr<AKSurface> AKSurface::Make(GrRecordingContext *context, const SkSize &size, SkScalar scale, bool hasAlpha) noexcept
 {
     auto surface = std::shared_ptr<AKSurface>(new AKSurface(context, hasAlpha));
     surface->resize(size, scale, true);
@@ -24,13 +24,14 @@ bool AKSurface::setHasAlpha(bool alpha) noexcept
     return shrink();
 }
 
-bool AKSurface::resize(const SkSize &size, const SkVector &scale, bool shrink) noexcept
+bool AKSurface::resize(const SkSize &size, SkScalar scale, bool shrink) noexcept
 {
     m_size = size;
     m_scale = scale;
+
     m_imageSrcRect = SkIRect::MakeWH(
-        size.width() * scale.x(),
-        size.height() * scale.y());
+        size.width() * m_scale,
+        size.height() * m_scale);
 
     const bool needsRecreation {
         !m_image ||

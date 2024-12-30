@@ -9,6 +9,7 @@
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 #include <iostream>
 
 #define LPAINTER_TRACK_UNIFORMS 1
@@ -67,7 +68,7 @@ void AKPainter::bindTextureMode(const TextureParams &p) noexcept
     userState.texture = p.texture;
 
     Float32 fbScale;
-    fbScale = t->xyScale().x();
+    fbScale = t->scale().x();
 
     SkIPoint pos = p.pos - SkIPoint::Make(t->viewport().x(), t->viewport().y());
     Float32 srcDstX, srcDstY;
@@ -291,6 +292,7 @@ void AKPainter::bindTextureMode(const TextureParams &p) noexcept
     srcRect = SkRect::MakeXYWH(srcFbX1, srcFbY1, srcFbW, srcFbH);
 
     glActiveTexture(GL_TEXTURE0);
+    glBindSampler(0, 0); // Skia touches this
     shaderSetMode(TextureMode);
     shaderSetActiveTexture(0);
     glBindTexture(glTarget, glInfo.fID);
@@ -482,6 +484,8 @@ void AKPainter::bindProgram() noexcept
     glDisable(GL_SAMPLE_COVERAGE);
     glDisable(GL_SAMPLE_SHADING);
     glDisable(GL_SAMPLE_MASK);
+    glDisable(GL_MULTISAMPLE);
+
     glDisable(GL_PROGRAM_POINT_SIZE);
     glDisable(GL_POINT_SMOOTH);
     glDisable(GL_LINE_SMOOTH);
@@ -491,7 +495,6 @@ void AKPainter::bindProgram() noexcept
     glDisable(GL_INDEX_LOGIC_OP);
     glDisable(GL_COLOR_TABLE);
     glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-    glDisable(GL_MULTISAMPLE);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glCullFace(GL_BACK);
     glLineWidth(1);
@@ -878,7 +881,7 @@ void AKPainter::setViewport(Int32 x, Int32 y, Int32 w, Int32 h) noexcept
     Float32 fbScale;
 
     // TODO: Separate x and y
-    fbScale = t->xyScale().x();
+    fbScale = t->scale().x();
 
     const Int32 x2 = floorf(Float32(x + w) * fbScale);
     const Int32 y2 = floorf(Float32(y + h) * fbScale);

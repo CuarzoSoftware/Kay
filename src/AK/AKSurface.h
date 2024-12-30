@@ -16,7 +16,7 @@ class AK::AKSurface : public AKObject
 public:
     ~AKSurface() { destroyStorage(); }
 
-    static std::shared_ptr<AKSurface> Make(GrRecordingContext *context, const SkSize &size, const SkVector &scale, bool hasAlpha = true) noexcept;
+    static std::shared_ptr<AKSurface> Make(GrRecordingContext *context, const SkSize &size, SkScalar scale, bool hasAlpha = true) noexcept;
 
     sk_sp<SkSurface> surface() const noexcept
     {
@@ -38,7 +38,7 @@ public:
         return m_size;
     }
 
-    const SkVector &scale() const noexcept
+    SkScalar scale() const noexcept
     {
         return m_scale;
     }
@@ -54,7 +54,7 @@ public:
     }
 
     bool setHasAlpha(bool alpha) noexcept;
-    bool resize(const SkSize &size, const SkVector &scale, bool shrink = false) noexcept;
+    bool resize(const SkSize &size, SkScalar scale, bool shrink = false) noexcept;
     bool shrink() noexcept;
 private:
     AKSurface(GrRecordingContext *context, bool hasAlpha) noexcept :
@@ -65,7 +65,7 @@ private:
     void destroyStorage() noexcept;
     sk_sp<SkSurface> m_surface;
     sk_sp<SkImage> m_image;
-    SkVector m_scale;
+    SkScalar m_scale;
     SkIRect m_imageSrcRect;
     SkSize m_size;
     GrGLFramebufferInfo m_fbInfo { 0 };

@@ -72,7 +72,7 @@ protected:
     struct ShadowData
     {
         std::shared_ptr<AKSurface> surface;
-        SkVector prevScale;
+        Int32 prevScale;
     };
 
     std::unordered_map<AKTarget*, ShadowData> m_targets;
