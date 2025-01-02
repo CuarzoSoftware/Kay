@@ -200,7 +200,7 @@ public:
      */
     SkRegion* outInputRegion { nullptr };
 
-    void setBakedComponentsScale(SkScalar scale) noexcept
+    void setBakedComponentsScale(Int32 scale) noexcept
     {
         if (scale == m_bakedComponentsScale)
             return;
@@ -209,7 +209,7 @@ public:
         markDirty();
     }
 
-    SkScalar bakedComponentsScale() const noexcept
+    Int32 bakedComponentsScale() const noexcept
     {
         return m_bakedComponentsScale;
     }
@@ -286,7 +286,7 @@ private:
     SkIRect             m_prevViewport;     // Rel to root
     SkMatrix            m_matrix;
     SkVector            m_xyScale;
-    SkScalar            m_bakedComponentsScale { 1.f };
+    Int32               m_bakedComponentsScale { 1 };
     SkRegion            m_prevClip;         // Rel to root
     SkRegion            m_damage;           // Rel to root
     SkRegion            m_opaque;           // Rel to root

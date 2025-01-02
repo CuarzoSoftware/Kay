@@ -7,6 +7,7 @@
 #include <AK/AKTheme.h>
 #include <AK/AKTarget.h>
 #include <AK/AKSurface.h>
+#include <iostream>
 
 AK::AKTheme::AKTheme() noexcept
 {
@@ -40,7 +41,10 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target)
     const auto it { m_buttonPlainHThreePatchImage.find(target->bakedComponentsScale()) };
 
     if (it != m_buttonPlainHThreePatchImage.end())
+    {
+        std::cout << "Got AKTheme asset from cache" << std::endl;
         return it->second;
+    }
 
     auto surface = AKSurface::Make(target->surface()->recordingContext(),
         SkSize(m_buttonPlainHThreePatchSideSrcRect.width() + m_buttonPlainHThreePatchCenterSrcRect.width(),
@@ -80,7 +84,10 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target)
     paint.setColor(SK_ColorWHITE);
     c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
     surface->surface()->flush();
-    return sk_sp<SkImage>(surface->releaseImage());
+
+    sk_sp<SkImage> result { surface->releaseImage() };
+    m_buttonPlainHThreePatchImage[target->bakedComponentsScale()] = result;
+    return result;
 }
 
 sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target)
@@ -88,7 +95,10 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target)
     const auto it { m_buttonTintedHThreePatchImage.find(target->bakedComponentsScale()) };
 
     if (it != m_buttonTintedHThreePatchImage.end())
+    {
+        std::cout << "Got AKTheme asset from cache" << std::endl;
         return it->second;
+    }
 
     auto surface = AKSurface::Make(target->surface()->recordingContext(),
         SkSize(m_buttonTintedHThreePatchSideSrcRect.width() + m_buttonTintedHThreePatchCenterSrcRect.width(),
@@ -130,5 +140,8 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target)
     paint.setStroke(false);
     c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
     surface->surface()->flush();
-    return sk_sp<SkImage>(surface->releaseImage());
+
+    sk_sp<SkImage> result { surface->releaseImage() };
+    m_buttonTintedHThreePatchImage[target->bakedComponentsScale()] = result;
+    return result;
 }
