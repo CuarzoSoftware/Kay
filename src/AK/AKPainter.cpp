@@ -36,8 +36,6 @@ void AKPainter::setParamsFromRenderable(AKRenderable *renderable) noexcept
     if (!renderable)
         return;
 
-    bindProgram();
-    bindTarget(renderable->currentTarget());
     setColor(renderable->color());
     setColorFactor(renderable->colorFactor());
     setAlpha(renderable->opacity());
@@ -949,9 +947,9 @@ void AKPainter::updateBlendingParams() noexcept
                 {
                     SkColor4f colorFactor;
                     const Float32 alpha { userState.alpha * userState.colorFactor.fA };
-                    colorFactor.fR = userState.colorFactor.fR * alpha;
-                    colorFactor.fG = userState.colorFactor.fG * alpha;
-                    colorFactor.fB = userState.colorFactor.fB * alpha;
+                    colorFactor.fR = userState.colorFactor.fR;
+                    colorFactor.fG = userState.colorFactor.fG;
+                    colorFactor.fB = userState.colorFactor.fB;
                     shaderSetPremultipliedAlpha(true);
                     glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                     shaderSetColor(colorFactor);

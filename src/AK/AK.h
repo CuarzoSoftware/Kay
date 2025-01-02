@@ -16,6 +16,7 @@ namespace AK
     template<typename...Args> class AKSignal;
     class AKListener;
     template<typename...Args> class AKListenerTemplate;
+    class AKTheme;
 
     class AKPen;
     class AKBrush;
@@ -39,6 +40,8 @@ namespace AK
     class AKSolidColor;
     class AKImage;
     class AKPath;
+    class AKHThreePatch;
+    class AKVThreePatch;
 
     /*********** BAKEABLES ***********/
 
@@ -47,6 +50,7 @@ namespace AK
     /*********** SUBSCENES ***********/
 
     class AKRoundContainer;
+    class AKButton;
 
     /************ EFFECTS ************/
 
@@ -117,6 +121,8 @@ namespace AK
 
     /// @brief Unsigned integer capable of holding a pointer
     typedef uintptr_t       UIntPtr;
+
+    AKTheme *theme() noexcept;
 };
 
 #define AK_IRECT_INF SkIRect::MakeLTRB(-2147483, -2147483, 2147483, 2147483)

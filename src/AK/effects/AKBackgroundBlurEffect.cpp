@@ -28,7 +28,7 @@ void AKBackgroundBlurEffect::onLayoutUpdate()
         m_brush.setImageFilter(SkImageFilters::Blur(m_sigma.x(), m_sigma.y(), SkTileMode::kMirror, nullptr));
 }
 
-void AKBackgroundBlurEffect::onRender(AKPainter *, const SkRegion &damage)
+void AKBackgroundBlurEffect::onRender(AKPainter *painter, const SkRegion &damage)
 {
     if (!currentTarget()->image() || damage.isEmpty())
         return;
@@ -68,4 +68,6 @@ void AKBackgroundBlurEffect::onRender(AKPainter *, const SkRegion &damage)
                     SkCanvas::kFast_SrcRectConstraint);
     currentTarget()->surface()->flush();
     c.restore();
+    painter->bindProgram();
+    painter->bindTarget(currentTarget());
 }

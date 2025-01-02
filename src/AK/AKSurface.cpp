@@ -105,8 +105,19 @@ bool AKSurface::shrink() noexcept
     return resize(m_size, m_scale, true);
 }
 
+SkImage *AKSurface::releaseImage() noexcept
+{
+    return m_image.release();
+}
+
 void AKSurface::destroyStorage() noexcept
 {
+    if (m_surface)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDeleteFramebuffers(1, &m_fbInfo.fFBOID);
+    }
+
     if (m_image)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -56,6 +56,7 @@ public:
     bool setHasAlpha(bool alpha) noexcept;
     bool resize(const SkSize &size, SkScalar scale, bool shrink = false) noexcept;
     bool shrink() noexcept;
+    SkImage *releaseImage() noexcept;
 private:
     AKSurface(GrRecordingContext *context, bool hasAlpha) noexcept :
         m_context(context)

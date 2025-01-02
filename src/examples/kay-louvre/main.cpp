@@ -1,6 +1,8 @@
 #include "AK/nodes/AKPath.h"
 #include "AK/nodes/AKSimpleText.h"
 #include "include/core/SkMaskFilter.h"
+#include <include/effects/SkBlurMaskFilter.h>
+
 #include <LLauncher.h>
 #include <LCompositor.h>
 #include <LOutput.h>
@@ -22,6 +24,7 @@
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKSolidColor.h>
 #include <AK/nodes/AKRoundContainer.h>
+#include <AK/nodes/AKButton.h>
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
@@ -415,7 +418,6 @@ public:
     MenuItem item16 { "Extra menu item 10", &menu.itemsContainer };
     MenuItem item17 { "Extra menu item 11", &menu.itemsContainer };
     MenuItem item18 { "Extra menu item 12", &menu.itemsContainer };
-
 };
 
 class Surface final : public LSurface
@@ -578,6 +580,11 @@ public:
 
     void initializeGL() override
     {
+        disabledButton.setEnabled(false);
+        customBackgroundButton.setBackgroundColor(0xFF247aff);
+        customBackgroundButtonDisabled.setBackgroundColor(0xFF247aff);
+        customBackgroundButtonDisabled.setEnabled(false);
+
         //setScale(1.5f);
         // Louvre creates an OpenGL context for each output
         // here we are wrapping it into a GrDirectContext.
@@ -789,6 +796,10 @@ public:
     AKImage background { &comp()->background };
     AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
     AKSimpleText instructions2 { "Note: Blur only works if launched from a TTY (DRM backend)", &background};
+    AKButton normalButton { "Normal Button", &background };
+    AKButton disabledButton { "Disabled Button", &background };
+    AKButton customBackgroundButton { "Colored Button", &background };
+    AKButton customBackgroundButtonDisabled { "Colored Button Disabled", &background };
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
