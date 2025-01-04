@@ -10,6 +10,8 @@
 #include <include/core/SkCanvas.h>
 #include <include/gpu/GrDirectContext.h>
 
+#include <AK/events/AKPointerMoveEvent.h>
+
 using namespace AK;
 
 AKTarget *AK::AKScene::createTarget(std::shared_ptr<AKPainter> painter) noexcept
@@ -39,7 +41,7 @@ bool AKScene::render(AKTarget *target)
     for (auto it = root()->children().rbegin(); it != root()->children().rend(); it++)
         notifyBegin(*it);
 
-    const bool isNestedScene = (root()->parent() && t->m_isSubScene);
+    const bool isNestedScene = (root()->parent() && isSubScene());
 
     if (!isNestedScene)
     {
@@ -90,6 +92,21 @@ bool AKScene::render(AKTarget *target)
     t->m_opaque.setEmpty();
     c->restore();
     return true;
+}
+
+void AKScene::postEvent(const AKEvent &event)
+{
+    if (!m_root) return;
+    m_treeChanged = false;
+    m_root->removeFlagsAndPropagate(AKNode::Notified);
+
+    switch (event.type()) {
+    case AKEvent::Type::Pointer:
+
+        break;
+    default:
+        break;
+    }
 }
 
 void AKScene::validateTarget(AKTarget *target) noexcept
@@ -193,7 +210,7 @@ void AKScene::notifyBegin(AKNode *node)
         node->t->clientDamage.setRect(AK_IRECT_INF);
     }
 
-    if (!t->m_isSubScene)
+    if (!isSubScene())
         for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
             notifyBegin(*it);
 
@@ -280,7 +297,7 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     clip.op(t->m_opaque, SkRegion::Op::kDifference_Op);
     node->t->prevLocalClip.op(t->m_opaque, SkRegion::Op::kDifference_Op);
-    node->m_insideLastTarget = SkIRect::Intersects(node->m_rect, t->viewport().roundOut());
+    node->m_flags.setFlag(AKNode::InsideLastTarget, SkIRect::Intersects(node->m_rect, t->viewport().roundOut()));
 
     node->m_intersectedTargets.clear();
     for (AKTarget *target : targets())
@@ -391,9 +408,9 @@ skipDamage:
         return;
 
     AKRenderable *rend { static_cast<AKRenderable*>(node) };
-    rend->m_renderedOnLastTarget = !t->m_opaque.contains(clip) && !clip.isEmpty() && !node->m_globalRect.isEmpty();
+    rend->m_flags.setFlag(AKNode::RenderedOnLastTarget, !t->m_opaque.contains(clip) && !clip.isEmpty() && !node->m_globalRect.isEmpty());
 
-    if (!rend->m_renderedOnLastTarget)
+    if (!rend->renderedOnLastTarget())
         return;
 
     rend->t->opaqueOverlay = t->m_opaque;
@@ -497,7 +514,7 @@ void AKScene::renderNodes(AKNode *node)
 {
     AKRenderable *rend;
 
-    if (!node->caps() || !node->m_renderedOnLastTarget)
+    if (!node->caps() || !node->renderedOnLastTarget())
         goto renderChildren;
 
     rend = static_cast<AKRenderable*>(node);

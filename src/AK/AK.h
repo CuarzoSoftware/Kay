@@ -17,6 +17,7 @@ namespace AK
     class AKListener;
     template<typename...Args> class AKListenerTemplate;
     class AKTheme;
+    class AKTime;
 
     class AKPen;
     class AKBrush;
@@ -59,6 +60,44 @@ namespace AK
     class AKBackgroundBoxShadowEffect;
     class AKBackgroundImageShadowEffect;
     class AKBackgroundBlurEffect;
+
+    /************ EVENTS *************/
+
+    class AKEvent;
+    class AKInputEvent;
+    class AKInputDevice;
+
+    class AKPointerEvent;
+    class AKPointerEnterEvent;
+    class AKPointerLeaveEvent;
+    class AKPointerMoveEvent;
+    class AKPointerButtonEvent;
+    class AKPointerScrollEvent;
+
+    class AKPointerSwipeBeginEvent;
+    class AKPointerSwipeUpdateEvent;
+    class AKPointerSwipeEndEvent;
+
+    class AKPointerPinchBeginEvent;
+    class AKPointerPinchUpdateEvent;
+    class AKPointerPinchEndEvent;
+
+    class AKPointerHoldBeginEvent;
+    class AKPointerHoldEndEvent;
+
+    class AKKeyboardEvent;
+    class AKKeyboardEnterEvent;
+    class AKKeyboardLeaveEvent;
+    class AKKeyboardKeyEvent;
+    class AKKeyboardModifiersEvent;
+
+    class AKTouchEvent;
+    class AKTouchDownEvent;
+    class AKTouchMoveEvent;
+    class AKTouchUpEvent;
+    class AKTouchFrameEvent;
+    class AKTouchCancelEvent;
+    class AKTouchPoint;
 
     struct AKBlendFunc
     {

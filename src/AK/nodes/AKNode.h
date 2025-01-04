@@ -75,19 +75,13 @@ public:
 
     /* Insert at the end, nullptr unsets */
     void setParent(AKNode *parent) noexcept;
-    AKNode *parent() const noexcept
-    {
-        return m_parent;
-    }
-
+    AKNode *parent() const noexcept { return m_parent; }
     AKNode *topmostParent() const noexcept;
-
     void insertBefore(AKNode *other) noexcept;
     void insertAfter(AKNode *other) noexcept;
     bool isSubchildOf(AKNode *node) const noexcept
     {
         if (!node || !parent()) return false;
-
         return parent() == node || parent()->isSubchildOf(node);
     }
     const std::vector<AKNode*> &children() const noexcept
@@ -100,21 +94,16 @@ public:
         return m_caps;
     }
 
+    bool isRoot() const noexcept { return m_flags.check(IsRoot); }
+
     AKTarget *currentTarget() const noexcept
     {
         assert(t);
         return t->target;
     }
 
-    const std::vector<AKTarget*> &intersectedTargets() const noexcept
-    {
-        return m_intersectedTargets;
-    }
-
-    bool childrenClippingEnabled() const noexcept
-    {
-        return m_flags.check(ChildrenClipping);
-    }
+    const std::vector<AKTarget*> &intersectedTargets() const noexcept { return m_intersectedTargets; }
+    bool childrenClippingEnabled() const noexcept { return m_flags.check(ChildrenClipping); }
 
     void enableChildrenClipping(bool enable) noexcept
     {
@@ -125,57 +114,24 @@ public:
         addChange(Chg_ChildrenClipping);
     }
 
-    void setInputRegion(SkRegion *region) noexcept
-    {
-        m_inputRegion = region ? std::make_unique<SkRegion>(*region) : nullptr;
-    }
-
-    SkRegion *inputRegion() const noexcept
-    {
-        return m_inputRegion.get();
-    }
-
-    bool insideLastTarget() const noexcept
-    {
-        return m_insideLastTarget;
-    }
-
-    bool renderedOnLastTarget() const noexcept
-    {
-        return m_renderedOnLastTarget;
-    }
+    void setInputRegion(SkRegion *region) noexcept { m_inputRegion = region ? std::make_unique<SkRegion>(*region) : nullptr; }
+    SkRegion *inputRegion() const noexcept { return m_inputRegion.get(); }
+    bool insideLastTarget() const noexcept { return m_flags.check(InsideLastTarget); }
+    bool renderedOnLastTarget() const noexcept { return m_flags.check(RenderedOnLastTarget); }
 
     /* Layout */
 
     /* Relative to the closest subscene */
-    const SkIRect rect() const noexcept
-    {
-        return m_rect;
-    }
+    const SkIRect rect() const noexcept { return m_rect;}
 
     /* Relative to the root node */
-    const SkIRect globalRect() const noexcept
-    {
-        return m_globalRect;
-    }
-
-    const AKLayout &layout() const noexcept
-    {
-        return m_layout;
-    }
-
-    AKLayout &layout() noexcept
-    {
-        return m_layout;
-    }
+    const SkIRect globalRect() const noexcept { return m_globalRect; }
+    const AKLayout &layout() const noexcept { return m_layout; }
+    AKLayout &layout() noexcept { return m_layout; }
 
     /* Effects */
 
-    const std::unordered_set<AKBackgroundEffect*> &backgroundEffects() const noexcept
-    {
-        return m_backgroundEffects;
-    }
-
+    const std::unordered_set<AKBackgroundEffect*> &backgroundEffects() const noexcept { return m_backgroundEffects; }
     void addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
     void removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
 
@@ -202,6 +158,12 @@ public:
         auto it = m_targets.find(target);
         return it == m_targets.end() ? nullptr : &it->second;
     }
+
+    AKScene *scene() const noexcept { return m_scene; }
+
+protected:
+    virtual void onEvent(const AKEvent &event) { (void)event; }
+
 private:
     friend class AKBackgroundEffect;
     friend class AKRenderable;
@@ -212,15 +174,25 @@ private:
     friend class AKScene;
     friend class AKLayout;
 
-    enum Flags : UInt64
+    enum Flags : UInt32
     {
-        ChildrenClipping    = 1L << 0,
+        ChildrenClipping        = 1 << 0,
+        IsRoot                  = 1 << 1,
+        Notified                = 1 << 2,
+        InsideLastTarget        = 1 << 3,
+        RenderedOnLastTarget    = 1 << 4
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
     AKNode *closestClipperParent() const noexcept;
+    void setScene(AKScene *scene) noexcept;
+    void propagateScene(AKScene *scene) noexcept;
+    void setParentPrivate(AKNode *parent, bool handleChanges) noexcept;
+    void addFlagsAndPropagate(Flags flags) noexcept;
+    void removeFlagsAndPropagate(Flags flags) noexcept;
 
     AKWeak<TargetData> t;
+    AKWeak<AKScene> m_scene;
     AKLayout m_layout { *this };
     AKBitset<Flags> m_flags { 0 };
     std::unordered_set<AKBackgroundEffect*> m_backgroundEffects;
@@ -233,8 +205,6 @@ private:
     std::unique_ptr<SkRegion> m_inputRegion;
     std::vector<AKTarget*> m_intersectedTargets;
     mutable std::unordered_map<AKTarget*, TargetData> m_targets;
-    bool m_insideLastTarget { false };
-    bool m_renderedOnLastTarget { false };
 };
 
 #endif // AKNODE_H

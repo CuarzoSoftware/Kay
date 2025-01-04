@@ -56,7 +56,32 @@ AKNode *AKNode::closestClipperParent() const noexcept
     return parent()->closestClipperParent();
 }
 
-void AKNode::setParent(AKNode *parent) noexcept
+void AKNode::setScene(AKScene *scene) noexcept
+{
+    if (m_scene == scene)
+        return;
+
+    if (m_scene)
+        m_scene->m_treeChanged = true;
+
+    m_scene.reset(scene);
+
+    if (scene)
+        scene->m_treeChanged = true;
+
+    for (AKNode *child : m_children)
+        child->propagateScene(scene);
+}
+
+void AKNode::propagateScene(AKScene *scene) noexcept
+{
+    m_scene.reset(scene);
+
+    for (AKNode *child : m_children)
+        child->propagateScene(scene);
+}
+
+void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
 {
     assert(!parent || (parent != this && !parent->isSubchildOf(this)));
 
@@ -65,7 +90,8 @@ void AKNode::setParent(AKNode *parent) noexcept
 
     if (m_parent)
     {
-        addChange(Chg_Parent);
+        if (handleChanges && m_parent != parent)
+            addChange(Chg_Parent);
         YGNodeRemoveChild(m_parent->layout().m_node, layout().m_node);
         auto next = m_parent->m_children.erase(m_parent->m_children.begin() + m_parentLinkIndex);
         for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex--;
@@ -78,8 +104,39 @@ void AKNode::setParent(AKNode *parent) noexcept
         m_parentLinkIndex = YGNodeGetChildCount(parent->layout().m_node);
         YGNodeInsertChild(parent->layout().m_node, layout().m_node, m_parentLinkIndex);
         parent->m_children.push_back(this);
-        parent->addChange(Chg_Layout);
+
+        if (handleChanges)
+        {
+            parent->addChange(Chg_Layout);
+            setScene(parent->scene());
+        }
+
+        if (scene())
+            scene()->m_treeChanged = true;
     }
+    else if (handleChanges)
+        setScene(nullptr);
+}
+
+void AKNode::addFlagsAndPropagate(Flags flags) noexcept
+{
+    m_flags.add(flags);
+
+    for (AKNode *child : m_children)
+        child->addFlagsAndPropagate(flags);
+}
+
+void AKNode::removeFlagsAndPropagate(Flags flags) noexcept
+{
+    m_flags.remove(flags);
+
+    for (AKNode *child : m_children)
+        child->removeFlagsAndPropagate(flags);
+}
+
+void AKNode::setParent(AKNode *parent) noexcept
+{
+    setParentPrivate(parent, true);
 }
 
 AKNode *AKNode::topmostParent() const noexcept
@@ -103,8 +160,23 @@ void AKNode::insertBefore(AKNode *other) noexcept
     {
         if (other->parent())
         {
+            if (other->parent() == parent())
+            {
+                // Already inserted before
+                if (other->m_parentLinkIndex == m_parentLinkIndex + 1)
+                    return;
+            }
+            else
+            {
+                addChange(Chg_Parent);
+
+                if (parent())
+                    parent()->addChange(Chg_Layout);
+            }
+
+            setScene(other->scene());
             other->parent()->addChange(Chg_Layout);
-            setParent(nullptr);
+            setParentPrivate(nullptr, false);
             m_parent = other->parent();
             m_parentLinkIndex = other->m_parentLinkIndex;
             YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLinkIndex);
@@ -114,6 +186,9 @@ void AKNode::insertBefore(AKNode *other) noexcept
             assert(m_parent->m_children[m_parentLinkIndex] == this);
             assert(m_parent->m_children[m_parentLinkIndex+1] == other);
             assert(m_parent->m_children[other->m_parentLinkIndex] == other);
+
+            if (scene())
+                scene()->m_treeChanged = true;
         }
         else
         {
@@ -137,7 +212,19 @@ void AKNode::insertAfter(AKNode *other) noexcept
     {
         if (other->parent())
         {
-            setParent(nullptr);
+            if (other->parent() == parent())
+            {
+                // Already inserted after
+                if (other->m_parentLinkIndex + 1 == m_parentLinkIndex)
+                    return;
+            }
+            else
+            {
+                addChange(Chg_Parent);
+
+                if (parent())
+                    parent()->addChange(Chg_Layout);
+            }
 
             if (other->parent()->children().back() == other)
             {
@@ -145,12 +232,17 @@ void AKNode::insertAfter(AKNode *other) noexcept
                 return;
             }
 
+            setParentPrivate(nullptr, false);
+            setScene(other->scene());
             other->parent()->addChange(Chg_Layout);
             m_parent = other->parent();
             m_parentLinkIndex = other->m_parentLinkIndex + 1;
             YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLinkIndex);
             auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLinkIndex, this) + 1;
             for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex++;
+
+            if (scene())
+                scene()->m_treeChanged = true;
         }
         else
         {

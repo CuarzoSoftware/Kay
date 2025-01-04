@@ -8,6 +8,7 @@ using namespace AK;
 
 AKSubScene::AKSubScene(AKNode *parent) noexcept : AKBakeable(parent)
 {
+    m_scene.m_isSubScene = true;
     m_scene.setRoot(this);
     enableChildrenClipping(true);
     m_caps |= Scene;
@@ -30,7 +31,6 @@ void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
         target->on.markedDirty.subscribe(this, [this](AKTarget &){
             addChange(Chg_Layout);
         });
-        target->m_isSubScene = true;
         m_sceneTargets[t->target] = target;
         isNewTarget = true;
     }

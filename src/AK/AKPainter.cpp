@@ -12,7 +12,7 @@
 #include <GLES3/gl3.h>
 #include <iostream>
 
-#define LPAINTER_TRACK_UNIFORMS 1
+#define AKPAINTER_TRACK_UNIFORMS 1
 
 using namespace AK;
 
@@ -661,7 +661,7 @@ AKPainter::AKPainter() noexcept
     else
     {
         currentProgram = programObjectExternal;
-#if LPAINTER_TRACK_UNIFORMS == 1
+#if AKPAINTER_TRACK_UNIFORMS == 1
         currentState = &stateExternal;
 #endif
         currentUniforms = &uniformsExternal;
@@ -689,7 +689,7 @@ AKPainter::AKPainter() noexcept
     }
 
     currentProgram = programObject;
-#if LPAINTER_TRACK_UNIFORMS == 1
+#if AKPAINTER_TRACK_UNIFORMS == 1
     currentState = &state;
 #endif
     currentUniforms = &uniforms;

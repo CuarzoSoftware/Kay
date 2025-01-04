@@ -34,7 +34,13 @@ public:
         if (node == m_root)
             return;
 
+        if (m_root)
+            m_root->m_flags.remove(AKNode::IsRoot);
+
         m_root.reset(node);
+
+        if (m_root && !m_isSubScene)
+            m_root->m_flags.add(AKNode::IsRoot);
 
         for (AKTarget *t : m_targets)
         {
@@ -52,13 +58,21 @@ public:
     {
         return m_targets;
     }
+
+    bool isSubScene() const noexcept { return m_isSubScene; };
+
+    void postEvent(const AKEvent &event);
 private:
     friend class AKTarget;
+    friend class AKNode;
+    friend class AKSubScene;
     SkCanvas *c;
     AKTarget *t;
     SkMatrix m_matrix;
     std::vector<AKTarget*> m_targets;
     AKWeak<AKNode> m_root;
+    bool m_isSubScene { false };
+    bool m_treeChanged { false };
     void validateTarget(AKTarget *target) noexcept;
     void updateMatrix() noexcept;
     void notifyBegin(AKNode *node);

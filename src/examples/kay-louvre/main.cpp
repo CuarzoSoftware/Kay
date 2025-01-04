@@ -9,9 +9,10 @@
 #include <LOutputMode.h>
 #include <LSurface.h>
 #include <LCursor.h>
+#include <LPointer.h>
 #include <LLog.h>
 #include <LSeat.h>
-#include <LPointer.h>
+#include <include/core/SkPoint.h>
 #include <LKeyboard.h>
 #include <LAnimation.h>
 #include <LOpenGL.h>
@@ -53,7 +54,7 @@
 #include <iostream>
 
 using namespace AK;
-using namespace Louvre;
+using namespace AK;
 
 enum NodeTypeFlags
 {
@@ -453,6 +454,7 @@ public:
         background.layout().setJustifyContent(YGJustifyCenter);
         background.layout().setAlignItems(YGAlignCenter);
         background.layout().setPositionType(YGPositionTypeAbsolute);
+        background.layout().setGap(YGGutterAll, 8.f);
 
         topbar.layout().setPositionType(YGPositionTypeAbsolute);
         topbar.layout().setPosition(YGEdgeLeft, pos().x());

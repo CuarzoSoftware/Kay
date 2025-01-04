@@ -299,7 +299,6 @@ private:
     UInt32              m_fbId;
     SkIRect             m_dstRect { 0, 0, 0, 0 };
     bool                m_isDirty { false };
-    bool                m_isSubScene { false };
     bool                m_needsFullRepaint { true };
     std::shared_ptr<AKPainter> m_painter;
     std::vector<SkRegion> m_reactive;

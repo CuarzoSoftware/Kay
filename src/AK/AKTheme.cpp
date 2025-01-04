@@ -41,10 +41,7 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target)
     const auto it { m_buttonPlainHThreePatchImage.find(target->bakedComponentsScale()) };
 
     if (it != m_buttonPlainHThreePatchImage.end())
-    {
-        std::cout << "Got AKTheme asset from cache" << std::endl;
         return it->second;
-    }
 
     auto surface = AKSurface::Make(target->surface()->recordingContext(),
         SkSize(m_buttonPlainHThreePatchSideSrcRect.width() + m_buttonPlainHThreePatchCenterSrcRect.width(),
@@ -95,10 +92,7 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target)
     const auto it { m_buttonTintedHThreePatchImage.find(target->bakedComponentsScale()) };
 
     if (it != m_buttonTintedHThreePatchImage.end())
-    {
-        std::cout << "Got AKTheme asset from cache" << std::endl;
         return it->second;
-    }
 
     auto surface = AKSurface::Make(target->surface()->recordingContext(),
         SkSize(m_buttonTintedHThreePatchSideSrcRect.width() + m_buttonTintedHThreePatchCenterSrcRect.width(),

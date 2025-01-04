@@ -18,7 +18,6 @@
 #include <GLES2/gl2ext.h>
 #include <cassert>
 #include <cstring>
-#include <iostream>
 #include <linux/input-event-codes.h>
 
 #include <AK/AKScene.h>
