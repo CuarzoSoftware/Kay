@@ -2,6 +2,8 @@
 #include <include/gpu/ganesh/SkImageGanesh.h>
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
 
+#include <AK/events/AKPointerEnterEvent.h>
+
 #include <AK/AKTarget.h>
 #include <AK/AKScene.h>
 #include <AK/nodes/AKNode.h>
@@ -44,6 +46,36 @@ const std::bitset<128> &AKNode::changes() const noexcept
 {
     static std::bitset<128> emptyChanges;
     return currentTarget() == nullptr ? emptyChanges: m_targets[currentTarget()].changes;
+}
+
+void AKNode::enablePointerGrab(bool enabled) noexcept
+{
+    if (pointerGrabEnabled() == enabled)
+        return;
+
+    m_flags.setFlag(PointerGrab, enabled);
+
+    if (enabled && !hasPointerFocus())
+    {
+        m_flags.add(HasPointerFocus);
+        onEvent(AKPointerEnterEvent());
+    }
+}
+
+AKNode *AKNode::topmostInvisibleParent() const noexcept
+{
+    AKNode *topmost { nullptr };
+    const AKNode *node { this };
+
+    while (node)
+    {
+        if (node->parent() && !node->parent()->visible())
+            topmost = node->parent();
+
+        node = node->parent();
+    }
+
+    return topmost;
 }
 
 AKNode *AKNode::closestClipperParent() const noexcept
@@ -118,7 +150,7 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
         setScene(nullptr);
 }
 
-void AKNode::addFlagsAndPropagate(Flags flags) noexcept
+void AKNode::addFlagsAndPropagate(UInt32 flags) noexcept
 {
     m_flags.add(flags);
 
@@ -126,12 +158,23 @@ void AKNode::addFlagsAndPropagate(Flags flags) noexcept
         child->addFlagsAndPropagate(flags);
 }
 
-void AKNode::removeFlagsAndPropagate(Flags flags) noexcept
-{
+void AKNode::removeFlagsAndPropagate(UInt32 flags) noexcept
+{    
     m_flags.remove(flags);
 
     for (AKNode *child : m_children)
         child->removeFlagsAndPropagate(flags);
+}
+
+void AKNode::setFlagsAndPropagateToParents(UInt32 flags, bool set) noexcept
+{
+    AKNode *node { this };
+
+    while (node)
+    {
+        node->m_flags.setFlag(flags, set);
+        node = node->parent();
+    }
 }
 
 void AKNode::setParent(AKNode *parent) noexcept
@@ -147,6 +190,16 @@ AKNode *AKNode::topmostParent() const noexcept
         par = par->parent();
 
     return par;
+}
+
+AKNode *AKNode::bottommostChild() const noexcept
+{
+    const AKNode *child { this };
+
+    while (child && !child->children().empty())
+        child = child->children().back();
+
+    return child == this ? nullptr : (AKNode*)child;
 }
 
 void AKNode::insertBefore(AKNode *other) noexcept

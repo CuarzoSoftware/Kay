@@ -1,5 +1,9 @@
 #include <AK/nodes/AKButton.h>
 #include <AK/AKTheme.h>
+#include <AK/events/AKPointerEnterEvent.h>
+#include <AK/events/AKPointerLeaveEvent.h>
+#include <AK/events/AKPointerMoveEvent.h>
+#include <AK/events/AKPointerButtonEvent.h>
 
 using namespace AK;
 
@@ -44,9 +48,49 @@ void AKButton::setEnabled(bool enabled) noexcept
     addChange(Chg_Enabled);
 }
 
+void AKButton::setPressed(bool pressed) noexcept
+{
+    if (!enabled())
+        return;
+
+    if (m_pressed == pressed)
+        return;
+
+    m_pressed = pressed;
+    addChange(Chg_Pressed);
+}
+
+void AKButton::onEvent(const AKEvent &event)
+{
+    if (event.type() != AKEvent::Type::Pointer || event.subtype() != AKEvent::Subtype::Button)
+        return;
+
+    auto &e { static_cast<const AKPointerButtonEvent&>(event) };
+    if (e.button() == AKPointerButtonEvent::Left)
+    {
+        const bool triggerOnClicked { !e.state() && pressed() };
+        setPressed(e.state());
+        enablePointerGrab(e.state());
+
+        if (triggerOnClicked)
+            on.clicked.notify();
+    }
+}
+
 void AKButton::onSceneBegin()
 {
     applyLayoutConstraints();
+
+    SkColor4f finalBackgroundColor { SkColor4f::FromColor(m_backgroundColor) };
+    SkScalar contentOpacity { 1.f };
+
+    if (pressed())
+    {
+        finalBackgroundColor.fR *= theme()->buttonPressedBackgroundDarkness();
+        finalBackgroundColor.fG *= theme()->buttonPressedBackgroundDarkness();
+        finalBackgroundColor.fB *= theme()->buttonPressedBackgroundDarkness();
+        contentOpacity = theme()->buttonPressedContentOpacity;
+    }
 
     if (m_backgroundColor == SK_ColorWHITE)
     {
@@ -60,7 +104,6 @@ void AKButton::onSceneBegin()
         m_hThreePatch.setSideSrcRect(theme()->buttonTintedHThreePatchSideSrcRect());
         m_hThreePatch.setCenterSrcRect(theme()->buttonTintedHThreePatchCenterSrcRect());
         m_hThreePatch.setImage(theme()->buttonTintedHThreePatchImage(currentTarget()));
-        m_hThreePatch.setColorFactor(m_backgroundColor);
 
         if (enabled())
             m_text.setColorWithoutAlpha(SK_ColorWHITE);
@@ -68,6 +111,8 @@ void AKButton::onSceneBegin()
             m_text.setColorWithoutAlpha(SK_ColorBLACK);
     }
 
+    m_text.setOpacity(contentOpacity);
+    m_hThreePatch.setColorFactor(finalBackgroundColor);
     m_hThreePatch.setScale(currentTarget()->bakedComponentsScale());
 }
 

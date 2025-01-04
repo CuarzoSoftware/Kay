@@ -7,7 +7,6 @@
 #include <AK/AKTheme.h>
 #include <AK/AKTarget.h>
 #include <AK/AKSurface.h>
-#include <iostream>
 
 AK::AKTheme::AKTheme() noexcept
 {

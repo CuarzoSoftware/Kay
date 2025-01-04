@@ -49,6 +49,8 @@ public:
         }
     }
 
+    AKNode *nodeAt(const SkPoint &pos) const noexcept;
+
     AKNode *root() const noexcept
     {
         return m_root;
@@ -66,6 +68,7 @@ private:
     friend class AKTarget;
     friend class AKNode;
     friend class AKSubScene;
+    const AKEvent *e;
     SkCanvas *c;
     AKTarget *t;
     SkMatrix m_matrix;
@@ -80,6 +83,9 @@ private:
     void updateDamageRing() noexcept;
     void renderBackground() noexcept;
     void renderNodes(AKNode *node);
+
+    void handlePointerMoveEvent();
+    void handlePointerButtonEvent();
 };
 
 #endif // AKSCENE_H

@@ -23,6 +23,86 @@ class AK::AKNode : public AKObject
 {
 public:
 
+    class RIterator
+    {
+    public:
+        RIterator(AKNode *node) noexcept
+        {
+            reset(node);
+        }
+
+        void reset(AKNode *node) noexcept
+        {
+            m_node = node;
+
+            if (m_node)
+            {
+                m_done = false;
+                m_end = m_node->topmostParent();
+
+                if (!m_end)
+                    m_end = m_node;
+            }
+            else
+            {
+                m_done = true;
+                m_end = node;
+            }
+        }
+        bool done() const noexcept { return m_done; }
+        void next() noexcept
+        {
+            m_done = m_end == m_node;
+
+            if (done()) return;
+
+            AKNode *prev { m_node->prev() };
+
+            if (!prev)
+            {
+                m_node = m_node->parent();
+                return;
+            }
+            else
+            {
+                AKNode *bottommost { prev->bottommostChild() };
+
+                if (bottommost)
+                {
+                    m_node = bottommost;
+                    return;
+                }
+                else
+                    m_node = prev;
+            }
+        }
+        void jumpTo(AKNode *node) noexcept
+        {
+            if (node == m_node) return;
+
+            if (node)
+            {
+                if (m_end)
+                {
+                    m_done = false;
+                    m_node = node;
+                }
+                else
+                    reset(node);
+            }
+            else
+            {
+                m_done = true;
+                m_node = m_end = nullptr;
+            }
+        }
+        AKNode *end() const noexcept { return m_end; }
+        AKNode *node() const noexcept { return m_node; }
+    private:
+        AKNode *m_node, *m_end;
+        bool m_done;
+    };
+
     struct TargetData : public AKObject
     {
         TargetData() noexcept { changes.set(); }
@@ -73,12 +153,36 @@ public:
         return layout().display() != YGDisplayNone;
     }
 
+    bool hasPointerFocus() const noexcept
+    {
+        return m_flags.check(HasPointerFocus);
+    }
+
+    void enablePointerGrab(bool enabled) noexcept;
+    bool pointerGrabEnabled() const noexcept
+    {
+        return m_flags.check(PointerGrab);
+    }
+
+    AKNode *topmostInvisibleParent() const noexcept;
+
     /* Insert at the end, nullptr unsets */
     void setParent(AKNode *parent) noexcept;
     AKNode *parent() const noexcept { return m_parent; }
     AKNode *topmostParent() const noexcept;
+    AKNode *bottommostChild() const noexcept;
     void insertBefore(AKNode *other) noexcept;
     void insertAfter(AKNode *other) noexcept;
+    AKNode *next() const noexcept
+    {
+        return m_parent && m_parent->m_children.back() != this ? m_parent->m_children[m_parentLinkIndex + 1] : nullptr;
+    }
+
+    AKNode *prev() const noexcept
+    {
+        return m_parent && m_parentLinkIndex > 0 ? m_parent->m_children[m_parentLinkIndex - 1] : nullptr;
+    }
+
     bool isSubchildOf(AKNode *node) const noexcept
     {
         if (!node || !parent()) return false;
@@ -180,7 +284,10 @@ private:
         IsRoot                  = 1 << 1,
         Notified                = 1 << 2,
         InsideLastTarget        = 1 << 3,
-        RenderedOnLastTarget    = 1 << 4
+        RenderedOnLastTarget    = 1 << 4,
+        HasPointerFocus         = 1 << 5,
+        ChildHasPointerFocus    = 1 << 6,
+        PointerGrab             = 1 << 7
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
@@ -188,8 +295,9 @@ private:
     void setScene(AKScene *scene) noexcept;
     void propagateScene(AKScene *scene) noexcept;
     void setParentPrivate(AKNode *parent, bool handleChanges) noexcept;
-    void addFlagsAndPropagate(Flags flags) noexcept;
-    void removeFlagsAndPropagate(Flags flags) noexcept;
+    void addFlagsAndPropagate(UInt32 flags) noexcept;
+    void removeFlagsAndPropagate(UInt32 flags) noexcept;
+    void setFlagsAndPropagateToParents(UInt32 flags, bool set) noexcept;
 
     AKWeak<TargetData> t;
     AKWeak<AKScene> m_scene;

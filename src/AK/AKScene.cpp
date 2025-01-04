@@ -11,6 +11,9 @@
 #include <include/gpu/GrDirectContext.h>
 
 #include <AK/events/AKPointerMoveEvent.h>
+#include <AK/events/AKPointerEnterEvent.h>
+#include <AK/events/AKPointerLeaveEvent.h>
+#include <AK/events/AKPointerButtonEvent.h>
 
 using namespace AK;
 
@@ -94,18 +97,177 @@ bool AKScene::render(AKTarget *target)
     return true;
 }
 
+AKNode *AKScene::nodeAt(const SkPoint &pos) const noexcept
+{
+    if (!m_root)
+        return nullptr;
+
+    const SkIPoint ipos(pos.x(), pos.y());
+    AKNode::RIterator it { m_root->bottommostChild() };
+    AKNode *clipper, *topmostInvisibleParent;
+
+    while (!it.done())
+    {
+        topmostInvisibleParent = it.node()->topmostInvisibleParent();
+
+        if (topmostInvisibleParent)
+        {
+            it.jumpTo(topmostInvisibleParent);
+            continue;
+        }
+
+        if (!it.node()->visible())
+        {
+            it.next();
+            continue;
+        }
+
+        if (!it.node()->globalRect().contains(ipos.x(), ipos.y()))
+        {
+            it.next();
+            continue;
+        }
+
+        if (it.node()->inputRegion() && !it.node()->inputRegion()->contains(
+                ipos.x() - it.node()->globalRect().x(),
+                ipos.y() - it.node()->globalRect().y()))
+        {
+            it.next();
+            continue;
+        }
+
+        clipper = it.node()->closestClipperParent();
+
+        if (clipper)
+        {
+            if (!clipper->globalRect().contains(ipos.x(), ipos.y()))
+            {
+                it.next();
+                continue;
+            }
+
+            if (clipper->inputRegion() && !clipper->inputRegion()->contains(
+                    ipos.x() - clipper->globalRect().x(),
+                    ipos.y() - clipper->globalRect().y()))
+            {
+                it.next();
+                continue;
+            }
+        }
+
+        return it.node();
+    }
+
+    return nullptr;
+}
+
 void AKScene::postEvent(const AKEvent &event)
 {
     if (!m_root) return;
-    m_treeChanged = false;
-    m_root->removeFlagsAndPropagate(AKNode::Notified);
+    e = &event;
 
     switch (event.type()) {
     case AKEvent::Type::Pointer:
-
+        switch (event.subtype()) {
+        case AKEvent::Subtype::Move:
+            handlePointerMoveEvent();
+            break;
+        case AKEvent::Subtype::Button:
+            handlePointerButtonEvent();
+            break;
+        default:
+            break;
+        }
         break;
     default:
         break;
+    }
+}
+
+void AKScene::handlePointerMoveEvent()
+{
+    auto &event { *static_cast<const AKPointerMoveEvent*>(e) };
+    const AKPointerEnterEvent enterEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
+    const AKPointerLeaveEvent leaveEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
+    m_root->removeFlagsAndPropagate(AKNode::Notified | AKNode::ChildHasPointerFocus);
+    AKNode *hover { nodeAt(event.pos()) };
+
+    if (hover)
+        hover->setFlagsAndPropagateToParents(AKNode::ChildHasPointerFocus, true);
+
+    AKNode::RIterator it { nullptr };
+
+retry:
+    it.reset(m_root->bottommostChild());
+    m_treeChanged = false;
+
+    while (!it.done())
+    {
+        if (it.node()->m_flags.check(AKNode::Notified))
+        {
+            it.next();
+            continue;
+        }
+
+        it.node()->m_flags.add(AKNode::Notified);
+
+        if (it.node()->pointerGrabEnabled())
+        {
+            it.node()->onEvent(*e);
+        }
+        else
+        {
+            if (it.node()->m_flags.check(AKNode::ChildHasPointerFocus))
+            {
+                if (it.node()->m_flags.check(AKNode::HasPointerFocus))
+                    it.node()->onEvent(*e);
+                else
+                {
+                    it.node()->m_flags.add(AKNode::HasPointerFocus);
+                    it.node()->onEvent(enterEvent);
+                }
+            }
+            else if (it.node()->m_flags.check(AKNode::HasPointerFocus))
+            {
+                it.node()->m_flags.remove(AKNode::HasPointerFocus);
+                it.node()->onEvent(leaveEvent);
+            }
+        }
+
+        if (m_treeChanged)
+            goto retry;
+
+        it.next();
+    }
+}
+
+void AKScene::handlePointerButtonEvent()
+{
+    auto &event { *static_cast<const AKPointerButtonEvent*>(e) };
+    m_root->removeFlagsAndPropagate(AKNode::Notified);
+    AKNode::RIterator it { nullptr };
+
+retry:
+    it.reset(m_root->bottommostChild());
+    m_treeChanged = false;
+
+    while (!it.done())
+    {
+        if (it.node()->m_flags.check(AKNode::Notified))
+        {
+            it.next();
+            continue;
+        }
+
+        it.node()->m_flags.add(AKNode::Notified);
+
+        if (it.node()->m_flags.check(AKNode::HasPointerFocus | AKNode::PointerGrab))
+            it.node()->onEvent(*e);
+
+        if (m_treeChanged)
+            goto retry;
+
+        it.next();
     }
 }
 

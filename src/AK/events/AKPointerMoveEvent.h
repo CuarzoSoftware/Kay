@@ -21,12 +21,45 @@ public:
      * @param us The microsecond timestamp of the event.
      * @param device The input device that originated the event.
      */
-    AKPointerMoveEvent(const SkPoint &delta = SkPoint(0.f, 0.f), const SkPoint &deltaUnaccelerated = SkPoint(0.f, 0.f),
+    AKPointerMoveEvent(const SkPoint &pos = SkPoint(0.f, 0.f), const SkPoint &delta = SkPoint(0.f, 0.f), const SkPoint &deltaUnaccelerated = SkPoint(0.f, 0.f),
                              UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
         AKPointerEvent(AKEvent::Subtype::Move, serial, ms, us, device),
+        m_pos(pos),
         m_delta(delta),
         m_deltaUnaccelerated(deltaUnaccelerated)
     {}
+
+    /**
+     * @brief Sets the scene position of the pointer.
+     */
+    void setPos(const SkPoint &pos) noexcept
+    {
+        m_pos = pos;
+    }
+
+    /**
+     * @brief Sets the x scene position of the pointer.
+     */
+    void setX(Float32 x) noexcept
+    {
+        m_pos.fX = x;
+    }
+
+    /**
+     * @brief Sets the y scene position of the pointer.
+     */
+    void setY(Float32 y) noexcept
+    {
+        m_pos.fY = y;
+    }
+
+    /**
+     * @brief Gets the scene position of the pointer.
+     */
+    const SkPoint &pos() const noexcept
+    {
+        return m_pos;
+    }
 
     /**
      * @brief Sets the movement delta of the pointer.
@@ -92,12 +125,8 @@ public:
         return m_deltaUnaccelerated;
     }
 
-    /**
-     * @brief The surface or view local position where the pointer is positioned in surface coordinates.
-     */
-    mutable SkPoint localPos;
-
 protected:
+    SkPoint m_pos;
     SkPoint m_delta;
     SkPoint m_deltaUnaccelerated;    
 };

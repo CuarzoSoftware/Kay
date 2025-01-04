@@ -14,9 +14,12 @@ public:
 
     /* AKButton */
 
+    static inline SkScalar buttonPressedContentOpacity { 0.85f };
+
     const SkFont &buttonFont() const noexcept { return m_buttonFont; }
     const SkRect &buttonPadding() const noexcept { return m_buttonPadding; }
     SkScalar buttonDisabledOpacity() const noexcept { return m_buttonDisabledOpacity; }
+    SkScalar buttonPressedBackgroundDarkness() const noexcept { return m_buttonPressedBackgroundDarkness; }
     const SkRect &buttonPlainHThreePatchSideSrcRect() const noexcept { return m_buttonPlainHThreePatchSideSrcRect; }
     const SkRect &buttonPlainHThreePatchCenterSrcRect() const noexcept { return m_buttonPlainHThreePatchCenterSrcRect; }
     const SkRect &buttonTintedHThreePatchSideSrcRect() const noexcept { return m_buttonTintedHThreePatchSideSrcRect; }
@@ -32,6 +35,7 @@ protected:
     SkFont m_buttonFont;
     SkRect m_buttonPadding { 16.f, 2.f, 16.f, 2.f };
     SkScalar m_buttonDisabledOpacity { 0.3f };
+    SkScalar m_buttonPressedBackgroundDarkness { 0.95f };
     SkRect m_buttonPlainHThreePatchSideSrcRect { SkRect::MakeWH(8.f, 24.f) };
     SkRect m_buttonTintedHThreePatchSideSrcRect { m_buttonPlainHThreePatchSideSrcRect };
     SkRect m_buttonPlainHThreePatchCenterSrcRect { SkRect::MakeXYWH(8.f, 0.f, 1.f, 24.f) };

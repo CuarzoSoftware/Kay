@@ -1,7 +1,22 @@
-#include "AK/nodes/AKPath.h"
-#include "AK/nodes/AKSimpleText.h"
-#include "include/core/SkMaskFilter.h"
+#include <include/core/SkMaskFilter.h>
 #include <include/effects/SkBlurMaskFilter.h>
+#include <include/gpu/gl/GrGLInterface.h>
+#include <include/gpu/gl/GrGLTypes.h>
+#include <include/gpu/GrDirectContext.h>
+#include <include/gpu/GrBackendSurface.h>
+#include <include/gpu/ganesh/SkSurfaceGanesh.h>
+#include <include/gpu/ganesh/SkImageGanesh.h>
+#include <include/core/SkImage.h>
+#include <include/core/SkSurface.h>
+#include <include/core/SkCanvas.h>
+#include <include/gpu/gl/GrGLAssembleInterface.h>
+#include <include/core/SkColorSpace.h>
+#include <include/effects/SkImageFilters.h>
+#include <include/effects/SkGradientShader.h>
+#include <include/utils/SkParsePath.h>
+#include <include/effects/SkBlurMaskFilter.h>
+#include <include/core/SkRRect.h>
+#include <include/utils/SkParsePath.h>
 
 #include <LLauncher.h>
 #include <LCompositor.h>
@@ -26,34 +41,23 @@
 #include <AK/nodes/AKSolidColor.h>
 #include <AK/nodes/AKRoundContainer.h>
 #include <AK/nodes/AKButton.h>
+#include <AK/nodes/AKPath.h>
+#include <AK/nodes/AKSimpleText.h>
+
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
 
+#include <AK/events/AKPointerMoveEvent.h>
+#include <AK/events/AKPointerButtonEvent.h>
+
 #include <AK/AKScene.h>
 #include <AK/AKSurface.h>
 
-#include <cassert>
-#include <include/gpu/gl/GrGLInterface.h>
-#include <include/gpu/gl/GrGLTypes.h>
-#include <include/gpu/GrDirectContext.h>
-#include <include/gpu/GrBackendSurface.h>
-#include <include/gpu/ganesh/SkSurfaceGanesh.h>
-#include <include/gpu/ganesh/SkImageGanesh.h>
-#include <include/core/SkImage.h>
-#include <include/core/SkSurface.h>
-#include <include/core/SkCanvas.h>
-#include <include/gpu/gl/GrGLAssembleInterface.h>
-#include <include/core/SkColorSpace.h>
-#include <include/effects/SkImageFilters.h>
-#include <include/effects/SkGradientShader.h>
-#include <include/utils/SkParsePath.h>
-#include <include/effects/SkBlurMaskFilter.h>
-#include <include/core/SkRRect.h>
-#include <include/utils/SkParsePath.h>
 #include <iostream>
+#include <cassert>
 
-using namespace AK;
+using namespace Louvre;
 using namespace AK;
 
 enum NodeTypeFlags
@@ -587,6 +591,11 @@ public:
         customBackgroundButtonDisabled.setBackgroundColor(0xFF247aff);
         customBackgroundButtonDisabled.setEnabled(false);
 
+        exitButton.setBackgroundColor(SK_ColorRED);
+        exitButton.on.clicked.subscribe(&exitButton, [](){
+            compositor()->finish();
+        });
+
         //setScale(1.5f);
         // Louvre creates an OpenGL context for each output
         // here we are wrapping it into a GrDirectContext.
@@ -802,6 +811,7 @@ public:
     AKButton disabledButton { "Disabled Button", &background };
     AKButton customBackgroundButton { "Colored Button", &background };
     AKButton customBackgroundButtonDisabled { "Colored Button Disabled", &background };
+    AKButton exitButton { "Exit", &background };
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
@@ -822,6 +832,8 @@ class Pointer final : public LPointer
 {
 public:
     using LPointer::LPointer;
+    AKPointerMoveEvent moveEvent;
+    AKPointerButtonEvent buttonEvent;
 
     AKWeak<MenuItem> focus;
 
@@ -833,6 +845,10 @@ public:
     void pointerMoveEvent(const LPointerMoveEvent &event) override
     {
         LPointer::pointerMoveEvent(event);
+
+        moveEvent.setX(cursor()->pos().x());
+        moveEvent.setY(cursor()->pos().y());
+        static_cast<Compositor*>(compositor())->scene.postEvent(moveEvent);
 
         MenuItem *newFocus { (MenuItem*)nodeAt(SkIPoint(cursor()->pos().x(), cursor()->pos().y()), MENU_ITEM) };
 
@@ -868,6 +884,13 @@ public:
     void pointerButtonEvent(const LPointerButtonEvent &event) override
     {
         LPointer::pointerButtonEvent(event);
+
+        buttonEvent.setButton((AKPointerButtonEvent::Button)event.button());
+        buttonEvent.setState((AKPointerButtonEvent::State)event.state());
+        buttonEvent.setSerial(event.serial());
+        buttonEvent.setMs(event.ms());
+        buttonEvent.setUs(event.us());
+        static_cast<Compositor*>(compositor())->scene.postEvent(buttonEvent);
 
         if (event.button() == BTN_RIGHT && event.state() == LPointerButtonEvent::Pressed)
         {

@@ -13,6 +13,7 @@ public:
     {
         Chg_Enabled = AKSubScene::Chg_Last,
         Chg_BackgroundColor,
+        Chg_Pressed,
         Chg_Last
     };
 
@@ -25,7 +26,15 @@ public:
     void setEnabled(bool enabled) noexcept;
     bool enabled() const noexcept { return m_enabled; }
 
+    void setPressed(bool pressed) noexcept;
+    bool pressed() const noexcept { return m_pressed; };
+
+    struct {
+        AKSignal<> clicked;
+    } on;
+
 protected:
+    void onEvent(const AKEvent &event) override;
     void onSceneBegin() override;
     void onLayoutUpdate() override;
     void applyLayoutConstraints() noexcept;
@@ -34,6 +43,7 @@ protected:
     AKSimpleText m_text;
     SkColor m_backgroundColor { SK_ColorWHITE };
     bool m_enabled { true };
+    bool m_pressed { false };
 };
 
 #endif // AKBUTTON_H
