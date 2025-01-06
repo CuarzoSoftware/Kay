@@ -26,76 +26,11 @@ public:
     class RIterator
     {
     public:
-        RIterator(AKNode *node) noexcept
-        {
-            reset(node);
-        }
-
-        void reset(AKNode *node) noexcept
-        {
-            m_node = node;
-
-            if (m_node)
-            {
-                m_done = false;
-                m_end = m_node->topmostParent();
-
-                if (!m_end)
-                    m_end = m_node;
-            }
-            else
-            {
-                m_done = true;
-                m_end = node;
-            }
-        }
+        RIterator(AKNode *node) noexcept { reset(node); }
+        void reset(AKNode *node) noexcept;
         bool done() const noexcept { return m_done; }
-        void next() noexcept
-        {
-            m_done = m_end == m_node;
-
-            if (done()) return;
-
-            AKNode *prev { m_node->prev() };
-
-            if (!prev)
-            {
-                m_node = m_node->parent();
-                return;
-            }
-            else
-            {
-                AKNode *bottommost { prev->bottommostChild() };
-
-                if (bottommost)
-                {
-                    m_node = bottommost;
-                    return;
-                }
-                else
-                    m_node = prev;
-            }
-        }
-        void jumpTo(AKNode *node) noexcept
-        {
-            if (node == m_node) return;
-
-            if (node)
-            {
-                if (m_end)
-                {
-                    m_done = false;
-                    m_node = node;
-                }
-                else
-                    reset(node);
-            }
-            else
-            {
-                m_done = true;
-                m_node = m_end = nullptr;
-            }
-        }
+        void next() noexcept;
+        void jumpTo(AKNode *node) noexcept;
         AKNode *end() const noexcept { return m_end; }
         AKNode *node() const noexcept { return m_node; }
     private:
@@ -127,6 +62,7 @@ public:
         Scene               = 1 << 2,
         BackgroundEffect    = 1 << 3
     };
+    AKNode() noexcept { theme(); }
     virtual ~AKNode();
 
     typedef UInt32 Change;

@@ -10,7 +10,7 @@
 class AK::AKScene : public AKObject
 {
 public:
-    AKScene() noexcept = default;
+    AKScene() noexcept;
     AKTarget *createTarget(std::shared_ptr<AKPainter> painter = nullptr) noexcept;
     bool destroyTarget(AKTarget *target);
     void updateLayout() noexcept

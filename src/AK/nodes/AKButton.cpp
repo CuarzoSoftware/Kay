@@ -10,13 +10,13 @@ using namespace AK;
 AKButton::AKButton(const std::string &text, AKNode *parent) noexcept : AKSubScene(parent),
     m_text(text, &m_content)
 {
-    m_text.setFont(theme()->buttonFont());
+    m_text.setFont(AKTheme::ButtonFont);
     applyLayoutConstraints();
     m_hThreePatch.layout().setFlex(1.f);
-    m_hThreePatch.layout().setPadding(YGEdgeLeft, theme()->buttonPadding().left());
-    m_hThreePatch.layout().setPadding(YGEdgeRight, theme()->buttonPadding().right());
-    m_hThreePatch.layout().setPadding(YGEdgeTop, theme()->buttonPadding().top());
-    m_hThreePatch.layout().setPadding(YGEdgeBottom, theme()->buttonPadding().bottom());
+    m_hThreePatch.layout().setPadding(YGEdgeLeft, AKTheme::ButtonPadding.left());
+    m_hThreePatch.layout().setPadding(YGEdgeRight, AKTheme::ButtonPadding.right());
+    m_hThreePatch.layout().setPadding(YGEdgeTop, AKTheme::ButtonPadding.top());
+    m_hThreePatch.layout().setPadding(YGEdgeBottom, AKTheme::ButtonPadding.bottom());
     m_content.layout().setFlex(1.f);
     m_content.layout().setJustifyContent(YGJustifyCenter);
     m_content.layout().setAlignItems(YGAlignCenter);
@@ -43,7 +43,7 @@ void AKButton::setEnabled(bool enabled) noexcept
         return;
 
     m_enabled = enabled;
-    m_hThreePatch.setOpacity(enabled ? 1.f : theme()->buttonDisabledOpacity());
+    m_hThreePatch.setOpacity(enabled ? 1.f : AKTheme::ButtonDisabledOpacity);
     m_text.setOpacity(m_hThreePatch.opacity());
     addChange(Chg_Enabled);
 }
@@ -86,23 +86,23 @@ void AKButton::onSceneBegin()
 
     if (pressed())
     {
-        finalBackgroundColor.fR *= theme()->buttonPressedBackgroundDarkness();
-        finalBackgroundColor.fG *= theme()->buttonPressedBackgroundDarkness();
-        finalBackgroundColor.fB *= theme()->buttonPressedBackgroundDarkness();
-        contentOpacity = theme()->buttonPressedContentOpacity;
+        finalBackgroundColor.fR *= AKTheme::ButtonPressedBackgroundDarkness;
+        finalBackgroundColor.fG *= AKTheme::ButtonPressedBackgroundDarkness;
+        finalBackgroundColor.fB *= AKTheme::ButtonPressedBackgroundDarkness;
+        contentOpacity = AKTheme::ButtonContentPressedOpacity;
     }
 
     if (m_backgroundColor == SK_ColorWHITE)
     {
-        m_hThreePatch.setSideSrcRect(theme()->buttonPlainHThreePatchSideSrcRect());
-        m_hThreePatch.setCenterSrcRect(theme()->buttonPlainHThreePatchCenterSrcRect());
+        m_hThreePatch.setSideSrcRect(AKTheme::ButtonPlainHThreePatchSideSrcRect);
+        m_hThreePatch.setCenterSrcRect(AKTheme::ButtonPlainHThreePatchCenterSrcRect);
         m_hThreePatch.setImage(theme()->buttonPlainHThreePatchImage(currentTarget()));
         m_text.setColorWithoutAlpha(SK_ColorBLACK);
     }
     else
     {
-        m_hThreePatch.setSideSrcRect(theme()->buttonTintedHThreePatchSideSrcRect());
-        m_hThreePatch.setCenterSrcRect(theme()->buttonTintedHThreePatchCenterSrcRect());
+        m_hThreePatch.setSideSrcRect(AKTheme::ButtonTintedHThreePatchSideSrcRect);
+        m_hThreePatch.setCenterSrcRect(AKTheme::ButtonTintedHThreePatchCenterSrcRect);
         m_hThreePatch.setImage(theme()->buttonTintedHThreePatchImage(currentTarget()));
 
         if (enabled())
@@ -126,8 +126,8 @@ void AKButton::onLayoutUpdate()
 
 void AKButton::applyLayoutConstraints() noexcept
 {
-    layout().setMinWidth(2.f * theme()->buttonPlainHThreePatchSideSrcRect().width() + 1);
-    layout().setMinHeight(theme()->buttonPlainHThreePatchCenterSrcRect().height());
+    layout().setMinWidth(2.f * AKTheme::ButtonPlainHThreePatchSideSrcRect.width() + 1);
+    layout().setMinHeight(AKTheme::ButtonPlainHThreePatchCenterSrcRect.height());
     layout().setMaxHeight(layout().minHeight().value);
     layout().setHeight(layout().minHeight().value);
 }

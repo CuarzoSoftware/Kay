@@ -3,6 +3,7 @@
 
 #include <AK/nodes/AKRenderable.h>
 #include <AK/AKTransform.h>
+#include <AK/AKAlignment.h>
 
 #include <include/core/SkImage.h>
 #include <include/core/SkRect.h>
@@ -17,11 +18,27 @@ public:
     enum Changes
     {
         Chg_Image = AKRenderable::Chg_Last,
-        Chg_SrcRect,
+        Chg_SizeMode,
         Chg_Transform,
-        Chg_Scale,
+        Chg_Alignment,
+        Chg_SrcRectMode,
+        Chg_CustomSrcRect,
+        Chg_CustomSrcRectScale,
 
         Chg_Last
+    };
+
+    enum class SrcRectMode
+    {
+        EntireImage, // Default
+        Custom
+    };
+
+    enum class SizeMode
+    {
+        Contain, // Default
+        Cover,
+        Fit
     };
 
     void setImage(sk_sp<SkImage> image) noexcept
@@ -33,20 +50,6 @@ public:
     sk_sp<SkImage> image() const noexcept
     {
         return m_image;
-    }
-
-    void setSrcRect(const SkRect &rect) noexcept
-    {
-        if (m_srcRect == rect)
-            return;
-
-        addChange(Chg_SrcRect);
-        m_srcRect = rect;
-    }
-
-    const SkRect &srcRect() const noexcept
-    {
-        return m_srcRect;
     }
 
     void setTransform(AKTransform transform) noexcept
@@ -63,26 +66,100 @@ public:
         return m_transform;
     }
 
-    void setScale(SkScalar scale) noexcept
+    void setAlignment(AKAlignment alignment) noexcept
     {
-        if (scale <= 0.f || m_scale == scale)
+        if (m_alignment == alignment)
             return;
 
-        addChange(Chg_Scale);
-        m_scale = scale;
+        m_alignment = alignment;
+        addChange(Chg_Alignment);
     }
 
-    SkScalar scale() const noexcept
+    AKAlignment alignment() const noexcept
     {
-        return m_scale;
+        return m_alignment;
+    }
+
+    void setSizeMode(SizeMode mode) noexcept
+    {
+        if (m_sizeMode == mode)
+            return;
+
+        m_sizeMode = mode;
+        addChange(Chg_SizeMode);
+    }
+
+    SizeMode sizeMode() const noexcept
+    {
+        return m_sizeMode;
+    }
+
+    void setSrcRectMode(SrcRectMode mode) noexcept
+    {
+        if (m_srcRectMode == mode)
+            return;
+
+        m_srcRectMode = mode;
+        addChange(Chg_SrcRectMode);
+    }
+
+    SrcRectMode srcRectMode() const noexcept
+    {
+        return m_srcRectMode;
+    }
+
+    void setCustomSrcRect(const SkRect &rect) noexcept
+    {
+        if (m_customSrcRect == rect)
+            return;
+
+        if (m_srcRectMode == SrcRectMode::Custom)
+            addChange(Chg_CustomSrcRect);
+
+        m_customSrcRect = rect;
+    }
+
+    const SkRect &customSrcRect() const noexcept
+    {
+        return m_customSrcRect;
+    }
+
+    void setCustomSrcRectScale(SkScalar scale) noexcept
+    {
+        if (scale <= 0.f || m_customSrcRectScale == scale)
+            return;
+
+        if (m_srcRectMode == SrcRectMode::Custom)
+            addChange(Chg_CustomSrcRectScale);
+        m_customSrcRectScale = scale;
+    }
+
+    SkScalar customSrcRectScale() const noexcept
+    {
+        return m_customSrcRectScale;
+    }
+
+    void enableAutoDamage(bool enabled) noexcept
+    {
+        m_autoDamage = enabled;
+    }
+
+    bool autoDamageEnabled() const noexcept
+    {
+        return m_autoDamage;
     }
 
 protected:
+    virtual void onSceneBegin() override;
     virtual void onRender(AKPainter *painter, const SkRegion &damage) override;
     sk_sp<SkImage> m_image;
-    SkRect m_srcRect;
-    SkScalar m_scale { 1.f };
+    SkRect m_customSrcRect { 0.f, 0.f, 0.f, 0.f };
+    SkScalar m_customSrcRectScale { 1.f };
+    SrcRectMode m_srcRectMode { SrcRectMode::EntireImage };
+    SizeMode m_sizeMode { SizeMode::Contain };
     AKTransform m_transform { AKTransform::Normal };
+    AKAlignment m_alignment { AKAlignCenter };
+    bool m_autoDamage { true };
 };
 
 #endif // AKImage_H

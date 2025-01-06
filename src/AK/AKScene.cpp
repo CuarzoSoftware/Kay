@@ -17,6 +17,11 @@
 
 using namespace AK;
 
+AKScene::AKScene() noexcept
+{
+    theme();
+}
+
 AKTarget *AK::AKScene::createTarget(std::shared_ptr<AKPainter> painter) noexcept
 {
     m_targets.emplace_back(new AKTarget(this, painter));
@@ -476,11 +481,12 @@ void AKScene::calculateNewDamage(AKNode *node)
 
         if (!clipRegion.isEmpty())
         {
-            bool surfaceChanged;
+            bool surfaceChanged ;
 
             if (bakeable->t->bake)
             {
-                surfaceChanged = bakeable->t->bake->resize(
+                surfaceChanged = bakeable->t->bake->scale() != t->bakedComponentsScale();
+                surfaceChanged |= bakeable->t->bake->resize(
                     SkSize::Make(bakeable->rect().size()),
                     t->bakedComponentsScale());
             }

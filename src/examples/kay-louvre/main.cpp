@@ -53,6 +53,7 @@
 
 #include <AK/AKScene.h>
 #include <AK/AKSurface.h>
+#include <AK/AKTheme.h>
 
 #include <iostream>
 #include <cassert>
@@ -429,6 +430,9 @@ class Surface final : public LSurface
 {
 public:
     Surface(const void *data) noexcept : LSurface(data) {
+        node.enableAutoDamage(false);
+        node.setSizeMode(AKImage::SizeMode::Fit);
+        node.setSrcRectMode(AKImage::SrcRectMode::Custom);
         node.layout().setPositionType(YGPositionTypeAbsolute);
     }
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
@@ -454,6 +458,8 @@ class Output final : public LOutput
 public:
     Output(const void *params) noexcept : LOutput(params)
     {
+        background.setSizeMode(AKImage::SizeMode::Fit);
+        background.setSrcRectMode(AKImage::SrcRectMode::Custom);
         background.layout().setDisplay(YGDisplayFlex);
         background.layout().setJustifyContent(YGJustifyCenter);
         background.layout().setAlignItems(YGAlignCenter);
@@ -521,6 +527,12 @@ public:
 
     void updateBackground() noexcept
     {
+        background.opaqueRegion.setRect(AK_IRECT_INF);
+        background.layout().setPosition(YGEdgeLeft, pos().x());
+        background.layout().setPosition(YGEdgeTop, pos().y());
+        background.layout().setWidth(size().w());
+        background.layout().setHeight(size().h());
+
         if (compositor()->graphicBackendId() == LGraphicBackendDRM)
         {
             LSize bufferSize;
@@ -574,29 +586,39 @@ public:
 
     skipScale:
         background.setImage(louvreTex2SkiaImage(wallpaper.get(), context.get(), this));
-        background.opaqueRegion.setRect(AK_IRECT_INF);
-        background.layout().setPosition(YGEdgeLeft, pos().x());
-        background.layout().setPosition(YGEdgeTop, pos().y());
-        background.layout().setWidth(size().w());
-        background.layout().setHeight(size().h());
 
         if (wallpaper)
-            background.setSrcRect(SkRect::MakeWH(wallpaper->sizeB().w(), wallpaper->sizeB().h()));
+            background.setCustomSrcRect(SkRect::MakeWH(wallpaper->sizeB().w(), wallpaper->sizeB().h()));
     }
 
     void initializeGL() override
     {
         disabledButton.setEnabled(false);
-        customBackgroundButton.setBackgroundColor(0xFF247aff);
-        customBackgroundButtonDisabled.setBackgroundColor(0xFF247aff);
+        customBackgroundButton.setBackgroundColor(AKTheme::SystemBlue);
+        customBackgroundButtonDisabled.setBackgroundColor(AKTheme::SystemBlue);
         customBackgroundButtonDisabled.setEnabled(false);
+        exitButton.setBackgroundColor(AKTheme::SystemRed);
 
-        exitButton.setBackgroundColor(SK_ColorRED);
         exitButton.on.clicked.subscribe(&exitButton, [](){
             compositor()->finish();
         });
 
-        //setScale(1.5f);
+        scalex1.setBackgroundColor(AKTheme::SystemGreen);
+        scalex1.on.clicked.subscribe(&scalex1, [this](){
+            setScale(1.f);
+        });
+
+        scalex15.setBackgroundColor(AKTheme::SystemOrange);
+        scalex15.on.clicked.subscribe(&scalex15, [this](){
+            setScale(1.5f);
+        });
+
+        scalex2.setBackgroundColor(AKTheme::SystemYellow);
+        scalex2.on.clicked.subscribe(&scalex2, [this](){
+            setScale(2.f);
+        });
+
+        // setScale(1.5f);
         // Louvre creates an OpenGL context for each output
         // here we are wrapping it into a GrDirectContext.
 
@@ -649,6 +671,77 @@ public:
 
         updateBackground();
         topbarExclusiveZone.setOutput(this);
+
+        assetsTexture = LOpenGL::loadTexture(compositor()->defaultAssetsPath()/"firefox.png");
+        assetsImage = louvreTex2SkiaImage(assetsTexture, context.get(), this);
+        assetsView.setImage(assetsImage);
+        assetsView.layout().setWidth(200);
+        assetsView.layout().setHeight(100);
+        assetsView.setSizeMode(AKImage::SizeMode::Contain);
+
+        imgTransform.on.clicked.subscribe(&imgTransform, [this](){
+            static const char* transformName[] {
+                "Normal",
+                "Rotated90",
+                "Rotated180",
+                "Rotated270",
+                "Flipped",
+                "Flipped90",
+                "Flipped180",
+                "Flipped270"
+            };
+
+            if (assetsView.transform() == AKTransform::Flipped270)
+                assetsView.setTransform(AKTransform::Normal);
+            else
+                assetsView.setTransform((AKTransform)(Int32(assetsView.transform())+1));
+
+            imgTransform.setText(transformName[Int32(assetsView.transform())]);
+        });
+
+        imgAlignment.on.clicked.subscribe(&imgAlignment, [this](){
+
+            static Int32 current { 0 };
+
+            static const AKAlignment alignments[] {
+                AKAlignCenter,
+                AKAlignTop,
+                AKAlignRight,
+                AKAlignBottom,
+                AKAlignLeft
+            };
+
+            static const char* alignmentName[] {
+                "Center",
+                "Top",
+                "Right",
+                "Bottom",
+                "Left"
+            };
+
+            if (current == 4)
+                current = 0;
+            else
+                current++;
+
+            assetsView.setAlignment(alignments[current]);
+            imgAlignment.setText(alignmentName[current]);
+        });
+
+        imgSizeMode.on.clicked.subscribe(&imgSizeMode, [this](){
+            static const char* sizeModeName[] {
+                "Contain",
+                "Cover",
+                "Fit",
+            };
+
+            if (assetsView.sizeMode() == AKImage::SizeMode::Fit)
+                assetsView.setSizeMode(AKImage::SizeMode::Contain);
+            else
+                assetsView.setSizeMode((AKImage::SizeMode)(Int32(assetsView.sizeMode())+1));
+
+            imgSizeMode.setText(sizeModeName[Int32(assetsView.sizeMode())]);
+        });
     }
 
     void paintGL() override
@@ -705,10 +798,10 @@ public:
             s->node.layout().setHeight(s->size().h());
 
             s->node.setImage(louvreTex2SkiaImage(s->texture(), context.get(), this));
-            s->node.setSrcRect(SkRect::MakeXYWH(
+            s->node.setCustomSrcRect(SkRect::MakeXYWH(
                 s->srcRect().x(), s->srcRect().y(),
                 s->srcRect().w(), s->srcRect().h()));
-            s->node.setScale(s->bufferScale());
+            s->node.setCustomSrcRectScale(s->bufferScale());
             s->node.setTransform(static_cast<AKTransform>(s->bufferTransform()));
 
             boxes = s->damage().boxes(&n);
@@ -807,11 +900,28 @@ public:
     AKImage background { &comp()->background };
     AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
     AKSimpleText instructions2 { "Note: Blur only works if launched from a TTY (DRM backend)", &background};
-    AKButton normalButton { "Normal Button", &background };
-    AKButton disabledButton { "Disabled Button", &background };
-    AKButton customBackgroundButton { "Colored Button", &background };
-    AKButton customBackgroundButtonDisabled { "Colored Button Disabled", &background };
-    AKButton exitButton { "Exit", &background };
+
+    AKContainer buttonsGroup1 { YGFlexDirectionRow, false, &background };
+    AKButton normalButton { "Normal Button", &buttonsGroup1};
+    AKButton disabledButton { "Disabled Button", &buttonsGroup1 };
+    AKButton customBackgroundButton { "Colored Button", &buttonsGroup1 };
+    AKButton customBackgroundButtonDisabled { "Colored Button Disabled", &buttonsGroup1 };
+
+    AKContainer buttonsGroup2 { YGFlexDirectionRow, false, &background };
+    AKButton scalex1 { "Screen@x1", &buttonsGroup2 };
+    AKButton scalex15 { "Screen@x1.5", &buttonsGroup2 };
+    AKButton scalex2 { "Screen@x2", &buttonsGroup2 };
+    AKButton exitButton { "Exit", &buttonsGroup2 };
+
+    AKContainer buttonsGroup3 { YGFlexDirectionRow, false, &background };
+    AKButton imgSizeMode { "SizeMode: Contain", &buttonsGroup3 };
+    AKButton imgAlignment { "Alignment: Center", &buttonsGroup3 };
+    AKButton imgTransform { "Transform: Normal", &buttonsGroup3 };
+
+    LWeak<LTexture> assetsTexture;
+    sk_sp<SkImage> assetsImage;
+    AKImage assetsView { &background };
+
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };

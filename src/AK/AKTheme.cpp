@@ -10,13 +10,13 @@
 
 AK::AKTheme::AKTheme() noexcept
 {
-    m_buttonFont.setTypeface(
+    ButtonFont.setTypeface(
         SkTypeface::MakeFromName("Inter",
         SkFontStyle(
             SkFontStyle::kSemiBold_Weight,
             SkFontStyle::Width::kNormal_Width,
             SkFontStyle::Slant::kUpright_Slant)));
-    m_buttonFont.setSize(12);
+    ButtonFont.setSize(12);
 }
 
 SkRegion AK::AKTheme::buttonPlainOpaqueRegion(Int32 width) noexcept
@@ -35,7 +35,7 @@ SkRegion AK::AKTheme::buttonTintedOpaqueRegion(Int32 width) noexcept
     return region;
 }
 
-sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target)
+sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target) noexcept
 {
     const auto it { m_buttonPlainHThreePatchImage.find(target->bakedComponentsScale()) };
 
@@ -43,8 +43,8 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target)
         return it->second;
 
     auto surface = AKSurface::Make(target->surface()->recordingContext(),
-        SkSize(m_buttonPlainHThreePatchSideSrcRect.width() + m_buttonPlainHThreePatchCenterSrcRect.width(),
-               m_buttonPlainHThreePatchSideSrcRect.height()),
+        SkSize(ButtonPlainHThreePatchSideSrcRect.width() + ButtonPlainHThreePatchCenterSrcRect.width(),
+               ButtonPlainHThreePatchSideSrcRect.height()),
         target->bakedComponentsScale(), true);
 
     surface->surface()->recordingContext()->asDirectContext()->resetContext();
@@ -86,7 +86,7 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target)
     return result;
 }
 
-sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target)
+sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target) noexcept
 {
     const auto it { m_buttonTintedHThreePatchImage.find(target->bakedComponentsScale()) };
 
@@ -94,8 +94,8 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target)
         return it->second;
 
     auto surface = AKSurface::Make(target->surface()->recordingContext(),
-        SkSize(m_buttonTintedHThreePatchSideSrcRect.width() + m_buttonTintedHThreePatchCenterSrcRect.width(),
-               m_buttonTintedHThreePatchSideSrcRect.height()),
+        SkSize(ButtonTintedHThreePatchSideSrcRect.width() + ButtonTintedHThreePatchCenterSrcRect.width(),
+               ButtonTintedHThreePatchSideSrcRect.height()),
                 target->bakedComponentsScale(), true);
 
     surface->surface()->recordingContext()->asDirectContext()->resetContext();

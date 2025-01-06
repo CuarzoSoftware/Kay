@@ -80,9 +80,10 @@ AKNode *AKNode::topmostInvisibleParent() const noexcept
 
 AKNode *AKNode::closestClipperParent() const noexcept
 {
-    assert(parent() != nullptr);
+    if (!parent())
+        return nullptr;
 
-    if (parent()->childrenClippingEnabled() || parent() == t->target->scene().root())
+    if (parent()->childrenClippingEnabled() || parent()->isRoot())
         return parent();
 
     return parent()->closestClipperParent();
@@ -331,4 +332,69 @@ void AKNode::removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexce
     backgroundEffect->onTargetNodeChanged();
 }
 
+void AKNode::RIterator::reset(AKNode *node) noexcept
+{
+    m_node = node;
 
+    if (m_node)
+    {
+        m_done = false;
+        m_end = m_node->topmostParent();
+
+        if (!m_end)
+            m_end = m_node;
+    }
+    else
+    {
+        m_done = true;
+        m_end = node;
+    }
+}
+
+void AKNode::RIterator::next() noexcept
+{
+    m_done = m_end == m_node;
+
+    if (done()) return;
+
+    AKNode *prev { m_node->prev() };
+
+    if (!prev)
+    {
+        m_node = m_node->parent();
+        return;
+    }
+    else
+    {
+        AKNode *bottommost { prev->bottommostChild() };
+
+        if (bottommost)
+        {
+            m_node = bottommost;
+            return;
+        }
+        else
+            m_node = prev;
+    }
+}
+
+void AKNode::RIterator::jumpTo(AKNode *node) noexcept
+{
+    if (node == m_node) return;
+
+    if (node)
+    {
+        if (m_end)
+        {
+            m_done = false;
+            m_node = node;
+        }
+        else
+            reset(node);
+    }
+    else
+    {
+        m_done = true;
+        m_node = m_end = nullptr;
+    }
+}
