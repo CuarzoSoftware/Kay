@@ -136,11 +136,7 @@ public:
 
     bool isRoot() const noexcept { return m_flags.check(IsRoot); }
 
-    AKTarget *currentTarget() const noexcept
-    {
-        assert(t);
-        return t->target;
-    }
+    AKTarget *currentTarget() const noexcept;
 
     const std::vector<AKTarget*> &intersectedTargets() const noexcept { return m_intersectedTargets; }
     bool childrenClippingEnabled() const noexcept { return m_flags.check(ChildrenClipping); }
@@ -175,12 +171,17 @@ public:
     void addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
     void removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
 
-    /* Triggered before the scene starts */
+    /* Triggered before the scene starts or when AKScene::updateLayout is called.
+     * Can be triggered without a target. */
+    virtual void updateLayout() {}
+
+    /* Triggered before the scene starts rendering and
+     * after rect() and globalRect() are calculated */
     virtual void onSceneBegin() {}
 
     /* Triggered before the scene starts rendering but
-     * after the Yoga layout is updated */
-    virtual void onLayoutUpdate() {}
+     * after rect() and globalRect() are calculated */
+    virtual void onSceneCalculatedRect() {}
 
     /**
      * @brief Reactive Region.

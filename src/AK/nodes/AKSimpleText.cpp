@@ -5,7 +5,7 @@
 
 using namespace AK;
 
-void AKSimpleText::onSceneBegin()
+void AKSimpleText::updateLayout()
 {
     const auto &chgs { changes() };
 

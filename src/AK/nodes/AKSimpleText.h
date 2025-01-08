@@ -86,7 +86,7 @@ public:
     }
 
 protected:
-    void onSceneBegin() override;
+    void updateLayout() override;
     void onBake(OnBakeParams *params) override;
     void updateDimensions() noexcept;
     std::string m_text;

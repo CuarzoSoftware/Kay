@@ -8,7 +8,7 @@
 
 using namespace AK;
 
-void AKBackgroundImageShadowEffect::onLayoutUpdate()
+void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
 {
     auto *targetNodeData { targetNode()->targetData(currentTarget()) };
 

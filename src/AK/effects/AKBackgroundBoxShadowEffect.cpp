@@ -9,11 +9,11 @@
 
 using namespace AK;
 
-void AKBackgroundBoxShadowEffect::onLayoutUpdate()
+void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
 {
     if (m_borderRadius.fBL != 0 || m_borderRadius.fBR != 0 || m_borderRadius.fTL != 0 || m_borderRadius.fTR != 0)
     {
-        onLayoutUpdateWithBorderRadius();
+        onSceneCalculatedRectWithBorderRadius();
         return;
     }
 
@@ -177,7 +177,7 @@ void AKBackgroundBoxShadowEffect::onLayoutUpdate()
 }
 
 // TODO: Use nine patch if fill background is enabled
-void AKBackgroundBoxShadowEffect::onLayoutUpdateWithBorderRadius() noexcept
+void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexcept
 {
     bool needsNewSurface { m_targets.find(currentTarget()) == m_targets.end() };
     bool needsFullDamage { needsNewSurface };

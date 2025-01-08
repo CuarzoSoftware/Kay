@@ -24,7 +24,7 @@ void AKPath::onSceneBegin()
     }
 }
 
-void AKPath::onLayoutUpdate()
+void AKPath::onSceneCalculatedRect()
 {
     m_bounds = m_path.getBounds();
     m_bounds.outset(1.f, 1.f);

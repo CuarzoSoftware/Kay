@@ -45,7 +45,16 @@ void AKNode::addChange(Change change) noexcept
 const std::bitset<128> &AKNode::changes() const noexcept
 {
     static std::bitset<128> emptyChanges;
-    return currentTarget() == nullptr ? emptyChanges: m_targets[currentTarget()].changes;
+
+    if (t && t->target)
+        return m_targets[t->target].changes;
+    else if (!m_targets.empty())
+        return m_targets.begin()->second.changes;
+
+    if (!emptyChanges.test(0))
+        emptyChanges.set();
+
+    return emptyChanges;
 }
 
 void AKNode::enablePointerGrab(bool enabled) noexcept
@@ -307,6 +316,14 @@ void AKNode::insertAfter(AKNode *other) noexcept
     {
         insertBefore(parent()->children().front());
     }
+}
+
+AKTarget *AKNode::currentTarget() const noexcept
+{
+    assert("The current target can only be accessed during onSceneBegin(), onSceneCalculatedRect(), onRender() or onBake() events" && t);
+    assert("The current target can only be accessed during onSceneBegin(), onSceneCalculatedRect(), onRender() or onBake() events" && scene() != nullptr);
+    assert("The current target can only be accessed during onSceneBegin(), onSceneCalculatedRect(), onRender() or onBake() events" && scene()->m_eventWithoutTarget == false);
+    return t->target;
 }
 
 void AKNode::addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept

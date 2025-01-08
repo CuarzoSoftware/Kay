@@ -30,7 +30,8 @@ yoga_dep    = dependency('yoga', modules: ['yoga::yogacore'])
 header_dirs = [
     ['./src/AK', ''],
     ['./src/AK/nodes', 'nodes'],
-    ['./src/AK/effects', 'effects']
+    ['./src/AK/effects', 'effects'],
+    ['./src/AK/events', 'events']
 ]
 
 foreach header_dir : header_dirs

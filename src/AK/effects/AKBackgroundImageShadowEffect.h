@@ -66,7 +66,7 @@ public:
 protected:
     using AKRenderable::enableCustomTextureColor;
 
-    void onLayoutUpdate() override;
+    void onSceneCalculatedRect() override;
     void onRender(AKPainter *painter, const SkRegion &damage) override;
     void onTargetNodeChanged() override;
     struct ShadowData

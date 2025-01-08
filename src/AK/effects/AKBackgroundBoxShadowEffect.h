@@ -97,8 +97,8 @@ public:
 protected:
     using AKRenderable::enableCustomTextureColor;
 
-    void onLayoutUpdate() override;
-    void onLayoutUpdateWithBorderRadius() noexcept;
+    void onSceneCalculatedRect() override;
+    void onSceneCalculatedRectWithBorderRadius() noexcept;
     void onRender(AKPainter *painter, const SkRegion &damage) override;
     void onRenderWithBorderRadius(AKPainter *painter, const SkRegion &damage) noexcept;
     void onTargetNodeChanged() override;

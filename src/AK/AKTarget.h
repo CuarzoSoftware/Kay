@@ -261,6 +261,16 @@ public:
         on.markedDirty.notify(*this);
     }
 
+    void enableUpdateLayout(bool enable) noexcept
+    {
+        m_updateLayout = enable;
+    }
+
+    bool updateLayoutEnabled() const noexcept
+    {
+        return m_updateLayout;
+    }
+
     struct
     {
         /**
@@ -300,6 +310,7 @@ private:
     SkIRect             m_dstRect { 0, 0, 0, 0 };
     bool                m_isDirty { false };
     bool                m_needsFullRepaint { true };
+    bool                m_updateLayout { true };
     std::shared_ptr<AKPainter> m_painter;
     std::vector<SkRegion> m_reactive;
     SkColor             m_clearColor { SK_ColorTRANSPARENT };

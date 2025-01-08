@@ -37,6 +37,34 @@ bool AKScene::destroyTarget(AKTarget *target)
     return true;
 }
 
+void AKScene::updateLayout() noexcept
+{
+    if (!root())
+        return;
+
+    AKNode *bottommost { root()->bottommostChild() };
+
+    if (!bottommost)
+        return;
+
+    m_eventWithoutTarget = true;
+
+    AKNode::RIterator it(root()->bottommostChild());
+
+    while (!it.done())
+    {
+        it.node()->updateLayout();
+        it.next();
+    }
+
+    m_eventWithoutTarget = false;
+
+    YGNodeCalculateLayout(root()->layout().m_node,
+                          YGUndefined,
+                          YGUndefined,
+                          YGDirectionInherit);
+}
+
 bool AKScene::render(AKTarget *target)
 {
     validateTarget(target);
@@ -53,10 +81,11 @@ bool AKScene::render(AKTarget *target)
 
     if (!isNestedScene)
     {
-        YGNodeCalculateLayout(root()->layout().m_node,
-                              YGUndefined,
-                              YGUndefined,
-                              YGDirectionInherit);
+        if (target->updateLayoutEnabled())
+            YGNodeCalculateLayout(root()->layout().m_node,
+                                  YGUndefined,
+                                  YGUndefined,
+                                  YGDirectionInherit);
 
         root()->m_globalRect = SkRect::MakeWH(t->viewport().width(), t->viewport().height()).roundOut();
         root()->m_rect = root()->m_globalRect;
@@ -248,7 +277,6 @@ retry:
 
 void AKScene::handlePointerButtonEvent()
 {
-    auto &event { *static_cast<const AKPointerButtonEvent*>(e) };
     m_root->removeFlagsAndPropagate(AKNode::Notified);
     AKNode::RIterator it { nullptr };
 
@@ -381,6 +409,12 @@ void AKScene::notifyBegin(AKNode *node)
         for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
             notifyBegin(*it);
 
+    if (t->updateLayoutEnabled())
+    {
+        m_eventWithoutTarget = true;
+        node->updateLayout();
+        m_eventWithoutTarget = false;
+    }
     node->onSceneBegin();
 }
 
@@ -404,7 +438,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     {
         AKBackgroundEffect &backgroundEffect { *static_cast<AKBackgroundEffect*>(node) };
 
-        node->onLayoutUpdate();
+        node->onSceneCalculatedRect();
 
         backgroundEffect.m_globalRect = SkIRect::MakeXYWH(
             backgroundEffect.effectRect.x() + backgroundEffect.targetNode()->globalRect().x(),
@@ -433,7 +467,7 @@ void AKScene::calculateNewDamage(AKNode *node)
             node->m_globalRect.width(),
             node->m_globalRect.height());
 
-        node->onLayoutUpdate();
+        node->onSceneCalculatedRect();
 
         bool parentIsVisible { node->parent() && !node->parent()->parent() && node->parent()->visible() };
         if (node->parent() && node->parent()->parent())

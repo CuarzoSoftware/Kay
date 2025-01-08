@@ -84,7 +84,7 @@ protected:
     /**
      * @brief Bake event
      *
-     * Triggered after onSceneBegin(), onLayoutUpdate() and before onRender().
+     * Triggered after onSceneBegin(), onSceneCalculatedRect() and before onRender().
      */
     virtual void onBake(OnBakeParams *params) = 0;
 private:

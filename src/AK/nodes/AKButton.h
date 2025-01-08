@@ -35,8 +35,9 @@ public:
 
 protected:
     void onEvent(const AKEvent &event) override;
+    void updateLayout() override;
     void onSceneBegin() override;
-    void onLayoutUpdate() override;
+    void onSceneCalculatedRect() override;
     void applyLayoutConstraints() noexcept;
     AKHThreePatch m_hThreePatch { this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };

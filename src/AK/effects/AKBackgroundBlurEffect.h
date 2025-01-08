@@ -42,7 +42,7 @@ public:
         Automatic,
 
         /**
-         * Both effectRect and the clip path are manually specified by subscribing to onLayoutUpdateSignal.
+         * Both effectRect and the clip path are manually specified by subscribing to onSceneCalculatedRectSignal.
          */
         Manual
     };
@@ -122,7 +122,7 @@ public:
      * This path is only used by the ClipMode::Manual mode and must be specified
      * relative to the effectRect. Parts that fall outside effectRect are ignored.
      *
-     * Should be set during the callback of onLayoutUpdateSignal which is triggered right after the target
+     * Should be set during the callback of onSceneCalculatedRectSignal which is triggered right after the target
      * node layout has been calculated.
      *
      * @note Performance tip: Avoid updating when not required as Skia regenerates the clipping mask each time.
@@ -130,7 +130,7 @@ public:
     SkPath clip;
     using AKBackgroundEffect::effectRect;
 protected:
-    void onLayoutUpdate() override;
+    void onSceneCalculatedRect() override;
     void onRender(AKPainter *, const SkRegion &damage) override;
     void onTargetNodeChanged() override { /* Nothing to free here */ }
 private:

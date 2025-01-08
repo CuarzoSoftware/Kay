@@ -7,7 +7,7 @@
 
 using namespace AK;
 
-void AKBackgroundBlurEffect::onLayoutUpdate()
+void AKBackgroundBlurEffect::onSceneCalculatedRect()
 {
     if (!currentTarget()->image())
         return;

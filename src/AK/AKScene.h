@@ -13,14 +13,7 @@ public:
     AKScene() noexcept;
     AKTarget *createTarget(std::shared_ptr<AKPainter> painter = nullptr) noexcept;
     bool destroyTarget(AKTarget *target);
-    void updateLayout() noexcept
-    {
-        if (root())
-            YGNodeCalculateLayout(root()->layout().m_node,
-                                  YGUndefined,
-                                  YGUndefined,
-                                  YGDirectionInherit);
-    }
+    void updateLayout() noexcept;
     bool render(AKTarget *target);
 
     /**
@@ -35,12 +28,19 @@ public:
             return;
 
         if (m_root)
+        {
             m_root->m_flags.remove(AKNode::IsRoot);
+            if (!m_isSubScene)
+                m_root->setScene(nullptr);
+        }
 
         m_root.reset(node);
 
         if (m_root && !m_isSubScene)
+        {
             m_root->m_flags.add(AKNode::IsRoot);
+            m_root->setScene(this);
+        }
 
         for (AKTarget *t : m_targets)
         {
@@ -76,6 +76,7 @@ private:
     AKWeak<AKNode> m_root;
     bool m_isSubScene { false };
     bool m_treeChanged { false };
+    bool m_eventWithoutTarget { false };
     void validateTarget(AKTarget *target) noexcept;
     void updateMatrix() noexcept;
     void notifyBegin(AKNode *node);
@@ -83,7 +84,6 @@ private:
     void updateDamageRing() noexcept;
     void renderBackground() noexcept;
     void renderNodes(AKNode *node);
-
     void handlePointerMoveEvent();
     void handlePointerButtonEvent();
 };

@@ -77,10 +77,13 @@ void AKButton::onEvent(const AKEvent &event)
     }
 }
 
-void AKButton::onSceneBegin()
+void AKButton::updateLayout()
 {
     applyLayoutConstraints();
+}
 
+void AKButton::onSceneBegin()
+{
     SkColor4f finalBackgroundColor { SkColor4f::FromColor(m_backgroundColor) };
     SkScalar contentOpacity { 1.f };
 
@@ -116,7 +119,7 @@ void AKButton::onSceneBegin()
     m_hThreePatch.setScale(currentTarget()->bakedComponentsScale());
 }
 
-void AKButton::onLayoutUpdate()
+void AKButton::onSceneCalculatedRect()
 {
     if (m_backgroundColor == SK_ColorWHITE)
         m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(rect().width());
