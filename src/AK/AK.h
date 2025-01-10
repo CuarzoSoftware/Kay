@@ -162,6 +162,7 @@ namespace AK
     typedef uintptr_t       UIntPtr;
 
     AKTheme *theme() noexcept;
+    void setTheme(AKTheme *theme) noexcept;
 };
 
 #define AK_IRECT_INF SkIRect::MakeLTRB(-2147483, -2147483, 2147483, 2147483)

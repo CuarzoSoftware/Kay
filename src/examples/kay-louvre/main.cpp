@@ -431,7 +431,7 @@ class Surface final : public LSurface
 public:
     Surface(const void *data) noexcept : LSurface(data) {
         node.enableAutoDamage(false);
-        node.setSizeMode(AKImage::SizeMode::Fit);
+        node.setSizeMode(AKImage::SizeMode::Fill);
         node.setSrcRectMode(AKImage::SrcRectMode::Custom);
         node.layout().setPositionType(YGPositionTypeAbsolute);
     }
@@ -458,7 +458,7 @@ class Output final : public LOutput
 public:
     Output(const void *params) noexcept : LOutput(params)
     {
-        background.setSizeMode(AKImage::SizeMode::Fit);
+        background.setSizeMode(AKImage::SizeMode::Fill);
         background.setSrcRectMode(AKImage::SrcRectMode::Custom);
         background.layout().setDisplay(YGDisplayFlex);
         background.layout().setJustifyContent(YGJustifyCenter);
@@ -732,10 +732,10 @@ public:
             static const char* sizeModeName[] {
                 "Contain",
                 "Cover",
-                "Fit",
+                "Fill",
             };
 
-            if (assetsView.sizeMode() == AKImage::SizeMode::Fit)
+            if (assetsView.sizeMode() == AKImage::SizeMode::Fill)
                 assetsView.setSizeMode(AKImage::SizeMode::Contain);
             else
                 assetsView.setSizeMode((AKImage::SizeMode)(Int32(assetsView.sizeMode())+1));

@@ -19,7 +19,7 @@ void AKImage::onSceneBegin()
         chg.test(Chg_SizeMode) ||
         chg.test(Chg_SrcRectMode) ||
         (srcRectMode() == SrcRectMode::Custom && (chg.test(Chg_CustomSrcRect) || chg.test(Chg_CustomSrcRectScale))) ||
-        (sizeMode() != SizeMode::Fit && chg.test(Chg_Alignment)))
+        (sizeMode() != SizeMode::Fill && chg.test(Chg_Alignment)))
         addDamage(AK_IRECT_INF);
 }
 
@@ -50,7 +50,7 @@ void AKImage::onRender(AKPainter *painter, const SkRegion &damage)
 
     SkRegion finalDamage { damage };
 
-    if (sizeMode() == SizeMode::Fit)
+    if (sizeMode() == SizeMode::Fill)
     {
         params.pos = rect().topLeft();
         params.dstSize = rect().size();
@@ -81,7 +81,7 @@ void AKImage::onRender(AKPainter *painter, const SkRegion &damage)
     }
 
     // Alignment
-    if (sizeMode() != SizeMode::Fit)
+    if (sizeMode() != SizeMode::Fill)
     {
         const AKBitset<AKAlignment> alignment { m_alignment };
 

@@ -11,6 +11,7 @@ class AK::AKTheme
 {
 public:
     AKTheme() noexcept;
+    virtual ~AKTheme() {}
 
     /* Colors */
 

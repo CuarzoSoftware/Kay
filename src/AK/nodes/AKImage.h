@@ -38,7 +38,7 @@ public:
     {
         Contain, // Default
         Cover,
-        Fit
+        Fill
     };
 
     void setImage(sk_sp<SkImage> image) noexcept
