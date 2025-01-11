@@ -272,7 +272,7 @@ private:
         bool customTextureColor { false };
     } userState;
 
-    SkRect srcRect;
+    SkRect srcRect { 0, 0, 0, 0 };
     bool needsBlendFuncUpdate { true };
 
     static inline GLfloat square[]
@@ -288,13 +288,13 @@ private:
 
     struct ShaderState
     {
-        SkSize texSize;
-        SkRect srcRect;
-        GLuint activeTexture;
-        ShaderMode mode;
+        SkSize texSize { 0, 0 };
+        SkRect srcRect { 0, 0, 0, 0 };
+        GLuint activeTexture { 0 };
+        ShaderMode mode { ShaderMode::TextureMode };
         SkColor4f color { SkColors::kBlack };
-        GLfloat alpha;
-        GLfloat scale;
+        GLfloat alpha { 1.f };
+        GLfloat scale { 1.f };
         bool colorFactorEnabled { false };
         bool texColorEnabled { false };
         bool premultipliedAlpha { false };

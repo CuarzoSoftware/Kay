@@ -49,7 +49,7 @@ void AKScene::updateLayout() noexcept
 
     m_eventWithoutTarget = true;
 
-    AKNode::RIterator it(root()->bottommostChild());
+    AKNode::RIterator it(bottommost);
 
     while (!it.done())
     {
@@ -405,7 +405,7 @@ void AKScene::notifyBegin(AKNode *node)
         node->t->clientDamage.setRect(AK_IRECT_INF);
     }
 
-    if (!isSubScene())
+    if (!isSubScene()) //if (!(node->caps() & AKNode::Scene))
         for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
             notifyBegin(*it);
 
@@ -515,14 +515,14 @@ void AKScene::calculateNewDamage(AKNode *node)
 
         if (!clipRegion.isEmpty())
         {
-            bool surfaceChanged ;
+            bool surfaceChanged;
 
             if (bakeable->t->bake)
             {
                 surfaceChanged = bakeable->t->bake->scale() != t->bakedComponentsScale();
                 surfaceChanged |= bakeable->t->bake->resize(
                     SkSize::Make(bakeable->rect().size()),
-                    t->bakedComponentsScale());
+                    t->bakedComponentsScale(), true);
             }
             else
             {
@@ -755,7 +755,6 @@ void AKScene::renderNodes(AKNode *node)
         for (size_t i = 0; i < node->children().size();)
         {
             renderNodes(node->children()[i]);
-
             node->children()[i]->t->changes.reset();
 
             if (node->children()[i]->caps() & AKNode::BackgroundEffect)

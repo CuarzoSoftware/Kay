@@ -36,12 +36,12 @@ void AKPainter::setParamsFromRenderable(AKRenderable *renderable) noexcept
     if (!renderable)
         return;
 
-    setColor(renderable->color());
     setColorFactor(renderable->colorFactor());
-    setAlpha(renderable->opacity());
-    setBlendFunc(renderable->customBlendFunc());
-    enableAutoBlendFunc(!renderable->customBlendFuncEnabled());
     enableCustomTextureColor(renderable->customTextureColorEnabled());
+    enableAutoBlendFunc(!renderable->customBlendFuncEnabled());
+    setBlendFunc(renderable->customBlendFunc());
+    setColor(renderable->color());
+    setAlpha(renderable->opacity());
 }
 
 void AKPainter::bindTextureMode(const TextureParams &p) noexcept
@@ -404,12 +404,7 @@ void AKPainter::setColorFactor(Float32 r, Float32 g, Float32 b, Float32 a) noexc
 
 void AKPainter::setColorFactor(const SkColor4f &factor) noexcept
 {
-    if (userState.colorFactor == factor)
-        return;
-
-    userState.colorFactor = factor;
-    shaderSetColorFactorEnabled(factor.fR != 1.f || factor.fG != 1.f || factor.fB != 1.f || factor.fA != 1.f);
-    needsBlendFuncUpdate = true;
+    setColorFactor(factor.fR, factor.fG, factor.fB, factor.fA);
 }
 
 void AKPainter::setClearColor(Float32 r, Float32 g, Float32 b, Float32 a) noexcept
@@ -542,7 +537,7 @@ void AKPainter::bindProgram() noexcept
     glUniform1i(currentUniforms->has90deg,
                 currentState->has90deg);
 
-    updateBlendingParams();
+    needsBlendFuncUpdate = true;
 }
 
 AKPainter::AKPainter() noexcept
@@ -694,23 +689,7 @@ AKPainter::AKPainter() noexcept
 #endif
     currentUniforms = &uniforms;
     setupProgram();
-
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.0f);
-    glEnable(GL_BLEND);
-    glEnable(GL_SCISSOR_TEST);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_DITHER);
-    glDisable(GL_POLYGON_OFFSET_FILL);
-    glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-    glDisable(GL_SAMPLE_COVERAGE);
-    glDisable(GL_SAMPLE_ALPHA_TO_ONE);
-
-    shaderSetPremultipliedAlpha(true);
-    shaderSetColorFactorEnabled(false);
-    shaderSetAlpha(1.f);
+    bindProgram();
 }
 
 AKPainter::~AKPainter()
@@ -906,6 +885,9 @@ void AKPainter::updateBlendingParams() noexcept
 {
     needsBlendFuncUpdate = false;
     shaderSetMode(userState.mode);
+    shaderSetColorFactorEnabled(userState.colorFactor.fR != 1.f
+                                || userState.colorFactor.fG != 1.f
+                                || userState.colorFactor.fB != 1.f );
 
     if (userState.mode == TextureMode)
     {
@@ -945,14 +927,10 @@ void AKPainter::updateBlendingParams() noexcept
             {
                 if (userState.autoBlendFunc)
                 {
-                    SkColor4f colorFactor;
                     const Float32 alpha { userState.alpha * userState.colorFactor.fA };
-                    colorFactor.fR = userState.colorFactor.fR;
-                    colorFactor.fG = userState.colorFactor.fG;
-                    colorFactor.fB = userState.colorFactor.fB;
                     shaderSetPremultipliedAlpha(true);
                     glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-                    shaderSetColor(colorFactor);
+                    shaderSetColor(userState.colorFactor);
                     shaderSetAlpha(alpha);
                 }
                 else

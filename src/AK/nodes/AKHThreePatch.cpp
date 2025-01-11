@@ -14,13 +14,13 @@ void AKHThreePatch::onRender(AKPainter *painter, const SkRegion &damage)
     dsts[0].setXYWH(rect().x(), rect().y(), m_sideSrcRect.width(), rect().height());
     dsts[1].setXYWH(dsts[0].fRight, rect().y(), centerWidth, dsts[0].height());
     dsts[2].setXYWH(dsts[1].fRight, rect().y(), m_sideSrcRect.width(), rect().height());
-    SkRegion regions[3] { damage, damage, damage };
 
     for (Int32 i = 0; i < 3; i++)
     {
-        regions[i].op(dsts[i], SkRegion::Op::kIntersect_Op);
+        SkRegion region { damage };
+        region.op(dsts[i], SkRegion::Op::kIntersect_Op);
 
-        if (regions[i].isEmpty())
+        if (region.isEmpty())
             continue;
 
         painter->bindTextureMode({
@@ -32,6 +32,6 @@ void AKHThreePatch::onRender(AKPainter *painter, const SkRegion &damage)
             .srcScale = m_scale
         });
 
-        painter->drawRegion(regions[i]);
+        painter->drawRegion(region);
     }
 }
