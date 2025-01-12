@@ -107,6 +107,11 @@ bool AKSurface::shrink() noexcept
 
 SkImage *AKSurface::releaseImage() noexcept
 {
+    if (m_image)
+    {
+        const auto skiaFormat = hasAlpha() ? kRGBA_8888_SkColorType : kRGB_888x_SkColorType;
+        m_image = SkImages::AdoptTextureFrom(m_context, m_backendTexture, GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin, skiaFormat, SkAlphaType::kPremul_SkAlphaType, m_colorSpace);
+    }
     return m_image.release();
 }
 

@@ -17,7 +17,8 @@ public:
     {
         Pointer, ///< Pointer event type.
         Keyboard, ///< Keyboard event type.
-        Touch ///< Touch event type.
+        Touch, ///< Touch event type.
+        State
     };
 
     /**
@@ -43,7 +44,9 @@ public:
         PinchUpdate, ///< PinchUpdate event subtype.
         PinchEnd, ///< PinchEnd event subtype.
         HoldBegin, ///< HoldBegin event subtype.
-        HoldEnd ///< HoldEnd event subtype.
+        HoldEnd, ///< HoldEnd event subtype.
+        Activated,
+        Deactivated
     };
 
     /**

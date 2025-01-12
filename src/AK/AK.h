@@ -67,6 +67,10 @@ namespace AK
     class AKInputEvent;
     class AKInputDevice;
 
+    class AKStateEvent;
+    class AKStateActivatedEvent;
+    class AKStateDeactivatedEvent;
+
     class AKPointerEvent;
     class AKPointerEnterEvent;
     class AKPointerLeaveEvent;
