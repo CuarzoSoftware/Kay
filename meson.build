@@ -31,7 +31,8 @@ header_dirs = [
     ['./src/AK', ''],
     ['./src/AK/nodes', 'nodes'],
     ['./src/AK/effects', 'effects'],
-    ['./src/AK/events', 'events']
+    ['./src/AK/events', 'events'],
+    ['./src/AK/utils', 'utils']
 ]
 
 foreach header_dir : header_dirs

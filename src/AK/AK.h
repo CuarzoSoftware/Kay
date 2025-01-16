@@ -19,6 +19,9 @@ namespace AK
     class AKTheme;
     class AKTime;
 
+    /* Utils */
+    class AKImageLoader;
+
     class AKPen;
     class AKBrush;
     class AKPainter;

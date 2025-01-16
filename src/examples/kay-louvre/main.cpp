@@ -835,8 +835,8 @@ public:
         target->setDstRect(SkIRect::MakeXYWH(0, 0, backendTarget.width(), backendTarget.height()));
         target->setBakedComponentsScale(scale());
 
-        //glScissor(0,0,100000,100000);
-        //glClear(GL_COLOR_BUFFER_BIT);
+        glScissor(0,0,100000,100000);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         // Here the scene calculates the layout and performs all the rendering
         comp()->scene.render(target);
