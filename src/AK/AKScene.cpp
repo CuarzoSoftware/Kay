@@ -47,6 +47,11 @@ void AKScene::updateLayout() noexcept
     if (!bottommost)
         return;
 
+    YGNodeCalculateLayout(root()->layout().m_node,
+                          YGUndefined,
+                          YGUndefined,
+                          YGDirectionInherit);
+
     m_eventWithoutTarget = true;
 
     AKNode::RIterator it(bottommost);
@@ -74,9 +79,6 @@ bool AKScene::render(AKTarget *target)
 
     updateMatrix();
 
-    for (auto it = root()->children().rbegin(); it != root()->children().rend(); it++)
-        notifyBegin(*it);
-
     const bool isNestedScene = (root()->parent() && isSubScene());
 
     if (!isNestedScene)
@@ -89,6 +91,17 @@ bool AKScene::render(AKTarget *target)
 
         root()->m_globalRect = SkRect::MakeWH(t->viewport().width(), t->viewport().height()).roundOut();
         root()->m_rect = root()->m_globalRect;
+    }
+
+    for (auto it = root()->children().rbegin(); it != root()->children().rend(); it++)
+        notifyBegin(*it);
+
+    if (!isNestedScene && target->updateLayoutEnabled())
+    {
+        YGNodeCalculateLayout(root()->layout().m_node,
+                              YGUndefined,
+                              YGUndefined,
+                              YGDirectionInherit);
     }
 
     t->m_globalIViewport = SkRect::MakeXYWH(

@@ -6,6 +6,11 @@
 
 #define AK_MAX_BUFFER_AGE 5
 
+#define AKCLASS_NO_COPY(class_name) \
+    class_name(const class_name&) = delete; \
+    class_name(class_name&&) = delete; \
+    class_name &operator=(const class_name&) = delete;
+
 namespace AK
 {
     class AKObject;
@@ -42,8 +47,9 @@ namespace AK
     /*********** RENDERABLES ***********/
 
     class AKSolidColor;
-    class AKImage;
     class AKPath;
+    class AKRenderableImage;
+    class AKImageFrame;
     class AKHThreePatch;
     class AKVThreePatch;
 

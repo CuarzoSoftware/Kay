@@ -36,7 +36,7 @@
 #include <private/LOutputPrivate.h>
 
 #include <AK/nodes/AKSubScene.h>
-#include <AK/nodes/AKImage.h>
+#include <AK/nodes/AKImageFrame.h>
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKSolidColor.h>
 #include <AK/nodes/AKRoundContainer.h>
@@ -431,13 +431,12 @@ class Surface final : public LSurface
 public:
     Surface(const void *data) noexcept : LSurface(data) {
         node.enableAutoDamage(false);
-        node.setSizeMode(AKImage::SizeMode::Fill);
-        node.setSrcRectMode(AKImage::SrcRectMode::Custom);
+        node.setSrcRectMode(AKRenderableImage::SrcRectMode::Custom);
         node.layout().setPositionType(YGPositionTypeAbsolute);
     }
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
 
-    AKImage node { &comp()->surfaces };
+    AKRenderableImage node { &comp()->surfaces };
 
     void orderChanged() override
     {
@@ -458,8 +457,15 @@ class Output final : public LOutput
 public:
     Output(const void *params) noexcept : LOutput(params)
     {
-        background.setSizeMode(AKImage::SizeMode::Fill);
-        background.setSrcRectMode(AKImage::SrcRectMode::Custom);
+        wallpaperFrame.setSizeMode(AKImageFrame::SizeMode::Fill);
+        wallpaperFrame.setSrcRectMode(AKRenderableImage::SrcRectMode::Custom);
+        wallpaperFrame.opaqueRegion().setRect(AK_IRECT_INF);
+        wallpaperFrame.layout().setPositionType(YGPositionTypeAbsolute);
+        wallpaperFrame.layout().setWidthPercent(100.f);
+        wallpaperFrame.layout().setHeightPercent(100.f);
+        wallpaperFrame.layout().setPosition(YGEdgeLeft, 0.f);
+        wallpaperFrame.layout().setPosition(YGEdgeTop, 0.f);
+
         background.layout().setDisplay(YGDisplayFlex);
         background.layout().setJustifyContent(YGJustifyCenter);
         background.layout().setAlignItems(YGAlignCenter);
@@ -527,7 +533,6 @@ public:
 
     void updateBackground() noexcept
     {
-        background.opaqueRegion.setRect(AK_IRECT_INF);
         background.layout().setPosition(YGEdgeLeft, pos().x());
         background.layout().setPosition(YGEdgeTop, pos().y());
         background.layout().setWidth(size().w());
@@ -585,10 +590,10 @@ public:
         }
 
     skipScale:
-        background.setImage(louvreTex2SkiaImage(wallpaper.get(), context.get(), this));
+        wallpaperFrame.setImage(louvreTex2SkiaImage(wallpaper.get(), context.get(), this));
 
         if (wallpaper)
-            background.setCustomSrcRect(SkRect::MakeWH(wallpaper->sizeB().w(), wallpaper->sizeB().h()));
+            wallpaperFrame.setCustomSrcRect(SkRect::MakeWH(wallpaper->sizeB().w(), wallpaper->sizeB().h()));
     }
 
     void initializeGL() override
@@ -677,7 +682,7 @@ public:
         assetsView.setImage(assetsImage);
         assetsView.layout().setWidth(200);
         assetsView.layout().setHeight(100);
-        assetsView.setSizeMode(AKImage::SizeMode::Contain);
+        assetsView.setSizeMode(AKImageFrame::SizeMode::Contain);
 
         imgTransform.on.clicked.subscribe(&imgTransform, [this](){
             static const char* transformName[] {
@@ -691,12 +696,12 @@ public:
                 "Flipped270"
             };
 
-            if (assetsView.transform() == AKTransform::Flipped270)
-                assetsView.setTransform(AKTransform::Normal);
+            if (assetsView.srcTransform() == AKTransform::Flipped270)
+                assetsView.setSrcTransform(AKTransform::Normal);
             else
-                assetsView.setTransform((AKTransform)(Int32(assetsView.transform())+1));
+                assetsView.setSrcTransform((AKTransform)(Int32(assetsView.srcTransform())+1));
 
-            imgTransform.setText(transformName[Int32(assetsView.transform())]);
+            imgTransform.setText(transformName[Int32(assetsView.srcTransform())]);
         });
 
         imgAlignment.on.clicked.subscribe(&imgAlignment, [this](){
@@ -735,10 +740,10 @@ public:
                 "Fill",
             };
 
-            if (assetsView.sizeMode() == AKImage::SizeMode::Fill)
-                assetsView.setSizeMode(AKImage::SizeMode::Contain);
+            if (assetsView.sizeMode() == AKImageFrame::SizeMode::Fill)
+                assetsView.setSizeMode(AKImageFrame::SizeMode::Contain);
             else
-                assetsView.setSizeMode((AKImage::SizeMode)(Int32(assetsView.sizeMode())+1));
+                assetsView.setSizeMode((AKImageFrame::SizeMode)(Int32(assetsView.sizeMode())+1));
 
             imgSizeMode.setText(sizeModeName[Int32(assetsView.sizeMode())]);
         });
@@ -802,7 +807,7 @@ public:
                 s->srcRect().x(), s->srcRect().y(),
                 s->srcRect().w(), s->srcRect().h()));
             s->node.setCustomSrcRectScale(s->bufferScale());
-            s->node.setTransform(static_cast<AKTransform>(s->bufferTransform()));
+            s->node.setSrcTransform(static_cast<AKTransform>(s->bufferTransform()));
 
             boxes = s->damage().boxes(&n);
             region.setRects((const SkIRect*)boxes, n);
@@ -835,8 +840,8 @@ public:
         target->setDstRect(SkIRect::MakeXYWH(0, 0, backendTarget.width(), backendTarget.height()));
         target->setBakedComponentsScale(scale());
 
-        glScissor(0,0,100000,100000);
-        glClear(GL_COLOR_BUFFER_BIT);
+        //glScissor(0,0,100000,100000);
+        //glClear(GL_COLOR_BUFFER_BIT);
 
         // Here the scene calculates the layout and performs all the rendering
         comp()->scene.render(target);
@@ -897,7 +902,8 @@ public:
     }
 
     bool inPaintGL { false };
-    AKImage background { &comp()->background };
+    AKContainer background { YGFlexDirectionColumn, false, &comp()->background };
+    AKImageFrame wallpaperFrame { &background };
     AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
     AKSimpleText instructions2 { "Note: Blur only works if launched from a TTY (DRM backend)", &background};
 
@@ -920,7 +926,7 @@ public:
 
     LWeak<LTexture> assetsTexture;
     sk_sp<SkImage> assetsImage;
-    AKImage assetsView { &background };
+    AKImageFrame assetsView { &background };
 
     GrContextOptions contextOptions;
     sk_sp<GrDirectContext> context;
