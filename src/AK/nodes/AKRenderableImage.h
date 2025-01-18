@@ -28,6 +28,9 @@ public:
 
     void setImage(sk_sp<SkImage> image) noexcept
     {
+        if (image.get() == m_image.get())
+            return;
+
         addChange(Chg_Image);
         m_image = image;
     }

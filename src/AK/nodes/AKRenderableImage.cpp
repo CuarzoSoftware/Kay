@@ -9,8 +9,7 @@ void AKRenderableImage::onSceneBegin()
 
     const auto &chg { changes() };
 
-    if (chg.test(Chg_Image) ||
-        chg.test(Chg_SrcTransform) ||
+    if (chg.test(Chg_SrcTransform) ||
         chg.test(Chg_SrcRectMode) ||
         (srcRectMode() == SrcRectMode::Custom && (chg.test(Chg_CustomSrcRect) || chg.test(Chg_CustomSrcRectScale))))
         addDamage(AK_IRECT_INF);
