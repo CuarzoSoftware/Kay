@@ -22,35 +22,8 @@ public:
      * Only the children of the root node are rendered.
      * The root node's bounds do not clip its children, but its layout properties may affect them.
      */
-    void setRoot(AKNode *node) noexcept
-    {
-        if (node == m_root)
-            return;
-
-        if (m_root)
-        {
-            m_root->m_flags.remove(AKNode::IsRoot);
-            if (!m_isSubScene)
-                m_root->setScene(nullptr);
-        }
-
-        m_root.reset(node);
-
-        if (m_root && !m_isSubScene)
-        {
-            m_root->m_flags.add(AKNode::IsRoot);
-            m_root->setScene(this);
-        }
-
-        for (AKTarget *t : m_targets)
-        {
-            t->m_needsFullRepaint = true;
-            t->markDirty();
-        }
-    }
-
+    void setRoot(AKNode *node) noexcept;
     AKNode *nodeAt(const SkPoint &pos) const noexcept;
-
     AKNode *root() const noexcept
     {
         return m_root;
@@ -62,7 +35,7 @@ public:
     }
 
     bool isSubScene() const noexcept { return m_isSubScene; };
-
+    bool activated() const noexcept { return m_activated; };
     void postEvent(const AKEvent &event);
 private:
     friend class AKTarget;
@@ -77,6 +50,7 @@ private:
     bool m_isSubScene { false };
     bool m_treeChanged { false };
     bool m_eventWithoutTarget { false };
+    bool m_activated { true };
     void validateTarget(AKTarget *target) noexcept;
     void updateMatrix() noexcept;
     void notifyBegin(AKNode *node);
@@ -86,6 +60,8 @@ private:
     void renderNodes(AKNode *node);
     void handlePointerMoveEvent();
     void handlePointerButtonEvent();
+    void handleStateActivatedEvent();
+    void handleStateDeactivatedEvent();
 };
 
 #endif // AKSCENE_H

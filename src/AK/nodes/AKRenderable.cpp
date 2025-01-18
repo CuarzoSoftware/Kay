@@ -1,3 +1,4 @@
+#include <AK/events/AKEvent.h>
 #include <AK/nodes/AKRenderable.h>
 #include <AK/AKTarget.h>
 
@@ -19,6 +20,21 @@ const SkRegion &AKRenderable::damage() const noexcept
 {
     static const SkRegion emptyRegion;
     return currentTarget() == nullptr ? emptyRegion : m_targets[currentTarget()].clientDamage;
+}
+
+void AKRenderable::onEvent(const AKEvent &event)
+{
+    AKNode::onEvent(event);
+
+    if (diminishOpacityOnInactive() && event.type() == AKEvent::Type::State)
+    {
+        if (event.subtype() == AKEvent::Subtype::Activated || event.subtype() == AKEvent::Subtype::Deactivated)
+        {
+            addDamage(AK_IRECT_INF);
+            repaint();
+            return;
+        }
+    }
 }
 
 void AKRenderable::handleCommonChanges() noexcept
@@ -48,4 +64,7 @@ void AKRenderable::handleCommonChanges() noexcept
 
         m_colorHint = opacity() < 1.f || colorFactor().fA < 1.f ? ColorHint::Translucent : ColorHint::UseRegion;
     }
+
+    if (diminishOpacityOnInactive() && !activated())
+        m_colorHint = ColorHint::Translucent;
 }

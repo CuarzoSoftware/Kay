@@ -30,6 +30,10 @@ public:
     static inline SkColor   SystemGray    { 0xFF7B7B81 };
     static inline SkColor   LinkColor     { 0xFF094FD1 };
 
+    /* Renderables */
+
+    static inline SkScalar  RenderableInactiveOpacityFactor { 0.5f };
+
     /* AKButton */
 
     static inline SkScalar  ButtonPressedBackgroundDarkness         { 0.95f };

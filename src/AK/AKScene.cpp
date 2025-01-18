@@ -144,6 +144,33 @@ bool AKScene::render(AKTarget *target)
     return true;
 }
 
+void AKScene::setRoot(AKNode *node) noexcept
+{
+    if (node == m_root)
+        return;
+
+    if (m_root)
+    {
+        m_root->m_flags.remove(AKNode::IsRoot);
+        if (!m_isSubScene)
+            m_root->setScene(nullptr);
+    }
+
+    m_root.reset(node);
+
+    if (m_root && !m_isSubScene)
+    {
+        m_root->m_flags.add(AKNode::IsRoot);
+        m_root->setScene(this);
+    }
+
+    for (AKTarget *t : m_targets)
+    {
+        t->m_needsFullRepaint = true;
+        t->markDirty();
+    }
+}
+
 AKNode *AKScene::nodeAt(const SkPoint &pos) const noexcept
 {
     if (!m_root)
@@ -221,6 +248,18 @@ void AKScene::postEvent(const AKEvent &event)
             break;
         case AKEvent::Subtype::Button:
             handlePointerButtonEvent();
+            break;
+        default:
+            break;
+        }
+        break;
+    case AKEvent::Type::State:
+        switch (event.subtype()) {
+        case AKEvent::Subtype::Activated:
+            handleStateActivatedEvent();
+            break;
+        case AKEvent::Subtype::Deactivated:
+            handleStateDeactivatedEvent();
             break;
         default:
             break;
@@ -309,6 +348,68 @@ retry:
 
         if (it.node()->m_flags.check(AKNode::HasPointerFocus | AKNode::PointerGrab))
             it.node()->onEvent(*e);
+
+        if (m_treeChanged)
+            goto retry;
+
+        it.next();
+    }
+}
+
+void AKScene::handleStateActivatedEvent()
+{
+    if (m_activated)
+        return;
+
+    m_activated = true;
+    m_root->removeFlagsAndPropagate(AKNode::Notified);
+    AKNode::RIterator it { nullptr };
+
+retry:
+    it.reset(m_root->bottommostChild());
+    m_treeChanged = false;
+
+    while (!it.done())
+    {
+        if (it.node()->m_flags.check(AKNode::Notified))
+        {
+            it.next();
+            continue;
+        }
+
+        it.node()->m_flags.add(AKNode::Notified);
+        it.node()->onEvent(*e);
+
+        if (m_treeChanged)
+            goto retry;
+
+        it.next();
+    }
+}
+
+void AKScene::handleStateDeactivatedEvent()
+{
+    if (!m_activated)
+        return;
+
+    m_activated = false;
+    m_root->removeFlagsAndPropagate(AKNode::Notified);
+    AKNode::RIterator it { nullptr };
+
+retry:
+    it.reset(m_root->bottommostChild());
+    m_treeChanged = false;
+
+    while (!it.done())
+    {
+        if (it.node()->m_flags.check(AKNode::Notified))
+        {
+            it.next();
+            continue;
+        }
+
+        it.node()->m_flags.add(AKNode::Notified);
+        it.node()->onEvent(*e);
 
         if (m_treeChanged)
             goto retry;

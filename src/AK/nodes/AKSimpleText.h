@@ -24,7 +24,6 @@ public:
     {
         m_brush.setAntiAlias(false);
         m_pen.setAntiAlias(true);
-        setColorWithAlpha(SkColors::kBlack);
         setText(text);
         enableCustomTextureColor(true);
     }
@@ -90,6 +89,7 @@ protected:
     void onBake(OnBakeParams *params) override;
     void updateDimensions() noexcept;
     std::string m_text;
+    SkColor m_color { SK_ColorBLACK };
     SkFont m_font;
     AKBrush m_brush;
     AKPen m_pen { AKPen::NoPen() };

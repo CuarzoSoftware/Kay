@@ -22,6 +22,7 @@ public:
         Chg_CustomBlendFuncEnabled,
         Chg_CustomBlendFunc,
         Chg_Size,
+        Chg_DiminishOpacityOnInactive,
         Chg_Last
     };
 
@@ -157,6 +158,20 @@ public:
         return m_customBlendFunc;
     }
 
+    void enableDiminishOpacityOnInactive(bool enable) noexcept
+    {
+        if (m_flags.check(DiminishOpacityOnInactive) == enable)
+            return;
+
+        m_flags.setFlag(DiminishOpacityOnInactive, enable);
+        addChange(Chg_DiminishOpacityOnInactive);
+    }
+
+    bool diminishOpacityOnInactive() const noexcept
+    {
+        return m_flags.check(DiminishOpacityOnInactive);
+    }
+
 protected:
     enum ColorHint
     {
@@ -173,6 +188,7 @@ protected:
     ColorHint m_colorHint { UseRegion };
     bool m_customBlendFuncEnabled { false };
     bool m_customTextureColorEnabled { false };
+    virtual void onEvent(const AKEvent &event) override;
     virtual void onRender(AKPainter *painter, const SkRegion &damage) = 0;
 private:
     void handleCommonChanges() noexcept;

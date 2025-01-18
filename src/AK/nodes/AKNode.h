@@ -76,6 +76,17 @@ public:
     };
     void addChange(Change change) noexcept;
 
+    /**
+     * @brief Marks all intersected targets as dirty.
+     *
+     * This function triggers the AK::AKTarget::onMarkedDirty() signal
+     * for all intersected targets, which, depending on the implementation,
+     * may lead to a window or screen repaint.
+     *
+     * @note The addChange() function automatically calls this function internally.
+     */
+    void repaint() noexcept;
+
     [[nodiscard]]
     const std::bitset<128> &changes() const noexcept;
 
@@ -202,6 +213,8 @@ public:
 
     AKScene *scene() const noexcept { return m_scene; }
 
+    bool activated() const noexcept;
+
 protected:
     virtual void onEvent(const AKEvent &event) { (void)event; }
 
@@ -217,14 +230,15 @@ private:
 
     enum Flags : UInt32
     {
-        ChildrenClipping        = 1 << 0,
-        IsRoot                  = 1 << 1,
-        Notified                = 1 << 2,
-        InsideLastTarget        = 1 << 3,
-        RenderedOnLastTarget    = 1 << 4,
-        HasPointerFocus         = 1 << 5,
-        ChildHasPointerFocus    = 1 << 6,
-        PointerGrab             = 1 << 7
+        ChildrenClipping            = 1 << 0,
+        IsRoot                      = 1 << 1,
+        Notified                    = 1 << 2,
+        InsideLastTarget            = 1 << 3,
+        RenderedOnLastTarget        = 1 << 4,
+        HasPointerFocus             = 1 << 5,
+        ChildHasPointerFocus        = 1 << 6,
+        PointerGrab                 = 1 << 7,
+        DiminishOpacityOnInactive   = 1 << 8
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;

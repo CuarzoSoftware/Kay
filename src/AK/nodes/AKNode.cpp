@@ -38,6 +38,11 @@ void AKNode::addChange(Change change) noexcept
     for (auto &t : m_targets)
         t.second.changes.set(change);
 
+    repaint();
+}
+
+void AKNode::repaint() noexcept
+{
     for (auto *t : m_intersectedTargets)
         t->markDirty();
 }
@@ -347,6 +352,11 @@ void AKNode::removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexce
     m_backgroundEffects.erase(backgroundEffect);
     backgroundEffect->m_targetNode.reset(nullptr);
     backgroundEffect->onTargetNodeChanged();
+}
+
+bool AKNode::activated() const noexcept
+{
+    return scene() && scene()->activated();
 }
 
 void AKNode::RIterator::reset(AKNode *node) noexcept

@@ -62,6 +62,17 @@ void AKButton::setPressed(bool pressed) noexcept
 
 void AKButton::onEvent(const AKEvent &event)
 {
+    AKSubScene::onEvent(event);
+
+    if (event.type() == AKEvent::Type::State)
+    {
+        if (event.subtype() == AKEvent::Subtype::Activated || event.subtype() == AKEvent::Subtype::Deactivated)
+        {
+            repaint();
+            return;
+        }
+    }
+
     if (event.type() != AKEvent::Type::Pointer || event.subtype() != AKEvent::Subtype::Button)
         return;
 
@@ -84,7 +95,8 @@ void AKButton::updateLayout()
 
 void AKButton::onSceneBegin()
 {
-    SkColor4f finalBackgroundColor { SkColor4f::FromColor(m_backgroundColor) };
+    const bool activated { this->activated() };
+    SkColor4f finalBackgroundColor { SkColor4f::FromColor(activated ? m_backgroundColor : SK_ColorWHITE) };
     SkScalar contentOpacity { 1.f };
 
     if (pressed())
@@ -95,7 +107,7 @@ void AKButton::onSceneBegin()
         contentOpacity = AKTheme::ButtonContentPressedOpacity;
     }
 
-    if (m_backgroundColor == SK_ColorWHITE)
+    if (!activated || m_backgroundColor == SK_ColorWHITE)
     {
         m_hThreePatch.setSideSrcRect(AKTheme::ButtonPlainHThreePatchSideSrcRect);
         m_hThreePatch.setCenterSrcRect(AKTheme::ButtonPlainHThreePatchCenterSrcRect);
@@ -121,7 +133,7 @@ void AKButton::onSceneBegin()
 
 void AKButton::onSceneCalculatedRect()
 {
-    if (m_backgroundColor == SK_ColorWHITE)
+    if (!activated() || m_backgroundColor == SK_ColorWHITE)
         m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(rect().width());
     else
         m_hThreePatch.opaqueRegion = theme()->buttonTintedOpaqueRegion(rect().width());

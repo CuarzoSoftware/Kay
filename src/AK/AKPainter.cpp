@@ -4,6 +4,7 @@
 #include "include/gpu/ganesh/SkImageGanesh.h"
 #include "include/gpu/ganesh/SkSurfaceGanesh.h"
 #include <AK/AKPainter.h>
+#include <AK/AKTheme.h>
 #include <AK/nodes/AKRenderable.h>
 #include <EGL/egl.h>
 #include <GL/gl.h>
@@ -36,7 +37,14 @@ void AKPainter::setParamsFromRenderable(AKRenderable *renderable) noexcept
     if (!renderable)
         return;
 
-    setColorFactor(renderable->colorFactor());
+    if (!renderable->activated() && renderable->diminishOpacityOnInactive())
+    {
+        SkColor4f factor { renderable->colorFactor() };
+        factor.fA *= AKTheme::RenderableInactiveOpacityFactor;
+        setColorFactor(factor);
+    }
+    else
+        setColorFactor(renderable->colorFactor());
     enableCustomTextureColor(renderable->customTextureColorEnabled());
     enableAutoBlendFunc(!renderable->customBlendFuncEnabled());
     setBlendFunc(renderable->customBlendFunc());
