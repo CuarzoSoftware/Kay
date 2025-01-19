@@ -1,13 +1,13 @@
 #ifndef AKNODE_H
 #define AKNODE_H
 
+#include <AK/AKCursor.h>
 #include <AK/AKObject.h>
 #include <AK/AKWeak.h>
 #include <AK/AKBitset.h>
 #include <AK/AKLayout.h>
 
 #include <bitset>
-#include <cassert>
 #include <include/core/SkImage.h>
 #include <include/core/SkSurface.h>
 #include <include/gpu/GrBackendSurface.h>
@@ -215,6 +215,9 @@ public:
 
     bool activated() const noexcept;
 
+    AKCursor cursor() const noexcept { return m_cursor; }
+    void setCursor(AKCursor cursor) { m_cursor = cursor; }
+
 protected:
     virtual void onEvent(const AKEvent &event) { (void)event; }
 
@@ -264,6 +267,7 @@ private:
     std::unique_ptr<SkRegion> m_inputRegion;
     std::vector<AKTarget*> m_intersectedTargets;
     mutable std::unordered_map<AKTarget*, TargetData> m_targets;
+    AKCursor m_cursor { AKCursor::Default };
 };
 
 #endif // AKNODE_H

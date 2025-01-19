@@ -10,6 +10,7 @@ using namespace AK;
 AKButton::AKButton(const std::string &text, AKNode *parent) noexcept : AKSubScene(parent),
     m_text(text, &m_content)
 {
+    setCursor(AKCursor::Pointer);
     m_text.setFont(AKTheme::ButtonFont);
     applyLayoutConstraints();
     m_hThreePatch.layout().setFlex(1.f);
@@ -42,6 +43,7 @@ void AKButton::setEnabled(bool enabled) noexcept
     if (m_enabled == enabled)
         return;
 
+    setCursor(enabled ? AKCursor::Pointer : AKCursor::NotAllowed);
     m_enabled = enabled;
     m_hThreePatch.setOpacity(enabled ? 1.f : AKTheme::ButtonDisabledOpacity);
     m_text.setOpacity(m_hThreePatch.opacity());

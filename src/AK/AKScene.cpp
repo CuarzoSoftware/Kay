@@ -276,10 +276,10 @@ void AKScene::handlePointerMoveEvent()
     const AKPointerEnterEvent enterEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
     const AKPointerLeaveEvent leaveEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
     m_root->removeFlagsAndPropagate(AKNode::Notified | AKNode::ChildHasPointerFocus);
-    AKNode *hover { nodeAt(event.pos()) };
+    m_pointerFocus.reset(nodeAt(event.pos()));
 
-    if (hover)
-        hover->setFlagsAndPropagateToParents(AKNode::ChildHasPointerFocus, true);
+    if (m_pointerFocus)
+        m_pointerFocus->setFlagsAndPropagateToParents(AKNode::ChildHasPointerFocus, true);
 
     AKNode::RIterator it { nullptr };
 

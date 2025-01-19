@@ -37,6 +37,8 @@ public:
     bool isSubScene() const noexcept { return m_isSubScene; };
     bool activated() const noexcept { return m_activated; };
     void postEvent(const AKEvent &event);
+
+    AKNode *pointerFocus() const noexcept { return m_pointerFocus; };
 private:
     friend class AKTarget;
     friend class AKNode;
@@ -47,6 +49,7 @@ private:
     SkMatrix m_matrix;
     std::vector<AKTarget*> m_targets;
     AKWeak<AKNode> m_root;
+    AKWeak<AKNode> m_pointerFocus;
     bool m_isSubScene { false };
     bool m_treeChanged { false };
     bool m_eventWithoutTarget { false };
