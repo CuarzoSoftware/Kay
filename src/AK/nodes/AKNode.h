@@ -218,8 +218,12 @@ public:
     AKCursor cursor() const noexcept { return m_cursor; }
     void setCursor(AKCursor cursor) { m_cursor = cursor; }
 
+    struct {
+        AKSignal<const AKEvent&> event;
+    } on;
+
 protected:
-    virtual void onEvent(const AKEvent &event) { (void)event; }
+    virtual void onEvent(const AKEvent &event) { on.event.notify(event); }
 
 private:
     friend class AKBackgroundEffect;
