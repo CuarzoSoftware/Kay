@@ -2,8 +2,31 @@
 #include <include/core/SkFontMetrics.h>
 #include <AK/nodes/AKSimpleText.h>
 #include <AK/AKSurface.h>
+#include <AK/events/AKPointerMoveEvent.h>
 
 using namespace AK;
+
+Int32 AKSimpleText::charIndexAtX(SkScalar x) const noexcept
+{
+    if (m_text.empty())
+        return -1;
+
+    if (x <= 0)
+        return 0;
+
+    SkScalar width { 0.f };
+    SkRect bounds;
+
+    for (size_t i = 0; i < m_text.size(); i++)
+    {
+        m_font.measureText(&m_text[i], sizeof(m_text[i]), SkTextEncoding::kUTF8, &bounds);
+        width += bounds.width();
+        if (width > x)
+            return i;
+    }
+
+    return m_text.size() - 1;
+}
 
 void AKSimpleText::updateLayout()
 {
@@ -59,3 +82,4 @@ void AKSimpleText::updateDimensions() noexcept
     layout().setMinHeight(m_bounds.height());
     layout().setMaxHeight(m_bounds.height());
 }
+

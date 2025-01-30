@@ -56,6 +56,17 @@ public:
         return m_text;
     }
 
+    /**
+     * @brief Retrieves the character index at the specified x-coordinate.
+     *
+     * If the x-coordinate is outside the component's bounds, the nearest index will be returned.
+     * For example, passing x = -10 would return 0, or -1 if text() is empty.
+     *
+     * @param x The x-coordinate within the component.
+     * @return The index of the character at the x-coordinate, or -1 if text() is empty.
+     */
+    Int32 charIndexAtX(SkScalar x) const noexcept;
+
     void setBrush(const AKBrush &brush) noexcept
     {
         if (m_brush == brush)
