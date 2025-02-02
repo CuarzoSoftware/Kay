@@ -63,6 +63,7 @@ private:
     void renderNodes(AKNode *node);
     void handlePointerMoveEvent();
     void handlePointerButtonEvent();
+    void handleKeyboardKeyEvent();
     void handleStateActivatedEvent();
     void handleStateDeactivatedEvent();
 };

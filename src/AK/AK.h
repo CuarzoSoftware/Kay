@@ -50,8 +50,8 @@ namespace AK
     class AKPath;
     class AKRenderableImage;
     class AKImageFrame;
-    class AKHThreePatch;
-    class AKVThreePatch;
+    class AKThreeImagePatch;
+    class AKTextCaret;
 
     /*********** BAKEABLES ***********/
 
@@ -61,6 +61,7 @@ namespace AK
 
     class AKRoundContainer;
     class AKButton;
+    class AKTextField;
 
     /************ EFFECTS ************/
 
@@ -69,6 +70,10 @@ namespace AK
     class AKBackgroundBoxShadowEffect;
     class AKBackgroundImageShadowEffect;
     class AKBackgroundBlurEffect;
+
+    /************ INPUT *************/
+
+    class AKKeymap;
 
     /************ EVENTS *************/
 
@@ -176,6 +181,8 @@ namespace AK
 
     AKTheme *theme() noexcept;
     void setTheme(AKTheme *theme) noexcept;
+
+    AKKeymap *keymap() noexcept;
 };
 
 #define AK_IRECT_INF SkIRect::MakeLTRB(-2147483, -2147483, 2147483, 2147483)

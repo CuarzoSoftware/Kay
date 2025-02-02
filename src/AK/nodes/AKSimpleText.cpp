@@ -6,9 +6,29 @@
 
 using namespace AK;
 
+static void replaceAllInPlace(std::string &dst, const std::string &find, const std::string &replace) {
+    size_t pos { 0 };
+    while ((pos = dst.find(find, pos)) != std::string::npos) {
+        dst.replace(pos, 1, replace);
+        pos += replace.size();
+    }
+}
+
+void AKSimpleText::setText(const std::string &text) noexcept
+{
+    if (m_text == text)
+        return;
+
+    addChange(Chg_Text);
+    m_text = text;
+    m_skText = text;
+    replaceAllInPlace(m_skText, "\t", "    ");
+    signalTextChanged.notify();
+}
+
 Int32 AKSimpleText::charIndexAtX(SkScalar x) const noexcept
 {
-    if (m_text.empty())
+    if (m_skText.empty())
         return -1;
 
     if (x <= 0)
@@ -17,15 +37,15 @@ Int32 AKSimpleText::charIndexAtX(SkScalar x) const noexcept
     SkScalar width { 0.f };
     SkRect bounds;
 
-    for (size_t i = 0; i < m_text.size(); i++)
+    for (size_t i = 0; i < m_skText.size(); i++)
     {
-        m_font.measureText(&m_text[i], sizeof(m_text[i]), SkTextEncoding::kUTF8, &bounds);
+        m_font.measureText(&m_skText[i], sizeof(m_skText[i]), SkTextEncoding::kUTF8, &bounds);
         width += bounds.width();
         if (width > x)
             return i;
     }
 
-    return m_text.size() - 1;
+    return m_skText.size() - 1;
 }
 
 void AKSimpleText::updateLayout()
@@ -38,7 +58,7 @@ void AKSimpleText::updateLayout()
 
 void AKSimpleText::onBake(OnBakeParams *params)
 {
-    if (text().empty())
+    if (m_skText.empty())
         return;
 
     SkCanvas &c { *params->surface->surface()->getCanvas() };
@@ -59,10 +79,10 @@ void AKSimpleText::onBake(OnBakeParams *params)
         c.restore();
 
         if (brush().enabled)
-            c.drawSimpleText(text().c_str(), text().size(), SkTextEncoding::kUTF8, -m_bounds.x(), -m_bounds.y(), font(), brush());
+            c.drawSimpleText(m_skText.c_str(), text().size(), SkTextEncoding::kUTF8, -m_bounds.x(), -m_bounds.y(), font(), brush());
 
         if (pen().enabled)
-            c.drawSimpleText(text().c_str(), text().size(), SkTextEncoding::kUTF8, -m_bounds.x(), -m_bounds.y(), font(), pen());
+            c.drawSimpleText(m_skText.c_str(), text().size(), SkTextEncoding::kUTF8, -m_bounds.x(), -m_bounds.y(), font(), pen());
 
         params->damage->setRect(AK_IRECT_INF);
     }
@@ -72,12 +92,14 @@ void AKSimpleText::updateDimensions() noexcept
 {
     SkFontMetrics metrics;
     font().getMetrics(&metrics);
-    font().measureText(text().c_str(), text().size(), SkTextEncoding::kUTF8, &m_bounds);
+
     m_bounds.fTop = metrics.fTop;
     m_bounds.fBottom = metrics.fBottom;
-    layout().setWidth(m_bounds.width());
-    layout().setMinWidth(m_bounds.width());
-    layout().setMaxWidth(m_bounds.width());
+    m_bounds.fLeft = 0;
+    m_bounds.fRight = font().measureText(m_skText.c_str(), m_skText.size(), SkTextEncoding::kUTF8);
+    layout().setWidth(m_bounds.fRight);
+    layout().setMinWidth(m_bounds.fRight);
+    layout().setMaxWidth(m_bounds.fRight);
     layout().setHeight(m_bounds.height());
     layout().setMinHeight(m_bounds.height());
     layout().setMaxHeight(m_bounds.height());

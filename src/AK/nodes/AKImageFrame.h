@@ -6,94 +6,97 @@
 #include <AK/AKAlignment.h>
 
 /**
- * @brief A frame for images
+ * @brief A frame for displaying images with flexible sizing and alignment options.
  *
- * The AK::AKImageFrame node allows displaying SkImages aligned, contained, stretched, etc., within a frame depending on the specified
- * sizeMode() and alignment().
+ * The `AKImageFrame` node allows displaying `SkImage` objects with various sizing and alignment modes,
+ * such as contained, cover, or fill. It is particularly useful for displaying wallpapers, icons, or other
+ * images where maintaining aspect ratio or positioning is important.
  *
- * It's useful for displaying wallpapers, icons, etc., without having to worry about manually specifying the image dimensions to keep
- * the aspect ratio.
+ * This class is a subclass of `AKContainer` and internally uses an `AKRenderableImage` child node to render
+ * the image. The position and dimensions of the `AKRenderableImage` are automatically calculated and updated
+ * in the `AKImageFrame::updateLayout()` event.
  *
- * It is a subclass of AK::AKContainer and has a child AKRenderableImage whose position and dimensions are calculated and set
- * within the AK::AKImageFrame::updateLayout() event.
+ * @note It is not recommended to add additional child nodes or modify the layout properties of the frame
+ * (other than size and position), as this may interfere with the image display logic.
  *
- * Given this structure, it is not recommended to add additional child nodes, or change the layout properties of the frame other than
- * size and position, as it could affect the way the image is displayed.
- *
- * @note Since an AKRenderableImage is used, there is no additional buffering required for displaying the images, making it efficient.
+ * @note Since `AKRenderableImage` is used internally, no additional buffering is required for displaying
+ * images, making this class efficient for rendering.
  */
 class AK::AKImageFrame : public AKContainer
 {
 public:
     /**
-     * @brief Constructs an AKImageFrame without an SkImage.
+     * @brief Enumeration of changes specific to `AKImageFrame`.
      *
-     * @param parent The node's parent, can be nullptr.
+     * Extends the base `AKContainer::Changes` to include additional change types:
+     * - `Chg_SizeMode`: Indicates a change to the size mode (e.g., `Contain`, `Cover`, `Fill`).
+     * - `Chg_Alignment`: Indicates a change to the image alignment within the frame.
+     * - `Chg_Last`: Marks the end of change types for this component.
+     */
+    enum Changes
+    {
+        Chg_SizeMode = AKContainer::Chg_Last, ///< Change type for the size mode.
+        Chg_Alignment,                        ///< Change type for the alignment.
+        Chg_Last                              ///< Marks the end of change types for this component.
+    };
+
+    /**
+     * @brief Constructs an `AKImageFrame` without an initial `SkImage`.
+     *
+     * @param parent The parent `AKNode` to which this frame will be attached. Defaults to `nullptr`.
      */
     explicit AKImageFrame(AKNode* parent = nullptr) noexcept;
 
     /**
-     * @brief Constructs an AKImageFrame with an SkImage.
+     * @brief Constructs an `AKImageFrame` with an initial `SkImage`.
      *
-     * @param image The SkImage to display, can be nullptr.
-     * @param parent The node's parent, can be nullptr.
+     * @param image The `SkImage` to display. Can be `nullptr` if no image is provided initially.
+     * @param parent The parent `AKNode` to which this frame will be attached. Defaults to `nullptr`.
      */
     explicit AKImageFrame(sk_sp<SkImage> image, AKNode* parent = nullptr) noexcept;
 
-    AKCLASS_NO_COPY(AKImageFrame)
-
-    enum Changes
-    {
-        Chg_SizeMode = AKContainer::Chg_Last,
-        Chg_Alignment,
-        Chg_Last
-    };
+    AKCLASS_NO_COPY(AKImageFrame) ///< Disables copying of `AKImageFrame`.
 
     /**
-     * @brief Size mode
+     * @brief Enumeration of size modes for the image within the frame.
      *
-     * The size mode determines how the image is resized and positioned within the frame.
-     *
-     * @see setSizeMode()
+     * Determines how the image is resized and positioned within the frame.
      */
     enum class SizeMode
     {
         /**
-         * @brief Contained mode (default)
+         * @brief Contained mode (default).
          *
          * Scales the image to fit within the frame while maintaining its aspect ratio.
-         *
-         * The image's position within the frame depends on the alignment().
+         * The image's position within the frame depends on the `alignment()`.
          */
         Contain,
 
         /**
-         * @brief Cover mode
+         * @brief Cover mode.
          *
          * Scales the image to cover the entire frame while maintaining its aspect ratio.
          * This may cause parts of the image to be clipped.
-         *
-         * The image's position within the frame depends on the alignment().
+         * The image's position within the frame depends on the `alignment()`.
          */
         Cover,
 
         /**
-         * @brief Fill mode
+         * @brief Fill mode.
          *
-         * The aspect ratio is ignored, and the image is resized to match the frame's dimensions.
-         *
-         * The image's position within the frame is unaffected by the alignment().
+         * Ignores the aspect ratio and resizes the image to match the frame's dimensions exactly.
+         * The image's position within the frame is unaffected by the `alignment()`.
          */
         Fill
     };
 
     /**
-     * @brief Sets the SkImage for the sub AK::AKRenderableImage node.
+     * @brief Sets the `SkImage` to be displayed in the frame.
      *
-     * If the image is nullptr, the AK::AKRenderableImage will be hidden,
+     * If the image is `nullptr`, the internal `AKRenderableImage` will be hidden,
      * but the frame retains its dimensions.
      *
-     * @param image The SkImage to display, can be nullptr.
+     * @param image The `SkImage` to display. Can be `nullptr`.
      */
     void setImage(sk_sp<SkImage> image) noexcept
     {
@@ -101,9 +104,9 @@ public:
     }
 
     /**
-     * @brief Retrieves the SkImage assigned to the sub AK::AKRenderableImage node.
+     * @brief Retrieves the `SkImage` currently displayed in the frame.
      *
-     * @see setImage()
+     * @return The `SkImage` being displayed, or `nullptr` if no image is set.
      */
     sk_sp<SkImage> image() const noexcept
     {
@@ -111,9 +114,9 @@ public:
     }
 
     /**
-     * @brief Sets the transform applied to the srcRect().
+     * @brief Sets the transform applied to the source rectangle (`srcRect()`).
      *
-     * The default value is AK::AKTransform::Normal.
+     * @param transform The transform to apply. Defaults to `AK::AKTransform::Normal`.
      */
     void setSrcTransform(AKTransform transform) noexcept
     {
@@ -121,18 +124,22 @@ public:
     }
 
     /**
-     * @brief Gets the transform applied to the srcRect().
+     * @brief Retrieves the transform applied to the source rectangle (`srcRect()`).
      *
-     * @see setSrcTransform()
-     *
-     * The default value is AK::AKTransform::Normal.
+     * @return The current transform. Defaults to `AK::AKTransform::Normal`.
      */
     AKTransform srcTransform() const noexcept
     {
         return m_renderableImage.srcTransform();
     }
 
-    // TODO: add doc
+    /**
+     * @brief Sets the alignment of the image within the frame.
+     *
+     * This property has no effect if the `SizeMode` is set to `Fill`.
+     *
+     * @param alignment The alignment to apply. Defaults to `AKAlignment::Center`.
+     */
     void setAlignment(AKAlignment alignment) noexcept
     {
         if (m_alignment == alignment)
@@ -142,11 +149,21 @@ public:
         addChange(Chg_Alignment);
     }
 
+    /**
+     * @brief Retrieves the current alignment of the image within the frame.
+     *
+     * @return The current alignment. Defaults to `AKAlignment::Center`.
+     */
     AKAlignment alignment() const noexcept
     {
         return m_alignment;
     }
 
+    /**
+     * @brief Sets the size mode for the image within the frame.
+     *
+     * @param mode The size mode to apply. Defaults to `SizeMode::Contain`.
+     */
     void setSizeMode(SizeMode mode) noexcept
     {
         if (m_sizeMode == mode)
@@ -156,61 +173,131 @@ public:
         addChange(Chg_SizeMode);
     }
 
+    /**
+     * @brief Retrieves the current size mode for the image within the frame.
+     *
+     * @return The current size mode. Defaults to `SizeMode::Contain`.
+     */
     SizeMode sizeMode() const noexcept
     {
         return m_sizeMode;
     }
 
+    /**
+     * @brief Sets the source rectangle mode for the image.
+     *
+     * Determines whether the entire image or a subrectangle is used for rendering.
+     *
+     * @param mode The source rectangle mode to apply.
+     */
     void setSrcRectMode(AKRenderableImage::SrcRectMode mode) noexcept
     {
         m_renderableImage.setSrcRectMode(mode);
     }
 
+    /**
+     * @brief Retrieves the current source rectangle mode for the image.
+     *
+     * @return The current source rectangle mode.
+     */
     AKRenderableImage::SrcRectMode srcRectMode() const noexcept
     {
         return m_renderableImage.srcRectMode();
     }
 
+    /**
+     * @brief Sets a custom source rectangle for the image.
+     *
+     * This property is only used if the `srcRectMode()` is set to `Custom`.
+     *
+     * @param rect The custom source rectangle to apply.
+     */
     void setCustomSrcRect(const SkRect &rect) noexcept
     {
-       m_renderableImage.setCustomSrcRect(rect);
+        m_renderableImage.setCustomSrcRect(rect);
     }
 
+    /**
+     * @brief Retrieves the current custom source rectangle for the image.
+     *
+     * @return The current custom source rectangle.
+     */
     const SkRect &customSrcRect() const noexcept
     {
         return m_renderableImage.customSrcRect();
     }
 
+    /**
+     * @brief Sets the scaling factor for the custom source rectangle.
+     *
+     * This property is only used if the `srcRectMode()` is set to `Custom`.
+     *
+     * @param scale The scaling factor to apply.
+     */
     void setCustomSrcRectScale(SkScalar scale) noexcept
     {
         m_renderableImage.setCustomSrcRectScale(scale);
     }
 
+    /**
+     * @brief Retrieves the current scaling factor for the custom source rectangle.
+     *
+     * @return The current scaling factor.
+     */
     SkScalar customSrcRectScale() const noexcept
     {
         return m_renderableImage.customSrcRectScale();
     }
 
+    /**
+     * @brief Enables or disables automatic damage tracking for the `AKRenderableImage`.
+     *
+     * When enabled, the `AKRenderableImage` will automatically mark itself as damaged when properties
+     * such as the transform, scaling factor, etc., change. However, manual damage marking is still
+     * required if the image is replaced with another of the same size.
+     *
+     * @param enabled Whether to enable automatic damage tracking.
+     */
     void enableAutoDamage(bool enabled) noexcept
     {
         m_renderableImage.enableAutoDamage(enabled);
     }
 
+    /**
+     * @brief Checks if automatic damage tracking is enabled for the `AKRenderableImage`.
+     *
+     * @return `true` if automatic damage tracking is enabled, `false` otherwise.
+     */
     bool autoDamageEnabled() const noexcept
     {
         return m_renderableImage.autoDamageEnabled();
     }
 
+    /**
+     * @brief Retrieves the internal `AKRenderableImage` component.
+     *
+     * @return A const reference to the internal `AKRenderableImage`.
+     */
     const AKRenderableImage &renderableImage() const noexcept
     {
         return m_renderableImage;
     }
 
+    /**
+     * @brief Retrieves the internal `AKRenderableImage` component.
+     *
+     * @return A mutable reference to the internal `AKRenderableImage`.
+     */
     AKRenderableImage &renderableImage() noexcept
     {
         return m_renderableImage;
     }
 
+    /**
+     * @brief Retrieves the opaque region of the `AKRenderableImage`.
+     *
+     * @return A reference to the opaque region of the `AKRenderableImage`.
+     */
     SkRegion &opaqueRegion() noexcept
     {
         return m_renderableImage.opaqueRegion;

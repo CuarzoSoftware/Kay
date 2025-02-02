@@ -1,4 +1,5 @@
 #include <AK/AKTheme.h>
+#include <AK/input/AKKeymap.h>
 
 using namespace AK;
 
@@ -21,4 +22,10 @@ void AK::setTheme(AKTheme *theme) noexcept
         m_theme = theme;
     else
         m_theme = new AKTheme();
+}
+
+AKKeymap *AK::keymap() noexcept
+{
+    static AKKeymap keymap;
+    return &keymap;
 }

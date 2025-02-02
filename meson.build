@@ -17,13 +17,14 @@ HEADERS_INSTALL_PATH = join_paths(get_option('prefix'), get_option('includedir')
 
 # -------------- DEPENDENCIES --------------
 
-cpp = meson.get_compiler('cpp')
-pkg         = import('pkgconfig')
-egl_dep     = dependency('egl')
-gl_dep      = dependency('gl')
-glesv2_dep  = dependency('glesv2')
-skia_dep    = dependency('Skia')
-yoga_dep    = dependency('yoga', modules: ['yoga::yogacore'])
+cpp             = meson.get_compiler('cpp')
+pkg             = import('pkgconfig')
+egl_dep         = dependency('egl')
+gl_dep          = dependency('gl')
+glesv2_dep      = dependency('glesv2')
+skia_dep        = dependency('Skia')
+xkbcommon_dep   = dependency('xkbcommon')
+yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
 
 # -------------- HEADERS --------------
 
@@ -32,7 +33,8 @@ header_dirs = [
     ['./src/AK/nodes', 'nodes'],
     ['./src/AK/effects', 'effects'],
     ['./src/AK/events', 'events'],
-    ['./src/AK/utils', 'utils']
+    ['./src/AK/utils', 'utils'],
+    ['./src/AK/input', 'input']
 ]
 
 foreach header_dir : header_dirs
@@ -51,7 +53,8 @@ kay = library(
         egl_dep,
         gl_dep,
         glesv2_dep,
-        yoga_dep
+        yoga_dep,
+        xkbcommon_dep
     ],
     soversion: VERSION_MAJOR,
     install : true)

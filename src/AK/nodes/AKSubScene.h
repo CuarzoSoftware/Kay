@@ -18,7 +18,11 @@ protected:
     void bakeChildren(OnBakeParams *params) noexcept;
     void onBake(OnBakeParams *params) override;
 private:
+    friend class AKScene;
+    void handleParentSceneNotifyBegin();
+    void notifyBegin(AKNode *node);
     AKScene m_scene;
+    AKWeak<AKTarget> m_currentLocalTarget;
     std::unordered_map<AKTarget*, AKTarget*> m_sceneTargets;
     using AKNode::enableChildrenClipping; // Always true
 };

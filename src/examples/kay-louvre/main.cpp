@@ -34,6 +34,7 @@
 #include <LScreenshotRequest.h>
 #include <LExclusiveZone.h>
 #include <private/LOutputPrivate.h>
+#include <LKeyboardKeyEvent.h>
 
 #include <AK/nodes/AKSubScene.h>
 #include <AK/nodes/AKImageFrame.h>
@@ -43,6 +44,7 @@
 #include <AK/nodes/AKButton.h>
 #include <AK/nodes/AKPath.h>
 #include <AK/nodes/AKSimpleText.h>
+#include <AK/nodes/AKTextField.h>
 
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
@@ -50,6 +52,8 @@
 
 #include <AK/events/AKPointerMoveEvent.h>
 #include <AK/events/AKPointerButtonEvent.h>
+#include <AK/events/AKKeyboardKeyEvent.h>
+#include <AK/input/AKKeymap.h>
 
 #include <AK/AKScene.h>
 #include <AK/AKSurface.h>
@@ -598,6 +602,7 @@ public:
 
     void initializeGL() override
     {
+        wallpaperFrame.setVisible(false);
         disabledButton.setEnabled(false);
         customBackgroundButton.setBackgroundColor(AKTheme::SystemBlue);
         customBackgroundButtonDisabled.setBackgroundColor(AKTheme::SystemBlue);
@@ -843,6 +848,7 @@ public:
         //glScissor(0,0,100000,100000);
         //glClear(GL_COLOR_BUFFER_BIT);
 
+        inPaintGL = false;
         // Here the scene calculates the layout and performs all the rendering
         comp()->scene.render(target);
 
@@ -879,8 +885,6 @@ public:
 
         for (auto *shReq : screenshotRequests())
             shReq->accept(true);
-
-        inPaintGL = false;
     }
 
     void resizeGL() override
@@ -924,6 +928,8 @@ public:
     AKButton imgAlignment { "Alignment: Center", &buttonsGroup3 };
     AKButton imgTransform { "Transform: Normal", &buttonsGroup3 };
 
+    AKTextField textField { &background };
+
     LWeak<LTexture> assetsTexture;
     sk_sp<SkImage> assetsImage;
     AKImageFrame assetsView { &background };
@@ -950,7 +956,6 @@ public:
     using LPointer::LPointer;
     AKPointerMoveEvent moveEvent;
     AKPointerButtonEvent buttonEvent;
-
     AKWeak<MenuItem> focus;
 
     AKNode *nodeAt(const SkIPoint &globalPos, UInt64 filter) const noexcept
@@ -1043,6 +1048,24 @@ private:
     }
 };
 
+class Keyboard : public LKeyboard
+{
+public:
+    using LKeyboard::LKeyboard;
+    AKKeyboardKeyEvent keyboardKeyEvent;
+
+    void keyEvent(const LKeyboardKeyEvent &event) override
+    {
+        LKeyboard::keyEvent(event);
+        AK::keymap()->updateKeyState(event.keyCode(), event.state());
+        keyboardKeyEvent.setKeyCode(event.keyCode());
+        keyboardKeyEvent.setState((AKKeyboardKeyEvent::State)event.state());
+        keyboardKeyEvent.setMs(event.ms());
+        keyboardKeyEvent.setSerial(event.serial());
+        static_cast<Compositor*>(compositor())->scene.postEvent(keyboardKeyEvent);
+    }
+};
+
 LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType, const void *params)
 {
     if (objectType == LFactoryObject::Type::LOutput)
@@ -1053,6 +1076,9 @@ LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType,
 
     if (objectType == LFactoryObject::Type::LPointer)
         return new Pointer(params);
+
+    if (objectType == LFactoryObject::Type::LKeyboard)
+        return new Keyboard(params);
 
     return nullptr;
 }

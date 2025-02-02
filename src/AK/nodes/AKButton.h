@@ -2,7 +2,7 @@
 #define AKBUTTON_H
 
 #include <AK/nodes/AKSubScene.h>
-#include <AK/nodes/AKHThreePatch.h>
+#include <AK/nodes/AKThreeImagePatch.h>
 #include <AK/nodes/AKSimpleText.h>
 #include <AK/nodes/AKContainer.h>
 
@@ -39,7 +39,7 @@ protected:
     void onSceneBegin() override;
     void onSceneCalculatedRect() override;
     void applyLayoutConstraints() noexcept;
-    AKHThreePatch m_hThreePatch { this };
+    AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
     AKSimpleText m_text;
     SkColor m_backgroundColor { SK_ColorWHITE };

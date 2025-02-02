@@ -22,9 +22,9 @@ public:
     AKSimpleText(const std::string &text, AKNode *parent = nullptr) noexcept :
         AKBakeable(parent)
     {
+        setText(text);
         m_brush.setAntiAlias(false);
         m_pen.setAntiAlias(true);
-        setText(text);
         enableCustomTextureColor(true);
     }
 
@@ -35,6 +35,7 @@ public:
 
         addChange(Chg_Font);
         m_font = font;
+        signalFontChanged.notify();
     }
 
     const SkFont &font() const noexcept
@@ -42,14 +43,7 @@ public:
         return m_font;
     }
 
-    void setText(const std::string &text) noexcept
-    {
-        if (m_text == text)
-            return;
-
-        addChange(Chg_Text);
-        m_text = text;
-    }
+    void setText(const std::string &text) noexcept;
 
     const std::string &text() const noexcept
     {
@@ -57,7 +51,7 @@ public:
     }
 
     /**
-     * @brief Retrieves the character index at the specified x-coordinate.
+     * @brief Retrieves the character index of text() at the specified x-coordinate.
      *
      * If the x-coordinate is outside the component's bounds, the nearest index will be returned.
      * For example, passing x = -10 would return 0, or -1 if text() is empty.
@@ -95,11 +89,14 @@ public:
         return m_pen;
     }
 
+    AKSignal<> signalTextChanged;
+    AKSignal<> signalFontChanged;
+
 protected:
     void updateLayout() override;
     void onBake(OnBakeParams *params) override;
     void updateDimensions() noexcept;
-    std::string m_text;
+    std::string m_text, m_skText;
     SkColor m_color { SK_ColorBLACK };
     SkFont m_font;
     AKBrush m_brush;

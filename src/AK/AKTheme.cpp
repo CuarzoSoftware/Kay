@@ -138,3 +138,87 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target) noexc
     m_buttonTintedHThreePatchImage[target->bakedComponentsScale()] = result;
     return result;
 }
+
+sk_sp<SkImage> AK::AKTheme::textFieldRoundHThreePatchImage(AKTarget *target) noexcept
+{
+    const auto it { m_textFieldRoundHThreePatchImage.find(target->bakedComponentsScale()) };
+
+    if (it != m_textFieldRoundHThreePatchImage.end())
+        return it->second;
+
+    auto surface = AKSurface::Make(target->surface()->recordingContext(),
+                                   SkSize(TextFieldRoundHThreePatchSideSrcRect.width() + TextFieldRoundHThreePatchCenterSrcRect.width(),
+                                          TextFieldRoundHThreePatchSideSrcRect.height()),
+                                   target->bakedComponentsScale(), true);
+
+    surface->surface()->recordingContext()->asDirectContext()->resetContext();
+    SkCanvas &c { *surface->surface()->getCanvas() };
+    c.scale(surface->scale(), surface->scale());
+    c.clear(SK_ColorTRANSPARENT);
+
+    SkPaint paint;
+    const float borderRadius { 5.f };
+    SkRect roundRect { SkRect::MakeWH(surface->size().width() * 2, surface->size().height()) };
+
+    // Shadow
+    paint.setAntiAlias(true);
+    roundRect.inset(2.5f, 2.5f);
+    roundRect.offset(0.f, 0.5f);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    paint.setColor(SkColorSetARGB(82, 0, 0, 0));
+    paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 1.f));
+    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
+    paint.setMaskFilter(nullptr);
+    roundRect.offset(0.f, -0.5f);
+
+    // Border
+    paint.setBlendMode(SkBlendMode::kSrcOver);
+    paint.setStroke(true);
+    paint.setStrokeWidth(1.f);
+    paint.setColor(SkColorSetARGB(9, 0, 0, 0));
+    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
+
+    // Fill
+    paint.setBlendMode(SkBlendMode::kSrc);
+    paint.setStroke(false);
+    paint.setColor(SK_ColorWHITE);
+    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
+    surface->surface()->flush();
+
+    sk_sp<SkImage> result { surface->releaseImage() };
+    m_textFieldRoundHThreePatchImage[target->bakedComponentsScale()] = result;
+    return result;
+}
+
+sk_sp<SkImage> AK::AKTheme::textCaretVThreePatchImage(AKTarget *target) noexcept
+{
+    const auto it { m_textCaretVThreePatchImage.find(target->bakedComponentsScale()) };
+
+    if (it != m_textCaretVThreePatchImage.end())
+        return it->second;
+
+    auto surface = AKSurface::Make(target->surface()->recordingContext(),
+                                   SkSize(TextCaretVThreePatchSideSrcRect.width(),
+                                          TextCaretVThreePatchSideSrcRect.height() + TextCaretVThreePatchCenterSrcRect.height()),
+                                   target->bakedComponentsScale(), true);
+
+    surface->surface()->recordingContext()->asDirectContext()->resetContext();
+    SkCanvas &c { *surface->surface()->getCanvas() };
+    c.scale(surface->scale(), surface->scale());
+    c.clear(SK_ColorTRANSPARENT);
+
+    const SkScalar borderRadius { surface->size().width() * 0.5f };
+    SkRect roundRect { SkRect::MakeWH(surface->size().width(), surface->size().height() * 2) };
+    SkPaint paint;
+    paint.setAntiAlias(true);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    paint.setStroke(false);
+    paint.setColor(SK_ColorWHITE);
+    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
+    surface->surface()->flush();
+
+    sk_sp<SkImage> result { surface->releaseImage() };
+    m_textCaretVThreePatchImage[target->bakedComponentsScale()] = result;
+    return result;
+}
+

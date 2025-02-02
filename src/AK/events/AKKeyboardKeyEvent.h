@@ -1,6 +1,7 @@
 #ifndef AKKEYBOARDKEYEVENT_H
 #define AKKEYBOARDKEYEVENT_H
 
+#include <xkbcommon/xkbcommon.h>
 #include <AK/events/AKKeyboardEvent.h>
 #include <AK/AKTime.h>
 
@@ -57,6 +58,16 @@ public:
     {
         return m_key;
     }
+
+    /**
+     * @brief Gets the XKB symbol.
+     */
+    xkb_keysym_t keySymbol() const noexcept;
+
+    /**
+     * @brief Gets the string representation of the key.
+     */
+    const char *keyString() const noexcept;
 
     /**
      * @brief Sets the state of the key.

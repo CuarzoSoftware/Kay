@@ -240,18 +240,32 @@ public:
     }
 
     /**
-     * @brief Indicates if a node visible on the target has changed one of its properties.
+     * @brief Checks if the target needs to be repainted.
      *
-     * Use the on.markedDirty() signal to detect when this property changes to true.
-     * Nodes modify this property when they invoke the AKNode::addChange() method, or
-     * when they are added to or removed from the scene. After the target is rendered
-     * by its scene, the property is reset to false.
+     * This property is automatically set to `true` when:
+     * - A node intercepted by the target invokes the `AKNode::addChange()` method.
+     * - A node intercepted by the target has the `AKNode::animated()` property set to `true`.
+     * - A node is added to or removed from the scene.
+     *
+     * After the target is rendered by its scene, this property is reset to `false`. However,
+     * an exception occurs for nodes with the `AKNode::animated()` property set to `true`. If such a node
+     * is visible and intercepted by the target during `AKScene::render()`, the property remains `true`
+     * to ensure continuous updates.
+     *
+     * Use `signalMarkedDirty()` to detect when this property changes to `true`.
+     *
+     * @return `true` if the node has changed and is marked as dirty, `false` otherwise.
      */
     bool isDirty() const noexcept
     {
         return m_isDirty;
     }
 
+    /**
+     * @brief Marks the target as dirty, indicating that it needs to be repainted.
+     *
+     * For more details check `isDirty()`.
+     */
     void markDirty() noexcept
     {
         if (isDirty())
@@ -311,6 +325,7 @@ private:
     bool                m_isDirty { false };
     bool                m_needsFullRepaint { true };
     bool                m_updateLayout { true };
+    bool                m_hasAnimatedNodes { false };
     std::shared_ptr<AKPainter> m_painter;
     std::vector<SkRegion> m_reactive;
     SkColor             m_clearColor { SK_ColorTRANSPARENT };
