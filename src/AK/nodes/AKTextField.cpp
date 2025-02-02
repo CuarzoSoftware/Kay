@@ -32,6 +32,32 @@ void AKTextField::onSceneBegin()
     m_hThreePatch.setScale(currentTarget()->bakedComponentsScale());
 }
 
+static size_t utf8CharLenght(char c)
+{
+    if ((c & 0x80) == 0) return 1;
+    if ((c & 0xE0) == 0xC0) return 2;
+    if ((c & 0xF0) == 0xE0) return 3;
+    if ((c & 0xF8) == 0xF0) return 4;
+    return 0; // Invalid UTF-8
+}
+
+void removeUTF8CharAt(std::string &str, size_t i) {
+    size_t size = 0;
+
+    while (size == 0 && i >= 0) {
+        size = utf8CharLenght(str[i]);
+
+        if (size == 0)
+        {
+            i--;
+            continue;
+        }
+
+        str.erase(i, size);
+        return;
+    }
+}
+
 void AKTextField::onEvent(const AKEvent &event)
 {
     AKSubScene::onEvent(event);
@@ -49,7 +75,9 @@ void AKTextField::onEvent(const AKEvent &event)
         if (m_text.text().empty())
             return;
 
-        m_text.setText(m_text.text().substr(0, m_text.text().size() - 1));
+        std::string str { m_text.text() };
+        removeUTF8CharAt(str, str.size() - 1);
+        m_text.setText(str);
     }
     else
     {

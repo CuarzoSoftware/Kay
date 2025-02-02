@@ -1,6 +1,5 @@
 #include <AK/input/AKKeymap.h>
 #include <cstdlib>
-#include <cstring>
 
 using namespace AK;
 
@@ -15,26 +14,31 @@ AKKeymap::AKKeymap() noexcept
     m_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
     assert("Failed to create XKB context" && m_context);
     m_keymap = xkb_keymap_new_from_names(m_context, &names, XKB_KEYMAP_COMPILE_NO_FLAGS);
-    assert("Failed to create XKB keymap" && m_context);
+    assert("Failed to create XKB keymap" && m_keymap);
     m_state = xkb_state_new(m_keymap);
-    assert("Failed to create XKB state" && m_context);
+    assert("Failed to create XKB state" && m_state);
+    m_composeTable = xkb_compose_table_new_from_locale(m_context, getenv("LANG"), XKB_COMPOSE_COMPILE_NO_FLAGS);
+    assert("Failed to create XKB compose table" && m_composeTable);
+    m_composeState = xkb_compose_state_new(m_composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
+    assert("Failed to create XKB compose table" && m_composeState);
 }
 
 const char *AKKeymap::keyString(UInt32 code) const noexcept
 {
     static char buffer[128];
 
-    switch (keySymbol(code))
+    switch (xkb_compose_state_get_status(m_composeState))
     {
-    case XKB_KEY_space:
-        strcpy(buffer, " ");
-        break;
-    case XKB_KEY_Tab:
-        strcpy(buffer, "\t");
-        break;
-    default:
+    case XKB_COMPOSE_NOTHING:
         xkb_state_key_get_utf8(m_state, code + 8, buffer, sizeof(buffer));
         break;
+    case XKB_COMPOSE_COMPOSED:
+        xkb_compose_state_get_utf8(m_composeState, buffer, sizeof(buffer));
+        xkb_compose_state_reset(m_composeState);
+        break;
+    case XKB_COMPOSE_COMPOSING:
+    case XKB_COMPOSE_CANCELLED:
+        return "";
     }
 
     return buffer;
@@ -48,6 +52,12 @@ xkb_keysym_t AKKeymap::keySymbol(UInt32 code) const noexcept
 void AKKeymap::updateKeyState(UInt32 code, UInt32 state) noexcept
 {
     xkb_state_update_key(m_state, code+8, (xkb_key_direction)state);
+
+    if (state == xkb_key_direction::XKB_KEY_DOWN)
+    {
+        const xkb_keysym_t symbol { keySymbol(code) };
+        xkb_compose_state_feed(m_composeState, symbol);
+    }
 }
 
 void AKKeymap::updateModifiers(UInt32 depressed, UInt32 latched, UInt32 locked, UInt32 group) noexcept

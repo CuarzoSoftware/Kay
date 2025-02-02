@@ -602,7 +602,6 @@ public:
 
     void initializeGL() override
     {
-        wallpaperFrame.setVisible(false);
         disabledButton.setEnabled(false);
         customBackgroundButton.setBackgroundColor(AKTheme::SystemBlue);
         customBackgroundButtonDisabled.setBackgroundColor(AKTheme::SystemBlue);

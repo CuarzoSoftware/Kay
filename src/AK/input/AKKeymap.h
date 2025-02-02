@@ -3,6 +3,7 @@
 
 #include <AK/AKObject.h>
 #include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-compose.h>
 
 class AK::AKKeymap : public AKObject
 {
@@ -16,6 +17,8 @@ private:
     xkb_context *m_context { nullptr };
     xkb_keymap *m_keymap { nullptr };
     xkb_state *m_state { nullptr };
+    xkb_compose_table *m_composeTable { nullptr };
+    xkb_compose_state *m_composeState { nullptr };
 };
 
 #endif // AKKEYMAP_H
