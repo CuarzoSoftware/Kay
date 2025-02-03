@@ -7,6 +7,7 @@ using namespace AK;
 
 AKTextField::AKTextField(AKNode *parent) noexcept : AKSubScene(parent)
 {
+    m_caret.setAnimated(true);
     m_focusShadow.setStackPosition(AKBackgroundEffect::Behind);
     setCursor(AKCursor::Text);
     m_hThreePatch.layout().setFlex(1.f);
@@ -41,9 +42,9 @@ static size_t utf8CharLenght(char c)
     return 0; // Invalid UTF-8
 }
 
-void removeUTF8CharAt(std::string &str, size_t i) {
+void removeUTF8CharAt(std::string &str, size_t index) {
     size_t size = 0;
-
+    Int32 i = index;
     while (size == 0 && i >= 0) {
         size = utf8CharLenght(str[i]);
 

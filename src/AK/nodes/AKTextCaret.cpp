@@ -7,7 +7,6 @@ using namespace AK;
 
 AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(Vertical, parent)
 {
-    setAnimated(true);
     SkRegion empty;
     setInputRegion(&empty);
     setSideSrcRect(AKTheme::TextCaretVThreePatchSideSrcRect);
@@ -19,10 +18,29 @@ AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(Vertical, 
     layout().setHeight(16);
 }
 
+void AKTextCaret::setAnimated(bool enabled) noexcept
+{
+    if (enabled == animated())
+        return;
+
+    AKNode::setAnimated(enabled);
+
+    if (animated())
+    {
+        setOpacity(0.f);
+        m_animStartMs = AKTime::ms();
+    }
+    else
+        setOpacity(1.f);
+}
+
 void AKTextCaret::onSceneBegin()
 {
-    const SkScalar anim { 0.5f + 0.5f * SkScalarCos(0.005f * SkScalar(AKTime::ms())) };
-    setOpacity(1.f - SkScalarPow(anim, 5.f));
+    if (animated())
+    {
+        const SkScalar anim { 0.5f + 0.5f * SkScalarCos(0.005f * SkScalar(AKTime::ms() - m_animStartMs)) };
+        setOpacity(1.f - SkScalarPow(anim, 5.f));
+    }
     AKThreeImagePatch::onSceneBegin();
     setImage(theme()->textCaretVThreePatchImage(currentTarget()));
     setScale(currentTarget()->bakedComponentsScale());

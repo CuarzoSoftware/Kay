@@ -1,5 +1,6 @@
 #include <AK/input/AKKeymap.h>
 #include <cstdlib>
+#include <algorithm>
 
 using namespace AK;
 
@@ -21,6 +22,46 @@ AKKeymap::AKKeymap() noexcept
     assert("Failed to create XKB compose table" && m_composeTable);
     m_composeState = xkb_compose_state_new(m_composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
     assert("Failed to create XKB compose table" && m_composeState);
+}
+
+bool AKKeymap::setFromBuffer(const char *buffer, size_t size, xkb_keymap_format format) noexcept
+{
+    xkb_keymap *newKeymap { xkb_keymap_new_from_buffer(m_context, buffer, size, format, XKB_KEYMAP_COMPILE_NO_FLAGS) };
+    if (!newKeymap) return false;
+
+    xkb_state *newState {xkb_state_new(newKeymap) };
+    if (!newState)
+    {
+        xkb_keymap_unref(newKeymap);
+        return false;
+    }
+
+    xkb_state_unref(m_state);
+    xkb_keymap_unref(m_keymap);
+    m_keymap = newKeymap;
+    m_state = newState;
+    xkb_compose_state_reset(m_composeState);
+    return true;
+}
+
+bool AKKeymap::setFromString(const char *str, xkb_keymap_format format) noexcept
+{
+    xkb_keymap *newKeymap { xkb_keymap_new_from_string(m_context, str, format, XKB_KEYMAP_COMPILE_NO_FLAGS) };
+    if (!newKeymap) return false;
+
+    xkb_state *newState {xkb_state_new(newKeymap) };
+    if (!newState)
+    {
+        xkb_keymap_unref(newKeymap);
+        return false;
+    }
+
+    xkb_state_unref(m_state);
+    xkb_keymap_unref(m_keymap);
+    m_keymap = newKeymap;
+    m_state = newState;
+    xkb_compose_state_reset(m_composeState);
+    return true;
 }
 
 const char *AKKeymap::keyString(UInt32 code) const noexcept
@@ -51,13 +92,26 @@ xkb_keysym_t AKKeymap::keySymbol(UInt32 code) const noexcept
 
 void AKKeymap::updateKeyState(UInt32 code, UInt32 state) noexcept
 {
+    auto it = std::find(m_pressedKeyCodes.begin(), m_pressedKeyCodes.end(), code);
+    const UInt32 isPressed { it != m_pressedKeyCodes.end() };
+
+    if (isPressed == state) return;
+
     xkb_state_update_key(m_state, code+8, (xkb_key_direction)state);
 
     if (state == xkb_key_direction::XKB_KEY_DOWN)
     {
         const xkb_keysym_t symbol { keySymbol(code) };
         xkb_compose_state_feed(m_composeState, symbol);
+        m_pressedKeyCodes.push_back(code);
     }
+    else
+        m_pressedKeyCodes.erase(it);
+}
+
+bool AKKeymap::isKeyCodePressed(UInt32 keyCode) const noexcept
+{
+    return std::find(m_pressedKeyCodes.begin(), m_pressedKeyCodes.end(), keyCode) != m_pressedKeyCodes.end();
 }
 
 void AKKeymap::updateModifiers(UInt32 depressed, UInt32 latched, UInt32 locked, UInt32 group) noexcept

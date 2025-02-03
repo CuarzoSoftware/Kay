@@ -8,6 +8,7 @@
 #include <AK/AKTarget.h>
 #include <AK/AKSurface.h>
 
+#include <include/core/SkOpenTypeSVGDecoder.h>
 AK::AKTheme::AKTheme() noexcept
 {
     ButtonFont.setTypeface(

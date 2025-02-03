@@ -18,7 +18,7 @@ protected:
     void onEvent(const AKEvent &event) override;
     AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
-    AKSimpleText m_text { "hola", &m_content };
+    AKSimpleText m_text { "", &m_content };
     AKTextCaret m_caret { &m_content };
     AKBackgroundImageShadowEffect m_focusShadow { 8.f, {0, 0}, AKTheme::FocusOutlineColor, this };
 };

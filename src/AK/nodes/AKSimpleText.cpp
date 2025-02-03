@@ -19,10 +19,10 @@ void AKSimpleText::setText(const std::string &text) noexcept
     if (m_text == text)
         return;
 
-    addChange(Chg_Text);
     m_text = text;
     m_skText = text;
     replaceAllInPlace(m_skText, "\t", "    ");
+    addChange(Chg_Text);
     signalTextChanged.notify();
 }
 
