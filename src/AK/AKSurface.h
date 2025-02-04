@@ -16,17 +16,11 @@ class AK::AKSurface : public AKObject
 public:
     ~AKSurface() { destroyStorage(); }
 
-    static std::shared_ptr<AKSurface> Make(GrRecordingContext *context, const SkSize &size, SkScalar scale, bool hasAlpha = true) noexcept;
+    static std::shared_ptr<AKSurface> Make(const SkSize &size, SkScalar scale, bool hasAlpha = true) noexcept;
 
-    sk_sp<SkSurface> surface() const noexcept
-    {
-        return m_surface;
-    }
+    sk_sp<SkSurface> surface() const noexcept;
 
-    const GrGLFramebufferInfo& fbInfo() const noexcept
-    {
-        return m_fbInfo;
-    }
+    GLuint fbId() const noexcept;
 
     sk_sp<SkImage> image() const noexcept
     {
@@ -58,23 +52,23 @@ public:
     bool shrink() noexcept;
     SkImage *releaseImage() noexcept;
 private:
-    AKSurface(GrRecordingContext *context, bool hasAlpha) noexcept :
-        m_context(context)
+    AKSurface(bool hasAlpha) noexcept
     {
+        static UInt32 slot { 0 };
+        m_slot = slot;
         m_fbInfo.fFormat = hasAlpha ? GL_RGBA8 : GL_RGB8;
+        slot++;
     }
     void destroyStorage() noexcept;
-    sk_sp<SkSurface> m_surface;
     sk_sp<SkImage> m_image;
     SkScalar m_scale;
     SkIRect m_imageSrcRect;
     SkSize m_size;
-    GrGLFramebufferInfo m_fbInfo { 0 };
-    GrBackendRenderTarget m_renderTarget;
+    mutable GrGLFramebufferInfo m_fbInfo { 0 };
     GrGLTextureInfo m_textureInfo { 0, 0 };
     GrBackendTexture m_backendTexture;
-    GrRecordingContext *m_context;
     sk_sp<SkColorSpace> m_colorSpace = SkColorSpace::MakeSRGB();
+    UInt32 m_slot, m_serial { 1 };
 };
 
 #endif // AKSURFACE_H

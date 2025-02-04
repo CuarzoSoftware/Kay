@@ -1,8 +1,6 @@
 #include <include/gpu/GrBackendSurface.h>
 #include <include/gpu/GrDirectContext.h>
 #include <include/core/SkSurface.h>
-#include <include/gpu/GrContextOptions.h>
-#include <include/gpu/gl/GrGLAssembleInterface.h>
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
 #include <include/core/SkColorSpace.h>
 #include <include/utils/SkParsePath.h>
@@ -20,7 +18,9 @@
 #include <cstring>
 #include <linux/input-event-codes.h>
 
+#include <AK/AKApplication.h>
 #include <AK/AKScene.h>
+#include <AK/AKGLContext.h>
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
 #include <AK/nodes/AKRoundContainer.h>
@@ -39,6 +39,7 @@ static const std::string happySVG { "M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16M7 6.5C7 
 static const std::string heartSVG { "M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1" };
 static struct
 {
+    AKApplication ak;
     wl_display *wlDisplay;
     wl_registry *wlRegistry;
     wl_compositor *wlCompositor { nullptr };
@@ -54,8 +55,6 @@ static struct
 
     // TODO: Check extension
     PFNEGLSWAPBUFFERSWITHDAMAGEKHRPROC eglSwapBuffersWithDamageKHR;
-
-    sk_sp<GrDirectContext> skContext;
 } app;
 
 class Topbar : public AKSolidColor
@@ -266,7 +265,7 @@ void Window::update() noexcept
             fbInfo);
 
         skSurface = SkSurfaces::WrapBackendRenderTarget(
-            app.skContext.get(),
+            AKApp()->glContext()->skContext().get(),
             backendTarget,
             GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin,
             SkColorType::kRGBA_8888_SkColorType,
@@ -444,37 +443,6 @@ static void initEGL() noexcept
     app.eglSwapBuffersWithDamageKHR = (PFNEGLSWAPBUFFERSWITHDAMAGEKHRPROC)eglGetProcAddress("eglSwapBuffersWithDamageKHR");
 }
 
-static void initSkia() noexcept
-{
-    auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](void *, const char *p) -> void * {
-        return (void *)eglGetProcAddress(p);
-    });
-
-    GrContextOptions contextOptions;
-    contextOptions.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kBackendBinary;
-    contextOptions.fAvoidStencilBuffers = true;
-    contextOptions.fPreferExternalImagesOverES3 = true;
-    contextOptions.fDisableGpuYUVConversion = true;
-    contextOptions.fReducedShaderVariations = false;
-    contextOptions.fSuppressPrints = true;
-    contextOptions.fSuppressMipmapSupport = true;
-    contextOptions.fSkipGLErrorChecks = GrContextOptions::Enable::kYes;
-    contextOptions.fBufferMapThreshold = -1;
-    contextOptions.fDisableDistanceFieldPaths = true;
-    contextOptions.fAllowPathMaskCaching = false;
-    contextOptions.fGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
-    contextOptions.fUseDrawInsteadOfClear = GrContextOptions::Enable::kYes;
-    contextOptions.fReduceOpsTaskSplitting = GrContextOptions::Enable::kYes;
-    contextOptions.fDisableDriverCorrectnessWorkarounds = true;
-    contextOptions.fRuntimeProgramCacheSize = 256;
-    contextOptions.fInternalMultisampleCount = 4;
-    contextOptions.fDisableTessellationPathRenderer = false;
-    contextOptions.fAllowMSAAOnNewIntel = true;
-    contextOptions.fAlwaysUseTexStorageWhenAvailable = false;
-    app.skContext = GrDirectContext::MakeGL(interface, contextOptions);
-    assert("Failed to create Skia context." && app.skContext.get());
-}
-
 int main(void)
 {
     app.wlDisplay = wl_display_connect(NULL);
@@ -485,7 +453,6 @@ int main(void)
     assert("Failed to get wl_compositor v6" && app.wlCompositor);
     assert("Failed to get xdg_wm_base" && app.wlCompositor);
     initEGL();
-    initSkia();
 
     Window window;
     while (wl_display_dispatch(app.wlDisplay) != -1) {}

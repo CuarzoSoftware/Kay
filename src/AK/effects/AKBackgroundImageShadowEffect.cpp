@@ -52,7 +52,6 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
         else
         {
             m_currentData->surface = AKSurface::Make(
-                currentTarget()->surface()->recordingContext(),
                 surfaceSize,
                 currentTarget()->bakedComponentsScale(),
                 true);

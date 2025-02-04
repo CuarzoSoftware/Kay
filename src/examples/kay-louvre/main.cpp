@@ -9,7 +9,6 @@
 #include <include/core/SkImage.h>
 #include <include/core/SkSurface.h>
 #include <include/core/SkCanvas.h>
-#include <include/gpu/gl/GrGLAssembleInterface.h>
 #include <include/core/SkColorSpace.h>
 #include <include/effects/SkImageFilters.h>
 #include <include/effects/SkGradientShader.h>
@@ -55,11 +54,12 @@
 #include <AK/events/AKKeyboardKeyEvent.h>
 #include <AK/input/AKKeymap.h>
 
+#include <AK/AKApplication.h>
 #include <AK/AKScene.h>
 #include <AK/AKSurface.h>
 #include <AK/AKTheme.h>
+#include <AK/AKGLContext.h>
 
-#include <iostream>
 #include <cassert>
 
 using namespace Louvre;
@@ -76,9 +76,9 @@ static const std::string logoSVG { "M9.05.435c-.58-.58-1.52-.58-2.1 0L.436 6.95c
 
 // Creates an SkImage from an LTexture (its just a wrapper, there is no copy involved)
 // Todo: properly handle other formats
-static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, GrRecordingContext *ctx, LOutput *o)
+static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
 {
-    if (!texture || !ctx)
+    if (!texture)
         return nullptr;
 
     GrGLTextureInfo skTextureInfo;
@@ -94,7 +94,7 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, GrRecordingContext 
         skTextureInfo);
 
     return SkImages::BorrowTextureFrom(
-        ctx,
+        AKApp()->glContext()->skContext().get(),
         skTexture,
         GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
         kBGRA_8888_SkColorType,
@@ -404,6 +404,7 @@ public:
     }
 
     LFactoryObject *createObjectRequest(LFactoryObject::Type objectType, const void *params) override;
+    AKApplication app;
     AKScene scene;
     AKContainer root;
     AKContainer background { YGFlexDirectionColumn, false, &root };
@@ -528,8 +529,6 @@ public:
             topbar.layout().setPosition(YGEdgeTop, pos().y() + zone->rect().y());
             topbar.layout().setWidth(zone->rect().w());
             topbar.layout().setHeight(zone->rect().h());
-
-            std::cout << "Topbar: Exclusive zone changed " << zone->rect().x() << "," << zone->rect().y() << "," << zone->rect().w() << "," << zone->rect().h() << std::endl;
         });
     }
 
@@ -594,7 +593,7 @@ public:
         }
 
     skipScale:
-        wallpaperFrame.setImage(louvreTex2SkiaImage(wallpaper.get(), context.get(), this));
+        wallpaperFrame.setImage(louvreTex2SkiaImage(wallpaper.get(), this));
 
         if (wallpaper)
             wallpaperFrame.setCustomSrcRect(SkRect::MakeWH(wallpaper->sizeB().w(), wallpaper->sizeB().h()));
@@ -631,39 +630,6 @@ public:
         // Louvre creates an OpenGL context for each output
         // here we are wrapping it into a GrDirectContext.
 
-        static auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](void *, const char *p) -> void * {
-            return (void *)eglGetProcAddress(p);
-        });
-
-        contextOptions.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kBackendBinary;
-        contextOptions.fAvoidStencilBuffers = true;
-        contextOptions.fPreferExternalImagesOverES3 = true;
-        contextOptions.fDisableGpuYUVConversion = true;
-        contextOptions.fReducedShaderVariations = true;
-        contextOptions.fSuppressPrints = true;
-        contextOptions.fSuppressMipmapSupport = true;
-        contextOptions.fSkipGLErrorChecks = GrContextOptions::Enable::kYes;
-        contextOptions.fBufferMapThreshold = -1;
-        contextOptions.fDisableDistanceFieldPaths = true;
-        contextOptions.fAllowPathMaskCaching = true;
-        contextOptions.fGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
-        contextOptions.fUseDrawInsteadOfClear = GrContextOptions::Enable::kYes;
-        contextOptions.fReduceOpsTaskSplitting = GrContextOptions::Enable::kYes;
-        contextOptions.fDisableDriverCorrectnessWorkarounds = true;
-        contextOptions.fRuntimeProgramCacheSize = 1024;
-        contextOptions.fInternalMultisampleCount = 0;
-        contextOptions.fDisableTessellationPathRenderer = false;
-        contextOptions.fAllowMSAAOnNewIntel = true;
-        contextOptions.fAlwaysUseTexStorageWhenAvailable = true;
-
-        context = GrDirectContext::MakeGL(interface, contextOptions);
-
-        if (!context.get())
-        {
-            LLog::fatal("Failed to create Skia context.");
-            exit(1);
-        }
-
         // All outputs share the same scene but we still need to create a
         // specific target for each.
         // A target contains information about the viewport, destination
@@ -682,7 +648,7 @@ public:
         topbarExclusiveZone.setOutput(this);
 
         assetsTexture = LOpenGL::loadTexture(compositor()->defaultAssetsPath()/"firefox.png");
-        assetsImage = louvreTex2SkiaImage(assetsTexture, context.get(), this);
+        assetsImage = louvreTex2SkiaImage(assetsTexture, this);
         assetsView.setImage(assetsImage);
         assetsView.layout().setWidth(200);
         assetsView.layout().setHeight(100);
@@ -780,7 +746,7 @@ public:
             fbInfo);
 
         target->setSurface(SkSurfaces::WrapBackendRenderTarget(
-            context.get(),
+            AKApp()->glContext()->skContext().get(),
             backendTarget,
             fbInfo.fFBOID == 0 ? GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin : GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
             SkColorType::kRGB_888x_SkColorType,
@@ -789,7 +755,7 @@ public:
 
         target->setImage(louvreTex2SkiaImage(
             usingFractionalScale() && fractionalOversamplingEnabled() ?
-            imp()->fractionalFb.texture(0) : bufferTexture(currentBuffer()), context.get(), this));
+            imp()->fractionalFb.texture(0) : bufferTexture(currentBuffer()), this));
 
         // We need to manually update each surface node
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
@@ -806,7 +772,7 @@ public:
             s->node.layout().setWidth(s->size().w());
             s->node.layout().setHeight(s->size().h());
 
-            s->node.setImage(louvreTex2SkiaImage(s->texture(), context.get(), this));
+            s->node.setImage(louvreTex2SkiaImage(s->texture(), this));
             s->node.setCustomSrcRect(SkRect::MakeXYWH(
                 s->srcRect().x(), s->srcRect().y(),
                 s->srcRect().w(), s->srcRect().h()));
@@ -902,6 +868,8 @@ public:
 
         if (wallpaper)
             delete wallpaper.get();
+
+        AKApp()->freeGLContext();
     }
 
     bool inPaintGL { false };
@@ -932,9 +900,6 @@ public:
     LWeak<LTexture> assetsTexture;
     sk_sp<SkImage> assetsImage;
     AKImageFrame assetsView { &background };
-
-    GrContextOptions contextOptions;
-    sk_sp<GrDirectContext> context;
     AKTarget *target { nullptr };
     LWeak<LTexture> wallpaper;
 
@@ -1084,6 +1049,7 @@ LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType,
 
 int main(void)
 {
+    setenv("KAY_DEBUG", "4", 1);
     setenv("LOUVRE_WAYLAND_DISPLAY", "louvre", 0);
     setenv("SRM_RENDER_MODE_ITSELF_FB_COUNT", "3", 1);
 

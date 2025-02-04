@@ -13,6 +13,8 @@
 
 namespace AK
 {
+    class AKApplication;
+    class AKEventSource;
     class AKObject;
     class AKWeakUtils;
     template <class T> class AKWeak;
@@ -21,11 +23,13 @@ namespace AK
     template<typename...Args> class AKSignal;
     class AKListener;
     template<typename...Args> class AKListenerTemplate;
+    class AKGLContext;
     class AKTheme;
     class AKTime;
 
     /* Utils */
     class AKImageLoader;
+    class AKLog;
 
     class AKPen;
     class AKBrush;
@@ -179,6 +183,7 @@ namespace AK
     /// @brief Unsigned integer capable of holding a pointer
     typedef uintptr_t       UIntPtr;
 
+    AKApplication *AKApp() noexcept;
     AKTheme *theme() noexcept;
     void setTheme(AKTheme *theme) noexcept;
 

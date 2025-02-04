@@ -1,17 +1,67 @@
+#include <AK/AKApplication.h>
 #include <AK/AKSurface.h>
-#include <GLES2/gl2.h>
-#include <cassert>
+#include <AK/AKGLContext.h>
 #include <include/core/SkColorSpace.h>
 #include <include/gpu/ganesh/SkImageGanesh.h>
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
+#include <GLES2/gl2.h>
+#include <cassert>
 
 using namespace AK;
 
-std::shared_ptr<AKSurface> AKSurface::Make(GrRecordingContext *context, const SkSize &size, SkScalar scale, bool hasAlpha) noexcept
+std::shared_ptr<AKSurface> AKSurface::Make(const SkSize &size, SkScalar scale, bool hasAlpha) noexcept
 {
-    auto surface = std::shared_ptr<AKSurface>(new AKSurface(context, hasAlpha));
+    auto surface = std::shared_ptr<AKSurface>(new AKSurface(hasAlpha));
     surface->resize(size, scale, true);
     return surface;
+}
+
+sk_sp<SkSurface> AKSurface::surface() const noexcept
+{
+    if (!m_image)
+        return nullptr;
+
+    AKGLContext *ctx {  AKApp()->glContext() };
+    const auto &fbo { ctx->getFBO(m_slot) };
+
+    if (fbo.serial == m_serial && fbo.skSurface)
+        return fbo.skSurface;
+
+    ctx->destroyFBO(m_slot);
+
+    AKGLContext::FBO newFBO;
+    newFBO.serial = m_serial;
+    glBindTexture(GL_TEXTURE_2D, m_textureInfo.fID);
+    glGenFramebuffers(1, &newFBO.id);
+    glBindFramebuffer(GL_FRAMEBUFFER, newFBO.id);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureInfo.fID, 0);
+    m_fbInfo.fFBOID = newFBO.id;
+    GrBackendRenderTarget target = GrBackendRenderTarget(
+        m_imageSrcRect.width(),
+        m_imageSrcRect.height(),
+        0, 0,
+        m_fbInfo);
+
+    static SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
+    const auto skiaFormat = hasAlpha() ? kRGBA_8888_SkColorType : kRGB_888x_SkColorType;
+
+    newFBO.skSurface = SkSurfaces::WrapBackendRenderTarget(
+        ctx->skContext().get(),
+        target,
+        GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
+        skiaFormat,
+        m_colorSpace,
+        &skSurfaceProps);
+
+    assert("[AkSurface::resize] Failed to create SkSurface" && newFBO.skSurface);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    ctx->storeFBO(m_slot, newFBO);
+    return newFBO.skSurface;
+}
+
+GLuint AKSurface::fbId() const noexcept
+{
+    return AKApp()->glContext()->getFBO(m_slot).id;
 }
 
 bool AKSurface::setHasAlpha(bool alpha) noexcept
@@ -64,7 +114,7 @@ bool AKSurface::resize(const SkSize &size, SkScalar scale, bool shrink) noexcept
         m_textureInfo);
 
     m_image = SkImages::BorrowTextureFrom(
-        m_context,
+        AKApp()->glContext()->skContext().get(),
         m_backendTexture,
         GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
         skiaFormat,
@@ -72,31 +122,8 @@ bool AKSurface::resize(const SkSize &size, SkScalar scale, bool shrink) noexcept
         m_colorSpace);
 
     assert("[AkSurface::resize] Failed to create SkImage" && m_image);
-
-    glGenFramebuffers(1, &m_fbInfo.fFBOID);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbInfo.fFBOID);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureInfo.fID, 0);
     m_fbInfo.fFormat = glSizedFormat;
-
-    m_renderTarget = GrBackendRenderTarget(
-        m_imageSrcRect.width(),
-        m_imageSrcRect.height(),
-        0, 0,
-        m_fbInfo);
-
-    static SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
-
-    m_surface = SkSurfaces::WrapBackendRenderTarget(
-        m_context,
-        m_renderTarget,
-        GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
-        skiaFormat,
-        m_colorSpace,
-        &skSurfaceProps);
-
-    assert("[AkSurface::resize] Failed to create SkSurface" && m_surface);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     return true;
 }
 
@@ -107,28 +134,28 @@ bool AKSurface::shrink() noexcept
 
 SkImage *AKSurface::releaseImage() noexcept
 {
+    AKApp()->glContext()->destroyFBO(m_slot);
+
     if (m_image)
     {
         const auto skiaFormat = hasAlpha() ? kRGBA_8888_SkColorType : kRGB_888x_SkColorType;
-        m_image = SkImages::AdoptTextureFrom(m_context, m_backendTexture, GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin, skiaFormat, SkAlphaType::kPremul_SkAlphaType, m_colorSpace);
+        m_image = SkImages::AdoptTextureFrom(AKApp()->glContext()->skContext().get(), m_backendTexture, GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin, skiaFormat, SkAlphaType::kPremul_SkAlphaType, m_colorSpace);
     }
+
+    m_serial++;
     return m_image.release();
 }
 
 void AKSurface::destroyStorage() noexcept
 {
-    if (m_surface)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDeleteFramebuffers(1, &m_fbInfo.fFBOID);
-    }
+    AKApp()->glContext()->destroyFBO(m_slot);
 
     if (m_image)
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindTexture(GL_FRAMEBUFFER, 0);
-        glDeleteFramebuffers(1, &m_fbInfo.fFBOID);
         glDeleteTextures(1, &m_textureInfo.fID);
         m_image.reset();
     }
+
+    m_serial++;
 }

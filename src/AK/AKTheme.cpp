@@ -43,7 +43,7 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target) noexce
     if (it != m_buttonPlainHThreePatchImage.end())
         return it->second;
 
-    auto surface = AKSurface::Make(target->surface()->recordingContext(),
+    auto surface = AKSurface::Make(
         SkSize(ButtonPlainHThreePatchSideSrcRect.width() + ButtonPlainHThreePatchCenterSrcRect.width(),
                ButtonPlainHThreePatchSideSrcRect.height()),
         target->bakedComponentsScale(), true);
@@ -94,7 +94,7 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target) noexc
     if (it != m_buttonTintedHThreePatchImage.end())
         return it->second;
 
-    auto surface = AKSurface::Make(target->surface()->recordingContext(),
+    auto surface = AKSurface::Make(
         SkSize(ButtonTintedHThreePatchSideSrcRect.width() + ButtonTintedHThreePatchCenterSrcRect.width(),
                ButtonTintedHThreePatchSideSrcRect.height()),
                 target->bakedComponentsScale(), true);
@@ -147,8 +147,7 @@ sk_sp<SkImage> AK::AKTheme::textFieldRoundHThreePatchImage(AKTarget *target) noe
     if (it != m_textFieldRoundHThreePatchImage.end())
         return it->second;
 
-    auto surface = AKSurface::Make(target->surface()->recordingContext(),
-                                   SkSize(TextFieldRoundHThreePatchSideSrcRect.width() + TextFieldRoundHThreePatchCenterSrcRect.width(),
+    auto surface = AKSurface::Make(SkSize(TextFieldRoundHThreePatchSideSrcRect.width() + TextFieldRoundHThreePatchCenterSrcRect.width(),
                                           TextFieldRoundHThreePatchSideSrcRect.height()),
                                    target->bakedComponentsScale(), true);
 
@@ -198,8 +197,7 @@ sk_sp<SkImage> AK::AKTheme::textCaretVThreePatchImage(AKTarget *target) noexcept
     if (it != m_textCaretVThreePatchImage.end())
         return it->second;
 
-    auto surface = AKSurface::Make(target->surface()->recordingContext(),
-                                   SkSize(TextCaretVThreePatchSideSrcRect.width(),
+    auto surface = AKSurface::Make(SkSize(TextCaretVThreePatchSideSrcRect.width(),
                                           TextCaretVThreePatchSideSrcRect.height() + TextCaretVThreePatchCenterSrcRect.height()),
                                    target->bakedComponentsScale(), true);
 

@@ -152,7 +152,6 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
         else
         {
             m_currentData->surface = AKSurface::Make(
-                currentTarget()->surface()->recordingContext(),
                 surfaceSize,
                 currentTarget()->bakedComponentsScale(),
                 true);
@@ -217,7 +216,6 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
         else
         {
             m_currentData->surface = AKSurface::Make(
-                currentTarget()->surface()->recordingContext(),
                 surfaceSize,
                 currentTarget()->bakedComponentsScale(),
                 true);

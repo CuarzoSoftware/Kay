@@ -691,7 +691,6 @@ void AKScene::calculateNewDamage(AKNode *node)
             {
                 surfaceChanged = true;
                 bakeable->t->bake = AKSurface::Make(
-                    t->surface()->recordingContext(),
                     SkSize::Make(bakeable->rect().size()),
                     t->bakedComponentsScale(), true);
             }
