@@ -99,7 +99,7 @@ protected:
 
     void onSceneCalculatedRect() override;
     void onSceneCalculatedRectWithBorderRadius() noexcept;
-    void onRender(AKPainter *painter, const SkRegion &damage) override;
+    void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
     void onRenderWithBorderRadius(AKPainter *painter, const SkRegion &damage) noexcept;
     void onTargetNodeChanged() override;
     struct ShadowData

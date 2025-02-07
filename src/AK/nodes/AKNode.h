@@ -23,6 +23,12 @@ class AK::AKNode : public AKObject
 {
 public:
 
+    enum LayoutChanges
+    {
+        Pos = 1 << 0,
+        Size = 1 << 1
+    };
+
     class RIterator
     {
     public:
@@ -44,14 +50,13 @@ public:
         AKTarget *target { nullptr };
         size_t targetLink;
         SkRegion prevLocalClip; // Rel to root
-        SkIRect prevLocalRect,
-            prevRect;
+        SkIRect prevLocalRect;
         SkRegion clientDamage,
             opaque, translucent,
             opaqueOverlay;
         std::shared_ptr<AKSurface> bake;
         std::bitset<128> changes;
-        bool visible;
+        bool visible { true };
         bool onBakeGeneratedDamage;
     };
 
@@ -70,6 +75,8 @@ public:
     enum Changes : Change
     {
         Chg_Layout,
+        Chg_LayoutPos,
+        Chg_LayoutSize,
         Chg_Parent,
         Chg_ChildrenClipping,
         Chg_Last
@@ -169,7 +176,7 @@ public:
     /* Layout */
 
     /* Relative to the closest subscene */
-    const SkIRect rect() const noexcept { return m_rect;}
+    const SkIRect sceneRect() const noexcept { return m_rect;}
 
     /* Relative to the root node */
     const SkIRect globalRect() const noexcept { return m_globalRect; }
@@ -181,10 +188,6 @@ public:
     const std::unordered_set<AKBackgroundEffect*> &backgroundEffects() const noexcept { return m_backgroundEffects; }
     void addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
     void removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
-
-    /* Triggered before the scene starts or when AKScene::updateLayout is called.
-     * Can be triggered without a target. */
-    virtual void updateLayout() {}
 
     /* Triggered before the scene starts rendering and
      * after rect() and globalRect() are calculated */
@@ -212,6 +215,7 @@ public:
     }
 
     AKScene *scene() const noexcept { return m_scene; }
+    AKNode *root() const noexcept;
 
     bool activated() const noexcept;
 
@@ -227,16 +231,7 @@ public:
      *
      * @param enabled `true` to mark the node as animated, `false` otherwise. The default value is `false`.
      */
-    void setAnimated(bool enabled) noexcept
-    {
-        if (enabled == m_flags.check(Animated))
-            return;
-
-        m_flags.setFlag(Animated, enabled);
-
-        if (enabled)
-            repaint();
-    }
+    void setAnimated(bool enabled) noexcept;
 
     /**
      * @brief Returns whether the node is currently being animated.
@@ -255,6 +250,8 @@ public:
     struct {
         AKSignal<const AKEvent&> event;
     } on;
+
+    AKSignal<AKBitset<LayoutChanges>> signalLayoutChanged;
 
 protected:
     virtual void onEvent(const AKEvent &event) { on.event.notify(event); }
@@ -280,7 +277,8 @@ private:
         ChildHasPointerFocus        = 1 << 6,
         PointerGrab                 = 1 << 7,
         DiminishOpacityOnInactive   = 1 << 8,
-        Animated                    = 1 << 9
+        Animated                    = 1 << 9,
+        ChildrenNeedPosUpdate       = 1 << 10
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
@@ -292,6 +290,7 @@ private:
     void removeFlagsAndPropagate(UInt32 flags) noexcept;
     void setFlagsAndPropagateToParents(UInt32 flags, bool set) noexcept;
 
+    bool m_skip { false };
     AKWeak<TargetData> t;
     AKWeak<AKScene> m_scene;
     AKLayout m_layout { *this };

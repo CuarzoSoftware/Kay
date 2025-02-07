@@ -4,6 +4,7 @@
 
 #include <AK/events/AKPointerEnterEvent.h>
 
+#include <AK/AKApplication.h>
 #include <AK/AKTarget.h>
 #include <AK/AKScene.h>
 #include <AK/nodes/AKNode.h>
@@ -31,6 +32,7 @@ AKNode::~AKNode()
         t.second.target->m_damage.op(t.second.prevLocalClip, SkRegion::kUnion_Op);
 
     setParent(nullptr);
+    setAnimated(false);
 }
 
 void AKNode::addChange(Change change) noexcept
@@ -56,8 +58,8 @@ const std::bitset<128> &AKNode::changes() const noexcept
     else if (!m_targets.empty())
         return m_targets.begin()->second.changes;
 
-    if (!emptyChanges.test(0))
-        emptyChanges.set();
+    //if (!emptyChanges.test(0))
+    //    emptyChanges.res();
 
     return emptyChanges;
 }
@@ -135,11 +137,17 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
     if (m_parent && m_parent == parent && m_parent->children().back() == this)
         return;
 
+    const bool isBackgroundEffect { (m_caps & Caps::BackgroundEffect) != 0 };
+
     if (m_parent)
     {
-        if (handleChanges && m_parent != parent)
-            addChange(Chg_Parent);
-        YGNodeRemoveChild(m_parent->layout().m_node, layout().m_node);
+        if (!isBackgroundEffect)
+        {
+            if (handleChanges && m_parent != parent)
+                addChange(Chg_Parent);
+
+            YGNodeRemoveChild(m_parent->layout().m_node, layout().m_node);
+        }
         auto next = m_parent->m_children.erase(m_parent->m_children.begin() + m_parentLinkIndex);
         for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex--;
     }
@@ -148,9 +156,15 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
 
     if (parent)
     {
-        m_parentLinkIndex = YGNodeGetChildCount(parent->layout().m_node);
-        YGNodeInsertChild(parent->layout().m_node, layout().m_node, m_parentLinkIndex);
+        m_parentLinkIndex = parent->children().size();
         parent->m_children.push_back(this);
+        if (isBackgroundEffect)
+        {
+            m_scene.reset(parent->scene());
+            return;
+        }
+
+        YGNodeInsertChild(parent->layout().m_node, layout().m_node, m_parentLinkIndex);
 
         if (handleChanges)
         {
@@ -162,7 +176,12 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
             scene()->m_treeChanged = true;
     }
     else if (handleChanges)
-        setScene(nullptr);
+    {
+        if (isBackgroundEffect)
+            m_scene.reset();
+        else
+            setScene(nullptr);
+    }
 }
 
 void AKNode::addFlagsAndPropagate(UInt32 flags) noexcept
@@ -224,6 +243,8 @@ void AKNode::insertBefore(AKNode *other) noexcept
     if (other == this)
         return;
 
+    const bool isBackgroundEffect { (m_caps & Caps::BackgroundEffect) != 0 };
+
     if (other)
     {
         if (other->parent())
@@ -234,7 +255,7 @@ void AKNode::insertBefore(AKNode *other) noexcept
                 if (other->m_parentLinkIndex == m_parentLinkIndex + 1)
                     return;
             }
-            else
+            else if (!isBackgroundEffect)
             {
                 addChange(Chg_Parent);
 
@@ -242,12 +263,22 @@ void AKNode::insertBefore(AKNode *other) noexcept
                     parent()->addChange(Chg_Layout);
             }
 
-            setScene(other->scene());
-            other->parent()->addChange(Chg_Layout);
+            if (isBackgroundEffect)
+            {
+                m_scene.reset(other->scene());
+            }
+            else
+            {
+                setScene(other->scene());
+                other->parent()->addChange(Chg_Layout);
+            }
+
             setParentPrivate(nullptr, false);
             m_parent = other->parent();
             m_parentLinkIndex = other->m_parentLinkIndex;
-            YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLinkIndex);
+
+            if (!isBackgroundEffect)
+                YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLinkIndex);
             auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLinkIndex, this) + 1;
             for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex++;
 
@@ -255,7 +286,7 @@ void AKNode::insertBefore(AKNode *other) noexcept
             assert(m_parent->m_children[m_parentLinkIndex+1] == other);
             assert(m_parent->m_children[other->m_parentLinkIndex] == other);
 
-            if (scene())
+            if (!isBackgroundEffect && scene())
                 scene()->m_treeChanged = true;
         }
         else
@@ -276,6 +307,8 @@ void AKNode::insertAfter(AKNode *other) noexcept
     if (other == this)
         return;
 
+    const bool isBackgroundEffect { (m_caps & Caps::BackgroundEffect) != 0 };
+
     if (other)
     {
         if (other->parent())
@@ -286,7 +319,7 @@ void AKNode::insertAfter(AKNode *other) noexcept
                 if (other->m_parentLinkIndex + 1 == m_parentLinkIndex)
                     return;
             }
-            else
+            else if (!isBackgroundEffect)
             {
                 addChange(Chg_Parent);
 
@@ -301,15 +334,27 @@ void AKNode::insertAfter(AKNode *other) noexcept
             }
 
             setParentPrivate(nullptr, false);
-            setScene(other->scene());
-            other->parent()->addChange(Chg_Layout);
+
+            if (isBackgroundEffect)
+            {
+                m_scene.reset(other->scene());
+            }
+            else
+            {
+                setScene(other->scene());
+                other->parent()->addChange(Chg_Layout);
+            }
+
             m_parent = other->parent();
             m_parentLinkIndex = other->m_parentLinkIndex + 1;
-            YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLinkIndex);
+
+            if (!isBackgroundEffect)
+                YGNodeInsertChild(m_parent->layout().m_node, layout().m_node, m_parentLinkIndex);
+
             auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLinkIndex, this) + 1;
             for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex++;
 
-            if (scene())
+            if (!isBackgroundEffect && scene())
                 scene()->m_treeChanged = true;
         }
         else
@@ -354,9 +399,43 @@ void AKNode::removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexce
     backgroundEffect->onTargetNodeChanged();
 }
 
+AKNode *AKNode::root() const noexcept
+{
+    if (!m_scene)
+        return nullptr;
+    return m_scene->root();
+}
+
 bool AKNode::activated() const noexcept
 {
     return scene() && scene()->activated();
+}
+
+void AKNode::setAnimated(bool enabled) noexcept
+{
+    if (enabled == m_flags.check(Animated))
+        return;
+
+    m_flags.setFlag(Animated, enabled);
+
+    if (enabled)
+    {
+        AKApp()->animated.push_back(this);
+        repaint();
+    }
+    else
+    {
+        for (size_t i = 0; i < AKApp()->animated.size(); i++)
+        {
+            if (AKApp()->animated[i] == this)
+            {
+                AKApp()->animated[i] = AKApp()->animated.back();
+                AKApp()->animated.pop_back();
+                return;
+            }
+        }
+
+    }
 }
 
 void AKNode::RIterator::reset(AKNode *node) noexcept

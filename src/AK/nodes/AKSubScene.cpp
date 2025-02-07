@@ -1,8 +1,10 @@
+#include "AK/AKTime.h"
 #include <cassert>
 #include <include/gpu/GrDirectContext.h>
 #include <include/core/SkCanvas.h>
 #include <AK/nodes/AKSubScene.h>
 #include <AK/AKSurface.h>
+#include <AK/AKLog.h>
 
 using namespace AK;
 
@@ -23,14 +25,14 @@ void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
     if (m_sceneTargets.find(t->target) == m_sceneTargets.end())
     {
         target = m_scene.createTarget(parentTargetData->target->painter());
-        target->enableUpdateLayout(false);
         target->AKObject::on.destroyed.subscribe(this, [this](AKObject *obj){
             AKTarget *target { static_cast<AKTarget*>(obj) };
             m_sceneTargets.erase(target);
         });
 
-        target->on.markedDirty.subscribe(this, [this](AKTarget &){
+        target->on.markedDirty.subscribe(this, [this, target](AKTarget &){
             addChange(Chg_Layout);
+            target->m_isDirty = false;
         });
         m_sceneTargets[t->target] = target;
         isNewTarget = true;
@@ -40,10 +42,14 @@ void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
         isNewTarget = false;
     }
 
-    //target->setAge((isNewTarget) ? 0 : 1);
+    if (!target->isDirty() && params->damage->isEmpty() && parentTargetData->changes.none())
+        return;
+
+    target->enableUpdateLayout(false);
+    target->setAge((isNewTarget) ? 0 : 1);
+    target->setBakedComponentsScale(parentTargetData->target->bakedComponentsScale());
     target->setSurface(params->surface->surface());
     target->setViewport(SkRect::MakeWH(params->surface->size().width(), params->surface->size().height()));
-    target->setBakedComponentsScale(parentTargetData->target->bakedComponentsScale());
     target->setDstRect(params->surface->imageSrcRect());
     //target->inClipRegion = params->clip;
     target->inDamageRegion = params->damage;
@@ -61,72 +67,4 @@ void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
 void AKSubScene::onBake(OnBakeParams *params)
 {
     bakeChildren(params);
-}
-
-void AKSubScene::handleParentSceneNotifyBegin()
-{
-    TargetData *parentTargetData { t };
-    AKTarget *target;
-    bool isNewTarget;
-
-    if (m_sceneTargets.find(t->target) == m_sceneTargets.end())
-    {
-        target = m_scene.createTarget(parentTargetData->target->painter());
-        target->AKObject::on.destroyed.subscribe(this, [this](AKObject *obj){
-            AKTarget *target { static_cast<AKTarget*>(obj) };
-            m_sceneTargets.erase(target);
-        });
-
-        target->on.markedDirty.subscribe(this, [this](AKTarget &){
-            addChange(Chg_Layout);
-        });
-        m_sceneTargets[t->target] = target;
-        isNewTarget = true;
-    }
-    else {
-        target = m_sceneTargets[t->target];
-        isNewTarget = false;
-    }
-
-    target->enableUpdateLayout(parentTargetData->target->updateLayoutEnabled());
-    target->setSurface(parentTargetData->target->surface());
-    target->setAge((isNewTarget) ? 0 : 1);
-    target->setBakedComponentsScale(parentTargetData->target->bakedComponentsScale());
-    m_currentLocalTarget.reset(target);
-    t = parentTargetData;
-
-    for (auto it = children().rbegin(); it != children().rend(); it++)
-        notifyBegin(*it);
-
-    t = parentTargetData;
-}
-
-void AKSubScene::notifyBegin(AKNode *node)
-{
-    node->t = &node->m_targets[m_currentLocalTarget.get()];
-
-    if (!node->t->target)
-    {
-        node->t->target = m_currentLocalTarget.get();
-        m_currentLocalTarget->AKObject::on.destroyed.subscribe(node, [node](AKObject *object){
-            AKTarget *target { static_cast<AKTarget*>(object) };
-            node->m_targets.erase(target);
-        });
-        node->t->clientDamage.setRect(AK_IRECT_INF);
-        node->m_intersectedTargets.push_back(m_currentLocalTarget.get());
-    }
-
-    if ((node->caps() & AKNode::Scene))
-        static_cast<AKSubScene*>(node)->handleParentSceneNotifyBegin();
-    else
-        for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
-            notifyBegin(*it);
-
-    if (m_currentLocalTarget.get()->updateLayoutEnabled())
-    {
-        m_scene.m_eventWithoutTarget = true;
-        node->updateLayout();
-        m_scene.m_eventWithoutTarget = false;
-    }
-    node->onSceneBegin();
 }

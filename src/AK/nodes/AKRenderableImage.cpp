@@ -15,7 +15,7 @@ void AKRenderableImage::onSceneBegin()
         addDamage(AK_IRECT_INF);
 }
 
-void AKRenderableImage::onRender(AKPainter *painter, const SkRegion &damage)
+void AKRenderableImage::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
 {
     if (damage.isEmpty() || !image() || image()->width() <= 0 || image()->height() <= 0)
         return;
@@ -40,8 +40,8 @@ void AKRenderableImage::onRender(AKPainter *painter, const SkRegion &damage)
             params.srcRect.setWH(image()->width(), image()->height());
     }
 
-    params.pos = rect().topLeft();
-    params.dstSize = rect().size();
+    params.pos = rect.topLeft();
+    params.dstSize = rect.size();
     params.texture = image();
     params.srcTransform = srcTransform();
     painter->bindTextureMode(params);

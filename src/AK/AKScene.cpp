@@ -1,11 +1,13 @@
 #include "include/gpu/ganesh/SkSurfaceGanesh.h"
 #include <AK/AKScene.h>
+#include <AK/AKLog.h>
 #include <AK/nodes/AKRenderable.h>
 #include <AK/nodes/AKBakeable.h>
 #include <AK/nodes/AKSubScene.h>
 #include <AK/effects/AKBackgroundEffect.h>
 #include <AK/AKSurface.h>
 #include <AK/AKPainter.h>
+#include <AK/AKApplication.h>
 #include <cassert>
 #include <yoga/Yoga.h>
 #include <include/core/SkCanvas.h>
@@ -43,32 +45,7 @@ void AKScene::updateLayout() noexcept
     if (!root())
         return;
 
-    AKNode *bottommost { root()->bottommostChild() };
-
-    if (!bottommost)
-        return;
-
-    YGNodeCalculateLayout(root()->layout().m_node,
-                          YGUndefined,
-                          YGUndefined,
-                          YGDirectionInherit);
-
-    m_eventWithoutTarget = true;
-
-    AKNode::RIterator it(bottommost);
-
-    while (!it.done())
-    {
-        it.node()->updateLayout();
-        it.next();
-    }
-
-    m_eventWithoutTarget = false;
-
-    YGNodeCalculateLayout(root()->layout().m_node,
-                          YGUndefined,
-                          YGUndefined,
-                          YGDirectionInherit);
+    root()->layout().apply();
 }
 
 bool AKScene::render(AKTarget *target)
@@ -84,22 +61,11 @@ bool AKScene::render(AKTarget *target)
 
     if (!isNestedScene)
     {
-        if (target->updateLayoutEnabled())
-            YGNodeCalculateLayout(root()->layout().m_node,
-                                  YGUndefined,
-                                  YGUndefined,
-                                  YGDirectionInherit);
-
         root()->m_globalRect = SkRect::MakeWH(t->viewport().width(), t->viewport().height()).roundOut();
         root()->m_rect = root()->m_globalRect;
 
-        for (auto it = root()->children().rbegin(); it != root()->children().rend(); it++)
-            notifyBegin(*it);
-
-        YGNodeCalculateLayout(root()->layout().m_node,
-                              YGUndefined,
-                              YGUndefined,
-                              YGDirectionInherit);
+        if (target->updateLayoutEnabled())
+            root()->layout().apply();
     }
 
     t->m_globalIViewport = SkRect::MakeXYWH(
@@ -107,8 +73,17 @@ bool AKScene::render(AKTarget *target)
                                t->viewport().y() + float(root()->globalRect().y()),
                                t->viewport().width(), t->viewport().height()).roundOut();
 
+    for (auto it = root()->children().rbegin(); it != root()->children().rend(); it++)
+        notifyBegin(*it);
+
     for (Int64 i = root()->children().size() - 1; i >= 0;)
     {
+        if (root()->children()[i]->m_skip)
+        {
+            i--;
+            continue;
+        }
+
         const int skip = root()->children()[i]->backgroundEffects().size();
         calculateNewDamage(root()->children()[i]);
         i -= 1 - skip;
@@ -124,8 +99,13 @@ bool AKScene::render(AKTarget *target)
 
     for (size_t i = 0; i < root()->children().size();)
     {
-        renderNodes(root()->children()[i]);
+        if (root()->children()[i]->m_skip)
+        {
+            i++;
+            continue;
+        }
 
+        renderNodes(root()->children()[i]);
         root()->children()[i]->t->changes.reset();
 
         if (root()->children()[i]->caps() & AKNode::BackgroundEffect)
@@ -140,320 +120,11 @@ bool AKScene::render(AKTarget *target)
     t->m_opaque.setEmpty();
     c->restore();
 
-    if (t->m_hasAnimatedNodes)
-        t->markDirty();
+    if (!isNestedScene)
+        for (AKNode *node : AKApp()->animated)
+                node->repaint();
 
     return true;
-}
-
-void AKScene::setRoot(AKNode *node) noexcept
-{
-    if (node == m_root)
-        return;
-
-    if (m_root)
-    {
-        m_root->m_flags.remove(AKNode::IsRoot);
-        if (!m_isSubScene)
-            m_root->setScene(nullptr);
-    }
-
-    m_root.reset(node);
-
-    if (m_root && !m_isSubScene)
-    {
-        m_root->m_flags.add(AKNode::IsRoot);
-        m_root->setScene(this);
-    }
-
-    for (AKTarget *t : m_targets)
-    {
-        t->m_needsFullRepaint = true;
-        t->markDirty();
-    }
-}
-
-AKNode *AKScene::nodeAt(const SkPoint &pos) const noexcept
-{
-    if (!m_root)
-        return nullptr;
-
-    const SkIPoint ipos(pos.x(), pos.y());
-    AKNode::RIterator it { m_root->bottommostChild() };
-    AKNode *clipper, *topmostInvisibleParent;
-
-    while (!it.done())
-    {
-        topmostInvisibleParent = it.node()->topmostInvisibleParent();
-
-        if (topmostInvisibleParent)
-        {
-            it.jumpTo(topmostInvisibleParent);
-            continue;
-        }
-
-        if (!it.node()->visible())
-        {
-            it.next();
-            continue;
-        }
-
-        if (!it.node()->globalRect().contains(ipos.x(), ipos.y()))
-        {
-            it.next();
-            continue;
-        }
-
-        if (it.node()->inputRegion() && !it.node()->inputRegion()->contains(
-                ipos.x() - it.node()->globalRect().x(),
-                ipos.y() - it.node()->globalRect().y()))
-        {
-            it.next();
-            continue;
-        }
-
-        clipper = it.node()->closestClipperParent();
-
-        if (clipper)
-        {
-            if (!clipper->globalRect().contains(ipos.x(), ipos.y()))
-            {
-                it.next();
-                continue;
-            }
-
-            if (clipper->inputRegion() && !clipper->inputRegion()->contains(
-                    ipos.x() - clipper->globalRect().x(),
-                    ipos.y() - clipper->globalRect().y()))
-            {
-                it.next();
-                continue;
-            }
-        }
-
-        return it.node();
-    }
-
-    return nullptr;
-}
-
-void AKScene::postEvent(const AKEvent &event)
-{
-    if (!m_root) return;
-    e = &event;
-
-    switch (event.type()) {
-    case AKEvent::Type::Pointer:
-        switch (event.subtype()) {
-        case AKEvent::Subtype::Move:
-            handlePointerMoveEvent();
-            break;
-        case AKEvent::Subtype::Button:
-            handlePointerButtonEvent();
-            break;
-        default:
-            break;
-        }
-        break;
-    case AKEvent::Type::Keyboard:
-        switch (event.subtype()) {
-        case AKEvent::Subtype::Key:
-            handleKeyboardKeyEvent();
-            break;
-        default:
-            break;
-        }
-        break;
-    case AKEvent::Type::State:
-        switch (event.subtype()) {
-        case AKEvent::Subtype::Activated:
-            handleStateActivatedEvent();
-            break;
-        case AKEvent::Subtype::Deactivated:
-            handleStateDeactivatedEvent();
-            break;
-        default:
-            break;
-        }
-        break;
-    default:
-        break;
-    }
-}
-
-void AKScene::handlePointerMoveEvent()
-{
-    auto &event { *static_cast<const AKPointerMoveEvent*>(e) };
-    const AKPointerEnterEvent enterEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
-    const AKPointerLeaveEvent leaveEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
-    m_root->removeFlagsAndPropagate(AKNode::Notified | AKNode::ChildHasPointerFocus);
-    m_pointerFocus.reset(nodeAt(event.pos()));
-
-    if (m_pointerFocus)
-        m_pointerFocus->setFlagsAndPropagateToParents(AKNode::ChildHasPointerFocus, true);
-
-    AKNode::RIterator it { nullptr };
-
-retry:
-    it.reset(m_root->bottommostChild());
-    m_treeChanged = false;
-
-    while (!it.done())
-    {
-        if (it.node()->m_flags.check(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
-
-        it.node()->m_flags.add(AKNode::Notified);
-
-        if (it.node()->pointerGrabEnabled())
-        {
-            it.node()->onEvent(*e);
-        }
-        else
-        {
-            if (it.node()->m_flags.check(AKNode::ChildHasPointerFocus))
-            {
-                if (it.node()->m_flags.check(AKNode::HasPointerFocus))
-                    it.node()->onEvent(*e);
-                else
-                {
-                    it.node()->m_flags.add(AKNode::HasPointerFocus);
-                    it.node()->onEvent(enterEvent);
-                }
-            }
-            else if (it.node()->m_flags.check(AKNode::HasPointerFocus))
-            {
-                it.node()->m_flags.remove(AKNode::HasPointerFocus);
-                it.node()->onEvent(leaveEvent);
-            }
-        }
-
-        if (m_treeChanged)
-            goto retry;
-
-        it.next();
-    }
-}
-
-void AKScene::handlePointerButtonEvent()
-{
-    m_root->removeFlagsAndPropagate(AKNode::Notified);
-    AKNode::RIterator it { nullptr };
-
-retry:
-    it.reset(m_root->bottommostChild());
-    m_treeChanged = false;
-
-    while (!it.done())
-    {
-        if (it.node()->m_flags.check(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
-
-        it.node()->m_flags.add(AKNode::Notified);
-
-        if (it.node()->m_flags.check(AKNode::HasPointerFocus | AKNode::PointerGrab))
-            it.node()->onEvent(*e);
-
-        if (m_treeChanged)
-            goto retry;
-
-        it.next();
-    }
-}
-
-void AKScene::handleKeyboardKeyEvent()
-{
-    m_root->removeFlagsAndPropagate(AKNode::Notified);
-    AKNode::RIterator it { nullptr };
-
-retry:
-    it.reset(m_root->bottommostChild());
-    m_treeChanged = false;
-
-    while (!it.done())
-    {
-        if (it.node()->m_flags.check(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
-
-        it.node()->m_flags.add(AKNode::Notified);
-        it.node()->onEvent(*e);
-
-        if (m_treeChanged)
-            goto retry;
-
-        it.next();
-    }
-}
-
-void AKScene::handleStateActivatedEvent()
-{
-    if (m_activated)
-        return;
-
-    m_activated = true;
-    m_root->removeFlagsAndPropagate(AKNode::Notified);
-    AKNode::RIterator it { nullptr };
-
-retry:
-    it.reset(m_root->bottommostChild());
-    m_treeChanged = false;
-
-    while (!it.done())
-    {
-        if (it.node()->m_flags.check(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
-
-        it.node()->m_flags.add(AKNode::Notified);
-        it.node()->onEvent(*e);
-
-        if (m_treeChanged)
-            goto retry;
-
-        it.next();
-    }
-}
-
-void AKScene::handleStateDeactivatedEvent()
-{
-    if (!m_activated)
-        return;
-
-    m_activated = false;
-    m_root->removeFlagsAndPropagate(AKNode::Notified);
-    AKNode::RIterator it { nullptr };
-
-retry:
-    it.reset(m_root->bottommostChild());
-    m_treeChanged = false;
-
-    while (!it.done())
-    {
-        if (it.node()->m_flags.check(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
-
-        it.node()->m_flags.add(AKNode::Notified);
-        it.node()->onEvent(*e);
-
-        if (m_treeChanged)
-            goto retry;
-
-        it.next();
-    }
 }
 
 void AKScene::validateTarget(AKTarget *target) noexcept
@@ -470,7 +141,6 @@ void AKScene::validateTarget(AKTarget *target) noexcept
     if (target->age() > AK_MAX_BUFFER_AGE || target->m_needsFullRepaint)
         target->setAge(0);
 
-    t->m_hasAnimatedNodes = false;
     auto skTarget = SkSurfaces::GetBackendRenderTarget(t->m_surface.get(), SkSurfaces::BackendHandleAccess::kFlushRead);
     GrGLFramebufferInfo fbInfo;
     skTarget.getGLFramebufferInfo(&fbInfo);
@@ -559,19 +229,22 @@ void AKScene::notifyBegin(AKNode *node)
         node->m_intersectedTargets.push_back(t);
     }
 
-    if ((node->caps() & AKNode::Scene))
-        static_cast<AKSubScene*>(node)->handleParentSceneNotifyBegin();
-    else
+    const bool visible { SkIRect::Intersects(node->globalRect(), t->m_globalIViewport) };
+
+    if (((!visible && node->childrenClippingEnabled()) || !node->visible()) && !node->t->visible)
+    {
+        node->m_skip = true;
+        return;
+    }
+
+    node->m_skip = false;
+
+    if (!(node->caps() & AKNode::Scene))
         for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
             notifyBegin(*it);
 
-    if (t->updateLayoutEnabled())
-    {
-        m_eventWithoutTarget = true;
-        node->updateLayout();
-        m_eventWithoutTarget = false;
-    }
-    node->onSceneBegin();
+    if (visible)
+        node->onSceneBegin();
 }
 
 void AKScene::calculateNewDamage(AKNode *node)
@@ -586,9 +259,11 @@ void AKScene::calculateNewDamage(AKNode *node)
             node->m_targets.erase(target);
         });
         node->t->clientDamage.setRect(AK_IRECT_INF);
+        node->m_intersectedTargets.push_back(t);
     }
 
     node->t->onBakeGeneratedDamage = false;
+    node->m_flags.remove(AKNode::RenderedOnLastTarget);
 
     if (node->caps() & AKNode::BackgroundEffect)
     {
@@ -608,23 +283,27 @@ void AKScene::calculateNewDamage(AKNode *node)
             backgroundEffect.m_globalRect.width(),
             backgroundEffect.m_globalRect.height());
 
-
         node->t->visible = node->visible() && backgroundEffect.targetNode()->t->visible;
     }
     else
     {
+        if (node->t->changes.test(AKNode::Chg_LayoutPos) || node->t->changes.test(AKNode::Chg_LayoutSize))
+        {
+
+            /*
         node->m_globalRect.fLeft = node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().calculatedLeft());
         node->m_globalRect.fTop = node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().calculatedTop());
         node->m_globalRect.fRight = node->m_globalRect.fLeft + SkScalarFloorToInt(node->layout().calculatedWidth());
-        node->m_globalRect.fBottom = node->m_globalRect.fTop + SkScalarFloorToInt(node->layout().calculatedHeight());
+        node->m_globalRect.fBottom = node->m_globalRect.fTop + SkScalarFloorToInt(node->layout().calculatedHeight());*/
 
-        node->m_rect = SkIRect::MakeXYWH(
-            node->m_globalRect.x() - root()->m_globalRect.x(),
-            node->m_globalRect.y() - root()->m_globalRect.y(),
-            node->m_globalRect.width(),
-            node->m_globalRect.height());
+            node->m_rect = SkIRect::MakeXYWH(
+                node->m_globalRect.x() - root()->m_globalRect.x(),
+                node->m_globalRect.y() - root()->m_globalRect.y(),
+                node->m_globalRect.width(),
+                node->m_globalRect.height());
 
-        node->onSceneCalculatedRect();
+            node->onSceneCalculatedRect();
+        }
 
         bool parentIsVisible { node->parent() && !node->parent()->parent() && node->parent()->visible() };
         if (node->parent() && node->parent()->parent())
@@ -659,15 +338,10 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     node->m_intersectedTargets.clear();
     for (AKTarget *target : targets())
-    {
         if (SkIRect::Intersects(node->globalRect(), target->m_globalIViewport))
-        {
             node->m_intersectedTargets.push_back(target);
-            target->m_hasAnimatedNodes |= node->animated();
-        }
-    }
 
-    if ((node->caps() & AKNode::Bake) && !clip.isEmpty())
+    if ((node->caps() & AKNode::Bake) && !clip.isEmpty() && (node->t->changes.any() || !node->t->clientDamage.isEmpty() || !node->t->bake || node->t->bake->scale() != t->bakedComponentsScale()))
     {
         auto *bakeable { static_cast<AKBakeable*>(node) };
 
@@ -684,14 +358,14 @@ void AKScene::calculateNewDamage(AKNode *node)
             {
                 surfaceChanged = bakeable->t->bake->scale() != t->bakedComponentsScale();
                 surfaceChanged |= bakeable->t->bake->resize(
-                    SkSize::Make(bakeable->rect().size()),
+                    SkSize::Make(bakeable->globalRect().size()),
                     t->bakedComponentsScale(), true);
             }
             else
             {
                 surfaceChanged = true;
                 bakeable->t->bake = AKSurface::Make(
-                    SkSize::Make(bakeable->rect().size()),
+                    SkSize::Make(bakeable->globalRect().size()),
                     t->bakedComponentsScale(), true);
             }
 
@@ -716,15 +390,10 @@ void AKScene::calculateNewDamage(AKNode *node)
             canvas.restore();
             bakeable->t->onBakeGeneratedDamage = !params.damage->isEmpty();
 
-            if (bakeable->caps() & AKNode::Caps::Scene)
+            if (!(bakeable->caps() & AKNode::Scene))
             {
-                auto *subscene { static_cast<AKSubScene*>(bakeable) };
-                for (AKTarget *target : subscene->m_intersectedTargets)
-                {
-                    auto it = subscene->m_sceneTargets.find(target);
-                    if (it != subscene->m_sceneTargets.end())
-                        target->m_hasAnimatedNodes |= it->second->m_hasAnimatedNodes;
-                }
+                params.surface->surface()->recordingContext()->asDirectContext()->resetContext();
+                params.surface->surface()->flush();
             }
         }
     }
@@ -761,7 +430,6 @@ skipDamage:
     node->t->clientDamage.setEmpty();
     node->t->prevLocalClip = clip;
     node->t->prevLocalRect = node->m_rect;
-    node->t->prevRect = node->m_globalRect;
 
     for (auto *backgroundEffect : node->backgroundEffects())
     {
@@ -774,6 +442,12 @@ skipDamage:
     if (!(node->caps() & AKNode::Scene))
         for (Int64 i = node->children().size() - 1; i >= 0;)
         {
+            if (node->children()[i]->m_skip)
+            {
+                i--;
+                continue;
+            }
+
             const int skip = node->children()[i]->backgroundEffects().size();
             calculateNewDamage(node->children()[i]);
             i -= 1 - skip;
@@ -783,7 +457,8 @@ skipDamage:
         return;
 
     AKRenderable *rend { static_cast<AKRenderable*>(node) };
-    rend->m_flags.setFlag(AKNode::RenderedOnLastTarget, !t->m_opaque.contains(clip) && !clip.isEmpty() && !node->m_globalRect.isEmpty());
+
+    node->m_flags.setFlag(AKNode::RenderedOnLastTarget, !t->m_opaque.contains(clip) && !clip.isEmpty() && !node->m_globalRect.isEmpty());
 
     if (!rend->renderedOnLastTarget())
         return;
@@ -905,7 +580,7 @@ void AKScene::renderNodes(AKNode *node)
 
     t->painter()->setParamsFromRenderable(rend);
     glEnable(GL_BLEND);
-    rend->onRender(t->painter().get(), node->t->translucent);
+    rend->onRender(t->painter().get(), node->t->translucent, rend->sceneRect());
 
     renderOpaque:
 
@@ -920,13 +595,19 @@ void AKScene::renderNodes(AKNode *node)
 
     t->painter()->setParamsFromRenderable(rend);
     glDisable(GL_BLEND);
-    rend->onRender(t->painter().get(), node->t->opaque);
+    rend->onRender(t->painter().get(), node->t->opaque, rend->sceneRect());
 
     renderChildren:
 
     if (!(node->caps() & AKNode::Scene))
         for (size_t i = 0; i < node->children().size();)
         {
+            if (node->children()[i]->m_skip)
+            {
+                i++;
+                continue;
+            }
+
             renderNodes(node->children()[i]);
             node->children()[i]->t->changes.reset();
             YGNodeSetHasNewLayout(node->m_layout.m_node, false);
@@ -937,3 +618,313 @@ void AKScene::renderNodes(AKNode *node)
                 i++;
         }
 }
+
+    void AKScene::setRoot(AKNode *node) noexcept
+    {
+        if (node == m_root)
+            return;
+
+        if (m_root)
+        {
+            m_root->m_flags.remove(AKNode::IsRoot);
+            if (!m_isSubScene)
+                m_root->setScene(nullptr);
+        }
+
+        m_root.reset(node);
+
+        if (m_root && !m_isSubScene)
+        {
+            m_root->m_flags.add(AKNode::IsRoot);
+            m_root->setScene(this);
+        }
+
+        for (AKTarget *t : m_targets)
+        {
+            t->m_needsFullRepaint = true;
+            t->markDirty();
+        }
+    }
+
+    AKNode *AKScene::nodeAt(const SkPoint &pos) const noexcept
+    {
+        if (!m_root)
+            return nullptr;
+
+        const SkIPoint ipos(pos.x(), pos.y());
+        AKNode::RIterator it { m_root->bottommostChild() };
+        AKNode *clipper, *topmostInvisibleParent;
+
+        while (!it.done())
+        {
+            topmostInvisibleParent = it.node()->topmostInvisibleParent();
+
+            if (topmostInvisibleParent)
+            {
+                it.jumpTo(topmostInvisibleParent);
+                continue;
+            }
+
+            if (!it.node()->visible())
+            {
+                it.next();
+                continue;
+            }
+
+            if (!it.node()->globalRect().contains(ipos.x(), ipos.y()))
+            {
+                it.next();
+                continue;
+            }
+
+            if (it.node()->inputRegion() && !it.node()->inputRegion()->contains(
+                    ipos.x() - it.node()->globalRect().x(),
+                    ipos.y() - it.node()->globalRect().y()))
+            {
+                it.next();
+                continue;
+            }
+
+            clipper = it.node()->closestClipperParent();
+
+            if (clipper)
+            {
+                if (!clipper->globalRect().contains(ipos.x(), ipos.y()))
+                {
+                    it.next();
+                    continue;
+                }
+
+                if (clipper->inputRegion() && !clipper->inputRegion()->contains(
+                        ipos.x() - clipper->globalRect().x(),
+                        ipos.y() - clipper->globalRect().y()))
+                {
+                    it.next();
+                    continue;
+                }
+            }
+
+            return it.node();
+        }
+
+        return nullptr;
+    }
+
+    void AKScene::postEvent(const AKEvent &event)
+    {
+        if (!m_root) return;
+        e = &event;
+
+        switch (event.type()) {
+        case AKEvent::Type::Pointer:
+            switch (event.subtype()) {
+            case AKEvent::Subtype::Move:
+                handlePointerMoveEvent();
+                break;
+            case AKEvent::Subtype::Button:
+                handlePointerButtonEvent();
+                break;
+            default:
+                break;
+            }
+            break;
+        case AKEvent::Type::Keyboard:
+            switch (event.subtype()) {
+            case AKEvent::Subtype::Key:
+                handleKeyboardKeyEvent();
+                break;
+            default:
+                break;
+            }
+            break;
+        case AKEvent::Type::State:
+            switch (event.subtype()) {
+            case AKEvent::Subtype::Activated:
+                handleStateActivatedEvent();
+                break;
+            case AKEvent::Subtype::Deactivated:
+                handleStateDeactivatedEvent();
+                break;
+            default:
+                break;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    void AKScene::handlePointerMoveEvent()
+    {
+        auto &event { *static_cast<const AKPointerMoveEvent*>(e) };
+        const AKPointerEnterEvent enterEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
+        const AKPointerLeaveEvent leaveEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
+        m_root->removeFlagsAndPropagate(AKNode::Notified | AKNode::ChildHasPointerFocus);
+        m_pointerFocus.reset(nodeAt(event.pos()));
+
+        if (m_pointerFocus)
+            m_pointerFocus->setFlagsAndPropagateToParents(AKNode::ChildHasPointerFocus, true);
+
+        AKNode::RIterator it { nullptr };
+
+    retry:
+        it.reset(m_root->bottommostChild());
+        m_treeChanged = false;
+
+        while (!it.done())
+        {
+            if (it.node()->m_flags.check(AKNode::Notified))
+            {
+                it.next();
+                continue;
+            }
+
+            it.node()->m_flags.add(AKNode::Notified);
+
+            if (it.node()->pointerGrabEnabled())
+            {
+                it.node()->onEvent(*e);
+            }
+            else
+            {
+                if (it.node()->m_flags.check(AKNode::ChildHasPointerFocus))
+                {
+                    if (it.node()->m_flags.check(AKNode::HasPointerFocus))
+                        it.node()->onEvent(*e);
+                    else
+                    {
+                        it.node()->m_flags.add(AKNode::HasPointerFocus);
+                        it.node()->onEvent(enterEvent);
+                    }
+                }
+                else if (it.node()->m_flags.check(AKNode::HasPointerFocus))
+                {
+                    it.node()->m_flags.remove(AKNode::HasPointerFocus);
+                    it.node()->onEvent(leaveEvent);
+                }
+            }
+
+            if (m_treeChanged)
+                goto retry;
+
+            it.next();
+        }
+    }
+
+    void AKScene::handlePointerButtonEvent()
+    {
+        m_root->removeFlagsAndPropagate(AKNode::Notified);
+        AKNode::RIterator it { nullptr };
+
+    retry:
+        it.reset(m_root->bottommostChild());
+        m_treeChanged = false;
+
+        while (!it.done())
+        {
+            if (it.node()->m_flags.check(AKNode::Notified))
+            {
+                it.next();
+                continue;
+            }
+
+            it.node()->m_flags.add(AKNode::Notified);
+
+            if (it.node()->m_flags.check(AKNode::HasPointerFocus | AKNode::PointerGrab))
+                it.node()->onEvent(*e);
+
+            if (m_treeChanged)
+                goto retry;
+
+            it.next();
+        }
+    }
+
+    void AKScene::handleKeyboardKeyEvent()
+    {
+        m_root->removeFlagsAndPropagate(AKNode::Notified);
+        AKNode::RIterator it { nullptr };
+
+    retry:
+        it.reset(m_root->bottommostChild());
+        m_treeChanged = false;
+
+        while (!it.done())
+        {
+            if (it.node()->m_flags.check(AKNode::Notified))
+            {
+                it.next();
+                continue;
+            }
+
+            it.node()->m_flags.add(AKNode::Notified);
+            it.node()->onEvent(*e);
+
+            if (m_treeChanged)
+                goto retry;
+
+            it.next();
+        }
+    }
+
+    void AKScene::handleStateActivatedEvent()
+    {
+        if (m_activated)
+            return;
+
+        m_activated = true;
+        m_root->removeFlagsAndPropagate(AKNode::Notified);
+        AKNode::RIterator it { nullptr };
+
+    retry:
+        it.reset(m_root->bottommostChild());
+        m_treeChanged = false;
+
+        while (!it.done())
+        {
+            if (it.node()->m_flags.check(AKNode::Notified))
+            {
+                it.next();
+                continue;
+            }
+
+            it.node()->m_flags.add(AKNode::Notified);
+            it.node()->onEvent(*e);
+
+            if (m_treeChanged)
+                goto retry;
+
+            it.next();
+        }
+    }
+
+    void AKScene::handleStateDeactivatedEvent()
+    {
+        if (!m_activated)
+            return;
+
+        m_activated = false;
+        m_root->removeFlagsAndPropagate(AKNode::Notified);
+        AKNode::RIterator it { nullptr };
+
+    retry:
+        it.reset(m_root->bottommostChild());
+        m_treeChanged = false;
+
+        while (!it.done())
+        {
+            if (it.node()->m_flags.check(AKNode::Notified))
+            {
+                it.next();
+                continue;
+            }
+
+            it.node()->m_flags.add(AKNode::Notified);
+            it.node()->onEvent(*e);
+
+            if (m_treeChanged)
+                goto retry;
+
+            it.next();
+        }
+    }

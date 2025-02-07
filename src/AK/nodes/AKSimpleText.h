@@ -35,6 +35,7 @@ public:
 
         addChange(Chg_Font);
         m_font = font;
+        updateDimensions();
         signalFontChanged.notify();
     }
 
@@ -93,7 +94,6 @@ public:
     AKSignal<> signalFontChanged;
 
 protected:
-    void updateLayout() override;
     void onBake(OnBakeParams *params) override;
     void updateDimensions() noexcept;
     std::string m_text, m_skText;

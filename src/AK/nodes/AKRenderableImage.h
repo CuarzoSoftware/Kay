@@ -110,7 +110,7 @@ public:
     }
 protected:
     virtual void onSceneBegin() override;
-    virtual void onRender(AKPainter *painter, const SkRegion &damage) override;
+    virtual void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
     sk_sp<SkImage> m_image;
     SkRect m_customSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkScalar m_customSrcRectScale { 1.f };

@@ -325,7 +325,6 @@ private:
     bool                m_isDirty { false };
     bool                m_needsFullRepaint { true };
     bool                m_updateLayout { true };
-    bool                m_hasAnimatedNodes { false };
     std::shared_ptr<AKPainter> m_painter;
     std::vector<SkRegion> m_reactive;
     SkColor             m_clearColor { SK_ColorTRANSPARENT };

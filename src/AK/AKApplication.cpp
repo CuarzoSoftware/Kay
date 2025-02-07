@@ -54,7 +54,7 @@ AKGLContext *AKApplication::glContext() noexcept
     if (it != _app->m_glContexts.end())
         return it->second;
 
-    auto skContext = GrDirectContext::MakeGL(interface, _app->skContextOptions());
+    sk_sp<GrDirectContext> skContext = GrDirectContext::MakeGL(interface, _app->skContextOptions());
     assert("Failed to create GrDirectContext. Please ensure a valid OpenGL context is bound before calling AKApplication::skContext()." && skContext);
     auto *akContext = new AKGLContext(skContext);
     _app->m_glContexts[eglGetCurrentContext()] = akContext;

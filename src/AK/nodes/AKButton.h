@@ -35,10 +35,10 @@ public:
 
 protected:
     void onEvent(const AKEvent &event) override;
-    void updateLayout() override;
     void onSceneBegin() override;
-    void onSceneCalculatedRect() override;
     void applyLayoutConstraints() noexcept;
+    void updateOpaqueRegion() noexcept;
+    void updateStyle() noexcept;
     AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
     AKSimpleText m_text;

@@ -18,7 +18,7 @@ public:
 protected:
     using AKRenderable::addDamage;
     using AKRenderable::opaqueRegion;
-    void onRender(AKPainter *painter, const SkRegion &damage) override;
+    void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
 };
 
 #endif // AKSOLIDCOLOR_H

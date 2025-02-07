@@ -1,3 +1,4 @@
+#include "AK/AKLog.h"
 #include <include/core/SkCanvas.h>
 #include <include/core/SkFontMetrics.h>
 #include <AK/nodes/AKSimpleText.h>
@@ -23,6 +24,7 @@ void AKSimpleText::setText(const std::string &text) noexcept
     m_skText = text;
     replaceAllInPlace(m_skText, "\t", "    ");
     addChange(Chg_Text);
+    updateDimensions();
     signalTextChanged.notify();
 }
 
@@ -48,14 +50,6 @@ Int32 AKSimpleText::charIndexAtX(SkScalar x) const noexcept
     return m_skText.size() - 1;
 }
 
-void AKSimpleText::updateLayout()
-{
-    const auto &chgs { changes() };
-
-    if (chgs.test(Chg_Text) || chgs.test(Chg_Font))
-        updateDimensions();
-}
-
 void AKSimpleText::onBake(OnBakeParams *params)
 {
     if (m_skText.empty())
@@ -74,7 +68,7 @@ void AKSimpleText::onBake(OnBakeParams *params)
     if (needsRepaint)
     {
         c.save();
-        c.clipIRect(SkIRect::MakeSize(rect().size()));
+        c.clipIRect(SkIRect::MakeSize(globalRect().size()));
         c.clear(SK_ColorTRANSPARENT);
         c.restore();
 
@@ -92,7 +86,6 @@ void AKSimpleText::updateDimensions() noexcept
 {
     SkFontMetrics metrics;
     font().getMetrics(&metrics);
-
     m_bounds.fTop = metrics.fTop;
     m_bounds.fBottom = metrics.fBottom;
     m_bounds.fLeft = 0;
@@ -103,5 +96,6 @@ void AKSimpleText::updateDimensions() noexcept
     layout().setHeight(m_bounds.height());
     layout().setMinHeight(m_bounds.height());
     layout().setMaxHeight(m_bounds.height());
+    layout().apply();
 }
 

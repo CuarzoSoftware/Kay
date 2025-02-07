@@ -1,16 +1,10 @@
 #include <AK/nodes/AKThreeImagePatch.h>
+#include <AK/AKLog.h>
+#include <AK/AKTime.h>
 
 using namespace AK;
 
-void AKThreeImagePatch::onSceneBegin()
-{
-    const auto &chg { changes() };
-
-    if (chg.test(Chg_CenterSrcRect) || chg.test(Chg_SideSrcRect) || chg.test(Chg_Orientation) || chg.test(Chg_Scale))
-        addDamage(AK_IRECT_INF);
-}
-
-void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage)
+void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
 {
     if (!m_image || m_scale <= 0)
         return;
@@ -22,10 +16,10 @@ void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage)
     {
         const SkRect srcs[] { m_sideSrcRect, m_centerSrcRect, m_sideSrcRect };
         constexpr static AKTransform transforms[] { AKTransform::Normal, AKTransform::Normal, AKTransform::Flipped };
-        const SkScalar centerWidth { std::max(1.f, SkScalar(rect().width()) - 2.f * m_sideSrcRect.width()) };
-        dsts[0].setXYWH(rect().x(), rect().y(), m_sideSrcRect.width(), rect().height());
-        dsts[1].setXYWH(dsts[0].fRight, rect().y(), centerWidth, dsts[0].height());
-        dsts[2].setXYWH(dsts[1].fRight, rect().y(), m_sideSrcRect.width(), rect().height());
+        const SkScalar centerWidth { std::max(1.f, SkScalar(rect.width()) - 2.f * m_sideSrcRect.width()) };
+        dsts[0].setXYWH(rect.x(), rect.y(), m_sideSrcRect.width(), rect.height());
+        dsts[1].setXYWH(dsts[0].fRight, rect.y(), centerWidth, dsts[0].height());
+        dsts[2].setXYWH(dsts[1].fRight, rect.y(), m_sideSrcRect.width(), rect.height());
 
         for (Int32 i = 0; i < 3; i++)
         {
@@ -52,10 +46,10 @@ void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage)
         SkRect srcs[] { m_sideSrcRect, m_centerSrcRect, m_sideSrcRect };
         srcs[2].offset(0, m_centerSrcRect.height());
         constexpr static AKTransform transforms[] { AKTransform::Normal, AKTransform::Normal, AKTransform::Flipped180 };
-        const SkScalar centerHeight { std::max(1.f, SkScalar(rect().height()) - 2.f * m_sideSrcRect.height()) };
-        dsts[0].setXYWH(rect().x(), rect().y(), rect().width(), m_sideSrcRect.height());
-        dsts[1].setXYWH(rect().x(), dsts[0].fBottom, rect().width(), centerHeight);
-        dsts[2].setXYWH(rect().x(), dsts[1].fBottom, rect().width(), m_sideSrcRect.height());
+        const SkScalar centerHeight { std::max(1.f, SkScalar(rect.height()) - 2.f * m_sideSrcRect.height()) };
+        dsts[0].setXYWH(rect.x(), rect.y(), rect.width(), m_sideSrcRect.height());
+        dsts[1].setXYWH(rect.x(), dsts[0].fBottom, rect.width(), centerHeight);
+        dsts[2].setXYWH(rect.x(), dsts[1].fBottom, rect.width(), m_sideSrcRect.height());
 
         for (Int32 i = 0; i < 3; i++)
         {

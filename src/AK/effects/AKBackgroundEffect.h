@@ -63,7 +63,7 @@ protected:
 
     void onSceneCalculatedRect() override
     {
-        effectRect = SkIRect::MakeSize(targetNode()->rect().size());
+        effectRect = SkIRect::MakeSize(targetNode()->globalRect().size());
     }
 
     using AKRenderable::onRender;

@@ -189,7 +189,7 @@ protected:
     bool m_customBlendFuncEnabled { false };
     bool m_customTextureColorEnabled { false };
     virtual void onEvent(const AKEvent &event) override;
-    virtual void onRender(AKPainter *painter, const SkRegion &damage) = 0;
+    virtual void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) = 0;
 private:
     void handleCommonChanges() noexcept;
 };

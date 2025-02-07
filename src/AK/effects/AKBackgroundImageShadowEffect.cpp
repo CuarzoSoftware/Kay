@@ -36,7 +36,7 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
     }
 
     const SkISize prevSize { effectRect.size() };
-    effectRect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
+    effectRect = SkIRect::MakeWH(targetNode()->globalRect().width(), targetNode()->globalRect().height());
     effectRect.outset(m_radius, m_radius);
     effectRect.offset(offset().x(), offset().y());
 
@@ -69,9 +69,9 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
         canvas.drawImageRect(
             targetNodeData->bake->image(),
             SkRect::MakeXYWH(0, 0,
-                             targetNode()->rect().width() * currentTarget()->bakedComponentsScale(),
-                             targetNode()->rect().height() * currentTarget()->bakedComponentsScale()),
-            SkRect::MakeXYWH(m_radius, m_radius, targetNode()->rect().width(), targetNode()->rect().height()),
+                             targetNode()->globalRect().width() * currentTarget()->bakedComponentsScale(),
+                             targetNode()->globalRect().height() * currentTarget()->bakedComponentsScale()),
+            SkRect::MakeXYWH(m_radius, m_radius, targetNode()->globalRect().width(), targetNode()->globalRect().height()),
             SkFilterMode::kLinear,
             &brush,
             SkCanvas::kFast_SrcRectConstraint);
@@ -83,20 +83,20 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
 }
 
 
-void AKBackgroundImageShadowEffect::onRender(AKPainter *painter, const SkRegion &damage)
+void AKBackgroundImageShadowEffect::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
 {
     auto *targetNodeData { targetNode()->targetData(currentTarget()) };
 
     if (!(targetNode()->caps() & AKNode::Bake) || !targetNodeData || !targetNodeData->bake)
         return;
 
-    const SkRect src { SkRect::MakeWH(rect().size().width(), rect().size().height()) };
+    const SkRect src { SkRect::MakeWH(rect.size().width(), rect.size().height()) };
 
     painter->bindTextureMode({
         .texture = m_currentData->surface->image(),
-        .pos = { rect().x(), rect().y() },
+        .pos = { rect.x(), rect.y() },
         .srcRect = src,
-        .dstSize = rect().size(),
+        .dstSize = rect.size(),
         .srcTransform = AKTransform::Normal,
         .srcScale = SkScalar(m_currentData->surface->scale())
     });

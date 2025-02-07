@@ -457,12 +457,11 @@ void AKPainter::bindProgram() noexcept
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glBindAttribLocation(currentProgram, 0, "vertexPosition");
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, square);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
-    glBindAttribLocation(currentProgram, 0, "vertexPosition");
-    glUseProgram(currentProgram);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, square);
-    glEnableVertexAttribArray(0);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.0f);
     glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
@@ -508,6 +507,7 @@ void AKPainter::bindProgram() noexcept
     glFrontFace(GL_CCW);
     glBlendColor(0, 0, 0, 0);
     glBlendEquation(GL_FUNC_ADD);
+
 
     glUniform2f(currentUniforms->texSize,
                 currentState->texSize.width(),

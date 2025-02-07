@@ -26,6 +26,7 @@
 #include <AK/AKScene.h>
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKSolidColor.h>
+#include <AK/AKApplication.h>
 
 using namespace AK;
 
@@ -186,6 +187,7 @@ int main(void)
 {
     setenv("SRM_DEBUG", "4", 0);
 
+    AKApplication app;
     SRMCore *core = srmCoreCreate(&srmInterface, NULL);
 
     if (!core)

@@ -87,7 +87,7 @@ protected:
      * Triggered after onSceneBegin(), onSceneCalculatedRect() and before onRender().
      */
     virtual void onBake(OnBakeParams *params) = 0;
-    virtual void onRender(AKPainter *, const SkRegion &damage) override;
+    virtual void onRender(AKPainter *, const SkRegion &damage, const SkIRect &rect) override;
 };
 
 #endif // AKBAKEABLE_H

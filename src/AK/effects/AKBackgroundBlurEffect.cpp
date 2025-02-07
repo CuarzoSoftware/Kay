@@ -13,7 +13,7 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
         return;
 
     if (clipMode() == Automatic)
-        effectRect = SkIRect::MakeSize(targetNode()->rect().size());
+        effectRect = SkIRect::MakeSize(targetNode()->globalRect().size());
     else
         on.targetLayoutUpdated.notify();
 
@@ -28,7 +28,7 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
         m_brush.setImageFilter(SkImageFilters::Blur(m_sigma.x(), m_sigma.y(), SkTileMode::kMirror, nullptr));
 }
 
-void AKBackgroundBlurEffect::onRender(AKPainter *painter, const SkRegion &damage)
+void AKBackgroundBlurEffect::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
 {
     if (!currentTarget()->image() || damage.isEmpty())
         return;
@@ -43,7 +43,7 @@ void AKBackgroundBlurEffect::onRender(AKPainter *painter, const SkRegion &damage
     damage.getBoundaryPath(&path);
     c.clipPath(path);
 
-    const SkRect dstRect { SkRect::Make(rect()) };
+    const SkRect dstRect { SkRect::Make(rect) };
 
     if (clipMode() == Manual)
     {

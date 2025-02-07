@@ -13,6 +13,7 @@ public:
     static AKGLContext *glContext() noexcept;
     static void freeGLContext() noexcept;
     const GrContextOptions &skContextOptions() const noexcept { return m_skContextOptions; };
+    std::vector<AKNode*> animated;
 protected:
     GrContextOptions m_skContextOptions;
     std::unordered_map<EGLContext, AKGLContext*> m_glContexts;

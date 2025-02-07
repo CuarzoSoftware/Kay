@@ -37,11 +37,11 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
         m_currentData->prevScale = currentTarget()->bakedComponentsScale();
     }
 
-    effectRect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
+    effectRect = SkIRect::MakeWH(targetNode()->globalRect().width(), targetNode()->globalRect().height());
     effectRect.outset(m_radius, m_radius);
     effectRect.offset(offset().x(), offset().y());
 
-    const SkIPoint finalPos { effectRect.x() + targetNode()->rect().x(), effectRect.y() + targetNode()->rect().y() };
+    const SkIPoint finalPos { effectRect.x() + targetNode()->sceneRect().x(), effectRect.y() + targetNode()->sceneRect().y() };
 
     if (chg.test(Chg_Radius))
         needsFullDamage = needsNewSurface = true;
@@ -56,42 +56,42 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
     // T
     m_currentData->dstRects[1] = SkIRect::MakeXYWH(
         finalPos.x() + m_radius, finalPos.y(),
-        targetNode()->rect().width(), m_radius);
+        targetNode()->sceneRect().width(), m_radius);
 
     // TR
     m_currentData->dstRects[2] = SkIRect::MakeXYWH(
-        finalPos.x() + m_radius + targetNode()->rect().width(), finalPos.y(),
+        finalPos.x() + m_radius + targetNode()->sceneRect().width(), finalPos.y(),
         m_radius, m_radius);
 
     // L
     m_currentData->dstRects[3] = SkIRect::MakeXYWH(
         finalPos.x(), finalPos.y() + m_radius,
-        m_radius, targetNode()->rect().height());
+        m_radius, targetNode()->sceneRect().height());
 
     // Center
     m_currentData->dstRects[4] = SkIRect::MakeXYWH(
         finalPos.x() + m_radius, finalPos.y() + m_radius,
-        targetNode()->rect().width(), targetNode()->rect().height());
+        targetNode()->sceneRect().width(), targetNode()->sceneRect().height());
 
     // R
     m_currentData->dstRects[5] = SkIRect::MakeXYWH(
-        finalPos.x() + targetNode()->rect().width() + m_radius, finalPos.y() + m_radius,
-        m_radius, targetNode()->rect().height());
+        finalPos.x() + targetNode()->sceneRect().width() + m_radius, finalPos.y() + m_radius,
+        m_radius, targetNode()->sceneRect().height());
 
     // BL
     m_currentData->dstRects[6] = SkIRect::MakeXYWH(
-        finalPos.x(), finalPos.y() + m_radius + targetNode()->rect().height(),
+        finalPos.x(), finalPos.y() + m_radius + targetNode()->sceneRect().height(),
         m_radius, m_radius);
 
     // B
     m_currentData->dstRects[7] = SkIRect::MakeXYWH(
-        finalPos.x() + m_radius, finalPos.y() + m_radius + targetNode()->rect().height(),
-        targetNode()->rect().width(), m_radius);
+        finalPos.x() + m_radius, finalPos.y() + m_radius + targetNode()->sceneRect().height(),
+        targetNode()->sceneRect().width(), m_radius);
 
     // BR
     m_currentData->dstRects[8] = SkIRect::MakeXYWH(
-        finalPos.x() + m_radius + targetNode()->rect().width(),
-        finalPos.y() + m_radius + targetNode()->rect().height(),
+        finalPos.x() + m_radius + targetNode()->sceneRect().width(),
+        finalPos.y() + m_radius + targetNode()->sceneRect().height(),
         m_radius, m_radius);
 
     needsFullDamage |= chg.test(Chg_Color) || chg.test(Chg_FillBackground);
@@ -169,6 +169,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
         brush.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, m_radius/3.f));
         canvas.drawRect(SkRect::MakeXYWH(m_radius, m_radius, centerSize, centerSize), brush);
         canvas.restore();
+        m_currentData->surface->surface()->flush();
     }
 
     if (needsFullDamage)
@@ -200,7 +201,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
 
     const SkISize prevSize { effectRect.size() };
 
-    effectRect = SkIRect::MakeWH(targetNode()->rect().width(), targetNode()->rect().height());
+    effectRect = SkIRect::MakeWH(targetNode()->sceneRect().width(), targetNode()->sceneRect().height());
     effectRect.outset(m_radius, m_radius);
     effectRect.offset(offset().x(), offset().y());
 
@@ -241,7 +242,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
 
         SkRRect rrect;
         rrect.setRectRadii(
-            SkRect::MakeXYWH(m_radius, m_radius, targetNode()->rect().width(), targetNode()->rect().height()),
+            SkRect::MakeXYWH(m_radius, m_radius, targetNode()->sceneRect().width(), targetNode()->sceneRect().height()),
             radii);
 
         canvas.drawRRect(rrect, brush);
@@ -251,8 +252,8 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
             rrect.setRectRadii(
                 SkRect::MakeXYWH(m_radius - offset().x() + 0.5f,
                                  m_radius - offset().y() + 0.5f,
-                                 targetNode()->rect().width() - 1.f,
-                                 targetNode()->rect().height() - 1.f),
+                                 targetNode()->sceneRect().width() - 1.f,
+                                 targetNode()->sceneRect().height() - 1.f),
                 radii);
             brush.setAntiAlias(true);
             brush.setBlendMode(SkBlendMode::kClear);
@@ -268,7 +269,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
 }
 
 
-void AKBackgroundBoxShadowEffect::onRender(AKPainter *painter, const SkRegion &damage)
+void AKBackgroundBoxShadowEffect::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
 {
     if (m_borderRadius.fBL != 0 || m_borderRadius.fBR != 0 || m_borderRadius.fTL != 0 || m_borderRadius.fTR != 0)
     {
@@ -279,7 +280,7 @@ void AKBackgroundBoxShadowEffect::onRender(AKPainter *painter, const SkRegion &d
     SkRegion fullDamage { damage };
 
     if (!fillBackgroundEnabled())
-        fullDamage.op(targetNode()->rect(), SkRegion::Op::kDifference_Op);
+        fullDamage.op(targetNode()->sceneRect(), SkRegion::Op::kDifference_Op);
 
     for (int i = 0; i < 9; i++)
     {
@@ -308,37 +309,37 @@ void AKBackgroundBoxShadowEffect::onRenderWithBorderRadius(AKPainter *painter, c
         // Eliminate damaged regions without round corners
         // to optimize GPU usage by preventing unnecessary rendering of invisible pixels
         SkRegion toExclude;
-        toExclude.setRect(targetNode()->rect());
+        toExclude.setRect(targetNode()->sceneRect());
         toExclude.op(SkIRect::MakeXYWH( // TL
-            targetNode()->rect().x(),
-            targetNode()->rect().y(),
+            targetNode()->sceneRect().x(),
+            targetNode()->sceneRect().y(),
             m_borderRadius.fTL,
             m_borderRadius.fTL), SkRegion::Op::kDifference_Op);
         toExclude.op(SkIRect::MakeXYWH( // TR
-                         targetNode()->rect().fRight - m_borderRadius.fTR,
-                         targetNode()->rect().y(),
+                         targetNode()->sceneRect().fRight - m_borderRadius.fTR,
+                         targetNode()->sceneRect().y(),
                          m_borderRadius.fTR,
                          m_borderRadius.fTR), SkRegion::Op::kDifference_Op);
         toExclude.op(SkIRect::MakeXYWH( // BR
-                         targetNode()->rect().fRight - m_borderRadius.fBR,
-                         targetNode()->rect().fBottom - m_borderRadius.fBR,
+                         targetNode()->sceneRect().fRight - m_borderRadius.fBR,
+                         targetNode()->sceneRect().fBottom - m_borderRadius.fBR,
                          m_borderRadius.fBR,
                          m_borderRadius.fBR), SkRegion::Op::kDifference_Op);
         toExclude.op(SkIRect::MakeXYWH( // BL
-                         targetNode()->rect().x(),
-                         targetNode()->rect().fBottom - m_borderRadius.fBL,
+                         targetNode()->sceneRect().x(),
+                         targetNode()->sceneRect().fBottom - m_borderRadius.fBL,
                          m_borderRadius.fBL,
                          m_borderRadius.fBL), SkRegion::Op::kDifference_Op);
         finalDamage.op(toExclude, SkRegion::Op::kDifference_Op);
     }
 
-    const SkRect src { SkRect::MakeWH(rect().size().width(), rect().size().height()) };
+    const SkRect src { SkRect::MakeWH(sceneRect().size().width(), sceneRect().size().height()) };
 
     painter->bindTextureMode({
         .texture = m_currentData->surface->image(),
-        .pos = { rect().x(), rect().y() },
+        .pos = { sceneRect().x(), sceneRect().y() },
         .srcRect = src,
-        .dstSize = rect().size(),
+        .dstSize = sceneRect().size(),
         .srcTransform = AKTransform::Normal,
         .srcScale = SkScalar(m_currentData->surface->scale())
     });

@@ -7,7 +7,7 @@ AKImageFrame::AKImageFrame(AKNode *parent) noexcept :
     m_renderableImage(this)
 {
     layout().setOverflow(YGOverflowHidden);
-    m_renderableImage.layout().setPositionType(YGPositionTypeAbsolute);
+    m_renderableImage.layout().setPositionType(YGPositionTypeRelative);
 }
 
 AKImageFrame::AKImageFrame(sk_sp<SkImage> image, AKNode *parent) noexcept :
@@ -15,10 +15,10 @@ AKImageFrame::AKImageFrame(sk_sp<SkImage> image, AKNode *parent) noexcept :
     m_renderableImage(image, this)
 {
     layout().setOverflow(YGOverflowHidden);
-    m_renderableImage.layout().setPositionType(YGPositionTypeAbsolute);
+    m_renderableImage.layout().setPositionType(YGPositionTypeRelative);
 }
 
-void AKImageFrame::updateLayout()
+void AKImageFrame::onSceneBegin()
 {
     if (!image() || image()->width() <= 0 || image()->height() <= 0 || layout().calculatedWidth() <= 0.f || layout().calculatedHeight() <= 0.f)
     {
@@ -102,4 +102,7 @@ void AKImageFrame::updateLayout()
         else if (alignment.check(AKAlignBottom))
             m_renderableImage.layout().setPosition(YGEdgeTop, layout().calculatedHeight() - dstSize.height());
     }
+
+    m_renderableImage.layout().apply();
 }
+

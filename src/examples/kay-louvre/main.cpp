@@ -17,6 +17,7 @@
 #include <include/core/SkRRect.h>
 #include <include/utils/SkParsePath.h>
 
+#include <LPainter.h>
 #include <LLauncher.h>
 #include <LCompositor.h>
 #include <LOutput.h>
@@ -462,8 +463,8 @@ class Output final : public LOutput
 public:
     Output(const void *params) noexcept : LOutput(params)
     {
-        wallpaperFrame.setSizeMode(AKImageFrame::SizeMode::Fill);
-        wallpaperFrame.setSrcRectMode(AKRenderableImage::SrcRectMode::Custom);
+        wallpaperFrame.setSizeMode(AKImageFrame::SizeMode::Cover);
+        wallpaperFrame.setSrcRectMode(AKRenderableImage::SrcRectMode::EntireImage);
         wallpaperFrame.opaqueRegion().setRect(AK_IRECT_INF);
         wallpaperFrame.layout().setPositionType(YGPositionTypeAbsolute);
         wallpaperFrame.layout().setWidthPercent(100.f);
@@ -471,7 +472,6 @@ public:
         wallpaperFrame.layout().setPosition(YGEdgeLeft, 0.f);
         wallpaperFrame.layout().setPosition(YGEdgeTop, 0.f);
 
-        background.layout().setDisplay(YGDisplayFlex);
         background.layout().setJustifyContent(YGJustifyCenter);
         background.layout().setAlignItems(YGAlignCenter);
         background.layout().setPositionType(YGPositionTypeAbsolute);
@@ -524,9 +524,6 @@ public:
         }
 
         topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
-            topbar.setParent(&comp()->overlay);
-            topbar.layout().setPosition(YGEdgeLeft, pos().x() + zone->rect().x());
-            topbar.layout().setPosition(YGEdgeTop, pos().y() + zone->rect().y());
             topbar.layout().setWidth(zone->rect().w());
             topbar.layout().setHeight(zone->rect().h());
         });
@@ -536,11 +533,6 @@ public:
 
     void updateBackground() noexcept
     {
-        background.layout().setPosition(YGEdgeLeft, pos().x());
-        background.layout().setPosition(YGEdgeTop, pos().y());
-        background.layout().setWidth(size().w());
-        background.layout().setHeight(size().h());
-
         if (compositor()->graphicBackendId() == LGraphicBackendDRM)
         {
             LSize bufferSize;
@@ -562,7 +554,10 @@ public:
             wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
 
             if (!wallpaper)
-                goto skipScale;
+            {
+                wallpaperFrame.setImage(nullptr);
+                return;
+            }
 
             LRect srcB;
             const Float32 w { Float32(bufferSize.w() * wallpaper->sizeB().h()) / Float32(bufferSize.h()) };
@@ -592,15 +587,13 @@ public:
             wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
         }
 
-    skipScale:
         wallpaperFrame.setImage(louvreTex2SkiaImage(wallpaper.get(), this));
-
-        if (wallpaper)
-            wallpaperFrame.setCustomSrcRect(SkRect::MakeWH(wallpaper->sizeB().w(), wallpaper->sizeB().h()));
     }
 
     void initializeGL() override
     {
+        resizeGL();
+        moveGL();
         disabledButton.setEnabled(false);
         customBackgroundButton.setBackgroundColor(AKTheme::SystemBlue);
         customBackgroundButtonDisabled.setBackgroundColor(AKTheme::SystemBlue);
@@ -740,8 +733,6 @@ public:
         const GrBackendRenderTarget backendTarget(
             realBufferSize().w(),
             realBufferSize().h(),
-            //currentMode()->sizeB().w(),
-            //currentMode()->sizeB().h(),
             0, 0,
             fbInfo);
 
@@ -836,7 +827,8 @@ public:
         // This allows optimizations in the Wayland backend, or the DRM backend in some hybrid GPU cases
         if (hasBufferDamageSupport() || usingFractionalScale())
         {
-            outDamage.translate(pos().x(), pos().y());
+            if (!usingFractionalScale())
+                outDamage.translate(pos().x(), pos().y());
 
             SkRegion::Iterator it(outDamage);
             while (!it.done())
@@ -855,11 +847,26 @@ public:
     void resizeGL() override
     {
         updateBackground();
+
+        Int32 x { 0 };
+        for (LOutput *o : comp()->outputs())
+        {
+            o->setPos(LPoint(x, 0));
+            x += o->size().w();
+            o->moveGL();
+        }
+
+        background.layout().setWidth(size().w());
+        background.layout().setHeight(size().h());
+        comp()->scene.updateLayout();
     }
 
     void moveGL() override
     {
-        updateBackground();
+        background.layout().setPosition(YGEdgeLeft, pos().x());
+        background.layout().setPosition(YGEdgeTop, pos().y());
+        topbar.layout().setPosition(YGEdgeLeft, pos().x() + topbarExclusiveZone.rect().x());
+        topbar.layout().setPosition(YGEdgeTop, pos().y() + topbarExclusiveZone.rect().y());
     }
 
     void uninitializeGL() override
@@ -903,7 +910,7 @@ public:
     AKTarget *target { nullptr };
     LWeak<LTexture> wallpaper;
 
-    AKSubScene topbar { };
+    AKSubScene topbar { &comp()->overlay };
     AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
     AKSolidColor topbarBackground { 0x22FFFFFF, &topbar };
     AKBackgroundBoxShadowEffect topbarShadow {
@@ -1051,7 +1058,7 @@ int main(void)
 {
     setenv("KAY_DEBUG", "4", 1);
     setenv("LOUVRE_WAYLAND_DISPLAY", "louvre", 0);
-    setenv("SRM_RENDER_MODE_ITSELF_FB_COUNT", "3", 1);
+    //setenv("SRM_RENDER_MODE_ITSELF_FB_COUNT", "3", 1);
 
     LLauncher::startDaemon();
     Compositor compositor;

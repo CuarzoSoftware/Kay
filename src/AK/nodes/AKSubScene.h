@@ -20,9 +20,7 @@ protected:
 private:
     friend class AKScene;
     void handleParentSceneNotifyBegin();
-    void notifyBegin(AKNode *node);
     AKScene m_scene;
-    AKWeak<AKTarget> m_currentLocalTarget;
     std::unordered_map<AKTarget*, AKTarget*> m_sceneTargets;
     using AKNode::enableChildrenClipping; // Always true
 };

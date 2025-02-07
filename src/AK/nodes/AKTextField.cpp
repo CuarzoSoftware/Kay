@@ -5,10 +5,10 @@
 
 using namespace AK;
 
-AKTextField::AKTextField(AKNode *parent) noexcept : AKSubScene(parent)
+AKTextField::AKTextField(AKNode *parent) noexcept : AKContainer(YGFlexDirection::YGFlexDirectionRow, true, parent)
 {
     m_caret.setAnimated(true);
-    m_focusShadow.setStackPosition(AKBackgroundEffect::Behind);
+    //m_focusShadow.setStackPosition(AKBackgroundEffect::Behind);
     setCursor(AKCursor::Text);
     m_hThreePatch.layout().setFlex(1.f);
     m_hThreePatch.layout().setWidthPercent(100.f);
@@ -17,18 +17,23 @@ AKTextField::AKTextField(AKNode *parent) noexcept : AKSubScene(parent)
     m_hThreePatch.layout().setPadding(YGEdgeRight, AKTheme::TextFieldPadding.right());
     m_hThreePatch.layout().setPadding(YGEdgeTop, AKTheme::TextFieldPadding.top());
     m_hThreePatch.layout().setPadding(YGEdgeBottom, AKTheme::TextFieldPadding.bottom());
+    m_hThreePatch.setSideSrcRect(AKTheme::TextFieldRoundHThreePatchSideSrcRect);
+    m_hThreePatch.setCenterSrcRect(AKTheme::TextFieldRoundHThreePatchCenterSrcRect);
     m_content.layout().setFlex(1.f);
     m_content.layout().setJustifyContent(YGJustifyCenter);
     m_content.layout().setAlignItems(YGAlignCenter);
     m_content.layout().setFlexDirection(YGFlexDirectionRow);
     layout().setWidth(200);
     layout().setHeight(24);
+
+    signalLayoutChanged.subscribe(this, [this](AKBitset<LayoutChanges> changes){
+        if (changes.check(LayoutChanges::Size))
+            m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(globalRect().width());
+    });
 }
 
 void AKTextField::onSceneBegin()
 {
-    m_hThreePatch.setSideSrcRect(AKTheme::TextFieldRoundHThreePatchSideSrcRect);
-    m_hThreePatch.setCenterSrcRect(AKTheme::TextFieldRoundHThreePatchCenterSrcRect);
     m_hThreePatch.setImage(theme()->textFieldRoundHThreePatchImage(currentTarget()));
     m_hThreePatch.setScale(currentTarget()->bakedComponentsScale());
 }
@@ -61,7 +66,7 @@ void removeUTF8CharAt(std::string &str, size_t index) {
 
 void AKTextField::onEvent(const AKEvent &event)
 {
-    AKSubScene::onEvent(event);
+    AKContainer::onEvent(event);
 
     if (event.type() != AKEvent::Type::Keyboard || event.subtype() != AKEvent::Subtype::Key)
         return;

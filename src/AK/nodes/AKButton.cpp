@@ -12,7 +12,6 @@ AKButton::AKButton(const std::string &text, AKNode *parent) noexcept : AKSubScen
 {
     setCursor(AKCursor::Pointer);
     m_text.setFont(AKTheme::ButtonFont);
-    applyLayoutConstraints();
     m_hThreePatch.layout().setFlex(1.f);
     m_hThreePatch.layout().setPadding(YGEdgeLeft, AKTheme::ButtonPadding.left());
     m_hThreePatch.layout().setPadding(YGEdgeRight, AKTheme::ButtonPadding.right());
@@ -22,11 +21,21 @@ AKButton::AKButton(const std::string &text, AKNode *parent) noexcept : AKSubScen
     m_content.layout().setJustifyContent(YGJustifyCenter);
     m_content.layout().setAlignItems(YGAlignCenter);
     m_content.layout().setFlexDirection(YGFlexDirectionRow);
+    updateStyle();
+
+    signalLayoutChanged.subscribe(this, [this](AKBitset<LayoutChanges> changes){
+        if (changes.check(LayoutChanges::Size))
+            updateOpaqueRegion();
+    });
 }
 
 void AKButton::setText(const std::string &text) noexcept
 {
+    if (text == m_text.text())
+        return;
+
     m_text.setText(text);
+    updateStyle();
 }
 
 void AKButton::setBackgroundColor(SkColor color) noexcept
@@ -36,6 +45,7 @@ void AKButton::setBackgroundColor(SkColor color) noexcept
 
     m_backgroundColor = color;
     addChange(Chg_BackgroundColor);
+    updateStyle();
 }
 
 void AKButton::setEnabled(bool enabled) noexcept
@@ -48,6 +58,7 @@ void AKButton::setEnabled(bool enabled) noexcept
     m_hThreePatch.setOpacity(enabled ? 1.f : AKTheme::ButtonDisabledOpacity);
     m_text.setOpacity(m_hThreePatch.opacity());
     addChange(Chg_Enabled);
+    updateStyle();
 }
 
 void AKButton::setPressed(bool pressed) noexcept
@@ -60,6 +71,7 @@ void AKButton::setPressed(bool pressed) noexcept
 
     m_pressed = pressed;
     addChange(Chg_Pressed);
+    updateStyle();
 }
 
 void AKButton::onEvent(const AKEvent &event)
@@ -70,7 +82,7 @@ void AKButton::onEvent(const AKEvent &event)
     {
         if (event.subtype() == AKEvent::Subtype::Activated || event.subtype() == AKEvent::Subtype::Deactivated)
         {
-            repaint();
+            updateStyle();
             return;
         }
     }
@@ -90,15 +102,38 @@ void AKButton::onEvent(const AKEvent &event)
     }
 }
 
-void AKButton::updateLayout()
-{
-    applyLayoutConstraints();
-}
-
 void AKButton::onSceneBegin()
 {
-    const bool activated { this->activated() };
-    SkColor4f finalBackgroundColor { SkColor4f::FromColor(activated ? m_backgroundColor : SK_ColorWHITE) };
+    if (!activated() || m_backgroundColor == SK_ColorWHITE)
+        m_hThreePatch.setImage(theme()->buttonPlainHThreePatchImage(currentTarget()));
+    else
+        m_hThreePatch.setImage(theme()->buttonTintedHThreePatchImage(currentTarget()));
+
+    m_hThreePatch.setScale(currentTarget()->bakedComponentsScale());
+}
+
+void AKButton::applyLayoutConstraints() noexcept
+{
+    layout().setMinWidth(2.f * AKTheme::ButtonPlainHThreePatchSideSrcRect.width() + 1);
+    layout().setMinHeight(AKTheme::ButtonPlainHThreePatchCenterSrcRect.height());
+    layout().setMaxHeight(layout().minHeight().value);
+    layout().setHeight(layout().minHeight().value);
+}
+
+void AKButton::updateOpaqueRegion() noexcept
+{
+    if (!activated() || m_backgroundColor == SK_ColorWHITE)
+        m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(globalRect().width());
+    else
+        m_hThreePatch.opaqueRegion = theme()->buttonTintedOpaqueRegion(globalRect().width());
+}
+
+void AKButton::updateStyle() noexcept
+{
+    updateOpaqueRegion();
+    applyLayoutConstraints();
+
+    SkColor4f finalBackgroundColor { SkColor4f::FromColor(activated() ? m_backgroundColor : SK_ColorWHITE) };
     SkScalar contentOpacity { 1.f };
 
     if (pressed())
@@ -109,18 +144,16 @@ void AKButton::onSceneBegin()
         contentOpacity = AKTheme::ButtonContentPressedOpacity;
     }
 
-    if (!activated || m_backgroundColor == SK_ColorWHITE)
+    if (!activated() || m_backgroundColor == SK_ColorWHITE)
     {
         m_hThreePatch.setSideSrcRect(AKTheme::ButtonPlainHThreePatchSideSrcRect);
         m_hThreePatch.setCenterSrcRect(AKTheme::ButtonPlainHThreePatchCenterSrcRect);
-        m_hThreePatch.setImage(theme()->buttonPlainHThreePatchImage(currentTarget()));
         m_text.setColorWithoutAlpha(SK_ColorBLACK);
     }
     else
     {
         m_hThreePatch.setSideSrcRect(AKTheme::ButtonTintedHThreePatchSideSrcRect);
         m_hThreePatch.setCenterSrcRect(AKTheme::ButtonTintedHThreePatchCenterSrcRect);
-        m_hThreePatch.setImage(theme()->buttonTintedHThreePatchImage(currentTarget()));
 
         if (enabled())
             m_text.setColorWithoutAlpha(SK_ColorWHITE);
@@ -130,21 +163,4 @@ void AKButton::onSceneBegin()
 
     m_text.setOpacity(contentOpacity);
     m_hThreePatch.setColorFactor(finalBackgroundColor);
-    m_hThreePatch.setScale(currentTarget()->bakedComponentsScale());
-}
-
-void AKButton::onSceneCalculatedRect()
-{
-    if (!activated() || m_backgroundColor == SK_ColorWHITE)
-        m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(rect().width());
-    else
-        m_hThreePatch.opaqueRegion = theme()->buttonTintedOpaqueRegion(rect().width());
-}
-
-void AKButton::applyLayoutConstraints() noexcept
-{
-    layout().setMinWidth(2.f * AKTheme::ButtonPlainHThreePatchSideSrcRect.width() + 1);
-    layout().setMinHeight(AKTheme::ButtonPlainHThreePatchCenterSrcRect.height());
-    layout().setMaxHeight(layout().minHeight().value);
-    layout().setHeight(layout().minHeight().value);
 }

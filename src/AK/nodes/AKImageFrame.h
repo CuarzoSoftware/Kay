@@ -304,7 +304,7 @@ public:
     }
 
 protected:
-    virtual void updateLayout() override;
+    void onSceneBegin() override;
     AKRenderableImage m_renderableImage;
     SizeMode m_sizeMode { SizeMode::Contain };
     AKAlignment m_alignment { AKAlignCenter };

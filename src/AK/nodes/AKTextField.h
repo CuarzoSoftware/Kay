@@ -9,7 +9,7 @@
 #include <AK/nodes/AKSimpleText.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
 
-class AK::AKTextField : public AKSubScene
+class AK::AKTextField : public AKContainer
 {
 public:
     AKTextField(AKNode *parent = nullptr) noexcept;
@@ -20,7 +20,7 @@ protected:
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
     AKSimpleText m_text { "", &m_content };
     AKTextCaret m_caret { &m_content };
-    AKBackgroundImageShadowEffect m_focusShadow { 8.f, {0, 0}, AKTheme::FocusOutlineColor, this };
+    //AKBackgroundImageShadowEffect m_focusShadow { 8.f, {0, 0}, AKTheme::FocusOutlineColor, this };
 };
 
 #endif // AKTEXTFIELD_H

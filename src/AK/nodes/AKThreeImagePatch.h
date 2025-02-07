@@ -165,8 +165,7 @@ public:
     }
 
 protected:
-    void onSceneBegin() override;
-    void onRender(AKPainter *painter, const SkRegion &damage) override;
+    void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
     SkRect m_sideSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkRect m_centerSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkScalar m_scale { 1.f };

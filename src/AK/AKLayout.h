@@ -440,12 +440,16 @@ public:
     {
         return YGNodeStyleGetAspectRatio(m_node);
     }
+
+    void apply() noexcept;
+
 private:
     friend class AKNode;
     friend class AKScene;
     AKLayout(AKNode &akNode) noexcept : m_node(YGNodeNew()), m_akNode(akNode) {}
     ~AKLayout() { YGNodeFree(m_node); }
     void checkIsDirty() noexcept;
+    static void applyTree(AKNode *node);
     YGNodeRef m_node { nullptr };
     AKNode &m_akNode;
 };
