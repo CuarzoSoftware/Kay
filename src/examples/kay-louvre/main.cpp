@@ -179,12 +179,12 @@ public:
     {
         layout().setPosition(YGEdgeLeft, x - m_shadowRadius + m_shadowOffset.x());
         layout().setPosition(YGEdgeTop, y - m_shadowRadius + m_shadowOffset.y());
-        layout().setDisplay(YGDisplayFlex);
+        setVisible(true);
     }
 
     void hide() noexcept
     {
-        layout().setDisplay(YGDisplayNone);
+        setVisible(false);
     }
 
     void setShadowColor(SkColor color) noexcept
@@ -203,6 +203,7 @@ public:
 
         m_shadowRadius = radius;
         addChange(Chg_ShadowRadius);
+        updateShadow();
     }
 
     void setShadowOffset(const SkPoint &offset) noexcept
@@ -212,6 +213,7 @@ public:
 
         m_shadowOffset = offset;
         addChange(Chg_ShadowOffset);
+        updateShadow();
     }
 
     void setBrush(const AKBrush &brush) noexcept
@@ -233,7 +235,7 @@ public:
     }
 
     AKContainer itemsContainer { YGFlexDirectionColumn, true, this };
-    AKBackgroundBlurEffect blur { AKBackgroundBlurEffect::Manual, { 16.f, 16.f },this };
+    AKBackgroundBlurEffect blur { AKBackgroundBlurEffect::Manual, { 16.f, 16.f }, this };
 protected:
     AKBrush m_shadowBrush; // Shadow style (color basically)
     AKBrush m_brush; // Fill style
@@ -244,7 +246,7 @@ protected:
     LAnimation m_fadeInAnimation, m_fadeOutAnimation;
 
     // Called right before the scene calculates the layout
-    void onSceneBegin() override
+    void updateShadow() noexcept
     {
         const auto chgs { changes() };
         const bool needsShadowUpdate { chgs.test(Chg_ShadowRadius) };

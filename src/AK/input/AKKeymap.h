@@ -14,6 +14,7 @@ public:
 
     const char *keyString(UInt32 code) const noexcept;
     xkb_keysym_t keySymbol(UInt32 code) const noexcept;
+    xkb_compose_status composeStatus() const noexcept;
 
     void updateKeyState(UInt32 code, UInt32 state) noexcept;
     const std::vector<UInt32> &pressedKeyCodes() const noexcept { return m_pressedKeyCodes; };
@@ -36,6 +37,7 @@ private:
     Int32 m_keyRepeatRateMs { 32 };
     Int32 m_keyRepeatDelayMs { 500 };
     std::vector<UInt32> m_pressedKeyCodes;
+    void loadComposeTable(const char *locale = nullptr) noexcept;
 };
 
 #endif // AKKEYMAP_H
