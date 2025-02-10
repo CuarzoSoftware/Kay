@@ -48,8 +48,8 @@ public:
     static inline SkRect    ButtonTintedHThreePatchCenterSrcRect    { ButtonPlainHThreePatchCenterSrcRect };
     virtual SkRegion        buttonPlainOpaqueRegion                 (Int32 width) noexcept;
     virtual SkRegion        buttonTintedOpaqueRegion                (Int32 width) noexcept;
-    virtual sk_sp<SkImage>  buttonPlainHThreePatchImage             (AKTarget *target) noexcept;
-    virtual sk_sp<SkImage>  buttonTintedHThreePatchImage            (AKTarget *target) noexcept;
+    virtual sk_sp<SkImage>  buttonPlainHThreePatchImage             (Int32 scale) noexcept;
+    virtual sk_sp<SkImage>  buttonTintedHThreePatchImage            (Int32 scale) noexcept;
 
     /* AKTextField */
 
@@ -57,13 +57,13 @@ public:
     static inline SkRect    TextFieldPadding                        { 16.f, 2.f, 16.f, 2.f };
     static inline SkRect    TextFieldRoundHThreePatchCenterSrcRect  { SkRect::MakeXYWH(8.f, 0.f, 1.f, 24.f) };
     static inline SkRect    TextFieldRoundHThreePatchSideSrcRect    { SkRect::MakeWH(8.f, 24.f) };
-    virtual sk_sp<SkImage>  textFieldRoundHThreePatchImage          (AKTarget *target) noexcept;
+    virtual sk_sp<SkImage>  textFieldRoundHThreePatchImage          (Int32 scale) noexcept;
 
     /* AKTextCaret */
 
     static inline SkRect    TextCaretVThreePatchCenterSrcRect       { SkRect::MakeXYWH(0.f, 1.f, 2.f, 1.f) };
     static inline SkRect    TextCaretVThreePatchSideSrcRect         { SkRect::MakeWH(2.f, 2.f) };
-    virtual sk_sp<SkImage>  textCaretVThreePatchImage               (AKTarget *target) noexcept;
+    virtual sk_sp<SkImage>  textCaretVThreePatchImage               (Int32 scale) noexcept;
 protected:
 
     /* AKButton */

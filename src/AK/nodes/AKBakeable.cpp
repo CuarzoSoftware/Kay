@@ -4,24 +4,23 @@
 
 using namespace AK;
 
-std::shared_ptr<AKSurface> AKBakeable::getSurface(AKTarget *target) const noexcept
+std::shared_ptr<AKSurface> AKBakeable::surface() const noexcept
 {
-    auto it = m_targets.find(target);
-    return it == m_targets.end() ? nullptr : it->second.bake;
+    return m_surface;
 }
 
 void AKBakeable::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
 {
-    if (!t || !t->bake->image())
+    if (!m_surface)
         return;
 
     painter->bindTextureMode({
-        .texture = t->bake->image(),
+        .texture = m_surface->image(),
         .pos = rect.topLeft(),
         .srcRect = SkRect::MakeWH(rect.width(), rect.height()),
         .dstSize = rect.size(),
         .srcTransform = AKTransform::Normal,
-        .srcScale = SkScalar(t->bake->scale())
+        .srcScale = SkScalar(m_surface->scale())
     });
 
     painter->drawRegion(damage);

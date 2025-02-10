@@ -72,7 +72,9 @@ public:
      *
      * @return The AKSurface of the node associated with a target, or `nullptr` if there isn't one.
      */
-    std::shared_ptr<AKSurface> getSurface(AKTarget *target) const noexcept;
+    std::shared_ptr<AKSurface> surface() const noexcept;
+
+    bool onBakeGeneratedDamage() const noexcept { return m_onBakeGeneratedDamage; };
 
 protected:
     friend class AKScene;
@@ -88,6 +90,10 @@ protected:
      */
     virtual void onBake(OnBakeParams *params) = 0;
     virtual void onRender(AKPainter *, const SkRegion &damage, const SkIRect &rect) override;
+
+private:
+    std::shared_ptr<AKSurface> m_surface;
+    bool m_onBakeGeneratedDamage;
 };
 
 #endif // AKBAKEABLE_H

@@ -7,30 +7,14 @@ using namespace AK;
 
 void AKPath::onSceneBegin()
 {
-    return;
-    m_bounds = path().getBounds();
-
     if (changes().test(Chg_Path))
     {
-        m_bounds = path().getBounds();
-
-        layout().setWidth(m_bounds.width());
-        layout().setMaxWidth(m_bounds.width());
-        layout().setMinWidth(m_bounds.width());
-
-        layout().setHeight(m_bounds.height());
-        layout().setMaxHeight(m_bounds.height());
-        layout().setMinHeight(m_bounds.height());
+        m_bounds = m_path.getBounds();
+        m_bounds.outset(1.f, 1.f);
+        m_matrix.setIdentity();
+        m_matrix.preScale(SkScalar(globalRect().width())/m_bounds.width(), SkScalar(globalRect().height())/m_bounds.height());
+        m_matrix.preTranslate(-m_bounds.x() + 1.f, -m_bounds.y() + 1.f);
     }
-}
-
-void AKPath::onSceneCalculatedRect()
-{
-    m_bounds = m_path.getBounds();
-    m_bounds.outset(1.f, 1.f);
-    m_matrix.setIdentity();
-    m_matrix.preScale(SkScalar(globalRect().width())/m_bounds.width(), SkScalar(globalRect().height())/m_bounds.height());
-    m_matrix.preTranslate(-m_bounds.x() + 1.f, -m_bounds.y() + 1.f);
 }
 
 void AKPath::onBake(OnBakeParams *params)

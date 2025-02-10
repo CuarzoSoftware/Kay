@@ -53,6 +53,7 @@ public:
 
         m_orientation = orientation;
         addChange(Chg_Orientation);
+        addDamage(AK_IRECT_INF);
     }
 
     Orientation orientation() const noexcept
@@ -74,6 +75,7 @@ public:
 
         m_sideSrcRect = rect;
         addChange(Chg_SideSrcRect);
+        addDamage(AK_IRECT_INF);
     }
 
     /**
@@ -98,6 +100,7 @@ public:
 
         m_centerSrcRect = rect;
         addChange(Chg_CenterSrcRect);
+        addDamage(AK_IRECT_INF);
     }
 
     /**
@@ -125,6 +128,7 @@ public:
 
         m_scale = scale;
         addChange(Chg_Scale);
+        addDamage(AK_IRECT_INF);
     }
 
     /**
@@ -152,6 +156,7 @@ public:
 
         m_image = image;
         addChange(Chg_Image);
+        addDamage(AK_IRECT_INF);
     }
 
     /**

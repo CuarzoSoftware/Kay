@@ -118,9 +118,15 @@ public:
      *
      * @param transform The transform to apply. Defaults to `AK::AKTransform::Normal`.
      */
-    void setSrcTransform(AKTransform transform) noexcept
+    bool setSrcTransform(AKTransform transform) noexcept
     {
-        m_renderableImage.setSrcTransform(transform);
+        if (m_renderableImage.setSrcTransform(transform))
+        {
+            updateDimensions();
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -140,13 +146,15 @@ public:
      *
      * @param alignment The alignment to apply. Defaults to `AKAlignment::Center`.
      */
-    void setAlignment(AKAlignment alignment) noexcept
+    bool setAlignment(AKAlignment alignment) noexcept
     {
         if (m_alignment == alignment)
-            return;
+            return false;
 
         m_alignment = alignment;
         addChange(Chg_Alignment);
+        updateDimensions();
+        return true;
     }
 
     /**
@@ -164,13 +172,15 @@ public:
      *
      * @param mode The size mode to apply. Defaults to `SizeMode::Contain`.
      */
-    void setSizeMode(SizeMode mode) noexcept
+    bool setSizeMode(SizeMode mode) noexcept
     {
         if (m_sizeMode == mode)
-            return;
+            return false;
 
         m_sizeMode = mode;
         addChange(Chg_SizeMode);
+        updateDimensions();
+        return true;
     }
 
     /**
@@ -190,9 +200,14 @@ public:
      *
      * @param mode The source rectangle mode to apply.
      */
-    void setSrcRectMode(AKRenderableImage::SrcRectMode mode) noexcept
+    bool setSrcRectMode(AKRenderableImage::SrcRectMode mode) noexcept
     {
-        m_renderableImage.setSrcRectMode(mode);
+        if (m_renderableImage.setSrcRectMode(mode))
+        {
+            updateDimensions();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -212,9 +227,15 @@ public:
      *
      * @param rect The custom source rectangle to apply.
      */
-    void setCustomSrcRect(const SkRect &rect) noexcept
+    bool setCustomSrcRect(const SkRect &rect) noexcept
     {
-        m_renderableImage.setCustomSrcRect(rect);
+        if (m_renderableImage.setCustomSrcRect(rect))
+        {
+            updateDimensions();
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -234,9 +255,15 @@ public:
      *
      * @param scale The scaling factor to apply.
      */
-    void setCustomSrcRectScale(SkScalar scale) noexcept
+    bool setCustomSrcRectScale(SkScalar scale) noexcept
     {
-        m_renderableImage.setCustomSrcRectScale(scale);
+        if (m_renderableImage.setCustomSrcRectScale(scale))
+        {
+            updateDimensions();
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -304,7 +331,8 @@ public:
     }
 
 protected:
-    void onSceneBegin() override;
+    void init() noexcept;
+    void updateDimensions() noexcept;
     AKRenderableImage m_renderableImage;
     SizeMode m_sizeMode { SizeMode::Contain };
     AKAlignment m_alignment { AKAlignCenter };

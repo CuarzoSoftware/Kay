@@ -35,7 +35,6 @@ public:
 
 protected:
     void onEvent(const AKEvent &event) override;
-    void onSceneBegin() override;
     void applyLayoutConstraints() noexcept;
     void updateOpaqueRegion() noexcept;
     void updateStyle() noexcept;

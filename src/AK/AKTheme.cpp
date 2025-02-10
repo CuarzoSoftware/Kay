@@ -36,9 +36,9 @@ SkRegion AK::AKTheme::buttonTintedOpaqueRegion(Int32 width) noexcept
     return region;
 }
 
-sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target) noexcept
+sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(Int32 scale) noexcept
 {
-    const auto it { m_buttonPlainHThreePatchImage.find(target->bakedComponentsScale()) };
+    const auto it { m_buttonPlainHThreePatchImage.find(scale) };
 
     if (it != m_buttonPlainHThreePatchImage.end())
         return it->second;
@@ -46,7 +46,7 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target) noexce
     auto surface = AKSurface::Make(
         SkSize(ButtonPlainHThreePatchSideSrcRect.width() + ButtonPlainHThreePatchCenterSrcRect.width(),
                ButtonPlainHThreePatchSideSrcRect.height()),
-        target->bakedComponentsScale(), true);
+        scale, true);
 
     surface->surface()->recordingContext()->asDirectContext()->resetContext();
     SkCanvas &c { *surface->surface()->getCanvas() };
@@ -83,13 +83,13 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(AKTarget *target) noexce
     surface->surface()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
-    m_buttonPlainHThreePatchImage[target->bakedComponentsScale()] = result;
+    m_buttonPlainHThreePatchImage[scale] = result;
     return result;
 }
 
-sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target) noexcept
+sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(Int32 scale) noexcept
 {
-    const auto it { m_buttonTintedHThreePatchImage.find(target->bakedComponentsScale()) };
+    const auto it { m_buttonTintedHThreePatchImage.find(scale) };
 
     if (it != m_buttonTintedHThreePatchImage.end())
         return it->second;
@@ -97,7 +97,7 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target) noexc
     auto surface = AKSurface::Make(
         SkSize(ButtonTintedHThreePatchSideSrcRect.width() + ButtonTintedHThreePatchCenterSrcRect.width(),
                ButtonTintedHThreePatchSideSrcRect.height()),
-                target->bakedComponentsScale(), true);
+                scale, true);
 
     surface->surface()->recordingContext()->asDirectContext()->resetContext();
     SkCanvas &c { *surface->surface()->getCanvas() };
@@ -136,20 +136,20 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(AKTarget *target) noexc
     surface->surface()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
-    m_buttonTintedHThreePatchImage[target->bakedComponentsScale()] = result;
+    m_buttonTintedHThreePatchImage[scale] = result;
     return result;
 }
 
-sk_sp<SkImage> AK::AKTheme::textFieldRoundHThreePatchImage(AKTarget *target) noexcept
+sk_sp<SkImage> AK::AKTheme::textFieldRoundHThreePatchImage(Int32 scale) noexcept
 {
-    const auto it { m_textFieldRoundHThreePatchImage.find(target->bakedComponentsScale()) };
+    const auto it { m_textFieldRoundHThreePatchImage.find(scale) };
 
     if (it != m_textFieldRoundHThreePatchImage.end())
         return it->second;
 
     auto surface = AKSurface::Make(SkSize(TextFieldRoundHThreePatchSideSrcRect.width() + TextFieldRoundHThreePatchCenterSrcRect.width(),
                                           TextFieldRoundHThreePatchSideSrcRect.height()),
-                                   target->bakedComponentsScale(), true);
+                                   scale, true);
 
     surface->surface()->recordingContext()->asDirectContext()->resetContext();
     SkCanvas &c { *surface->surface()->getCanvas() };
@@ -186,20 +186,20 @@ sk_sp<SkImage> AK::AKTheme::textFieldRoundHThreePatchImage(AKTarget *target) noe
     surface->surface()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
-    m_textFieldRoundHThreePatchImage[target->bakedComponentsScale()] = result;
+    m_textFieldRoundHThreePatchImage[scale] = result;
     return result;
 }
 
-sk_sp<SkImage> AK::AKTheme::textCaretVThreePatchImage(AKTarget *target) noexcept
+sk_sp<SkImage> AK::AKTheme::textCaretVThreePatchImage(Int32 scale) noexcept
 {
-    const auto it { m_textCaretVThreePatchImage.find(target->bakedComponentsScale()) };
+    const auto it { m_textCaretVThreePatchImage.find(scale) };
 
     if (it != m_textCaretVThreePatchImage.end())
         return it->second;
 
     auto surface = AKSurface::Make(SkSize(TextCaretVThreePatchSideSrcRect.width(),
                                           TextCaretVThreePatchSideSrcRect.height() + TextCaretVThreePatchCenterSrcRect.height()),
-                                   target->bakedComponentsScale(), true);
+                                   scale, true);
 
     surface->surface()->recordingContext()->asDirectContext()->resetContext();
     SkCanvas &c { *surface->surface()->getCanvas() };
@@ -217,7 +217,7 @@ sk_sp<SkImage> AK::AKTheme::textCaretVThreePatchImage(AKTarget *target) noexcept
     surface->surface()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
-    m_textCaretVThreePatchImage[target->bakedComponentsScale()] = result;
+    m_textCaretVThreePatchImage[scale] = result;
     return result;
 }
 

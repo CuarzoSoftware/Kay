@@ -3,14 +3,53 @@
 #include <AK/AKScene.h>
 #include <AK/AKPainter.h>
 
-AK::AKTarget::AKTarget(AKScene *scene, std::shared_ptr<AKPainter> painter) noexcept :
-    m_scene(scene),
-    m_painter(painter)
+void AK::AKTarget::setViewport(const SkRect &viewport) noexcept
+{
+    if (m_viewport == viewport)
+        return;
+
+    m_viewport = viewport;
+    m_needsFullRepaint = true;
+
+    if (!m_scene->isSubScene())
+    {
+        if (m_scene->root())
+            m_globalIViewport = SkRect::MakeXYWH(
+                m_viewport.x() + float(m_scene->root()->globalRect().x()),
+                m_viewport.y() + float(m_scene->root()->globalRect().y()),
+                m_viewport.width(), m_viewport.height()).roundOut();
+        else
+            m_globalIViewport = SkRect::MakeXYWH(
+                m_viewport.x(),
+                m_viewport.y(),
+                m_viewport.width(), m_viewport.height()).roundOut();
+    }
+
+    markDirty();
+}
+
+void AK::AKTarget::setBakedComponentsScale(Int32 scale) noexcept
+{
+    if (scale == m_bakedComponentsScale)
+        return;
+
+    m_bakedComponentsScale = scale;
+    markDirty();
+}
+
+void AK::AKTarget::markDirty() noexcept
+{
+    if (isDirty())
+        return;
+
+    m_isDirty = true;
+    on.markedDirty.notify(*this);
+}
+
+AK::AKTarget::AKTarget(AKScene *scene) noexcept :
+    m_scene(scene)
 {
     m_sceneLink = scene->m_targets.size();
-
-    if (!m_painter)
-        m_painter = AKPainter::Make();
 }
 
 AK::AKTarget::~AKTarget()

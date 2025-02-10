@@ -26,13 +26,14 @@ public:
     };
 
 
-    void setImage(sk_sp<SkImage> image) noexcept
+    bool setImage(sk_sp<SkImage> image) noexcept
     {
         if (image.get() == m_image.get())
-            return;
+            return false;
 
         addChange(Chg_Image);
         m_image = image;
+        return true;
     }
 
     sk_sp<SkImage> image() const noexcept
@@ -40,13 +41,14 @@ public:
         return m_image;
     }
 
-    void setSrcTransform(AKTransform transform) noexcept
+    bool setSrcTransform(AKTransform transform) noexcept
     {
         if (m_srcTransform == transform)
-            return;
+            return false;
 
         addChange(Chg_SrcTransform);
         m_srcTransform = transform;
+        return true;
     }
 
     AKTransform srcTransform() const noexcept
@@ -54,13 +56,14 @@ public:
         return m_srcTransform;
     }
 
-    void setSrcRectMode(SrcRectMode mode) noexcept
+    bool setSrcRectMode(SrcRectMode mode) noexcept
     {
         if (m_srcRectMode == mode)
-            return;
+            return false;
 
         m_srcRectMode = mode;
         addChange(Chg_SrcRectMode);
+        return true;
     }
 
     SrcRectMode srcRectMode() const noexcept
@@ -68,15 +71,16 @@ public:
         return m_srcRectMode;
     }
 
-    void setCustomSrcRect(const SkRect &rect) noexcept
+    bool setCustomSrcRect(const SkRect &rect) noexcept
     {
         if (m_customSrcRect == rect)
-            return;
+            return false;
 
         if (m_srcRectMode == SrcRectMode::Custom)
             addChange(Chg_CustomSrcRect);
 
         m_customSrcRect = rect;
+        return true;
     }
 
     const SkRect &customSrcRect() const noexcept
@@ -84,14 +88,15 @@ public:
         return m_customSrcRect;
     }
 
-    void setCustomSrcRectScale(SkScalar scale) noexcept
+    bool setCustomSrcRectScale(SkScalar scale) noexcept
     {
         if (scale <= 0.f || m_customSrcRectScale == scale)
-            return;
+            return false;
 
         if (m_srcRectMode == SrcRectMode::Custom)
             addChange(Chg_CustomSrcRectScale);
         m_customSrcRectScale = scale;
+        return true;
     }
 
     SkScalar customSrcRectScale() const noexcept

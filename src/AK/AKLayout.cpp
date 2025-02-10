@@ -1,6 +1,7 @@
 #include <AK/AKLayout.h>
 #include <AK/AKTarget.h>
-#include <AK/nodes/AKNode.h>
+#include <AK/AKLog.h>
+#include <AK/nodes/AKSubScene.h>
 
 using namespace AK;
 
@@ -19,6 +20,12 @@ void AKLayout::setDisplay(YGDisplay display) noexcept
     }
     else
         checkIsDirty();
+}
+
+void AKLayout::markDirty() noexcept
+{
+    YGNodeSetHasNewLayout(m_node, true);
+    m_akNode.addChange(AKNode::Chg_Layout);
 }
 
 void AKLayout::checkIsDirty() noexcept
@@ -56,40 +63,73 @@ void AKLayout::apply() noexcept
 
 void AKLayout::applyTree(AKNode *node)
 {
-    if (!node->parent()->m_flags.check(AKNode::ChildrenNeedPosUpdate) && !YGNodeGetHasNewLayout(node->layout().m_node))
+    const bool updateScale { node->parent()->m_flags.check(AKNode::ChildrenNeedScaleUpdate) };
+    const bool updateRect { node->parent()->m_flags.check(AKNode::ChildrenNeedPosUpdate) || YGNodeGetHasNewLayout(node->layout().m_node) };
+
+    if (!updateScale && !updateRect)
         return;
 
     YGNodeSetHasNewLayout(node->layout().m_node, false);
 
-    SkIRect newRect;
-    newRect.fLeft = node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().calculatedLeft());
-    newRect.fTop = node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().calculatedTop());
-    newRect.fRight = newRect.fLeft + SkScalarFloorToInt(node->layout().calculatedWidth());
-    newRect.fBottom = newRect.fTop + SkScalarFloorToInt(node->layout().calculatedHeight());
-
     AKBitset<AKNode::LayoutChanges> changes;
 
-    if (newRect.topLeft() != node->m_globalRect.topLeft())
+    if (updateRect)
     {
-        changes.add(AKNode::LayoutChanges::Pos);
-        node->addChange(AKNode::Chg_LayoutPos);
-        node->m_flags.add(AKNode::ChildrenNeedPosUpdate);
+        SkIRect newRect;
+        newRect.fLeft = node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().calculatedLeft());
+        newRect.fTop = node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().calculatedTop());
+        newRect.fRight = newRect.fLeft + SkScalarFloorToInt(node->layout().calculatedWidth());
+        newRect.fBottom = newRect.fTop + SkScalarFloorToInt(node->layout().calculatedHeight());
+
+        if (newRect.topLeft() != node->m_globalRect.topLeft())
+        {
+            changes.add(AKNode::LayoutChanges::Pos);
+            node->addChange(AKNode::Chg_LayoutPos);
+            node->m_flags.add(AKNode::ChildrenNeedPosUpdate);
+        }
+
+        if (newRect.size() != node->m_globalRect.size())
+        {
+            changes.add(AKNode::LayoutChanges::Size);
+            node->addChange(AKNode::Chg_LayoutSize);
+        }
+
+        node->m_globalRect = newRect;
     }
 
-    if (newRect.size() != node->m_globalRect.size())
+    if (updateScale || updateRect)
     {
-        changes.add(AKNode::LayoutChanges::Size);
-        node->addChange(AKNode::Chg_LayoutSize);
+        Int32 newScale { 1 };
+
+        if (node->subScene())
+            newScale = node->subScene()->scale();
+        else if (node->scene())
+        {
+            if (!node->childrenClippingEnabled() && node->m_globalRect.isEmpty())
+                node->m_flags.add(AKNode::ChildrenNeedScaleUpdate);
+            else
+            {
+                for (const auto &target : node->scene()->targets())
+                    if (SkIRect::Intersects(node->m_globalRect, target->m_globalIViewport))
+                        if (target->bakedComponentsScale() > newScale)
+                            newScale = target->bakedComponentsScale();
+            }
+        }
+
+        if (newScale != node->m_scale)
+        {
+            node->m_scale = newScale;
+            changes.add(AKNode::LayoutChanges::Scale);
+            node->addChange(AKNode::Chg_LayoutScale);
+            node->m_flags.add(AKNode::ChildrenNeedScaleUpdate);
+        }
     }
 
     if (changes.get() != 0)
-    {
-        node->m_globalRect = newRect;
         node->signalLayoutChanged.notify(changes);
-    }
 
     for (AKNode *child : node->children())
         applyTree(child);
 
-    node->m_flags.remove(AKNode::ChildrenNeedPosUpdate);
+    node->m_flags.remove(AKNode::ChildrenNeedPosUpdate | AKNode::ChildrenNeedPosUpdate);
 }

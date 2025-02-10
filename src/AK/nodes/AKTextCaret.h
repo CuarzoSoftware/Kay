@@ -10,6 +10,7 @@ public:
 
     void setAnimated(bool enabled) noexcept;
 protected:
+    void updateDimensions() noexcept;
     void onSceneBegin() override;
     UInt32 m_animStartMs { 0 };
 };

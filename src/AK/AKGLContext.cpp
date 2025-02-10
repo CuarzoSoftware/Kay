@@ -7,6 +7,7 @@ AKGLContext::AKGLContext(sk_sp<GrDirectContext> skContext) noexcept : m_skContex
 {
     m_eglDisplay = eglGetCurrentDisplay();
     m_eglContext = eglGetCurrentContext();
+    m_painter.reset(new AKPainter());
     AKLog::debug("[AKGLContext] Created for EGLDisplay %lu EGLContext %lu.", (UInt64)m_eglDisplay, (UInt64)m_eglContext);
 }
 

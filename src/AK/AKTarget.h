@@ -92,15 +92,7 @@ public:
      *
      * This defines the visible area in the scene that will be rendered, expressed in logical coordinates.
      */
-    void setViewport(const SkRect &viewport) noexcept
-    {
-        if (m_viewport == viewport)
-            return;
-
-        m_viewport = viewport;
-        m_needsFullRepaint = true;
-        markDirty();
-    }
+    void setViewport(const SkRect &viewport) noexcept;
 
     const SkRect &viewport() const noexcept
     {
@@ -200,14 +192,7 @@ public:
      */
     SkRegion* outInputRegion { nullptr };
 
-    void setBakedComponentsScale(Int32 scale) noexcept
-    {
-        if (scale == m_bakedComponentsScale)
-            return;
-
-        m_bakedComponentsScale = scale;
-        markDirty();
-    }
+    void setBakedComponentsScale(Int32 scale) noexcept;
 
     Int32 bakedComponentsScale() const noexcept
     {
@@ -217,11 +202,6 @@ public:
     const SkVector &scale() const noexcept
     {
         return m_xyScale;
-    }
-
-    std::shared_ptr<AKPainter> painter() const noexcept
-    {
-        return m_painter;
     }
 
     UInt32 fbId() const noexcept
@@ -266,14 +246,7 @@ public:
      *
      * For more details check `isDirty()`.
      */
-    void markDirty() noexcept
-    {
-        if (isDirty())
-            return;
-
-        m_isDirty = true;
-        on.markedDirty.notify(*this);
-    }
+    void markDirty() noexcept;
 
     void enableUpdateLayout(bool enable) noexcept
     {
@@ -301,7 +274,8 @@ private:
     friend class AKScene;
     friend class AKNode;
     friend class AKSubScene;
-    AKTarget(AKScene *scene, std::shared_ptr<AKPainter> painter) noexcept;
+    friend class AKLayout;
+    AKTarget(AKScene *scene) noexcept;
     ~AKTarget();
     sk_sp<SkSurface>    m_surface;
     sk_sp<SkImage>      m_image;
@@ -311,6 +285,7 @@ private:
     SkMatrix            m_matrix;
     SkVector            m_xyScale;
     Int32               m_bakedComponentsScale { 1 };
+    Int32               m_prevBakedComponentsScale { 1 };
     SkRegion            m_prevClip;         // Rel to root
     SkRegion            m_damage;           // Rel to root
     SkRegion            m_opaque;           // Rel to root
@@ -325,7 +300,6 @@ private:
     bool                m_isDirty { false };
     bool                m_needsFullRepaint { true };
     bool                m_updateLayout { true };
-    std::shared_ptr<AKPainter> m_painter;
     std::vector<SkRegion> m_reactive;
     SkColor             m_clearColor { SK_ColorTRANSPARENT };
     UInt32              m_age { 0 };

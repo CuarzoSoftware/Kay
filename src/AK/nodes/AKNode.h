@@ -26,7 +26,8 @@ public:
     enum LayoutChanges
     {
         Pos = 1 << 0,
-        Size = 1 << 1
+        Size = 1 << 1,
+        Scale = 1 << 2
     };
 
     class RIterator
@@ -54,10 +55,8 @@ public:
         SkRegion clientDamage,
             opaque, translucent,
             opaqueOverlay;
-        std::shared_ptr<AKSurface> bake;
         std::bitset<128> changes;
         bool visible { true };
-        bool onBakeGeneratedDamage;
     };
 
     enum Caps : UInt32
@@ -77,6 +76,7 @@ public:
         Chg_Layout,
         Chg_LayoutPos,
         Chg_LayoutSize,
+        Chg_LayoutScale,
         Chg_Parent,
         Chg_ChildrenClipping,
         Chg_Last
@@ -181,6 +181,7 @@ public:
     /* Relative to the root node */
     const SkIRect globalRect() const noexcept { return m_globalRect; }
     const AKLayout &layout() const noexcept { return m_layout; }
+    Int32 scale() const noexcept { return m_scale; }
     AKLayout &layout() noexcept { return m_layout; }
 
     /* Effects */
@@ -215,6 +216,7 @@ public:
     }
 
     AKScene *scene() const noexcept { return m_scene; }
+    AKSubScene *subScene() const noexcept { return m_subScene; }
     AKNode *root() const noexcept;
 
     bool activated() const noexcept;
@@ -278,13 +280,15 @@ private:
         PointerGrab                 = 1 << 7,
         DiminishOpacityOnInactive   = 1 << 8,
         Animated                    = 1 << 9,
-        ChildrenNeedPosUpdate       = 1 << 10
+        ChildrenNeedPosUpdate       = 1 << 10,
+        ChildrenNeedScaleUpdate     = 1 << 11
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
     AKNode *closestClipperParent() const noexcept;
     void setScene(AKScene *scene) noexcept;
     void propagateScene(AKScene *scene) noexcept;
+    void updateSubScene() noexcept;
     void setParentPrivate(AKNode *parent, bool handleChanges) noexcept;
     void addFlagsAndPropagate(UInt32 flags) noexcept;
     void removeFlagsAndPropagate(UInt32 flags) noexcept;
@@ -293,11 +297,13 @@ private:
     bool m_skip { false };
     AKWeak<TargetData> t;
     AKWeak<AKScene> m_scene;
+    AKWeak<AKSubScene> m_subScene;
     AKLayout m_layout { *this };
     AKBitset<Flags> m_flags { 0 };
     std::unordered_set<AKBackgroundEffect*> m_backgroundEffects;
     SkIRect m_rect;
-    SkIRect m_globalRect;
+    SkIRect m_globalRect { 0, 0, 0, 0 };
+    Int32 m_scale { 1 };
     UInt32 m_caps { 0 };
     AKNode *m_parent { nullptr };
     std::vector<AKNode*> m_children;

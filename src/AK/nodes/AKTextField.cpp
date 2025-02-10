@@ -29,13 +29,11 @@ AKTextField::AKTextField(AKNode *parent) noexcept : AKContainer(YGFlexDirection:
     signalLayoutChanged.subscribe(this, [this](AKBitset<LayoutChanges> changes){
         if (changes.check(LayoutChanges::Size))
             m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(globalRect().width());
+        if (changes.check(LayoutChanges::Scale))
+            updateDimensions();
     });
-}
 
-void AKTextField::onSceneBegin()
-{
-    m_hThreePatch.setImage(theme()->textFieldRoundHThreePatchImage(currentTarget()));
-    m_hThreePatch.setScale(currentTarget()->bakedComponentsScale());
+    updateDimensions();
 }
 
 static size_t utf8CharLenght(char c)
@@ -90,4 +88,10 @@ void AKTextField::onEvent(const AKEvent &event)
         m_text.setText(m_text.text() + e.keyString());
     }
 
+}
+
+void AKTextField::updateDimensions() noexcept
+{
+    m_hThreePatch.setImage(theme()->textFieldRoundHThreePatchImage(scale()));
+    m_hThreePatch.setScale(scale());
 }

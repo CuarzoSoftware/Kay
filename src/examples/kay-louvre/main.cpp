@@ -60,6 +60,7 @@
 #include <AK/AKSurface.h>
 #include <AK/AKTheme.h>
 #include <AK/AKGLContext.h>
+#include <AK/AKLog.h>
 
 #include <cassert>
 
@@ -393,43 +394,56 @@ protected:
 class Compositor final : public LCompositor
 {
 public:
-    Compositor() noexcept
-    {
-        scene.setRoot(&root);
-        surfaces.layout().setPositionType(YGPositionTypeAbsolute);
-    }
 
     void initialized() override
     {
+        kay = std::make_unique<Kay>();
         LCompositor::initialized();
     }
 
+    void uninitialized() override
+    {
+        LCompositor::uninitialized();
+        while (!outputs().empty())
+            removeOutput(outputs().back());
+        kay.reset();
+    }
+
     LFactoryObject *createObjectRequest(LFactoryObject::Type objectType, const void *params) override;
-    AKApplication app;
-    AKScene scene;
-    AKContainer root;
-    AKContainer background { YGFlexDirectionColumn, false, &root };
-    AKContainer surfaces { YGFlexDirectionColumn, false, &root };
-    AKContainer overlay { YGFlexDirectionColumn, false, &root };
-    Menu menu { &overlay };
-    MenuItem item1 { "New Folder", &menu.itemsContainer };
-    MenuItem item2 { "Open Terminal", &menu.itemsContainer };
-    MenuItem item3 { "Change Wallpaper", &menu.itemsContainer };
-    MenuItem item4 { "Properties", &menu.itemsContainer };
-    MenuItem item5 { "Empty Trash", &menu.itemsContainer };
-    MenuItem item6 { "Menu with very very very very very very very very very long text", &menu.itemsContainer };
-    MenuItem item7 { "Extra menu item 1", &menu.itemsContainer };
-    MenuItem item8 { "Extra menu item 2", &menu.itemsContainer };
-    MenuItem item9 { "Extra menu item 3", &menu.itemsContainer };
-    MenuItem item10 { "Extra menu item 4", &menu.itemsContainer };
-    MenuItem item11 { "Extra menu item 5", &menu.itemsContainer };
-    MenuItem item12 { "Extra menu item 6", &menu.itemsContainer };
-    MenuItem item13 { "Extra menu item 7", &menu.itemsContainer };
-    MenuItem item14 { "Extra menu item 8", &menu.itemsContainer };
-    MenuItem item15 { "Extra menu item 9", &menu.itemsContainer };
-    MenuItem item16 { "Extra menu item 10", &menu.itemsContainer };
-    MenuItem item17 { "Extra menu item 11", &menu.itemsContainer };
-    MenuItem item18 { "Extra menu item 12", &menu.itemsContainer };
+
+    struct Kay {
+        Kay() noexcept
+        {
+            scene.setRoot(&root);
+            surfaces.layout().setPositionType(YGPositionTypeAbsolute);
+        }
+        AKApplication app;
+        AKScene scene;
+        AKContainer root;
+        AKContainer background { YGFlexDirectionColumn, false, &root };
+        AKContainer surfaces { YGFlexDirectionColumn, false, &root };
+        AKContainer overlay { YGFlexDirectionColumn, false, &root };
+        Menu menu { &overlay };
+        MenuItem item1 { "New Folder", &menu.itemsContainer };
+        MenuItem item2 { "Open Terminal", &menu.itemsContainer };
+        MenuItem item3 { "Change Wallpaper", &menu.itemsContainer };
+        MenuItem item4 { "Properties", &menu.itemsContainer };
+        MenuItem item5 { "Empty Trash", &menu.itemsContainer };
+        MenuItem item6 { "Menu with very very very very very very very very very long text", &menu.itemsContainer };
+        MenuItem item7 { "Extra menu item 1", &menu.itemsContainer };
+        MenuItem item8 { "Extra menu item 2", &menu.itemsContainer };
+        MenuItem item9 { "Extra menu item 3", &menu.itemsContainer };
+        MenuItem item10 { "Extra menu item 4", &menu.itemsContainer };
+        MenuItem item11 { "Extra menu item 5", &menu.itemsContainer };
+        MenuItem item12 { "Extra menu item 6", &menu.itemsContainer };
+        MenuItem item13 { "Extra menu item 7", &menu.itemsContainer };
+        MenuItem item14 { "Extra menu item 8", &menu.itemsContainer };
+        MenuItem item15 { "Extra menu item 9", &menu.itemsContainer };
+        MenuItem item16 { "Extra menu item 10", &menu.itemsContainer };
+        MenuItem item17 { "Extra menu item 11", &menu.itemsContainer };
+        MenuItem item18 { "Extra menu item 12", &menu.itemsContainer };
+    };
+    std::unique_ptr<Kay> kay;
 };
 
 class Surface final : public LSurface
@@ -442,7 +456,7 @@ public:
     }
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
 
-    AKRenderableImage node { &comp()->surfaces };
+    AKRenderableImage node { &comp()->kay->surfaces };
 
     void orderChanged() override
     {
@@ -458,262 +472,24 @@ public:
     AKBackgroundImageShadowEffect shadow { 6, {0,0}, 0x66000000, this };
 };
 
+static std::mutex m;
+
 class Output final : public LOutput
 {
 public:
-    Output(const void *params) noexcept : LOutput(params)
-    {
-        wallpaperFrame.setSizeMode(AKImageFrame::SizeMode::Cover);
-        wallpaperFrame.setSrcRectMode(AKRenderableImage::SrcRectMode::EntireImage);
-        wallpaperFrame.opaqueRegion().setRect(AK_IRECT_INF);
-        wallpaperFrame.layout().setPositionType(YGPositionTypeAbsolute);
-        wallpaperFrame.layout().setWidthPercent(100.f);
-        wallpaperFrame.layout().setHeightPercent(100.f);
-        wallpaperFrame.layout().setPosition(YGEdgeLeft, 0.f);
-        wallpaperFrame.layout().setPosition(YGEdgeTop, 0.f);
-
-        background.layout().setJustifyContent(YGJustifyCenter);
-        background.layout().setAlignItems(YGAlignCenter);
-        background.layout().setPositionType(YGPositionTypeAbsolute);
-        background.layout().setGap(YGGutterAll, 8.f);
-
-        topbar.layout().setPositionType(YGPositionTypeAbsolute);
-        topbar.layout().setPosition(YGEdgeLeft, pos().x());
-        topbar.layout().setPosition(YGEdgeTop, pos().x());
-        topbarBackground.userFlags = 5;
-
-        topbarBackground.layout().setGap(YGGutterAll, 16);
-        topbarBackground.layout().setWidthPercent(100);
-        topbarBackground.layout().setHeightPercent(100);
-        topbarBackground.layout().setAlignItems(YGAlignCenter);
-        topbarBackground.layout().setJustifyContent(YGJustifyFlexStart);
-        topbarBackground.layout().setPadding(YGEdgeHorizontal, 8.f);
-        topbarBackground.layout().setFlexDirection(YGFlexDirectionRow);
-
-        SkPath path;
-        SkParsePath::FromSVGString(logoSVG.c_str(), &path);
-        logo.setPath(path);
-        logo.setColorWithAlpha(SK_ColorWHITE);
-        logo.setSizeMode(AKPath::ScalePath);
-        logo.layout().setWidth(16);
-        logo.layout().setHeight(16);
-        logo.layout().setMargin(YGEdgeLeft, 8.f);
-        logo.layout().setMargin(YGEdgeRight, 4.f);
-
-        const std::vector<std::string> topbarMenuNames
-        {
-            "File",
-            "Edit",
-            "View",
-            "Build",
-            "Debug",
-            "Analyze",
-            "Tools",
-            "Window",
-            "Help"
-        };
-
-        SkFont font;
-        font.setEmbolden(true);
-        for (auto &name : topbarMenuNames)
-        {
-            topbarMenus.push_back(new Text(name, &topbarBackground));
-            topbarMenus.back()->setColorWithAlpha(SK_ColorWHITE);
-            topbarMenus.back()->setFont(font);
-            topbarMenus.back()->setOpacity(0.75f);
-        }
-
-        topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
-            topbar.layout().setWidth(zone->rect().w());
-            topbar.layout().setHeight(zone->rect().h());
-        });
-    }
-
+    Output(const void *params) noexcept : LOutput(params) {}
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
-
-    void updateBackground() noexcept
-    {
-        if (compositor()->graphicBackendId() == LGraphicBackendDRM)
-        {
-            LSize bufferSize;
-
-            if (is90Transform(transform()))
-            {
-                bufferSize.setW(currentMode()->sizeB().h());
-                bufferSize.setH(currentMode()->sizeB().w());
-            }
-            else
-                bufferSize = currentMode()->sizeB();
-
-            if (wallpaper && wallpaper->sizeB() == bufferSize)
-                return;
-
-            if (wallpaper)
-                delete wallpaper.get();
-
-            wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
-
-            if (!wallpaper)
-            {
-                wallpaperFrame.setImage(nullptr);
-                return;
-            }
-
-            LRect srcB;
-            const Float32 w { Float32(bufferSize.w() * wallpaper->sizeB().h()) / Float32(bufferSize.h()) };
-
-            /* Clip and scale the wallpaper texture */
-
-            if (w >= wallpaper->sizeB().w())
-            {
-                srcB.setX(0);
-                srcB.setW(wallpaper->sizeB().w());
-                srcB.setH((wallpaper->sizeB().w() * bufferSize.h()) / bufferSize.w());
-                srcB.setY((wallpaper->sizeB().h() - srcB.h()) / 2);
-            }
-            else
-            {
-                srcB.setY(0);
-                srcB.setH(wallpaper->sizeB().h());
-                srcB.setW((wallpaper->sizeB().h() * bufferSize.w()) / bufferSize.h());
-                srcB.setX((wallpaper->sizeB().w() - srcB.w()) / 2);
-            }
-            LTexture *scaledWallpaper = wallpaper->copy(bufferSize, srcB);
-            delete wallpaper.get();
-            wallpaper.reset(scaledWallpaper);
-        }
-        else if (!wallpaper)
-        {
-            wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
-        }
-
-        wallpaperFrame.setImage(louvreTex2SkiaImage(wallpaper.get(), this));
-    }
 
     void initializeGL() override
     {
-        resizeGL();
-        moveGL();
-        disabledButton.setEnabled(false);
-        customBackgroundButton.setBackgroundColor(AKTheme::SystemBlue);
-        customBackgroundButtonDisabled.setBackgroundColor(AKTheme::SystemBlue);
-        customBackgroundButtonDisabled.setEnabled(false);
-        exitButton.setBackgroundColor(AKTheme::SystemRed);
-
-        exitButton.on.clicked.subscribe(&exitButton, [](){
-            compositor()->finish();
-        });
-
-        scalex1.setBackgroundColor(AKTheme::SystemGreen);
-        scalex1.on.clicked.subscribe(&scalex1, [this](){
-            setScale(1.f);
-        });
-
-        scalex15.setBackgroundColor(AKTheme::SystemOrange);
-        scalex15.on.clicked.subscribe(&scalex15, [this](){
-            setScale(1.5f);
-        });
-
-        scalex2.setBackgroundColor(AKTheme::SystemYellow);
-        scalex2.on.clicked.subscribe(&scalex2, [this](){
-            setScale(2.f);
-        });
-
-        // setScale(1.5f);
-        // Louvre creates an OpenGL context for each output
-        // here we are wrapping it into a GrDirectContext.
-
-        // All outputs share the same scene but we still need to create a
-        // specific target for each.
-        // A target contains information about the viewport, destination
-        // framebuffer, transform, etc, and is used by the scene and
-        // nodes to keep track of damage, previous dimensions, and other properties.
-        target = comp()->scene.createTarget();
-        target->setClearColor(SK_ColorWHITE);
-        target->on.markedDirty.subscribe(target, [this](AKTarget &){
-
-            if (inPaintGL)
-                return;
-            repaint();
-        });
-
-        updateBackground();
-        topbarExclusiveZone.setOutput(this);
-
-        assetsTexture = LOpenGL::loadTexture(compositor()->defaultAssetsPath()/"firefox.png");
-        assetsImage = louvreTex2SkiaImage(assetsTexture, this);
-        assetsView.setImage(assetsImage);
-        assetsView.layout().setWidth(200);
-        assetsView.layout().setHeight(100);
-        assetsView.setSizeMode(AKImageFrame::SizeMode::Contain);
-
-        imgTransform.on.clicked.subscribe(&imgTransform, [this](){
-            static const char* transformName[] {
-                "Normal",
-                "Rotated90",
-                "Rotated180",
-                "Rotated270",
-                "Flipped",
-                "Flipped90",
-                "Flipped180",
-                "Flipped270"
-            };
-
-            if (assetsView.srcTransform() == AKTransform::Flipped270)
-                assetsView.setSrcTransform(AKTransform::Normal);
-            else
-                assetsView.setSrcTransform((AKTransform)(Int32(assetsView.srcTransform())+1));
-
-            imgTransform.setText(transformName[Int32(assetsView.srcTransform())]);
-        });
-
-        imgAlignment.on.clicked.subscribe(&imgAlignment, [this](){
-
-            static Int32 current { 0 };
-
-            static const AKAlignment alignments[] {
-                AKAlignCenter,
-                AKAlignTop,
-                AKAlignRight,
-                AKAlignBottom,
-                AKAlignLeft
-            };
-
-            static const char* alignmentName[] {
-                "Center",
-                "Top",
-                "Right",
-                "Bottom",
-                "Left"
-            };
-
-            if (current == 4)
-                current = 0;
-            else
-                current++;
-
-            assetsView.setAlignment(alignments[current]);
-            imgAlignment.setText(alignmentName[current]);
-        });
-
-        imgSizeMode.on.clicked.subscribe(&imgSizeMode, [this](){
-            static const char* sizeModeName[] {
-                "Contain",
-                "Cover",
-                "Fill",
-            };
-
-            if (assetsView.sizeMode() == AKImageFrame::SizeMode::Fill)
-                assetsView.setSizeMode(AKImageFrame::SizeMode::Contain);
-            else
-                assetsView.setSizeMode((AKImageFrame::SizeMode)(Int32(assetsView.sizeMode())+1));
-
-            imgSizeMode.setText(sizeModeName[Int32(assetsView.sizeMode())]);
-        });
+        m.lock();
+        kay = std::make_unique<Kay>(this);
+        m.unlock();
     }
 
     void paintGL() override
     {
+        m.lock();
         inPaintGL = true;
         Int32 n;
         const LBox *boxes;
@@ -736,7 +512,7 @@ public:
             0, 0,
             fbInfo);
 
-        target->setSurface(SkSurfaces::WrapBackendRenderTarget(
+        kay->target->setSurface(SkSurfaces::WrapBackendRenderTarget(
             AKApp()->glContext()->skContext().get(),
             backendTarget,
             fbInfo.fFBOID == 0 ? GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin : GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
@@ -744,7 +520,7 @@ public:
             colorSpace,
             &skSurfaceProps));
 
-        target->setImage(louvreTex2SkiaImage(
+        kay->target->setImage(louvreTex2SkiaImage(
             usingFractionalScale() && fractionalOversamplingEnabled() ?
             imp()->fractionalFb.texture(0) : bufferTexture(currentBuffer()), this));
 
@@ -780,33 +556,43 @@ public:
 
         // We can ask the scene which region was repainted
         if (hasBufferDamageSupport() || usingFractionalScale())
-            target->outDamageRegion = &outDamage;
+            kay->target->outDamageRegion = &outDamage;
+        else
+            kay->target->outDamageRegion = nullptr;
 
         // If hw cursor is disabled or during screen captures
         const LRegion &softwareCursorDamage = cursor()->damage(this);
         boxes = softwareCursorDamage.boxes(&n);
-        cursorDamage.setRects((SkIRect*)boxes, n);
-        target->inDamageRegion = &cursorDamage;
+
+        if (n > 0)
+        {
+            cursorDamage.setRects((SkIRect*)boxes, n);
+            kay->target->inDamageRegion = &cursorDamage;
+        }
+        else
+        {
+            kay->target->inDamageRegion = nullptr;
+        }
 
         // Required for damage tracking
-        target->setAge(currentBufferAge());
+        kay->target->setAge(currentBufferAge());
 
         // Rect of the scene to capture relative to the root node
-        target->setViewport(SkRect::MakeXYWH(pos().x(), pos().y(), size().w(), size().h()));
+        kay->target->setViewport(SkRect::MakeXYWH(pos().x(), pos().y(), size().w(), size().h()));
 
         // If the screen is rotated/flipped
-        target->setTransform(static_cast<AKTransform>(transform()));
+        kay->target->setTransform(static_cast<AKTransform>(transform()));
 
         // Rect within the screen fb to render the viewport to (in this case the entire screen)
-        target->setDstRect(SkIRect::MakeXYWH(0, 0, backendTarget.width(), backendTarget.height()));
-        target->setBakedComponentsScale(scale());
+        kay->target->setDstRect(SkIRect::MakeXYWH(0, 0, backendTarget.width(), backendTarget.height()));
+        kay->target->setBakedComponentsScale(scale());
 
         //glScissor(0,0,100000,100000);
         //glClear(GL_COLOR_BUFFER_BIT);
 
         inPaintGL = false;
         // Here the scene calculates the layout and performs all the rendering
-        comp()->scene.render(target);
+        comp()->kay->scene.render(kay->target);
 
         // Allow visible apps to update
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
@@ -842,83 +628,357 @@ public:
 
         for (auto *shReq : screenshotRequests())
             shReq->accept(true);
+
+        m.unlock();
     }
 
     void resizeGL() override
     {
-        updateBackground();
-
-        Int32 x { 0 };
-        for (LOutput *o : comp()->outputs())
-        {
-            o->setPos(LPoint(x, 0));
-            x += o->size().w();
-            o->moveGL();
-        }
-
-        background.layout().setWidth(size().w());
-        background.layout().setHeight(size().h());
-        comp()->scene.updateLayout();
+        if (kay)
+            kay->resizeGL();
     }
 
     void moveGL() override
     {
-        background.layout().setPosition(YGEdgeLeft, pos().x());
-        background.layout().setPosition(YGEdgeTop, pos().y());
-        topbar.layout().setPosition(YGEdgeLeft, pos().x() + topbarExclusiveZone.rect().x());
-        topbar.layout().setPosition(YGEdgeTop, pos().y() + topbarExclusiveZone.rect().y());
+        if (kay)
+            kay->moveGL();
     }
 
     void uninitializeGL() override
     {
-        comp()->scene.destroyTarget(target);
-
-        if (wallpaper)
-            delete wallpaper.get();
-
+        kay.reset();
         AKApp()->freeGLContext();
     }
 
     bool inPaintGL { false };
-    AKContainer background { YGFlexDirectionColumn, false, &comp()->background };
-    AKImageFrame wallpaperFrame { &background };
-    AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
-    AKSimpleText instructions2 { "Note: Blur only works if launched from a TTY (DRM backend)", &background};
 
-    AKContainer buttonsGroup1 { YGFlexDirectionRow, false, &background };
-    AKButton normalButton { "Normal Button", &buttonsGroup1};
-    AKButton disabledButton { "Disabled Button", &buttonsGroup1 };
-    AKButton customBackgroundButton { "Colored Button", &buttonsGroup1 };
-    AKButton customBackgroundButtonDisabled { "Colored Button Disabled", &buttonsGroup1 };
+    struct Kay
+    {
+        Kay(Output *output) noexcept : output(output)
+        {
+            // setScale(1.5f);
+            // Louvre creates an OpenGL context for each output
+            // here we are wrapping it into a GrDirectContext.
 
-    AKContainer buttonsGroup2 { YGFlexDirectionRow, false, &background };
-    AKButton scalex1 { "Screen@x1", &buttonsGroup2 };
-    AKButton scalex15 { "Screen@x1.5", &buttonsGroup2 };
-    AKButton scalex2 { "Screen@x2", &buttonsGroup2 };
-    AKButton exitButton { "Exit", &buttonsGroup2 };
+            // All outputs share the same scene but we still need to create a
+            // specific target for each.
+            // A target contains information about the viewport, destination
+            // framebuffer, transform, etc, and is used by the scene and
+            // nodes to keep track of damage, previous dimensions, and other properties.
+            target = comp()->kay->scene.createTarget();
+            target->setClearColor(SK_ColorWHITE);
+            target->setViewport(SkRect::MakeXYWH(output->pos().x(), output->pos().y(), output->size().w(), output->size().h()));
+            target->setBakedComponentsScale(output->scale());
 
-    AKContainer buttonsGroup3 { YGFlexDirectionRow, false, &background };
-    AKButton imgSizeMode { "SizeMode: Contain", &buttonsGroup3 };
-    AKButton imgAlignment { "Alignment: Center", &buttonsGroup3 };
-    AKButton imgTransform { "Transform: Normal", &buttonsGroup3 };
+            target->on.markedDirty.subscribe(target, [output](AKTarget &){
 
-    AKTextField textField { &background };
+                if (output->inPaintGL)
+                    return;
+                output->repaint();
+            });
 
-    LWeak<LTexture> assetsTexture;
-    sk_sp<SkImage> assetsImage;
-    AKImageFrame assetsView { &background };
-    AKTarget *target { nullptr };
-    LWeak<LTexture> wallpaper;
+            wallpaperFrame.setSizeMode(AKImageFrame::SizeMode::Cover);
+            wallpaperFrame.setSrcRectMode(AKRenderableImage::SrcRectMode::EntireImage);
+            wallpaperFrame.opaqueRegion().setRect(AK_IRECT_INF);
+            wallpaperFrame.layout().setPositionType(YGPositionTypeAbsolute);
+            wallpaperFrame.layout().setWidthPercent(100.f);
+            wallpaperFrame.layout().setHeightPercent(100.f);
+            wallpaperFrame.layout().setPosition(YGEdgeLeft, 0.f);
+            wallpaperFrame.layout().setPosition(YGEdgeTop, 0.f);
 
-    AKSubScene topbar { &comp()->overlay };
-    AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
-    AKSolidColor topbarBackground { 0x22FFFFFF, &topbar };
-    AKBackgroundBoxShadowEffect topbarShadow {
-        16, {0, 0}, 0x45000000, false, &topbar};
-    AKPath logo { &topbarBackground };
-    AKBackgroundImageShadowEffect logoShadow { 6, {0,0}, 0x66000000, &logo };
-    std::vector<Text*>topbarMenus;
-    LExclusiveZone topbarExclusiveZone { LEdgeTop, 28 };
+            background.layout().setJustifyContent(YGJustifyCenter);
+            background.layout().setAlignItems(YGAlignCenter);
+            background.layout().setPositionType(YGPositionTypeAbsolute);
+            background.layout().setGap(YGGutterAll, 8.f);
+
+            topbar.layout().setPositionType(YGPositionTypeAbsolute);
+            topbar.layout().setPosition(YGEdgeLeft, output->pos().x());
+            topbar.layout().setPosition(YGEdgeTop, output->pos().x());
+            topbarBackground.userFlags = 5;
+
+            topbarBackground.layout().setGap(YGGutterAll, 16);
+            topbarBackground.layout().setWidthPercent(100);
+            topbarBackground.layout().setHeightPercent(100);
+            topbarBackground.layout().setAlignItems(YGAlignCenter);
+            topbarBackground.layout().setJustifyContent(YGJustifyFlexStart);
+            topbarBackground.layout().setPadding(YGEdgeHorizontal, 8.f);
+            topbarBackground.layout().setFlexDirection(YGFlexDirectionRow);
+
+            SkPath path;
+            SkParsePath::FromSVGString(logoSVG.c_str(), &path);
+            logo.setPath(path);
+            logo.setColorWithAlpha(SK_ColorWHITE);
+            logo.setSizeMode(AKPath::ScalePath);
+            logo.layout().setWidth(16);
+            logo.layout().setHeight(16);
+            logo.layout().setMargin(YGEdgeLeft, 8.f);
+            logo.layout().setMargin(YGEdgeRight, 4.f);
+
+            const std::vector<std::string> topbarMenuNames
+                {
+                    "File",
+                    "Edit",
+                    "View",
+                    "Build",
+                    "Debug",
+                    "Analyze",
+                    "Tools",
+                    "Window",
+                    "Help"
+                };
+
+            SkFont font;
+            font.setEmbolden(true);
+            for (auto &name : topbarMenuNames)
+            {
+                topbarMenus.push_back(new Text(name, &topbarBackground));
+                topbarMenus.back()->setColorWithAlpha(SK_ColorWHITE);
+                topbarMenus.back()->setFont(font);
+                topbarMenus.back()->setOpacity(0.75f);
+            }
+
+            topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
+                topbar.layout().setWidth(zone->rect().w());
+                topbar.layout().setHeight(zone->rect().h());
+            });
+
+            resizeGL();
+            moveGL();
+            disabledButton.setEnabled(false);
+            customBackgroundButton.setBackgroundColor(AKTheme::SystemBlue);
+            customBackgroundButtonDisabled.setBackgroundColor(AKTheme::SystemBlue);
+            customBackgroundButtonDisabled.setEnabled(false);
+            exitButton.setBackgroundColor(AKTheme::SystemRed);
+
+            exitButton.on.clicked.subscribe(&exitButton, [](){
+                compositor()->finish();
+            });
+
+            scalex1.setBackgroundColor(AKTheme::SystemGreen);
+            scalex1.on.clicked.subscribe(&scalex1, [output](){
+                output->setScale(1.f);
+            });
+
+            scalex15.setBackgroundColor(AKTheme::SystemOrange);
+            scalex15.on.clicked.subscribe(&scalex15, [output](){
+                output->setScale(1.5f);
+            });
+
+            scalex2.setBackgroundColor(AKTheme::SystemYellow);
+            scalex2.on.clicked.subscribe(&scalex2, [output](){
+                output->setScale(2.f);
+            });
+
+            updateBackground();
+            topbarExclusiveZone.setOutput(output);
+
+            assetsTexture = LOpenGL::loadTexture(compositor()->defaultAssetsPath()/"firefox.png");
+            assetsImage = louvreTex2SkiaImage(assetsTexture, output);
+            assetsView.setImage(assetsImage);
+            assetsView.layout().setWidth(200);
+            assetsView.layout().setHeight(100);
+            assetsView.setSizeMode(AKImageFrame::SizeMode::Contain);
+
+            imgTransform.on.clicked.subscribe(&imgTransform, [this](){
+                static const char* transformName[] {
+                    "Normal",
+                    "Rotated90",
+                    "Rotated180",
+                    "Rotated270",
+                    "Flipped",
+                    "Flipped90",
+                    "Flipped180",
+                    "Flipped270"
+                };
+
+                if (assetsView.srcTransform() == AKTransform::Flipped270)
+                    assetsView.setSrcTransform(AKTransform::Normal);
+                else
+                    assetsView.setSrcTransform((AKTransform)(Int32(assetsView.srcTransform())+1));
+
+                imgTransform.setText(transformName[Int32(assetsView.srcTransform())]);
+            });
+
+            imgAlignment.on.clicked.subscribe(&imgAlignment, [this](){
+
+                static Int32 current { 0 };
+
+                static const AKAlignment alignments[] {
+                    AKAlignCenter,
+                    AKAlignTop,
+                    AKAlignRight,
+                    AKAlignBottom,
+                    AKAlignLeft
+                };
+
+                static const char* alignmentName[] {
+                    "Center",
+                    "Top",
+                    "Right",
+                    "Bottom",
+                    "Left"
+                };
+
+                if (current == 4)
+                    current = 0;
+                else
+                    current++;
+
+                assetsView.setAlignment(alignments[current]);
+                imgAlignment.setText(alignmentName[current]);
+            });
+
+            imgSizeMode.on.clicked.subscribe(&imgSizeMode, [this](){
+                static const char* sizeModeName[] {
+                    "Contain",
+                    "Cover",
+                    "Fill",
+                };
+
+                if (assetsView.sizeMode() == AKImageFrame::SizeMode::Fill)
+                    assetsView.setSizeMode(AKImageFrame::SizeMode::Contain);
+                else
+                    assetsView.setSizeMode((AKImageFrame::SizeMode)(Int32(assetsView.sizeMode())+1));
+
+                imgSizeMode.setText(sizeModeName[Int32(assetsView.sizeMode())]);
+            });
+        }
+        ~Kay()
+        {
+            comp()->kay->scene.destroyTarget(target);
+
+            if (wallpaper)
+                delete wallpaper.get();
+        }
+        Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
+
+        void updateBackground() noexcept
+        {
+            if (compositor()->graphicBackendId() == LGraphicBackendDRM)
+            {
+                LSize bufferSize;
+
+                if (is90Transform(output->transform()))
+                {
+                    bufferSize.setW(output->currentMode()->sizeB().h());
+                    bufferSize.setH(output->currentMode()->sizeB().w());
+                }
+                else
+                    bufferSize = output->currentMode()->sizeB();
+
+                if (wallpaper && wallpaper->sizeB() == bufferSize)
+                    return;
+
+                if (wallpaper)
+                    delete wallpaper.get();
+
+                wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
+
+                if (!wallpaper)
+                {
+                    wallpaperFrame.setImage(nullptr);
+                    return;
+                }
+
+                LRect srcB;
+                const Float32 w { Float32(bufferSize.w() * wallpaper->sizeB().h()) / Float32(bufferSize.h()) };
+
+                /* Clip and scale the wallpaper texture */
+
+                if (w >= wallpaper->sizeB().w())
+                {
+                    srcB.setX(0);
+                    srcB.setW(wallpaper->sizeB().w());
+                    srcB.setH((wallpaper->sizeB().w() * bufferSize.h()) / bufferSize.w());
+                    srcB.setY((wallpaper->sizeB().h() - srcB.h()) / 2);
+                }
+                else
+                {
+                    srcB.setY(0);
+                    srcB.setH(wallpaper->sizeB().h());
+                    srcB.setW((wallpaper->sizeB().h() * bufferSize.w()) / bufferSize.h());
+                    srcB.setX((wallpaper->sizeB().w() - srcB.w()) / 2);
+                }
+                LTexture *scaledWallpaper = wallpaper->copy(bufferSize, srcB);
+                delete wallpaper.get();
+                wallpaper.reset(scaledWallpaper);
+            }
+            else if (!wallpaper)
+            {
+                wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
+            }
+
+            wallpaperFrame.setImage(louvreTex2SkiaImage(wallpaper.get(), output));
+        }
+
+        void moveGL() noexcept
+        {
+            background.layout().setPosition(YGEdgeLeft, output->pos().x());
+            background.layout().setPosition(YGEdgeTop, output->pos().y());
+            topbar.layout().setPosition(YGEdgeLeft, output->pos().x() + topbarExclusiveZone.rect().x());
+            topbar.layout().setPosition(YGEdgeTop, output->pos().y() + topbarExclusiveZone.rect().y());
+        }
+
+        void resizeGL() noexcept
+        {
+            updateBackground();
+
+            Int32 x { 0 };
+            for (LOutput *o : comp()->outputs())
+            {
+                o->setPos(LPoint(x, 0));
+                x += o->size().w();
+                o->moveGL();
+            }
+
+            background.layout().setWidth(output->size().w());
+            background.layout().setHeight(output->size().h());
+            comp()->kay->scene.updateLayout();
+        }
+
+        LWeak<Output> output;
+        AKContainer background { YGFlexDirectionColumn, false, &comp()->kay->background };
+        AKImageFrame wallpaperFrame { &background };
+        AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
+        AKSimpleText instructions2 { "Note: Blur only works if launched from a TTY (DRM backend)", &background};
+
+        AKContainer buttonsGroup1 { YGFlexDirectionRow, false, &background };
+        AKButton normalButton { "Normal Button", &buttonsGroup1};
+        AKButton disabledButton { "Disabled Button", &buttonsGroup1 };
+        AKButton customBackgroundButton { "Colored Button", &buttonsGroup1 };
+        AKButton customBackgroundButtonDisabled { "Colored Button Disabled", &buttonsGroup1 };
+
+        AKContainer buttonsGroup2 { YGFlexDirectionRow, false, &background };
+        AKButton scalex1 { "Screen@x1", &buttonsGroup2 };
+        AKButton scalex15 { "Screen@x1.5", &buttonsGroup2 };
+        AKButton scalex2 { "Screen@x2", &buttonsGroup2 };
+        AKButton exitButton { "Exit", &buttonsGroup2 };
+
+        AKContainer buttonsGroup3 { YGFlexDirectionRow, false, &background };
+        AKButton imgSizeMode { "SizeMode: Contain", &buttonsGroup3 };
+        AKButton imgAlignment { "Alignment: Center", &buttonsGroup3 };
+        AKButton imgTransform { "Transform: Normal", &buttonsGroup3 };
+
+        AKTextField textField { &background };
+
+        LWeak<LTexture> assetsTexture;
+        sk_sp<SkImage> assetsImage;
+        AKImageFrame assetsView { &background };
+        AKTarget *target { nullptr };
+        LWeak<LTexture> wallpaper;
+
+        AKSubScene topbar { &comp()->kay->overlay };
+        AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
+        AKSolidColor topbarBackground { 0x22FFFFFF, &topbar };
+        AKBackgroundBoxShadowEffect topbarShadow {
+            16, {0, 0}, 0x45000000, false, &topbar};
+        AKPath logo { &topbarBackground };
+        AKBackgroundImageShadowEffect logoShadow { 6, {0,0}, 0x66000000, &logo };
+        std::vector<Text*>topbarMenus;
+        LExclusiveZone topbarExclusiveZone { LEdgeTop, 28 };
+    };
+
+    std::unique_ptr<Kay> kay;
 };
 
 class Pointer final : public LPointer
@@ -931,7 +991,7 @@ public:
 
     AKNode *nodeAt(const SkIPoint &globalPos, UInt64 filter) const noexcept
     {
-        return findNode(&static_cast<Compositor*>(compositor())->root, globalPos, filter);
+        return findNode(&static_cast<Compositor*>(compositor())->kay->root, globalPos, filter);
     }
 
     void pointerMoveEvent(const LPointerMoveEvent &event) override
@@ -940,7 +1000,7 @@ public:
 
         moveEvent.setX(cursor()->pos().x());
         moveEvent.setY(cursor()->pos().y());
-        static_cast<Compositor*>(compositor())->scene.postEvent(moveEvent);
+        static_cast<Compositor*>(compositor())->kay->scene.postEvent(moveEvent);
 
         MenuItem *newFocus { (MenuItem*)nodeAt(SkIPoint(cursor()->pos().x(), cursor()->pos().y()), MENU_ITEM) };
 
@@ -982,11 +1042,11 @@ public:
         buttonEvent.setSerial(event.serial());
         buttonEvent.setMs(event.ms());
         buttonEvent.setUs(event.us());
-        static_cast<Compositor*>(compositor())->scene.postEvent(buttonEvent);
+        static_cast<Compositor*>(compositor())->kay->scene.postEvent(buttonEvent);
 
         if (event.button() == BTN_RIGHT && event.state() == LPointerButtonEvent::Pressed)
         {
-            static_cast<Compositor*>(compositor())->menu.showAt(cursor()->pos().x(), cursor()->pos().y());
+            static_cast<Compositor*>(compositor())->kay->menu.showAt(cursor()->pos().x(), cursor()->pos().y());
             return;
         }
 
@@ -995,7 +1055,7 @@ public:
             if (!focus)
             {
                 if (event.state() == LPointerButtonEvent::Released)
-                    static_cast<Compositor*>(compositor())->menu.hide();
+                    static_cast<Compositor*>(compositor())->kay->menu.hide();
                 return;
             }
 
@@ -1033,7 +1093,7 @@ public:
         keyboardKeyEvent.setState((AKKeyboardKeyEvent::State)event.state());
         keyboardKeyEvent.setMs(event.ms());
         keyboardKeyEvent.setSerial(event.serial());
-        static_cast<Compositor*>(compositor())->scene.postEvent(keyboardKeyEvent);
+        static_cast<Compositor*>(compositor())->kay->scene.postEvent(keyboardKeyEvent);
     }
 };
 
@@ -1058,7 +1118,8 @@ int main(void)
 {
     setenv("KAY_DEBUG", "4", 1);
     setenv("LOUVRE_WAYLAND_DISPLAY", "louvre", 0);
-    //setenv("SRM_RENDER_MODE_ITSELF_FB_COUNT", "3", 1);
+    setenv("SRM_RENDER_MODE_ITSELF_FB_COUNT", "2", 1);
+    setenv("SRM_FORCE_GL_ALLOCATION", "1", 1);
 
     LLauncher::startDaemon();
     Compositor compositor;

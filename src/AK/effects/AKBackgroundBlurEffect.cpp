@@ -4,6 +4,7 @@
 #include <include/effects/SkImageFilters.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
 #include <AK/AKTarget.h>
+#include <AK/AKLog.h>
 
 using namespace AK;
 

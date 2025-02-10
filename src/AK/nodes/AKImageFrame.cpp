@@ -6,19 +6,30 @@ AKImageFrame::AKImageFrame(AKNode *parent) noexcept :
     AKContainer(YGFlexDirectionRow, true, parent),
     m_renderableImage(this)
 {
-    layout().setOverflow(YGOverflowHidden);
-    m_renderableImage.layout().setPositionType(YGPositionTypeRelative);
+    init();
 }
 
 AKImageFrame::AKImageFrame(sk_sp<SkImage> image, AKNode *parent) noexcept :
     AKContainer(YGFlexDirectionRow, true, parent),
     m_renderableImage(image, this)
 {
-    layout().setOverflow(YGOverflowHidden);
-    m_renderableImage.layout().setPositionType(YGPositionTypeRelative);
+    init();
 }
 
-void AKImageFrame::onSceneBegin()
+void AKImageFrame::init() noexcept
+{
+    layout().setOverflow(YGOverflowHidden);
+    m_renderableImage.layout().setPositionType(YGPositionTypeRelative);
+
+    signalLayoutChanged.subscribe(this, [this](auto changes){
+        if (changes.check(AKNode::LayoutChanges::Size))
+            updateDimensions();
+    });
+
+    updateDimensions();
+}
+
+void AKImageFrame::updateDimensions() noexcept
 {
     if (!image() || image()->width() <= 0 || image()->height() <= 0 || layout().calculatedWidth() <= 0.f || layout().calculatedHeight() <= 0.f)
     {
@@ -105,4 +116,3 @@ void AKImageFrame::onSceneBegin()
 
     m_renderableImage.layout().apply();
 }
-

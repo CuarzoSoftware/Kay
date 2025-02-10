@@ -4,7 +4,7 @@
 #include <GLES2/gl2.h>
 #include <cstdint>
 
-#define AK_MAX_BUFFER_AGE 5
+#define AK_MAX_BUFFER_AGE 10
 
 #define AKCLASS_NO_COPY(class_name) \
     class_name(const class_name&) = delete; \

@@ -115,7 +115,6 @@ public:
 
 protected:
     void onSceneBegin() override;
-    void onSceneCalculatedRect() override;
     void onBake(OnBakeParams *) override;
     SkPath m_path;
     AKBrush m_brush;

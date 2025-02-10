@@ -19,47 +19,36 @@ AKSubScene::AKSubScene(AKNode *parent) noexcept : AKBakeable(parent)
 void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
 {
     TargetData *parentTargetData { t };
-    AKTarget *target;
-    bool isNewTarget;
+    const bool isNewTarget { m_target == nullptr };
 
-    if (m_sceneTargets.find(t->target) == m_sceneTargets.end())
+    if (isNewTarget)
     {
-        target = m_scene.createTarget(parentTargetData->target->painter());
-        target->AKObject::on.destroyed.subscribe(this, [this](AKObject *obj){
-            AKTarget *target { static_cast<AKTarget*>(obj) };
-            m_sceneTargets.erase(target);
-        });
+        m_target = m_scene.createTarget();
 
-        target->on.markedDirty.subscribe(this, [this, target](AKTarget &){
+        m_target->on.markedDirty.subscribe(this, [this](AKTarget &){
             addChange(Chg_Layout);
-            target->m_isDirty = false;
+            m_target->m_isDirty = false;
         });
-        m_sceneTargets[t->target] = target;
-        isNewTarget = true;
-    }
-    else {
-        target = m_sceneTargets[t->target];
-        isNewTarget = false;
     }
 
-    if (!target->isDirty() && params->damage->isEmpty() && parentTargetData->changes.none())
+    if (!m_target->isDirty() && params->damage->isEmpty() && parentTargetData->changes.none())
         return;
 
-    target->enableUpdateLayout(false);
-    target->setAge((isNewTarget) ? 0 : 1);
-    target->setBakedComponentsScale(parentTargetData->target->bakedComponentsScale());
-    target->setSurface(params->surface->surface());
-    target->setViewport(SkRect::MakeWH(params->surface->size().width(), params->surface->size().height()));
-    target->setDstRect(params->surface->imageSrcRect());
+    m_target->enableUpdateLayout(false);
+    m_target->setAge((isNewTarget) ? 0 : 1);
+    m_target->setBakedComponentsScale(scale());
+    m_target->setSurface(params->surface->surface());
+    m_target->setViewport(SkRect::MakeWH(params->surface->size().width(), params->surface->size().height()));
+    m_target->setDstRect(params->surface->imageSrcRect());
     //target->inClipRegion = params->clip;
-    target->inDamageRegion = params->damage;
-    target->outDamageRegion = params->damage;
-    target->outOpaqueRegion = params->opaque;
+    m_target->inDamageRegion = params->damage;
+    m_target->outDamageRegion = params->damage;
+    m_target->outOpaqueRegion = params->opaque;
 
     SkCanvas &c { *params->surface->surface()->getCanvas() };
     c.save();
     c.resetMatrix();
-    m_scene.render(target);
+    m_scene.render(m_target);
     c.restore();
     t = parentTargetData;
 }

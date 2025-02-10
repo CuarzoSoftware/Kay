@@ -69,14 +69,9 @@ protected:
     void onSceneCalculatedRect() override;
     void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
     void onTargetNodeChanged() override;
-    struct ShadowData
-    {
-        std::shared_ptr<AKSurface> surface;
-        Int32 prevScale;
-    };
 
-    std::unordered_map<AKTarget*, ShadowData> m_targets;
-    ShadowData *m_currentData;
+    std::shared_ptr<AKSurface> m_surface;
+    Int32 m_prevScale;
     SkIPoint m_offset;
     SkScalar m_radius;
 };

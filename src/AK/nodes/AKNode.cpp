@@ -8,6 +8,7 @@
 #include <AK/AKTarget.h>
 #include <AK/AKScene.h>
 #include <AK/nodes/AKNode.h>
+#include <AK/nodes/AKSubScene.h>
 #include <AK/AKSurface.h>
 #include <AK/effects/AKBackgroundEffect.h>
 #include <GL/gl.h>
@@ -130,6 +131,22 @@ void AKNode::propagateScene(AKScene *scene) noexcept
         child->propagateScene(scene);
 }
 
+void AKNode::updateSubScene() noexcept
+{
+    if (parent())
+    {
+        if (parent()->caps() & Caps::Scene)
+            m_subScene.reset((AKSubScene*)parent());
+        else
+            m_subScene.reset(parent()->subScene());
+    }
+    else
+        m_subScene.reset();
+
+    for (AKNode *child : m_children)
+        child->updateSubScene();
+}
+
 void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
 {
     assert(!parent || (parent != this && !parent->isSubchildOf(this)));
@@ -158,9 +175,11 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
     {
         m_parentLinkIndex = parent->children().size();
         parent->m_children.push_back(this);
+
         if (isBackgroundEffect)
         {
             m_scene.reset(parent->scene());
+            updateSubScene();
             return;
         }
 
@@ -170,6 +189,7 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
         {
             parent->addChange(Chg_Layout);
             setScene(parent->scene());
+            updateSubScene();
         }
 
         if (scene())
@@ -181,6 +201,8 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
             m_scene.reset();
         else
             setScene(nullptr);
+
+        updateSubScene();
     }
 }
 
@@ -282,6 +304,8 @@ void AKNode::insertBefore(AKNode *other) noexcept
             auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLinkIndex, this) + 1;
             for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex++;
 
+            updateSubScene();
+
             assert(m_parent->m_children[m_parentLinkIndex] == this);
             assert(m_parent->m_children[m_parentLinkIndex+1] == other);
             assert(m_parent->m_children[other->m_parentLinkIndex] == other);
@@ -353,6 +377,8 @@ void AKNode::insertAfter(AKNode *other) noexcept
 
             auto next = m_parent->m_children.insert(m_parent->m_children.begin() + m_parentLinkIndex, this) + 1;
             for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLinkIndex++;
+
+            updateSubScene();
 
             if (!isBackgroundEffect && scene())
                 scene()->m_treeChanged = true;

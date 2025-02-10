@@ -96,6 +96,5 @@ void AKSimpleText::updateDimensions() noexcept
     layout().setHeight(m_bounds.height());
     layout().setMinHeight(m_bounds.height());
     layout().setMaxHeight(m_bounds.height());
-    layout().apply();
 }
 

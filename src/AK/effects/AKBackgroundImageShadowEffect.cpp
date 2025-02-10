@@ -2,6 +2,7 @@
 #include <include/effects/SkImageFilters.h>
 #include <include/effects/SkColorMatrixFilter.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
+#include <AK/nodes/AKBakeable.h>
 #include <AK/AKTarget.h>
 #include <AK/AKSurface.h>
 #include <AK/AKBrush.h>
@@ -10,68 +11,58 @@ using namespace AK;
 
 void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
 {
-    auto *targetNodeData { targetNode()->targetData(currentTarget()) };
+    AKBakeable *bakeableTarget = dynamic_cast<AKBakeable*>(targetNode());
 
-    if (!(targetNode()->caps() & AKNode::Bake) || !targetNodeData || !targetNodeData->bake)
+    if (!bakeableTarget || !bakeableTarget->surface())
         return;
 
-    bool needsNewSurface { m_targets.find(currentTarget()) == m_targets.end() };
+    bool needsNewSurface { m_surface == nullptr };
     bool needsFullDamage { needsNewSurface };
     const auto &chg { changes() };
 
-    m_currentData = &m_targets[currentTarget()];
-
-    if (!m_currentData->surface)
-    {
-        currentTarget()->AKObject::on.destroyed.subscribe(this, [this](AKObject *obj){
-            AKTarget *target { static_cast<AKTarget*>(obj) };
-            m_targets.erase(target);
-        });
-    }
-
-    if (m_currentData->prevScale != currentTarget()->bakedComponentsScale())
+    if (m_prevScale != bakeableTarget->scale())
     {
         needsNewSurface = needsFullDamage = true;
-        m_currentData->prevScale = currentTarget()->bakedComponentsScale();
+        m_prevScale = bakeableTarget->scale();
     }
 
     const SkISize prevSize { effectRect.size() };
-    effectRect = SkIRect::MakeWH(targetNode()->globalRect().width(), targetNode()->globalRect().height());
+    effectRect = SkIRect::MakeWH(bakeableTarget->globalRect().width(), bakeableTarget->globalRect().height());
     effectRect.outset(m_radius, m_radius);
     effectRect.offset(offset().x(), offset().y());
 
-    if (prevSize != effectRect.size() || chg.test(Chg_Radius) || targetNodeData->onBakeGeneratedDamage)
+    if (prevSize != effectRect.size() || chg.test(Chg_Radius) || bakeableTarget->onBakeGeneratedDamage())
         needsFullDamage = needsNewSurface = true;
 
     if (needsNewSurface)
     {
         const SkSize surfaceSize { SkSize::Make(effectRect.size()) };
 
-        if (m_currentData->surface)
-            m_currentData->surface->resize(surfaceSize, currentTarget()->bakedComponentsScale(), true);
+        if (m_surface)
+            m_surface->resize(surfaceSize, bakeableTarget->scale(), true);
         else
         {
-            m_currentData->surface = AKSurface::Make(
+            m_surface = AKSurface::Make(
                 surfaceSize,
-                currentTarget()->bakedComponentsScale(),
+                bakeableTarget->scale(),
                 true);
         }
 
-        SkCanvas &canvas { *m_currentData->surface->surface()->getCanvas() };
+        SkCanvas &canvas { *m_surface->surface()->getCanvas() };
         AKBrush brush;
         canvas.save();
         canvas.scale(
-            currentTarget()->bakedComponentsScale(),
-            currentTarget()->bakedComponentsScale());
+            bakeableTarget->scale(),
+            bakeableTarget->scale());
         canvas.clear(SK_ColorTRANSPARENT);
         brush.setBlendMode(SkBlendMode::kSrc);
         brush.setImageFilter(SkImageFilters::DropShadowOnly(0, 0, m_radius/3.f, m_radius/3.f, SK_ColorBLACK, nullptr));
         canvas.drawImageRect(
-            targetNodeData->bake->image(),
+            bakeableTarget->surface()->image(),
             SkRect::MakeXYWH(0, 0,
-                             targetNode()->globalRect().width() * currentTarget()->bakedComponentsScale(),
-                             targetNode()->globalRect().height() * currentTarget()->bakedComponentsScale()),
-            SkRect::MakeXYWH(m_radius, m_radius, targetNode()->globalRect().width(), targetNode()->globalRect().height()),
+                             bakeableTarget->globalRect().width() * bakeableTarget->scale(),
+                             bakeableTarget->globalRect().height() * bakeableTarget->scale()),
+            SkRect::MakeXYWH(m_radius, m_radius, bakeableTarget->globalRect().width(), bakeableTarget->globalRect().height()),
             SkFilterMode::kLinear,
             &brush,
             SkCanvas::kFast_SrcRectConstraint);
@@ -85,20 +76,20 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
 
 void AKBackgroundImageShadowEffect::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
 {
-    auto *targetNodeData { targetNode()->targetData(currentTarget()) };
+    AKBakeable *bakeableTarget = dynamic_cast<AKBakeable*>(targetNode());
 
-    if (!(targetNode()->caps() & AKNode::Bake) || !targetNodeData || !targetNodeData->bake)
+    if (!bakeableTarget || !bakeableTarget->surface())
         return;
 
     const SkRect src { SkRect::MakeWH(rect.size().width(), rect.size().height()) };
 
     painter->bindTextureMode({
-        .texture = m_currentData->surface->image(),
+        .texture = m_surface->image(),
         .pos = { rect.x(), rect.y() },
         .srcRect = src,
         .dstSize = rect.size(),
         .srcTransform = AKTransform::Normal,
-        .srcScale = SkScalar(m_currentData->surface->scale())
+        .srcScale = SkScalar(m_surface->scale())
     });
 
     painter->drawRegion(damage);

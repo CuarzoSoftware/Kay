@@ -441,6 +441,7 @@ public:
         return YGNodeStyleGetAspectRatio(m_node);
     }
 
+    void markDirty() noexcept;
     void apply() noexcept;
 
 private:

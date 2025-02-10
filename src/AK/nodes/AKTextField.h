@@ -14,8 +14,8 @@ class AK::AKTextField : public AKContainer
 public:
     AKTextField(AKNode *parent = nullptr) noexcept;
 protected:
-    void onSceneBegin() override;
     void onEvent(const AKEvent &event) override;
+    void updateDimensions() noexcept;
     AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
     AKSimpleText m_text { "", &m_content };

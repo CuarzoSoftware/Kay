@@ -102,16 +102,12 @@ protected:
     void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
     void onRenderWithBorderRadius(AKPainter *painter, const SkRegion &damage) noexcept;
     void onTargetNodeChanged() override;
-    struct ShadowData
-    {
-        std::shared_ptr<AKSurface> surface;
-        Int32 prevScale;
-        SkRect srcRects[9];
-        SkIRect dstRects[9];
-    };
 
-    std::unordered_map<AKTarget*, ShadowData> m_targets;
-    ShadowData *m_currentData;
+    std::shared_ptr<AKSurface> m_surface;
+    Int32 m_prevScale;
+    SkIRect m_prevRect { -1, -1, 0, 0 };
+    SkRect m_srcRects[9];
+    SkIRect m_dstRects[9];
     SkIPoint m_offset;
     SkScalar m_radius;
     AKBorderRadius m_borderRadius { 0, 0, 0, 0};

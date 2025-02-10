@@ -232,7 +232,7 @@ public:
     ~AKPainter();
 
 private:
-
+    friend class AKGLContext;
     AKPainter() noexcept;
 
     enum ShaderMode : GLint

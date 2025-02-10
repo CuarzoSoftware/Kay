@@ -11,7 +11,7 @@ class AK::AKScene : public AKObject
 {
 public:
     AKScene() noexcept;
-    AKTarget *createTarget(std::shared_ptr<AKPainter> painter = nullptr) noexcept;
+    AKTarget *createTarget() noexcept;
     bool destroyTarget(AKTarget *target);
     void updateLayout() noexcept;
     bool render(AKTarget *target);
@@ -50,12 +50,14 @@ private:
     std::vector<AKTarget*> m_targets;
     AKWeak<AKNode> m_root;
     AKWeak<AKNode> m_pointerFocus;
+    std::shared_ptr<AKPainter> m_painter;
     bool m_isSubScene { false };
     bool m_treeChanged { false };
     bool m_eventWithoutTarget { false };
     bool m_activated { true };
     void validateTarget(AKTarget *target) noexcept;
     void updateMatrix() noexcept;
+    void createOrAssignTargetDataForNode(AKNode *node) noexcept;
     void notifyBegin(AKNode *node);
     void calculateNewDamage(AKNode *node);
     void updateDamageRing() noexcept;

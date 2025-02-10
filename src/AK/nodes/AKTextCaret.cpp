@@ -16,6 +16,11 @@ AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(Vertical, 
 
     layout().setWidth(AKTheme::TextCaretVThreePatchSideSrcRect.width());
     layout().setHeight(16);
+
+    signalLayoutChanged.subscribe(this, [this](auto changes){
+        if (changes.check(LayoutChanges::Scale))
+            updateDimensions();
+    });
 }
 
 void AKTextCaret::setAnimated(bool enabled) noexcept
@@ -34,6 +39,12 @@ void AKTextCaret::setAnimated(bool enabled) noexcept
         setOpacity(1.f);
 }
 
+void AKTextCaret::updateDimensions() noexcept
+{
+    setImage(theme()->textCaretVThreePatchImage(scale()));
+    setScale(scale());
+}
+
 void AKTextCaret::onSceneBegin()
 {
     if (animated())
@@ -42,6 +53,4 @@ void AKTextCaret::onSceneBegin()
         setOpacity(1.f - SkScalarPow(anim, 5.f));
     }
     AKThreeImagePatch::onSceneBegin();
-    setImage(theme()->textCaretVThreePatchImage(currentTarget()));
-    setScale(currentTarget()->bakedComponentsScale());
 }
