@@ -106,6 +106,25 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
         nullptr);
 }
 
+/*
+#include <modules/skparagraph/src/ParagraphImpl.h>
+#include <AK/AKSurface.h>
+
+class ParagraphTest : public AKBakeable
+{
+public:
+    ParagraphTest(AKNode *parent) : AKBakeable(parent)
+    {
+
+    }
+
+    void onBake(OnBakeParams *p) override
+    {
+        SkCanvas *c { p->surface->surface()->getCanvas() };
+        c->drawTextBlob();
+    }
+};*/
+
 /**
  * @brief Example Context Menu Component
  *

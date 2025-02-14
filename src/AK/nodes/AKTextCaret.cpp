@@ -21,6 +21,7 @@ AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(Vertical, 
         if (changes.check(LayoutChanges::Scale))
             updateDimensions();
     });
+    updateDimensions();
 }
 
 void AKTextCaret::setAnimated(bool enabled) noexcept
