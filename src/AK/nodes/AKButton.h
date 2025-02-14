@@ -11,10 +11,10 @@ class AK::AKButton : public AKSubScene
 public:
     enum Changes
     {
-        Chg_Enabled = AKSubScene::Chg_Last,
-        Chg_BackgroundColor,
-        Chg_Pressed,
-        Chg_Last
+        CHEnabled = AKSubScene::Chg_Last,
+        CHBackgroundColor,
+        CHPressed,
+        CHLast
     };
 
     AKButton(const std::string &text, AKNode *parent = nullptr) noexcept;

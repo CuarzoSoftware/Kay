@@ -221,3 +221,29 @@ sk_sp<SkImage> AK::AKTheme::textCaretVThreePatchImage(Int32 scale) noexcept
     return result;
 }
 
+sk_sp<SkImage> AK::AKTheme::edgeShadowImage(Int32 scale) noexcept
+{
+    const auto it { m_edgeShadowImage.find(scale) };
+
+    if (it != m_edgeShadowImage.end())
+        return it->second;
+
+    auto surface = AKSurface::Make(SkSize(1, EdgeShadowRadius), scale, true);
+    surface->surface()->recordingContext()->asDirectContext()->resetContext();
+    SkCanvas &c { *surface->surface()->getCanvas() };
+    c.scale(surface->scale(), surface->scale());
+    c.clear(SK_ColorTRANSPARENT);
+
+    SkPaint paint;
+    paint.setColor(SK_ColorWHITE);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, SkScalar(EdgeShadowRadius)/3.f));
+    c.drawIRect(SkIRect::MakeXYWH(-100, -100, 200, 100), paint);
+
+    surface->surface()->flush();
+
+    sk_sp<SkImage> result { surface->releaseImage() };
+    m_edgeShadowImage[scale] = result;
+    return result;
+}
+

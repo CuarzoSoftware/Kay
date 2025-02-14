@@ -23,12 +23,12 @@ class AK::AKThreeImagePatch : public AKRenderable
 public:
     enum Changes
     {
-        Chg_SideSrcRect = AKRenderable::Chg_Last,
-        Chg_CenterSrcRect,
-        Chg_Orientation,
-        Chg_Scale,
-        Chg_Image,
-        Chg_Last
+        CHSideSrcRect = AKRenderable::Chg_Last,
+        CHCenterSrcRect,
+        CHOrientation,
+        CHImageScale,
+        CHImage,
+        CHLast
     };
 
     enum Orientation
@@ -52,7 +52,7 @@ public:
             return;
 
         m_orientation = orientation;
-        addChange(Chg_Orientation);
+        addChange(CHOrientation);
         addDamage(AK_IRECT_INF);
     }
 
@@ -74,7 +74,7 @@ public:
             return;
 
         m_sideSrcRect = rect;
-        addChange(Chg_SideSrcRect);
+        addChange(CHSideSrcRect);
         addDamage(AK_IRECT_INF);
     }
 
@@ -99,7 +99,7 @@ public:
             return;
 
         m_centerSrcRect = rect;
-        addChange(Chg_CenterSrcRect);
+        addChange(CHCenterSrcRect);
         addDamage(AK_IRECT_INF);
     }
 
@@ -121,13 +121,13 @@ public:
      *
      * @param scale The scaling factor to apply.
      */
-    void setScale(SkScalar scale) noexcept
+    void setImageScale(SkScalar scale) noexcept
     {
-        if (scale == m_scale)
+        if (scale == m_imageScale)
             return;
 
-        m_scale = scale;
-        addChange(Chg_Scale);
+        m_imageScale = scale;
+        addChange(CHImageScale);
         addDamage(AK_IRECT_INF);
     }
 
@@ -136,9 +136,9 @@ public:
      *
      * @return The scaling factor. The default value is 1.f.
      */
-    SkScalar scale() const noexcept
+    SkScalar imageScale() const noexcept
     {
-        return m_scale;
+        return m_imageScale;
     }
 
     /**
@@ -155,7 +155,7 @@ public:
             return;
 
         m_image = image;
-        addChange(Chg_Image);
+        addChange(CHImage);
         addDamage(AK_IRECT_INF);
     }
 
@@ -173,7 +173,7 @@ protected:
     void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
     SkRect m_sideSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkRect m_centerSrcRect { 0.f, 0.f, 0.f, 0.f };
-    SkScalar m_scale { 1.f };
+    SkScalar m_imageScale { 1.f };
     Orientation m_orientation;
     sk_sp<SkImage> m_image;
 };

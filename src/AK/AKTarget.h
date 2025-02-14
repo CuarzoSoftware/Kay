@@ -248,14 +248,32 @@ public:
      */
     void markDirty() noexcept;
 
-    void enableUpdateLayout(bool enable) noexcept
+    /**
+     * @brief Enables or disables layout calculation during rendering.
+     *
+     * By default, scenes call `root()->layout()->calculate()` during `LScene::render()`.
+     * However, in some cases (e.g., desktop applications), you may need to calculate
+     * the layout beforehand to set window dimensions. Use this function to disable
+     * layout calculation during rendering to avoid redundant calculations.
+     *
+     * @note If disabled, ensure the root layout is updated before rendering
+     *       to avoid undesired results.
+     *
+     * @param enabled If true, layout is calculated during rendering.
+     */
+    void setRenderCalculatesLayout(bool enabled) noexcept
     {
-        m_updateLayout = enable;
+        m_renderCalculatesLayout = enabled;
     }
 
-    bool updateLayoutEnabled() const noexcept
+    /**
+     * @brief Returns whether layout calculation is enabled during rendering.
+     *
+     * @see setRenderCalculatesLayout()
+     */
+    bool renderCalculatesLayout() const noexcept
     {
-        return m_updateLayout;
+        return m_renderCalculatesLayout;
     }
 
     struct
@@ -299,7 +317,7 @@ private:
     SkIRect             m_dstRect { 0, 0, 0, 0 };
     bool                m_isDirty { false };
     bool                m_needsFullRepaint { true };
-    bool                m_updateLayout { true };
+    bool                m_renderCalculatesLayout { true };
     std::vector<SkRegion> m_reactive;
     SkColor             m_clearColor { SK_ColorTRANSPARENT };
     UInt32              m_age { 0 };

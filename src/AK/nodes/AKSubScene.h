@@ -7,7 +7,7 @@
 class AK::AKSubScene : public AKBakeable
 {
 public:
-    enum Changes
+    enum class Changes
     {
         Chg_Last = AKBakeable::Chg_Last,
     };

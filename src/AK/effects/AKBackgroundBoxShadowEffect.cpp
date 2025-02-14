@@ -169,7 +169,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
         brush.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, m_radius/3.f));
         canvas.drawRect(SkRect::MakeXYWH(m_radius, m_radius, centerSize, centerSize), brush);
         canvas.restore();
-        m_surface->surface()->flush();
+        //m_surface->surface()->flush();
     }
 
     if (needsFullDamage)

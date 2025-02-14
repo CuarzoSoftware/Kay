@@ -13,7 +13,6 @@ public:
     AKScene() noexcept;
     AKTarget *createTarget() noexcept;
     bool destroyTarget(AKTarget *target);
-    void updateLayout() noexcept;
     bool render(AKTarget *target);
 
     /**

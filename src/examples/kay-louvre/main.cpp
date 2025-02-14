@@ -100,7 +100,7 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
         skTexture,
         GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
         kBGRA_8888_SkColorType,
-        SkAlphaType::kPremul_SkAlphaType,
+        texture->premultipliedAlpha() ? SkAlphaType::kPremul_SkAlphaType : SkAlphaType::kUnpremul_SkAlphaType,
         colorSpace,
         nullptr,
         nullptr);
@@ -401,6 +401,7 @@ public:
     {
         kay = std::make_unique<Kay>();
         LCompositor::initialized();
+        LLauncher::launch(std::string("swaybg -i ") + std::string(defaultAssetsPath() / "wallpaper.png"));
     }
 
     void uninitialized() override
@@ -422,9 +423,10 @@ public:
         AKApplication app;
         AKScene scene;
         AKContainer root;
+        AKContainer wallpaper { YGFlexDirectionColumn, false, &root };
         AKContainer background { YGFlexDirectionColumn, false, &root };
         AKContainer surfaces { YGFlexDirectionColumn, false, &root };
-        AKContainer overlay { YGFlexDirectionColumn, false, &root };
+        AKContainer overlay { YGFlexDirectionColumn, false, &root};
         Menu menu { &overlay };
         MenuItem item1 { "New Folder", &menu.itemsContainer };
         MenuItem item2 { "Open Terminal", &menu.itemsContainer };
@@ -460,10 +462,56 @@ public:
 
     AKRenderableImage node { &comp()->kay->surfaces };
 
+    GLuint prevTexId { 0 };
+
+    void layerChanged() override
+    {
+        LSurface::layerChanged();
+        if (layer() == LLayerBackground)
+            node.setParent(&comp()->kay->wallpaper);
+    }
+
     void orderChanged() override
     {
         AKNode *prev { prevSurface() ? &static_cast<Surface*>(prevSurface())->node : nullptr };
         node.insertAfter(prev);
+    }
+
+    void opaqueRegionChanged() override
+    {
+        LSurface::opaqueRegionChanged();
+        Int32 n;
+        const LBox *boxes = opaqueRegion().boxes(&n);
+        node.opaqueRegion.setRects((const SkIRect*)boxes, n);
+    }
+
+    void damageChanged() override
+    {
+        LSurface::damageChanged();
+        Int32 n;
+        const LBox *boxes = damage().boxes(&n);
+        SkRegion region;
+        region.setRects((const SkIRect*)boxes, n);
+        node.addDamage(region);
+    }
+
+    void bufferTransformChanged() override
+    {
+        LSurface::bufferTransformChanged();
+        node.setSrcTransform(static_cast<AKTransform>(bufferTransform()));
+    }
+
+    void bufferScaleChanged() override
+    {
+        LSurface::bufferScaleChanged();
+        node.setCustomSrcRectScale(bufferScale());
+    }
+
+    void srcRectChanged() override
+    {
+        node.setCustomSrcRect(SkRect::MakeXYWH(
+            srcRect().x(), srcRect().y(),
+            srcRect().w(), srcRect().h()));
     }
 };
 
@@ -535,25 +583,17 @@ public:
                 continue;
 
             const LPoint &pos { s->rolePos() };
-
             s->node.layout().setPosition(YGEdgeLeft, pos.x());
             s->node.layout().setPosition(YGEdgeTop, pos.y());
             s->node.layout().setWidth(s->size().w());
             s->node.layout().setHeight(s->size().h());
 
-            s->node.setImage(louvreTex2SkiaImage(s->texture(), this));
-            s->node.setCustomSrcRect(SkRect::MakeXYWH(
-                s->srcRect().x(), s->srcRect().y(),
-                s->srcRect().w(), s->srcRect().h()));
-            s->node.setCustomSrcRectScale(s->bufferScale());
-            s->node.setSrcTransform(static_cast<AKTransform>(s->bufferTransform()));
-
-            boxes = s->damage().boxes(&n);
-            region.setRects((const SkIRect*)boxes, n);
-            s->node.addDamage(region);
-
-            boxes = s->opaqueRegion().boxes(&n);
-            s->node.opaqueRegion.setRects((const SkIRect*)boxes, n);
+            const GLuint newTexId { s->texture()->id(this) };
+            if (s->prevTexId != newTexId)
+            {
+                s->node.setImage(louvreTex2SkiaImage(s->texture(), this));
+                s->prevTexId = newTexId;
+            }
         }
 
         // We can ask the scene which region was repainted
@@ -668,7 +708,7 @@ public:
             // framebuffer, transform, etc, and is used by the scene and
             // nodes to keep track of damage, previous dimensions, and other properties.
             target = comp()->kay->scene.createTarget();
-            target->setClearColor(SK_ColorWHITE);
+            target->setClearColor(SK_ColorBLACK);
             target->setViewport(SkRect::MakeXYWH(output->pos().x(), output->pos().y(), output->size().w(), output->size().h()));
             target->setBakedComponentsScale(output->scale());
 
@@ -678,15 +718,6 @@ public:
                     return;
                 output->repaint();
             });
-
-            wallpaperFrame.setSizeMode(AKImageFrame::SizeMode::Cover);
-            wallpaperFrame.setSrcRectMode(AKRenderableImage::SrcRectMode::EntireImage);
-            wallpaperFrame.opaqueRegion().setRect(AK_IRECT_INF);
-            wallpaperFrame.layout().setPositionType(YGPositionTypeAbsolute);
-            wallpaperFrame.layout().setWidthPercent(100.f);
-            wallpaperFrame.layout().setHeightPercent(100.f);
-            wallpaperFrame.layout().setPosition(YGEdgeLeft, 0.f);
-            wallpaperFrame.layout().setPosition(YGEdgeTop, 0.f);
 
             background.layout().setJustifyContent(YGJustifyCenter);
             background.layout().setAlignItems(YGAlignCenter);
@@ -771,14 +802,15 @@ public:
                 output->setScale(2.f);
             });
 
-            updateBackground();
             topbarExclusiveZone.setOutput(output);
 
-            assetsTexture = LOpenGL::loadTexture(compositor()->defaultAssetsPath()/"firefox.png");
+            assetsTexture = LOpenGL::loadTexture(compositor()->defaultAssetsPath()/"weston-terminal.png");
+            if (assetsTexture)
+                assetsTexture->setPremultipliedAlpha(false);
             assetsImage = louvreTex2SkiaImage(assetsTexture, output);
             assetsView.setImage(assetsImage);
-            assetsView.layout().setWidth(200);
-            assetsView.layout().setHeight(100);
+            assetsView.layout().setWidth(100);
+            assetsView.layout().setHeight(64);
             assetsView.setSizeMode(AKImageFrame::SizeMode::Contain);
 
             imgTransform.on.clicked.subscribe(&imgTransform, [this](){
@@ -848,70 +880,9 @@ public:
         ~Kay()
         {
             comp()->kay->scene.destroyTarget(target);
-
-            if (wallpaper)
-                delete wallpaper.get();
         }
+
         Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
-
-        void updateBackground() noexcept
-        {
-            if (compositor()->graphicBackendId() == LGraphicBackendDRM)
-            {
-                LSize bufferSize;
-
-                if (is90Transform(output->transform()))
-                {
-                    bufferSize.setW(output->currentMode()->sizeB().h());
-                    bufferSize.setH(output->currentMode()->sizeB().w());
-                }
-                else
-                    bufferSize = output->currentMode()->sizeB();
-
-                if (wallpaper && wallpaper->sizeB() == bufferSize)
-                    return;
-
-                if (wallpaper)
-                    delete wallpaper.get();
-
-                wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
-
-                if (!wallpaper)
-                {
-                    wallpaperFrame.setImage(nullptr);
-                    return;
-                }
-
-                LRect srcB;
-                const Float32 w { Float32(bufferSize.w() * wallpaper->sizeB().h()) / Float32(bufferSize.h()) };
-
-                /* Clip and scale the wallpaper texture */
-
-                if (w >= wallpaper->sizeB().w())
-                {
-                    srcB.setX(0);
-                    srcB.setW(wallpaper->sizeB().w());
-                    srcB.setH((wallpaper->sizeB().w() * bufferSize.h()) / bufferSize.w());
-                    srcB.setY((wallpaper->sizeB().h() - srcB.h()) / 2);
-                }
-                else
-                {
-                    srcB.setY(0);
-                    srcB.setH(wallpaper->sizeB().h());
-                    srcB.setW((wallpaper->sizeB().h() * bufferSize.w()) / bufferSize.h());
-                    srcB.setX((wallpaper->sizeB().w() - srcB.w()) / 2);
-                }
-                LTexture *scaledWallpaper = wallpaper->copy(bufferSize, srcB);
-                delete wallpaper.get();
-                wallpaper.reset(scaledWallpaper);
-            }
-            else if (!wallpaper)
-            {
-                wallpaper.reset(LOpenGL::loadTexture(compositor()->defaultAssetsPath() / "wallpaper.png"));
-            }
-
-            wallpaperFrame.setImage(louvreTex2SkiaImage(wallpaper.get(), output));
-        }
 
         void moveGL() noexcept
         {
@@ -923,8 +894,6 @@ public:
 
         void resizeGL() noexcept
         {
-            updateBackground();
-
             Int32 x { 0 };
             for (LOutput *o : comp()->outputs())
             {
@@ -935,12 +904,10 @@ public:
 
             background.layout().setWidth(output->size().w());
             background.layout().setHeight(output->size().h());
-            comp()->kay->scene.updateLayout();
         }
 
         LWeak<Output> output;
         AKContainer background { YGFlexDirectionColumn, false, &comp()->kay->background };
-        AKImageFrame wallpaperFrame { &background };
         AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
         AKSimpleText instructions2 { "Note: Blur only works if launched from a TTY (DRM backend)", &background};
 
@@ -967,7 +934,6 @@ public:
         sk_sp<SkImage> assetsImage;
         AKImageFrame assetsView { &background };
         AKTarget *target { nullptr };
-        LWeak<LTexture> wallpaper;
 
         AKSubScene topbar { &comp()->kay->overlay };
         AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
@@ -1118,10 +1084,10 @@ LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType,
 
 int main(void)
 {
-    setenv("KAY_DEBUG", "4", 1);
+    setenv("KAY_DEBUG", "4", 0);
     setenv("LOUVRE_WAYLAND_DISPLAY", "louvre", 0);
-    setenv("SRM_RENDER_MODE_ITSELF_FB_COUNT", "2", 1);
-    setenv("SRM_FORCE_GL_ALLOCATION", "1", 1);
+    setenv("SRM_RENDER_MODE_ITSELF_FB_COUNT", "3", 0);
+    setenv("SRM_FORCE_GL_ALLOCATION", "1", 0);
 
     LLauncher::startDaemon();
     Compositor compositor;

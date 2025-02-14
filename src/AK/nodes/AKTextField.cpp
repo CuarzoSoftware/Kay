@@ -93,5 +93,5 @@ void AKTextField::onEvent(const AKEvent &event)
 void AKTextField::updateDimensions() noexcept
 {
     m_hThreePatch.setImage(theme()->textFieldRoundHThreePatchImage(scale()));
-    m_hThreePatch.setScale(scale());
+    m_hThreePatch.setImageScale(scale());
 }

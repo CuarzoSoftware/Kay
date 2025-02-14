@@ -5,6 +5,8 @@
 
 using namespace AK;
 
+AKLayout::AKLayout(AKNode &akNode) noexcept : m_node(YGNodeNew()), m_akNode(akNode) {}
+
 void AKLayout::setDisplay(YGDisplay display) noexcept
 {
     const bool turnedVisible { this->display() == YGDisplayNone && display != YGDisplayNone };
@@ -22,37 +24,33 @@ void AKLayout::setDisplay(YGDisplay display) noexcept
         checkIsDirty();
 }
 
-void AKLayout::markDirty() noexcept
-{
-    YGNodeSetHasNewLayout(m_node, true);
-    m_akNode.addChange(AKNode::Chg_Layout);
-}
-
 void AKLayout::checkIsDirty() noexcept
 {
     if (YGNodeIsDirty(m_node))
         m_akNode.addChange(AKNode::Chg_Layout);
 }
 
-void AKLayout::apply() noexcept
+void AKLayout::apply(bool calculate) noexcept
 {
     if (m_akNode.parent())
     {
-        YGNodeCalculateLayout(
-            m_node,
-            m_akNode.parent()->globalRect().width(),
-            m_akNode.parent()->globalRect().height(),
-            YGDirectionInherit);
+        if (calculate)
+            YGNodeCalculateLayout(
+                m_node,
+                m_akNode.parent()->globalRect().width(),
+                m_akNode.parent()->globalRect().height(),
+                YGDirectionInherit);
 
         applyTree(&m_akNode);
     }
     else
     {
-        YGNodeCalculateLayout(
-            m_node,
-            YGUndefined,
-            YGUndefined,
-            YGDirectionInherit);
+        if (calculate)
+            YGNodeCalculateLayout(
+                m_node,
+                YGUndefined,
+                YGUndefined,
+                YGDirectionInherit);
 
         YGNodeSetHasNewLayout(m_node, false);
 
@@ -61,8 +59,31 @@ void AKLayout::apply() noexcept
     }
 }
 
+void AKLayout::calculate() noexcept
+{
+    if (m_akNode.parent())
+    {
+        YGNodeCalculateLayout(
+            m_akNode.parent()->layout().m_node,
+            m_akNode.parent()->globalRect().width(),
+            m_akNode.parent()->globalRect().height(),
+            YGDirectionInherit);
+    }
+    else
+    {
+        YGNodeCalculateLayout(
+            m_node,
+            YGUndefined,
+            YGUndefined,
+            YGDirectionInherit);
+    }
+}
+
 void AKLayout::applyTree(AKNode *node)
 {
+    if (!node->visible())
+        return;
+
     const bool updateScale { node->parent()->m_flags.check(AKNode::ChildrenNeedScaleUpdate) };
     const bool updateRect { node->parent()->m_flags.check(AKNode::ChildrenNeedPosUpdate) || YGNodeGetHasNewLayout(node->layout().m_node) };
 

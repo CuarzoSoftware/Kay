@@ -61,7 +61,7 @@ protected:
 
     virtual void onTargetNodeChanged() = 0;
 
-    void onSceneCalculatedRect() override
+    virtual void onSceneCalculatedRect()
     {
         effectRect = SkIRect::MakeSize(targetNode()->globalRect().size());
     }

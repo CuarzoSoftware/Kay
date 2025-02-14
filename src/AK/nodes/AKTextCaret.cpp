@@ -42,7 +42,7 @@ void AKTextCaret::setAnimated(bool enabled) noexcept
 void AKTextCaret::updateDimensions() noexcept
 {
     setImage(theme()->textCaretVThreePatchImage(scale()));
-    setScale(scale());
+    setImageScale(scale());
 }
 
 void AKTextCaret::onSceneBegin()

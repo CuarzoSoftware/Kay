@@ -94,7 +94,6 @@ public:
      */
     void repaint() noexcept;
 
-    [[nodiscard]]
     const std::bitset<128> &changes() const noexcept;
 
     void setVisible(bool visible) noexcept
@@ -194,10 +193,6 @@ public:
      * after rect() and globalRect() are calculated */
     virtual void onSceneBegin() {}
 
-    /* Triggered before the scene starts rendering but
-     * after rect() and globalRect() are calculated */
-    virtual void onSceneCalculatedRect() {}
-
     /**
      * @brief Reactive Region.
      *
@@ -281,7 +276,8 @@ private:
         DiminishOpacityOnInactive   = 1 << 8,
         Animated                    = 1 << 9,
         ChildrenNeedPosUpdate       = 1 << 10,
-        ChildrenNeedScaleUpdate     = 1 << 11
+        ChildrenNeedScaleUpdate     = 1 << 11,
+        Skip                        = 1 << 12
     };
 
     AKNode(AKNode *parent = nullptr) noexcept;
@@ -294,17 +290,16 @@ private:
     void removeFlagsAndPropagate(UInt32 flags) noexcept;
     void setFlagsAndPropagateToParents(UInt32 flags, bool set) noexcept;
 
-    bool m_skip { false };
+    AKBitset<Flags> m_flags { 0 };
+    SkIRect m_globalRect { 0, 0, 0, 0 };
+    SkIRect m_rect;
+    UInt32 m_caps { 0 };
+    AKLayout m_layout { *this };
     AKWeak<TargetData> t;
+    Int32 m_scale { 1 };
     AKWeak<AKScene> m_scene;
     AKWeak<AKSubScene> m_subScene;
-    AKLayout m_layout { *this };
-    AKBitset<Flags> m_flags { 0 };
     std::unordered_set<AKBackgroundEffect*> m_backgroundEffects;
-    SkIRect m_rect;
-    SkIRect m_globalRect { 0, 0, 0, 0 };
-    Int32 m_scale { 1 };
-    UInt32 m_caps { 0 };
     AKNode *m_parent { nullptr };
     std::vector<AKNode*> m_children;
     size_t m_parentLinkIndex;

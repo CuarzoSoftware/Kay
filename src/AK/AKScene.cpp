@@ -41,14 +41,6 @@ bool AKScene::destroyTarget(AKTarget *target)
     return true;
 }
 
-void AKScene::updateLayout() noexcept
-{
-    if (!root())
-        return;
-
-    root()->layout().apply();
-}
-
 bool AKScene::render(AKTarget *target)
 {
     validateTarget(target);
@@ -69,13 +61,9 @@ bool AKScene::render(AKTarget *target)
     {
         root()->m_globalRect = SkRect::MakeWH(t->viewport().width(), t->viewport().height()).roundOut();
         root()->m_rect = root()->m_globalRect;
-
-        if (target->updateLayoutEnabled())
-        {
-            root()->m_flags.setFlag(AKNode::ChildrenNeedScaleUpdate, t->m_bakedComponentsScale != t->m_prevBakedComponentsScale);
-            root()->layout().apply();
-            root()->m_flags.remove(AKNode::ChildrenNeedScaleUpdate);
-        }
+        root()->m_flags.setFlag(AKNode::ChildrenNeedScaleUpdate, t->m_bakedComponentsScale != t->m_prevBakedComponentsScale);
+        root()->layout().apply(target->renderCalculatesLayout());
+        root()->m_flags.remove(AKNode::ChildrenNeedScaleUpdate);
     }
 
     for (auto it = root()->children().rbegin(); it != root()->children().rend(); it++)
@@ -83,7 +71,7 @@ bool AKScene::render(AKTarget *target)
 
     for (Int64 i = root()->children().size() - 1; i >= 0;)
     {
-        if (root()->children()[i]->m_skip)
+        if (root()->children()[i]->m_flags.check(AKNode::Skip))
         {
             i--;
             continue;
@@ -94,8 +82,10 @@ bool AKScene::render(AKTarget *target)
         i -= 1 - skip;
     }
 
-    target->surface()->recordingContext()->asDirectContext()->resetContext();
-    target->surface()->recordingContext()->asDirectContext()->flush();
+    auto skContext { AKApp()->glContext()->skContext() };
+    skContext->resetContext();
+    skContext->flush();
+
     m_painter->bindProgram();
     m_painter->bindTarget(t);
 
@@ -104,7 +94,7 @@ bool AKScene::render(AKTarget *target)
 
     for (size_t i = 0; i < root()->children().size();)
     {
-        if (root()->children()[i]->m_skip)
+        if (root()->children()[i]->m_flags.check(AKNode::Skip))
         {
             i++;
             continue;
@@ -156,7 +146,6 @@ void AKScene::validateTarget(AKTarget *target) noexcept
     skTarget.getGLFramebufferInfo(&fbInfo);
     t->m_fbId = fbInfo.fFBOID;
     m_painter = AKApp()->glContext()->painter();
-    m_painter->bindTarget(t);
 }
 
 void AKScene::updateMatrix() noexcept
@@ -241,9 +230,9 @@ void AKScene::createOrAssignTargetDataForNode(AKNode *node) noexcept
     }
     else
     {
-        node->t->opaque.setEmpty();
+        /*node->t->opaque.setEmpty();
         node->t->translucent.setEmpty();
-        node->t->opaqueOverlay.setEmpty();
+        node->t->opaqueOverlay.setEmpty();*/
     }
 }
 
@@ -255,11 +244,11 @@ void AKScene::notifyBegin(AKNode *node)
 
     if (((!visible && node->childrenClippingEnabled()) || !node->visible()) && node->t->prevLocalClip.isEmpty())
     {
-        node->m_skip = true;
+        node->m_flags.add(AKNode::Skip);
         return;
     }
 
-    node->m_skip = false;
+    node->m_flags.remove(AKNode::Skip);
 
     if (!(node->caps() & AKNode::Scene))
         for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
@@ -278,6 +267,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     AKNode *clipper { nullptr };
     AKRenderable *renderable { dynamic_cast<AKRenderable*>(node) };
     AKBakeable *bakeable { dynamic_cast<AKBakeable*>(node) };
+    AKBackgroundEffect *backgroundEffect { dynamic_cast<AKBackgroundEffect*>(node) };
 
     if (bakeable)
         static_cast<AKBakeable*>(node)->m_onBakeGeneratedDamage = false;
@@ -289,25 +279,23 @@ void AKScene::calculateNewDamage(AKNode *node)
                               node->t->changes.none() &&
                               node->t->clientDamage.isEmpty();
 
-    if (node->caps() & AKNode::BackgroundEffect)
+    if (backgroundEffect)
     {
-        AKBackgroundEffect &backgroundEffect { *static_cast<AKBackgroundEffect*>(node) };
+        backgroundEffect->onSceneCalculatedRect();
 
-        node->onSceneCalculatedRect();
+        backgroundEffect->m_globalRect = SkIRect::MakeXYWH(
+            backgroundEffect->effectRect.x() + backgroundEffect->targetNode()->globalRect().x(),
+            backgroundEffect->effectRect.y() + backgroundEffect->targetNode()->globalRect().y(),
+            backgroundEffect->effectRect.width(),
+            backgroundEffect->effectRect.height());
 
-        backgroundEffect.m_globalRect = SkIRect::MakeXYWH(
-            backgroundEffect.effectRect.x() + backgroundEffect.targetNode()->globalRect().x(),
-            backgroundEffect.effectRect.y() + backgroundEffect.targetNode()->globalRect().y(),
-            backgroundEffect.effectRect.width(),
-            backgroundEffect.effectRect.height());
+        backgroundEffect->m_rect = SkIRect::MakeXYWH(
+            backgroundEffect->m_globalRect.x() - root()->m_globalRect.x(),
+            backgroundEffect->m_globalRect.y() - root()->m_globalRect.y(),
+            backgroundEffect->m_globalRect.width(),
+            backgroundEffect->m_globalRect.height());
 
-        backgroundEffect.m_rect = SkIRect::MakeXYWH(
-            backgroundEffect.m_globalRect.x() - root()->m_globalRect.x(),
-            backgroundEffect.m_globalRect.y() - root()->m_globalRect.y(),
-            backgroundEffect.m_globalRect.width(),
-            backgroundEffect.m_globalRect.height());
-
-        node->t->visible = node->visible() && backgroundEffect.targetNode()->t->visible;
+        node->t->visible = node->visible() && backgroundEffect->targetNode()->t->visible;
     }
     else
     {
@@ -318,8 +306,6 @@ void AKScene::calculateNewDamage(AKNode *node)
                 node->m_globalRect.y() - root()->m_globalRect.y(),
                 node->m_globalRect.width(),
                 node->m_globalRect.height());
-
-            node->onSceneCalculatedRect();
         }
 
         bool parentIsVisible { node->parent() && !node->parent()->parent() && node->parent()->visible() };
@@ -366,7 +352,7 @@ void AKScene::calculateNewDamage(AKNode *node)
             || bakeable->surface()->scale() != node->scale()))
     {
         SkRegion clipRegion = clip;
-        //clipRegion.op(t->m_prevClip, SkRegion::Op::kIntersect_Op);
+        clipRegion.op(t->m_prevClip, SkRegion::Op::kIntersect_Op);
 
         if (!clipRegion.isEmpty())
         {
@@ -410,11 +396,8 @@ void AKScene::calculateNewDamage(AKNode *node)
             canvas.restore();
             bakeable->m_onBakeGeneratedDamage = !params.damage->isEmpty();
 
-            if (!(bakeable->caps() & AKNode::Scene))
-            {
-                params.surface->surface()->recordingContext()->asDirectContext()->resetContext();
-                params.surface->surface()->flush();
-            }
+            //params.surface->surface()->recordingContext()->asDirectContext()->resetContext();
+            //params.surface->surface()->flush();
         }
     }
 
@@ -459,7 +442,7 @@ skipDamage:
     if (!(node->caps() & AKNode::Scene))
         for (Int64 i = node->children().size() - 1; i >= 0;)
         {
-            if (node->children()[i]->m_skip)
+            if (node->children()[i]->m_flags.check(AKNode::Skip))
             {
                 i--;
                 continue;
@@ -579,7 +562,7 @@ void AKScene::renderNodes(AKNode *node)
 {
     AKRenderable *rend;
 
-    if (node->m_skip)
+    if (node->m_flags.check(AKNode::Skip))
         return;
 
     if (!node->caps() || !node->renderedOnLastTarget())
@@ -620,7 +603,7 @@ void AKScene::renderNodes(AKNode *node)
     if (!(node->caps() & AKNode::Scene))
         for (size_t i = 0; i < node->children().size();)
         {
-            if (node->children()[i]->m_skip)
+            if (node->children()[i]->m_flags.check(AKNode::Skip))
             {
                 i++;
                 continue;

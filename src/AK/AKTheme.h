@@ -64,6 +64,12 @@ public:
     static inline SkRect    TextCaretVThreePatchCenterSrcRect       { SkRect::MakeXYWH(0.f, 1.f, 2.f, 1.f) };
     static inline SkRect    TextCaretVThreePatchSideSrcRect         { SkRect::MakeWH(2.f, 2.f) };
     virtual sk_sp<SkImage>  textCaretVThreePatchImage               (Int32 scale) noexcept;
+
+    /* AKEdgeShadow */
+    static inline Int32     EdgeShadowRadius                        { 2 };
+    static inline SkColor   EdgeShadowColor                         { 0x80000000 };
+    virtual sk_sp<SkImage>  edgeShadowImage                         (Int32 scale) noexcept;
+
 protected:
 
     /* AKButton */
@@ -75,6 +81,9 @@ protected:
 
     std::unordered_map<Int32,sk_sp<SkImage>> m_textFieldRoundHThreePatchImage;
     std::unordered_map<Int32,sk_sp<SkImage>> m_textCaretVThreePatchImage;
+
+    /* AKEdgeShadow */
+    std::unordered_map<Int32,sk_sp<SkImage>> m_edgeShadowImage;
 };
 
 #endif // AKTHEME_H

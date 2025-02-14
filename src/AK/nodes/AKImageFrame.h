@@ -101,6 +101,7 @@ public:
     void setImage(sk_sp<SkImage> image) noexcept
     {
         m_renderableImage.setImage(image);
+        updateDimensions();
     }
 
     /**

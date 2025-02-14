@@ -47,7 +47,7 @@ void AKButton::setBackgroundColor(SkColor color) noexcept
         return;
 
     m_backgroundColor = color;
-    addChange(Chg_BackgroundColor);
+    addChange(CHBackgroundColor);
     updateStyle();
 }
 
@@ -60,7 +60,7 @@ void AKButton::setEnabled(bool enabled) noexcept
     m_enabled = enabled;
     m_hThreePatch.setOpacity(enabled ? 1.f : AKTheme::ButtonDisabledOpacity);
     m_text.setOpacity(m_hThreePatch.opacity());
-    addChange(Chg_Enabled);
+    addChange(CHEnabled);
     updateStyle();
 }
 
@@ -73,7 +73,7 @@ void AKButton::setPressed(bool pressed) noexcept
         return;
 
     m_pressed = pressed;
-    addChange(Chg_Pressed);
+    addChange(CHPressed);
     updateStyle();
 }
 
@@ -155,7 +155,7 @@ void AKButton::updateStyle() noexcept
 
     m_text.setOpacity(contentOpacity);
     m_hThreePatch.setColorFactor(finalBackgroundColor);
-    m_hThreePatch.setScale(scale());
+    m_hThreePatch.setImageScale(scale());
     updateOpaqueRegion();
     applyLayoutConstraints();
 }

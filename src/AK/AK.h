@@ -74,6 +74,7 @@ namespace AK
     class AKBackgroundBoxShadowEffect;
     class AKBackgroundImageShadowEffect;
     class AKBackgroundBlurEffect;
+    class AKEdgeShadow;
 
     /************ INPUT *************/
 

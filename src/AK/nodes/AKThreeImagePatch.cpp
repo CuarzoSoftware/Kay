@@ -6,7 +6,7 @@ using namespace AK;
 
 void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
 {
-    if (!m_image || m_scale <= 0)
+    if (!m_image || m_imageScale <= 0)
         return;
 
     SkIRect dsts[3];
@@ -35,7 +35,7 @@ void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage, con
                 .srcRect = srcs[i],
                 .dstSize = dsts[i].size(),
                 .srcTransform = transforms[i],
-                .srcScale = m_scale
+                .srcScale = m_imageScale
             });
 
             painter->drawRegion(region);
@@ -65,7 +65,7 @@ void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage, con
                 .srcRect = srcs[i],
                 .dstSize = dsts[i].size(),
                 .srcTransform = transforms[i],
-                .srcScale = m_scale
+                .srcScale = m_imageScale
             });
 
             painter->drawRegion(region);
