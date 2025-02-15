@@ -1,6 +1,7 @@
 #include <AK/input/AKKeymap.h>
 #include <cstdlib>
 #include <algorithm>
+#include <string>
 #include <AK/AKLog.h>
 #include <cstring>
 
@@ -150,6 +151,22 @@ void AKKeymap::updateModifiers(UInt32 depressed, UInt32 latched, UInt32 locked, 
     xkb_state_update_mask(m_state, depressed, latched, locked, 0, 0, group);
 }
 
+static std::string localePostDotToUpper(const std::string &locale)
+{
+    size_t lastDotPos = locale.find_last_of('.');
+
+    // If no dot is found, return the original string
+    if (lastDotPos == std::string::npos)
+        return locale;
+
+    std::string result { locale };
+
+    // Convert everything after the last dot to uppercase
+    std::transform(result.begin() + lastDotPos + 1, result.end(), result.begin() + lastDotPos + 1, ::toupper);
+
+    return result;
+}
+
 void AKKeymap::loadComposeTable(const char *locale) noexcept
 {
     if (m_composeState)
@@ -190,6 +207,16 @@ void AKKeymap::loadComposeTable(const char *locale) noexcept
     return;
 fail:
     AKLog::error("[AKKeymap] Failed to create compose table from locale %s.", locale);
+
+    // Try with uppercase
+    if (locale)
+    {
+        const std::string localeNormal { locale };
+        const std::string localeUpper { localePostDotToUpper(localeNormal) };
+
+        if (localeNormal != localeUpper)
+            return loadComposeTable(localeUpper.c_str());
+    }
 
     // Fallback
     if (strcmp(locale, "C") != 0)
