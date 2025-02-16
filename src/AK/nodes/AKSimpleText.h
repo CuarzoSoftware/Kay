@@ -3,9 +3,9 @@
 
 #include <AK/AKPen.h>
 #include <AK/AKBrush.h>
-#include <include/core/SkFont.h>
-#include <include/core/SkTypeface.h>
 #include <AK/nodes/AKBakeable.h>
+#include <AK/AKTheme.h>
+#include <include/core/SkFont.h>
 
 class AK::AKSimpleText : public AKBakeable
 {
@@ -98,7 +98,7 @@ protected:
     void updateDimensions() noexcept;
     std::string m_text, m_skText;
     SkColor m_color { SK_ColorBLACK };
-    SkFont m_font;
+    SkFont m_font { AKTheme::DefaultFont };
     AKBrush m_brush;
     AKPen m_pen { AKPen::NoPen() };
     SkRect m_bounds;

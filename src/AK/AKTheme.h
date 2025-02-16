@@ -31,6 +31,10 @@ public:
     static inline SkColor   LinkColor           { 0xFF094FD1 };
     static inline SkColor   FocusOutlineColor   { 0xFF86b4fa };
 
+    /* Fonts */
+
+    static inline SkFont    DefaultFont;
+
     /* Renderables */
 
     static inline SkScalar  RenderableInactiveOpacityFactor { 0.5f };

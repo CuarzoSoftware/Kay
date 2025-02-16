@@ -1,7 +1,6 @@
-#include "include/core/SkCanvas.h"
-#include "include/gpu/GrDirectContext.h"
-#include "include/gpu/GrRecordingContext.h"
+#include <include/core/SkCanvas.h>
 #include <include/effects/SkImageFilters.h>
+#include <include/gpu/ganesh/GrDirectContext.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
 #include <AK/AKTarget.h>
 #include <AK/AKLog.h>
@@ -67,7 +66,7 @@ void AKBackgroundBlurEffect::onRender(AKPainter *painter, const SkRegion &damage
                     SkFilterMode::kLinear,
                     &m_brush,
                     SkCanvas::kFast_SrcRectConstraint);
-    currentTarget()->surface()->flush();
+    currentTarget()->surface()->recordingContext()->asDirectContext()->flush();
     c.restore();
     painter->bindProgram();
     painter->bindTarget(currentTarget());

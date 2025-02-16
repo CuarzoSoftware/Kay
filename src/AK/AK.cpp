@@ -1,4 +1,5 @@
 #include <AK/AKTheme.h>
+#include <AK/AKApplication.h>
 #include <AK/input/AKKeymap.h>
 
 using namespace AK;
@@ -28,4 +29,9 @@ AKKeymap *AK::keymap() noexcept
 {
     static AKKeymap keymap;
     return &keymap;
+}
+
+sk_sp<SkFontMgr> AK::AKFontManager() noexcept
+{
+    return AKApp()->fontManager();
 }

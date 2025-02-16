@@ -25,6 +25,7 @@ glesv2_dep      = dependency('glesv2')
 skia_dep        = dependency('Skia')
 xkbcommon_dep   = dependency('xkbcommon')
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
+#skparagraph_dep = cpp.find_library('skparagraph')
 
 # -------------- HEADERS --------------
 

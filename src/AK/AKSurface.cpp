@@ -1,9 +1,10 @@
+#include <include/gpu/ganesh/SkImageGanesh.h>
+#include <include/gpu/ganesh/SkSurfaceGanesh.h>
+#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <include/gpu/ganesh/GrDirectContext.h>
 #include <AK/AKApplication.h>
 #include <AK/AKSurface.h>
 #include <AK/AKGLContext.h>
-#include <include/core/SkColorSpace.h>
-#include <include/gpu/ganesh/SkImageGanesh.h>
-#include <include/gpu/ganesh/SkSurfaceGanesh.h>
 #include <GLES2/gl2.h>
 #include <cassert>
 
@@ -36,7 +37,7 @@ sk_sp<SkSurface> AKSurface::surface() const noexcept
     glBindFramebuffer(GL_FRAMEBUFFER, newFBO.id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureInfo.fID, 0);
     m_fbInfo.fFBOID = newFBO.id;
-    GrBackendRenderTarget target = GrBackendRenderTarget(
+    GrBackendRenderTarget target = GrBackendRenderTargets::MakeGL(
         m_imageSrcRect.width(),
         m_imageSrcRect.height(),
         0, 0,
@@ -107,10 +108,10 @@ bool AKSurface::resize(const SkSize &size, SkScalar scale, bool shrink) noexcept
                  m_imageSrcRect.width(), m_imageSrcRect.height(),
                  0, glFormat, GL_UNSIGNED_BYTE, nullptr);
 
-    m_backendTexture = GrBackendTexture(
+    m_backendTexture = GrBackendTextures::MakeGL(
         m_imageSrcRect.width(),
         m_imageSrcRect.height(),
-        GrMipMapped::kNo,
+        skgpu::Mipmapped::kNo,
         m_textureInfo);
 
     m_image = SkImages::BorrowTextureFrom(

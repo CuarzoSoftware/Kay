@@ -13,15 +13,15 @@
 #include <iostream>
 #include <unistd.h>
 
-#include <include/gpu/gl/GrGLInterface.h>
-#include <include/gpu/gl/GrGLTypes.h>
-#include <include/gpu/GrDirectContext.h>
-#include <include/gpu/GrBackendSurface.h>
+#include <include/gpu/ganesh/gl/GrGLAssembleInterface.h>
+#include <include/gpu/ganesh/gl/GrGLDirectContext.h>
+#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
+#include <include/gpu/ganesh/GrBackendSurface.h>
+#include <include/gpu/ganesh/GrDirectContext.h>
 #include <include/core/SkImage.h>
 #include <include/core/SkSurface.h>
 #include <include/core/SkCanvas.h>
-#include <include/gpu/gl/GrGLAssembleInterface.h>
 #include <include/core/SkColorSpace.h>
 #include <AK/AKScene.h>
 #include <AK/nodes/AKContainer.h>
@@ -78,7 +78,7 @@ static void initializeGL(SRMConnector *connector, void *userData)
     data->contextOptions.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
     data->contextOptions.fReducedShaderVariations = false;
 
-    data->context = GrDirectContext::MakeGL(interface, data->contextOptions);
+    data->context = GrDirectContexts::MakeGL(interface, data->contextOptions);
 
     if (!data->context.get())
     {
@@ -101,7 +101,7 @@ static void paintGL(SRMConnector *connector, void *userData)
         .fFormat = GL_RGB8_OES
     };
 
-    const GrBackendRenderTarget target(
+    const GrBackendRenderTarget target = GrBackendRenderTargets::MakeGL(
         srmConnectorModeGetWidth(mode),
         srmConnectorModeGetHeight(mode),
         0, 0,

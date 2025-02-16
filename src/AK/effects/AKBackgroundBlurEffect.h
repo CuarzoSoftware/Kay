@@ -4,6 +4,7 @@
 #include <AK/effects/AKBackgroundEffect.h>
 #include <AK/AKSignal.h>
 #include <AK/AKBrush.h>
+#include <include/core/SkPath.h>
 
 /**
  * @brief Background blur effect

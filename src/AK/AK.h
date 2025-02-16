@@ -1,8 +1,8 @@
 #ifndef AK_H
 #define AK_H
 
-#include <GLES2/gl2.h>
 #include <cstdint>
+#include <include/core/SkFontMgr.h>
 
 #define AK_MAX_BUFFER_AGE 10
 
@@ -122,29 +122,6 @@ namespace AK
     class AKTouchCancelEvent;
     class AKTouchPoint;
 
-    struct AKBlendFunc
-    {
-        /// Source RGB factor for blending
-        GLenum sRGBFactor;
-
-        /// Destination RGB factor for blending
-        GLenum dRGBFactor;
-
-        /// Source alpha factor for blending
-        GLenum sAlphaFactor;
-
-        /// Destination alpha factor for blendin
-        GLenum dAlphaFactor;
-
-        constexpr bool operator==(const AKBlendFunc &other) const
-        {
-            return sRGBFactor == other.sRGBFactor &&
-                   dRGBFactor == other.dRGBFactor &&
-                   sAlphaFactor == other.sAlphaFactor &&
-                   dAlphaFactor == other.dAlphaFactor;
-        }
-    };
-
     /// @brief 64 bits unsigned integer
     typedef uint64_t        UInt64;
 
@@ -184,9 +161,33 @@ namespace AK
     /// @brief Unsigned integer capable of holding a pointer
     typedef uintptr_t       UIntPtr;
 
+    struct AKBlendFunc
+    {
+        /// Source RGB factor for blending
+        UInt32 sRGBFactor;
+
+        /// Destination RGB factor for blending
+        UInt32 dRGBFactor;
+
+        /// Source alpha factor for blending
+        UInt32 sAlphaFactor;
+
+        /// Destination alpha factor for blendin
+        UInt32 dAlphaFactor;
+
+        constexpr bool operator==(const AKBlendFunc &other) const
+        {
+            return sRGBFactor == other.sRGBFactor &&
+                   dRGBFactor == other.dRGBFactor &&
+                   sAlphaFactor == other.sAlphaFactor &&
+                   dAlphaFactor == other.dAlphaFactor;
+        }
+    };
+
     AKApplication *AKApp() noexcept;
     AKTheme *theme() noexcept;
     void setTheme(AKTheme *theme) noexcept;
+    sk_sp<SkFontMgr> AKFontManager() noexcept;
 
     AKKeymap *keymap() noexcept;
 };

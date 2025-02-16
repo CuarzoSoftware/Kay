@@ -1,9 +1,6 @@
+#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
 #include <include/core/SkMaskFilter.h>
 #include <include/effects/SkBlurMaskFilter.h>
-#include <include/gpu/gl/GrGLInterface.h>
-#include <include/gpu/gl/GrGLTypes.h>
-#include <include/gpu/GrDirectContext.h>
-#include <include/gpu/GrBackendSurface.h>
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
 #include <include/gpu/ganesh/SkImageGanesh.h>
 #include <include/core/SkImage.h>
@@ -16,6 +13,7 @@
 #include <include/effects/SkBlurMaskFilter.h>
 #include <include/core/SkRRect.h>
 #include <include/utils/SkParsePath.h>
+#include <include/gpu/ganesh/GrDirectContext.h>
 
 #include <LPainter.h>
 #include <LLauncher.h>
@@ -89,10 +87,10 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
     skTextureInfo.fID = texture->id(o);
     skTextureInfo.fTarget = texture->target();
 
-    skTexture = GrBackendTexture(
+    skTexture = GrBackendTextures::MakeGL(
         texture->sizeB().w(),
         texture->sizeB().h(),
-        GrMipMapped::kNo,
+        skgpu::Mipmapped::kNo,
         skTextureInfo);
 
     return SkImages::BorrowTextureFrom(
@@ -106,8 +104,9 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
         nullptr);
 }
 
-/*
 #include <modules/skparagraph/src/ParagraphImpl.h>
+#include <modules/skparagraph/src/ParagraphBuilderImpl.h>
+
 #include <AK/AKSurface.h>
 
 class ParagraphTest : public AKBakeable
@@ -115,15 +114,51 @@ class ParagraphTest : public AKBakeable
 public:
     ParagraphTest(AKNode *parent) : AKBakeable(parent)
     {
-
+        layout().setWidth(200);
+        layout().setHeight(200);
+        layout().setPosition(YGEdgeLeft, 200.f);
+        layout().setPosition(YGEdgeTop, 200.f);
     }
 
     void onBake(OnBakeParams *p) override
     {
         SkCanvas *c { p->surface->surface()->getCanvas() };
-        c->drawTextBlob();
+        c->clear(SK_ColorWHITE);
+
+        skia::textlayout::ParagraphStyle paraStyle;
+
+        paraStyle.setTextDirection(skia::textlayout::TextDirection::kLtr);
+
+        auto fontCollection = sk_make_sp<skia::textlayout::FontCollection>();
+        fontCollection->setDefaultFontManager(AKFontManager());
+        fontCollection->enableFontFallback();
+
+
+        /*fontCollection->defaultFallback(' ', SkFontStyle::Bold(), SkString("es_ES.UTF-8"));
+        fontCollection->setAssetFontManager(AKFontManager());
+        fontCollection->setDynamicFontManager(AKFontManager());*/
+
+        auto builder =  skia::textlayout::ParagraphBuilderImpl::make(paraStyle, fontCollection);
+
+
+        skia::textlayout::TextStyle textStyle;
+        //textStyle.setWordSpacing(40);
+        textStyle.setFontSize(12);
+        textStyle.setColor(SK_ColorBLACK);
+        std::vector<SkString> fams;
+        fams.push_back(SkString("Inter"));
+        textStyle.setFontFamilies(fams);
+        builder->pushStyle(textStyle);
+
+        builder->addText("Hello 😊");
+        builder->pop();
+        auto paragraph = builder->Build();
+
+        paragraph->layout(100000);
+
+        paragraph->paint(c, SkScalar(0), SkScalar(0));
     }
-};*/
+};
 
 /**
  * @brief Example Context Menu Component
@@ -380,7 +415,7 @@ public:
         layout().setDisplay(YGDisplayFlex);
         m_backgroundColor.setOpacity(0.f);
         m_backgroundColor.layout().setPadding(YGEdgeAll, 6.f);
-        SkFont font;
+        SkFont font = AKTheme::DefaultFont;
         font.setEmbolden(true);
         m_text.setFont(font);
     }
@@ -446,6 +481,7 @@ public:
         AKContainer background { YGFlexDirectionColumn, false, &root };
         AKContainer surfaces { YGFlexDirectionColumn, false, &root };
         AKContainer overlay { YGFlexDirectionColumn, false, &root};
+        ParagraphTest paragraph { &overlay };
         Menu menu { &overlay };
         MenuItem item1 { "New Folder", &menu.itemsContainer };
         MenuItem item2 { "Open Terminal", &menu.itemsContainer };
@@ -575,7 +611,7 @@ public:
             .fFormat = GL_RGB8_OES
         };
 
-        const GrBackendRenderTarget backendTarget(
+        const GrBackendRenderTarget backendTarget = GrBackendRenderTargets::MakeGL(
             realBufferSize().w(),
             realBufferSize().h(),
             0, 0,
@@ -779,7 +815,7 @@ public:
                     "Help"
                 };
 
-            SkFont font;
+            SkFont font = AKTheme::DefaultFont;
             font.setEmbolden(true);
             for (auto &name : topbarMenuNames)
             {
@@ -895,6 +931,7 @@ public:
 
                 imgSizeMode.setText(sizeModeName[Int32(assetsView.sizeMode())]);
             });
+
         }
         ~Kay()
         {

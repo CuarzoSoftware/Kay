@@ -1,18 +1,28 @@
-#include <include/gpu/GrDirectContext.h>
-#include <include/core/SkBlurTypes.h>
-#include <include/core/SkMaskFilter.h>
-#include <include/core/SkCanvas.h>
-#include <include/core/SkPaint.h>
-#include <include/effects/SkGradientShader.h>
+#include <AK/AKApplication.h>
 #include <AK/AKTheme.h>
 #include <AK/AKTarget.h>
 #include <AK/AKSurface.h>
+#include <AK/AKLog.h>
 
-#include <include/core/SkOpenTypeSVGDecoder.h>
+#include <include/gpu/ganesh/GrRecordingContext.h>
+#include <include/gpu/ganesh/GrDirectContext.h>
+#include <include/effects/SkGradientShader.h>
+#include <include/core/SkMaskFilter.h>
+#include <include/core/SkBlurTypes.h>
+#include <include/core/SkCanvas.h>
+
 AK::AKTheme::AKTheme() noexcept
 {
+    DefaultFont.setTypeface(
+        AKApp()->fontManager()->matchFamilyStyle("Inter",
+        SkFontStyle(
+        SkFontStyle::kNormal_Weight,
+        SkFontStyle::Width::kNormal_Width,
+        SkFontStyle::Slant::kUpright_Slant)));
+    DefaultFont.setSize(12);
+
     ButtonFont.setTypeface(
-        SkTypeface::MakeFromName("Inter",
+        AKApp()->fontManager()->matchFamilyStyle("Inter",
         SkFontStyle(
             SkFontStyle::kSemiBold_Weight,
             SkFontStyle::Width::kNormal_Width,
@@ -80,7 +90,7 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(Int32 scale) noexcept
     paint.setStroke(false);
     paint.setColor(SK_ColorWHITE);
     c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-    surface->surface()->flush();
+    surface->surface()->recordingContext()->asDirectContext()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
     m_buttonPlainHThreePatchImage[scale] = result;
@@ -133,7 +143,7 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(Int32 scale) noexcept
     paint.setBlendMode(SkBlendMode::kSrc);
     paint.setStroke(false);
     c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-    surface->surface()->flush();
+    surface->surface()->recordingContext()->asDirectContext()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
     m_buttonTintedHThreePatchImage[scale] = result;
@@ -183,7 +193,7 @@ sk_sp<SkImage> AK::AKTheme::textFieldRoundHThreePatchImage(Int32 scale) noexcept
     paint.setStroke(false);
     paint.setColor(SK_ColorWHITE);
     c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-    surface->surface()->flush();
+    surface->surface()->recordingContext()->asDirectContext()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
     m_textFieldRoundHThreePatchImage[scale] = result;
@@ -214,7 +224,7 @@ sk_sp<SkImage> AK::AKTheme::textCaretVThreePatchImage(Int32 scale) noexcept
     paint.setStroke(false);
     paint.setColor(SK_ColorWHITE);
     c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-    surface->surface()->flush();
+    surface->surface()->recordingContext()->asDirectContext()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
     m_textCaretVThreePatchImage[scale] = result;
@@ -240,7 +250,7 @@ sk_sp<SkImage> AK::AKTheme::edgeShadowImage(Int32 scale) noexcept
     paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, SkScalar(EdgeShadowRadius)/3.f));
     c.drawIRect(SkIRect::MakeXYWH(-100, -100, 200, 100), paint);
 
-    surface->surface()->flush();
+    surface->surface()->recordingContext()->asDirectContext()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
     m_edgeShadowImage[scale] = result;

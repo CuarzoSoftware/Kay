@@ -3,10 +3,12 @@
 
 #include <AK/AKPainter.h>
 #include <AK/AKObject.h>
-#include <EGL/egl.h>
-#include <include/gpu/GrDirectContext.h>
+
 #include <include/core/SkSurface.h>
+#include <include/gpu/ganesh/GrDirectContext.h>
+
 #include <unordered_map>
+#include <EGL/egl.h>
 
 class AK::AKGLContext : public AKObject
 {

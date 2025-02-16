@@ -1,4 +1,3 @@
-#include "include/gpu/ganesh/SkSurfaceGanesh.h"
 #include <AK/AKScene.h>
 #include <AK/AKLog.h>
 #include <AK/nodes/AKRenderable.h>
@@ -11,8 +10,11 @@
 #include <AK/AKGLContext.h>
 #include <cassert>
 #include <yoga/Yoga.h>
+
 #include <include/core/SkCanvas.h>
-#include <include/gpu/GrDirectContext.h>
+#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <include/gpu/ganesh/GrDirectContext.h>
+#include <include/gpu/ganesh/SkSurfaceGanesh.h>
 
 #include <AK/events/AKPointerMoveEvent.h>
 #include <AK/events/AKPointerEnterEvent.h>
@@ -143,7 +145,7 @@ void AKScene::validateTarget(AKTarget *target) noexcept
 
     auto skTarget = SkSurfaces::GetBackendRenderTarget(t->m_surface.get(), SkSurfaces::BackendHandleAccess::kFlushRead);
     GrGLFramebufferInfo fbInfo;
-    skTarget.getGLFramebufferInfo(&fbInfo);
+    GrBackendRenderTargets::GetGLFramebufferInfo(skTarget, &fbInfo);
     t->m_fbId = fbInfo.fFBOID;
     m_painter = AKApp()->glContext()->painter();
 }

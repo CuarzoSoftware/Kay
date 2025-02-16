@@ -5,10 +5,9 @@
 #include <include/core/SkColorSpace.h>
 #include <include/core/SkImage.h>
 #include <include/core/SkSurface.h>
-#include <include/gpu/GrBackendSurface.h>
-#include <include/gpu/gl/GrGLTypes.h>
-#include <include/gpu/GrRecordingContext.h>
 #include <include/core/SkRect.h>
+#include <include/gpu/ganesh/gl/GrGLTypes.h>
+#include <include/gpu/ganesh/GrBackendSurface.h>
 #include <AK/AKObject.h>
 
 class AK::AKSurface : public AKObject

@@ -1,10 +1,11 @@
 #include <AK/AKApplication.h>
 #include <AK/AKGLContext.h>
 #include <AK/AKLog.h>
-
-#include <include/gpu/gl/GrGLAssembleInterface.h>
-
 #include <EGL/egl.h>
+
+#include <include/gpu/ganesh/gl/GrGLAssembleInterface.h>
+#include <include/gpu/ganesh/gl/GrGLDirectContext.h>
+#include <include/ports/SkFontMgr_fontconfig.h>
 
 using namespace AK;
 
@@ -24,6 +25,8 @@ AKApplication::AKApplication() noexcept
     assert("Only a single AKApplication instance can exist per process" && _app == nullptr);
     _app = this;
     AKLog::init();
+    m_fontManager = SkFontMgr_New_FontConfig(nullptr);
+    assert("Failed to create the font manager" && m_fontManager);
     m_skContextOptions.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kBackendBinary;
     m_skContextOptions.fAvoidStencilBuffers = true;
     m_skContextOptions.fPreferExternalImagesOverES3 = true;
@@ -46,6 +49,11 @@ AKApplication::AKApplication() noexcept
     m_skContextOptions.fAlwaysUseTexStorageWhenAvailable = true;
 }
 
+sk_sp<SkFontMgr> AKApplication::fontManager() const noexcept
+{
+    return m_fontManager;
+}
+
 AKGLContext *AKApplication::glContext() noexcept
 {
     assert("Please ensure a valid OpenGL context is bound before calling AKApplication::skContext()" && eglGetCurrentContext() != EGL_NO_CONTEXT);
@@ -54,7 +62,7 @@ AKGLContext *AKApplication::glContext() noexcept
     if (it != _app->m_glContexts.end())
         return it->second;
 
-    sk_sp<GrDirectContext> skContext = GrDirectContext::MakeGL(interface, _app->skContextOptions());
+    sk_sp<GrDirectContext> skContext = GrDirectContexts::MakeGL(interface, _app->skContextOptions());
     assert("Failed to create GrDirectContext. Please ensure a valid OpenGL context is bound before calling AKApplication::skContext()." && skContext);
     auto *akContext = new AKGLContext(skContext);
     _app->m_glContexts[eglGetCurrentContext()] = akContext;

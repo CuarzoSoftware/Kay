@@ -10,8 +10,6 @@
 #include <bitset>
 #include <include/core/SkImage.h>
 #include <include/core/SkSurface.h>
-#include <include/gpu/GrBackendSurface.h>
-#include <include/gpu/gl/GrGLTypes.h>
 #include <include/core/SkRegion.h>
 
 #include <unordered_set>

@@ -1,11 +1,11 @@
-#include "AK/AKTarget.h"
-#include "include/gpu/GrBackendSurface.h"
-#include "include/gpu/GrDirectContext.h"
-#include "include/gpu/ganesh/SkImageGanesh.h"
-#include "include/gpu/ganesh/SkSurfaceGanesh.h"
+#include <include/gpu/ganesh/GrBackendSurface.h>
+#include <include/gpu/ganesh/SkImageGanesh.h>
+#include <include/gpu/ganesh/SkSurfaceGanesh.h>
+#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <AK/nodes/AKRenderable.h>
 #include <AK/AKPainter.h>
 #include <AK/AKTheme.h>
-#include <AK/nodes/AKRenderable.h>
+#include <AK/AKTarget.h>
 #include <EGL/egl.h>
 #include <GL/gl.h>
 #include <GL/glext.h>
@@ -57,7 +57,7 @@ void AKPainter::bindTextureMode(const TextureParams &p) noexcept
     GrBackendTexture texInfo;
     GrGLTextureInfo glInfo;
     SkImages::GetBackendTextureFromImage(p.texture, &texInfo, false);
-    texInfo.getGLTextureInfo(&glInfo);
+    GrBackendTextures::GetGLTextureInfo(texInfo, &glInfo);
 
     GLenum glTarget = glInfo.fTarget;
     switchTarget(glTarget);

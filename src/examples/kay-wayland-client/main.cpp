@@ -1,10 +1,3 @@
-#include <include/gpu/GrBackendSurface.h>
-#include <include/gpu/GrDirectContext.h>
-#include <include/core/SkSurface.h>
-#include <include/gpu/ganesh/SkSurfaceGanesh.h>
-#include <include/core/SkColorSpace.h>
-#include <include/utils/SkParsePath.h>
-
 #include <wayland-client.h>
 #include <wayland-egl.h>
 #include <xdg-shell-client-protocol.h>
@@ -14,6 +7,7 @@
 #include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#include <GLES3/gl3.h>
 #include <cassert>
 #include <cstring>
 #include <linux/input-event-codes.h>
@@ -28,6 +22,12 @@
 #include <AK/nodes/AKSolidColor.h>
 #include <AK/nodes/AKSimpleText.h>
 #include <AK/nodes/AKPath.h>
+
+#include <include/gpu/ganesh/GrBackendSurface.h>
+#include <include/gpu/ganesh/SkSurfaceGanesh.h>
+#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <include/core/SkColorSpace.h>
+#include <include/utils/SkParsePath.h>
 
 using namespace AK;
 
@@ -254,11 +254,12 @@ void Window::update() noexcept
 
         const GrGLFramebufferInfo fbInfo
         {
-            .fFBOID = 0,
-            .fFormat = GL_RGBA8_OES
+            0,
+            GL_RGBA8,
+            skgpu::Protected::kNo
         };
 
-        const GrBackendRenderTarget backendTarget(
+        const GrBackendRenderTarget backendTarget = GrBackendRenderTargets::MakeGL(
             bufferSize.width(),
             bufferSize.height(),
             0, 0,
