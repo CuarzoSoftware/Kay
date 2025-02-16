@@ -52,7 +52,7 @@ public:
 
     void enableCustomTextureColor(bool enable) noexcept
     {
-        if (m_customBlendFuncEnabled == enable)
+        if (m_customTextureColorEnabled == enable)
             return;
 
         m_customTextureColorEnabled = enable;

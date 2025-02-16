@@ -508,8 +508,6 @@ void AKPainter::bindProgram() noexcept
     glBlendColor(0, 0, 0, 0);
     glBlendEquation(GL_FUNC_ADD);
 
-    return;
-
     glUniform2f(currentUniforms->texSize,
                 currentState->texSize.width(),
                 currentState->texSize.height());

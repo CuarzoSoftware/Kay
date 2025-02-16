@@ -31,16 +31,20 @@ void AKText::setText(const std::string &text) noexcept
 
 void AKText::onBake(OnBakeParams *p)
 {
-    if (p->damage->isEmpty() || !m_paragraph)
+    if (!m_paragraph)
+        return;
+    const auto &ch { changes() };
+
+    if (p->damage->isEmpty() && !ch.test(CHText) && !ch.test(CHTextStyle) && !ch.test(CHParagraphStyle))
         return;
 
+    AKLog::debug("AKText repainted: Tint %d %dx%d %s", customTextureColorEnabled(), globalRect().width(), globalRect().height(), m_text.c_str());
     SkCanvas &c { *p->surface->surface()->getCanvas() };
     c.save();
     c.clipIRect(SkIRect::MakeSize(globalRect().size()));
     c.clear(SK_ColorTRANSPARENT);
     m_paragraph->paint(p->surface->surface()->getCanvas(), 0.f, 0.f);
     c.restore();
-    AKLog::debug("AKText repainted: %dx%d %s", globalRect().width(), globalRect().height(), m_text.c_str());
 }
 
 void AKText::updateDimensions() noexcept

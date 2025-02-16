@@ -140,7 +140,6 @@ void AKButton::updateStyle() noexcept
         m_hThreePatch.setSideSrcRect(AKTheme::ButtonPlainHThreePatchSideSrcRect);
         m_hThreePatch.setCenterSrcRect(AKTheme::ButtonPlainHThreePatchCenterSrcRect);
         m_text.enableCustomTextureColor(false);
-        m_text.setColorWithoutAlpha(SK_ColorBLACK);
     }
     else
     {
@@ -152,7 +151,7 @@ void AKButton::updateStyle() noexcept
         if (enabled())
             m_text.setColorWithoutAlpha(SK_ColorWHITE);
         else
-           m_text.enableCustomTextureColor(false);
+            m_text.enableCustomTextureColor(false);
     }
 
     m_text.setOpacity(contentOpacity);
