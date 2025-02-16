@@ -67,8 +67,8 @@ void AKText::updateDimensions() noexcept
     m_builder->pop();
     m_paragraph = m_builder->Build();
     m_paragraph->layout(3000000);
-    layout().setWidth(m_paragraph->getMaxIntrinsicWidth());
-    layout().setHeight(m_paragraph->getHeight());
+    layout().setWidth(SkScalarRoundToScalar(m_paragraph->getMaxIntrinsicWidth()));
+    layout().setHeight(SkScalarRoundToScalar(m_paragraph->getHeight()));
     layout().setMaxWidth(layout().width().value);
     layout().setMaxHeight(layout().height().value);
     layout().setMinWidth(layout().width().value);

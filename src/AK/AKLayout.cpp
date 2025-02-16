@@ -8,7 +8,7 @@ using namespace AK;
 AKLayout::AKLayout(AKNode &akNode) noexcept : m_node(YGNodeNew()), m_akNode(akNode)
 {
     m_config = YGConfigNew();
-    YGConfigSetPointScaleFactor(m_config, 0.f);
+    YGConfigSetPointScaleFactor(m_config, 1.f);
     YGNodeSetConfig(m_node, m_config);
 }
 

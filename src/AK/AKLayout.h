@@ -62,6 +62,20 @@ public:
         return YGNodeLayoutGetPadding(m_node, edge);
     }
 
+    /* Conf */
+
+    void setPointScaleFactor(float pixelsInPoint) noexcept
+    {
+        YGConfigSetPointScaleFactor(m_config, pixelsInPoint);
+        YGNodeSetConfig(m_node, m_config);
+        checkIsDirty();
+    }
+
+    float pointScaleFactor() const noexcept
+    {
+        return YGConfigGetPointScaleFactor(m_config);
+    }
+
     /* Style */
 
     void copyStyle(const AKLayout &from) noexcept
