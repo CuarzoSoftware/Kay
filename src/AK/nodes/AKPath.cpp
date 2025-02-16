@@ -6,7 +6,7 @@ using namespace AK;
 
 void AKPath::onSceneBegin()
 {
-    if (changes().test(Chg_Path))
+    if (changes().test(CHPath))
     {
         m_bounds = m_path.getBounds();
         m_bounds.outset(1.f, 1.f);
@@ -18,7 +18,7 @@ void AKPath::onSceneBegin()
 
 void AKPath::onBake(OnBakeParams *params)
 {
-    if (params->damage->isEmpty() && !changes().test(Chg_Path))
+    if (params->damage->isEmpty() && !changes().test(CHPath))
         return;
 
     params->surface->shrink();

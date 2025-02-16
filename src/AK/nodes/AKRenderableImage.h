@@ -11,12 +11,12 @@ public:
 
     enum Changes
     {
-        Chg_Image = AKRenderable::Chg_Last,
-        Chg_SrcTransform,
-        Chg_SrcRectMode,
-        Chg_CustomSrcRect,
-        Chg_CustomSrcRectScale,
-        Chg_Last
+        CHImage = AKRenderable::CHLast,
+        CHSrcTransform,
+        CHSrcRectMode,
+        CHCustomSrcRect,
+        CHCustomSrcRectScale,
+        CHLast
     };
 
     enum class SrcRectMode
@@ -31,7 +31,7 @@ public:
         if (image.get() == m_image.get())
             return false;
 
-        addChange(Chg_Image);
+        addChange(CHImage);
         m_image = image;
         return true;
     }
@@ -46,7 +46,7 @@ public:
         if (m_srcTransform == transform)
             return false;
 
-        addChange(Chg_SrcTransform);
+        addChange(CHSrcTransform);
         m_srcTransform = transform;
         return true;
     }
@@ -62,7 +62,7 @@ public:
             return false;
 
         m_srcRectMode = mode;
-        addChange(Chg_SrcRectMode);
+        addChange(CHSrcRectMode);
         return true;
     }
 
@@ -77,7 +77,7 @@ public:
             return false;
 
         if (m_srcRectMode == SrcRectMode::Custom)
-            addChange(Chg_CustomSrcRect);
+            addChange(CHCustomSrcRect);
 
         m_customSrcRect = rect;
         return true;
@@ -94,7 +94,7 @@ public:
             return false;
 
         if (m_srcRectMode == SrcRectMode::Custom)
-            addChange(Chg_CustomSrcRectScale);
+            addChange(CHCustomSrcRectScale);
         m_customSrcRectScale = scale;
         return true;
     }

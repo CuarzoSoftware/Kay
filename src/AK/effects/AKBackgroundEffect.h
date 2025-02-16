@@ -18,9 +18,9 @@ public:
 
     enum Changes
     {
-        Chg_StackPosition = AKRenderable::Chg_Last,
+        CHStackPosition = AKRenderable::CHLast,
 
-        Chg_Last
+        CHLast
     };
 
     StackPosition stackPosition() const noexcept
@@ -33,7 +33,7 @@ public:
         if (m_stackPosition == stackPosition)
             return;
 
-        addChange(Chg_StackPosition);
+        addChange(CHStackPosition);
         m_stackPosition = stackPosition;
     }
 

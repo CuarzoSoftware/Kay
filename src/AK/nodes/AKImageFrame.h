@@ -29,15 +29,15 @@ public:
      * @brief Enumeration of changes specific to `AKImageFrame`.
      *
      * Extends the base `AKContainer::Changes` to include additional change types:
-     * - `Chg_SizeMode`: Indicates a change to the size mode (e.g., `Contain`, `Cover`, `Fill`).
-     * - `Chg_Alignment`: Indicates a change to the image alignment within the frame.
-     * - `Chg_Last`: Marks the end of change types for this component.
+     * - `CHSizeMode`: Indicates a change to the size mode (e.g., `Contain`, `Cover`, `Fill`).
+     * - `CHAlignment`: Indicates a change to the image alignment within the frame.
+     * - `CHLast`: Marks the end of change types for this component.
      */
     enum Changes
     {
-        Chg_SizeMode = AKContainer::Chg_Last, ///< Change type for the size mode.
-        Chg_Alignment,                        ///< Change type for the alignment.
-        Chg_Last                              ///< Marks the end of change types for this component.
+        CHSizeMode = AKContainer::CHLast, ///< Change type for the size mode.
+        CHAlignment,                        ///< Change type for the alignment.
+        CHLast                              ///< Marks the end of change types for this component.
     };
 
     /**
@@ -153,7 +153,7 @@ public:
             return false;
 
         m_alignment = alignment;
-        addChange(Chg_Alignment);
+        addChange(CHAlignment);
         updateDimensions();
         return true;
     }
@@ -179,7 +179,7 @@ public:
             return false;
 
         m_sizeMode = mode;
-        addChange(Chg_SizeMode);
+        addChange(CHSizeMode);
         updateDimensions();
         return true;
     }

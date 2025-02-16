@@ -15,10 +15,10 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
 
     if (m_prevRect == targetNode()->globalRect() &&
         m_prevScale == targetNode()->scale() &&
-        !chg.test(Chg_Offset) &&
-        !chg.test(Chg_FillBackground) &&
-        !chg.test(Chg_BorderRadius) &&
-        !chg.test(Chg_Radius) &&
+        !chg.test(CHOffset) &&
+        !chg.test(CHFillBackground) &&
+        !chg.test(CHBorderRadius) &&
+        !chg.test(CHRadius) &&
         m_surface)
         return;
 
@@ -43,7 +43,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
 
     const SkIPoint finalPos { effectRect.x() + targetNode()->sceneRect().x(), effectRect.y() + targetNode()->sceneRect().y() };
 
-    if (chg.test(Chg_Radius))
+    if (chg.test(CHRadius))
         needsFullDamage = needsNewSurface = true;
 
     const SkScalar centerSize { std::max(m_radius * 0.5f, 64.f) };
@@ -94,7 +94,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
         finalPos.y() + m_radius + targetNode()->sceneRect().height(),
         m_radius, m_radius);
 
-    needsFullDamage |= chg.test(Chg_Color) || chg.test(Chg_FillBackground);
+    needsFullDamage |= chg.test(CHColor) || chg.test(CHFillBackground);
 
     if (needsNewSurface)
     {
@@ -195,7 +195,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
     effectRect.outset(m_radius, m_radius);
     effectRect.offset(offset().x(), offset().y());
 
-    if (effectRect.size() != prevSize || chg.test(Chg_Radius) || chg.test(Chg_BorderRadius) || chg.test(Chg_Offset) || chg.test(Chg_FillBackground))
+    if (effectRect.size() != prevSize || chg.test(CHRadius) || chg.test(CHBorderRadius) || chg.test(CHOffset) || chg.test(CHFillBackground))
         needsFullDamage = needsNewSurface = true;
 
     if (needsNewSurface)

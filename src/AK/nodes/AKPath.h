@@ -30,12 +30,12 @@ public:
     enum Changes
     {
         /// path() changed.
-        Chg_Path = AKBakeable::Chg_Last,
+        CHPath = AKBakeable::CHLast,
 
         /// sizeMode() changed.
-        Chg_SizeMode,
+        CHSizeMode,
 
-        Chg_Last
+        CHLast
     };
 
     /**
@@ -82,7 +82,7 @@ public:
             return;
 
         m_path = path;
-        addChange(Chg_Path);
+        addChange(CHPath);
     }
 
     /**
@@ -102,7 +102,7 @@ public:
             return;
 
         m_sizeMode = mode;
-        addChange(Chg_SizeMode);
+        addChange(CHSizeMode);
     }
 
     /**

@@ -31,7 +31,7 @@ public:
 
     enum Changes
     {
-        Chg_Last = AKRenderable::Chg_Last,
+        CHLast = AKRenderable::CHLast,
     };
 
     /**

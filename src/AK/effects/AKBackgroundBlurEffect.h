@@ -24,11 +24,11 @@ public:
     enum Changes
     {
         /// The sigma() value has changed.
-        Chg_Sigma = AKBackgroundEffect::Chg_Last,
+        CHSigma = AKBackgroundEffect::CHLast,
 
         /// The clipMode() value has changed.
-        Chg_ClipMode,
-        Chg_Last
+        CHClipMode,
+        CHLast
     };
 
     /**
@@ -73,7 +73,7 @@ public:
             return;
 
         m_clipMode = mode;
-        addChange(Chg_ClipMode);
+        addChange(CHClipMode);
     }
 
     /**
@@ -95,7 +95,7 @@ public:
             return;
 
         m_sigma = sigma;
-        addChange(Chg_Sigma);
+        addChange(CHSigma);
     }
 
     /**

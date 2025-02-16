@@ -161,7 +161,7 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
         if (!isBackgroundEffect)
         {
             if (handleChanges && m_parent != parent)
-                addChange(Chg_Parent);
+                addChange(CHParent);
 
             YGNodeRemoveChild(m_parent->layout().m_node, layout().m_node);
         }
@@ -187,7 +187,7 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
 
         if (handleChanges)
         {
-            parent->addChange(Chg_Layout);
+            parent->addChange(CHLayout);
             setScene(parent->scene());
             updateSubScene();
         }
@@ -279,10 +279,10 @@ void AKNode::insertBefore(AKNode *other) noexcept
             }
             else if (!isBackgroundEffect)
             {
-                addChange(Chg_Parent);
+                addChange(CHParent);
 
                 if (parent())
-                    parent()->addChange(Chg_Layout);
+                    parent()->addChange(CHLayout);
             }
 
             if (isBackgroundEffect)
@@ -292,7 +292,7 @@ void AKNode::insertBefore(AKNode *other) noexcept
             else
             {
                 setScene(other->scene());
-                other->parent()->addChange(Chg_Layout);
+                other->parent()->addChange(CHLayout);
             }
 
             setParentPrivate(nullptr, false);
@@ -345,10 +345,10 @@ void AKNode::insertAfter(AKNode *other) noexcept
             }
             else if (!isBackgroundEffect)
             {
-                addChange(Chg_Parent);
+                addChange(CHParent);
 
                 if (parent())
-                    parent()->addChange(Chg_Layout);
+                    parent()->addChange(CHLayout);
             }
 
             if (other->parent()->children().back() == other)
@@ -366,7 +366,7 @@ void AKNode::insertAfter(AKNode *other) noexcept
             else
             {
                 setScene(other->scene());
-                other->parent()->addChange(Chg_Layout);
+                other->parent()->addChange(CHLayout);
             }
 
             m_parent = other->parent();

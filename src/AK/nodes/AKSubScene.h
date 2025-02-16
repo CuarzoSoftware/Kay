@@ -9,7 +9,7 @@ class AK::AKSubScene : public AKBakeable
 public:
     enum class Changes
     {
-        Chg_Last = AKBakeable::Chg_Last,
+        CHLast = AKBakeable::CHLast,
     };
 
     AKSubScene(AKNode *parent = nullptr) noexcept;

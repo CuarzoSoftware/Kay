@@ -11,9 +11,9 @@ public:
 
     enum Changes
     {
-        Chg_Radius = AKBackgroundEffect::Chg_Last,
-        Chg_Offset,
-        Chg_Last
+        CHRadius = AKBackgroundEffect::CHLast,
+        CHOffset,
+        CHLast
     };
 
     explicit AKBackgroundImageShadowEffect(SkScalar radius,
@@ -35,7 +35,7 @@ public:
         if (m_radius == radius)
             return;
 
-        addChange(Chg_Radius);
+        addChange(CHRadius);
         m_radius = radius;
     }
 
@@ -49,7 +49,7 @@ public:
         if (m_offset == offset)
             return;
 
-        addChange(Chg_Offset);
+        addChange(CHOffset);
         m_offset = offset;
     }
 

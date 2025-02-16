@@ -11,7 +11,7 @@ class AK::AKButton : public AKSubScene
 public:
     enum Changes
     {
-        CHEnabled = AKSubScene::Chg_Last,
+        CHEnabled = AKSubScene::CHLast,
         CHBackgroundColor,
         CHPressed,
         CHLast

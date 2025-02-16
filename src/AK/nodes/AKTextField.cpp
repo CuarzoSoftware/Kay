@@ -28,12 +28,16 @@ AKTextField::AKTextField(AKNode *parent) noexcept : AKContainer(YGFlexDirection:
 
     signalLayoutChanged.subscribe(this, [this](AKBitset<LayoutChanges> changes){
         if (changes.check(LayoutChanges::Size))
-            m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(globalRect().width());
-        if (changes.check(LayoutChanges::Scale))
+        {
             updateDimensions();
+            updateTextPosition();
+        }
+        if (changes.check(LayoutChanges::Scale))
+            updateScale();
     });
 
     updateDimensions();
+    updateScale();
 }
 
 static size_t utf8CharLenght(char c)
@@ -81,17 +85,37 @@ void AKTextField::onEvent(const AKEvent &event)
 
         std::string str { m_text.text() };
         removeUTF8CharAt(str, str.size() - 1);
-        m_text.setText(str);
+        if (m_text.setText(str))
+            updateTextPosition();
+    }
+    else if (e.keySymbol() == XKB_KEY_Return)
+    {
+        return;
     }
     else
     {
-        m_text.setText(m_text.text() + e.keyString());
+        if (m_text.setText(m_text.text() + e.keyString()))
+            updateTextPosition();
     }
 
 }
 
 void AKTextField::updateDimensions() noexcept
 {
+    m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(globalRect().width());
+}
+
+void AKTextField::updateScale() noexcept
+{
     m_hThreePatch.setImage(theme()->textFieldRoundHThreePatchImage(scale()));
     m_hThreePatch.setImageScale(scale());
+}
+
+void AKTextField::updateTextPosition() noexcept
+{
+    layout().calculate();
+    if (m_text.layout().calculatedWidth() + m_caret.layout().calculatedWidth() < m_content.layout().calculatedWidth())
+        m_content.layout().setJustifyContent(YGJustifyCenter);
+    else
+        m_content.layout().setJustifyContent(YGJustifyFlexEnd);
 }

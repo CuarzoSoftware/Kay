@@ -31,7 +31,7 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
     effectRect.outset(m_radius, m_radius);
     effectRect.offset(offset().x(), offset().y());
 
-    if (prevSize != effectRect.size() || chg.test(Chg_Radius) || bakeableTarget->onBakeGeneratedDamage())
+    if (prevSize != effectRect.size() || chg.test(CHRadius) || bakeableTarget->onBakeGeneratedDamage())
         needsFullDamage = needsNewSurface = true;
 
     if (needsNewSurface)

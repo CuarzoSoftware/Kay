@@ -23,7 +23,7 @@ class AK::AKThreeImagePatch : public AKRenderable
 public:
     enum Changes
     {
-        CHSideSrcRect = AKRenderable::Chg_Last,
+        CHSideSrcRect = AKRenderable::CHLast,
         CHCenterSrcRect,
         CHOrientation,
         CHImageScale,

@@ -276,13 +276,6 @@ void AKScene::calculateNewDamage(AKNode *node)
     if (bakeable)
         static_cast<AKBakeable*>(node)->m_onBakeGeneratedDamage = false;
 
-    if (renderable)
-        renderable->handleCommonChanges();
-
-    const bool hasNoChanges = t->m_damage.isEmpty() &&
-                              node->t->changes.none() &&
-                              node->t->clientDamage.isEmpty();
-
     if (backgroundEffect)
     {
         backgroundEffect->onSceneCalculatedRect();
@@ -303,7 +296,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     }
     else
     {
-        if (node->t->changes.test(AKNode::Chg_LayoutPos) || node->t->changes.test(AKNode::Chg_LayoutSize))
+        if (node->t->changes.test(AKNode::CHLayoutPos) || node->t->changes.test(AKNode::CHLayoutSize))
         {
             node->m_rect = SkIRect::MakeXYWH(
                 node->m_globalRect.x() - root()->m_globalRect.x(),
@@ -327,13 +320,10 @@ void AKScene::calculateNewDamage(AKNode *node)
         t->m_opaque.op(reactive, SkRegion::Op::kDifference_Op);
     }
 
-    if (!hasNoChanges)
-    {
-        node->m_intersectedTargets.clear();
-        for (AKTarget *target : targets())
-            if (SkIRect::Intersects(node->globalRect(), target->m_globalIViewport))
-                node->m_intersectedTargets.push_back(target);
-    }
+    node->m_intersectedTargets.clear();
+    for (AKTarget *target : targets())
+        if (SkIRect::Intersects(node->globalRect(), target->m_globalIViewport))
+            node->m_intersectedTargets.push_back(target);
 
     if (node->t->visible)
         clip.setRect(node->m_rect);
@@ -351,6 +341,7 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     if (bakeable && !clip.isEmpty() &&
         (node->t->changes.any()
+            || !node->t->clientDamage.isEmpty()
             || !bakeable->surface()
             || bakeable->surface()->scale() != node->scale()))
     {
@@ -360,8 +351,6 @@ void AKScene::calculateNewDamage(AKNode *node)
         if (!clipRegion.isEmpty())
         {
             clipRegion.translate(-bakeable->m_rect.x(), -bakeable->m_rect.y());
-
-            SkRegion damage;
             bool surfaceChanged;
 
             if (bakeable->surface())
@@ -382,14 +371,14 @@ void AKScene::calculateNewDamage(AKNode *node)
             AKBakeable::OnBakeParams params
             {
                 .clip = &clipRegion,
-                .damage = &damage,
+                .damage = &node->t->clientDamage,
                 .opaque = &bakeable->opaqueRegion,
                 .surface = bakeable->m_surface
             };
 
             if (surfaceChanged)
             {
-                bakeable->t->changes.set(AKRenderable::Chg_Size);
+                bakeable->t->changes.set(AKRenderable::CHSize);
                 params.damage->setRect(AK_IRECT_INF);
             }
 
@@ -399,15 +388,14 @@ void AKScene::calculateNewDamage(AKNode *node)
             bakeable->onBake(&params);
             canvas.restore();
             bakeable->m_onBakeGeneratedDamage = !params.damage->isEmpty();
-            bakeable->t->clientDamage.op(damage, SkRegion::Op::kUnion_Op);
-
-            //params.surface->surface()->recordingContext()->asDirectContext()->resetContext();
-            //params.surface->surface()->flush();
         }
     }
 
-
-    if (!renderable)
+    /* Must be called after onBake. If called before, any added damage
+     * will cause unnecessary rebaking. */
+    if (renderable)
+        renderable->handleCommonChanges();
+    else
         goto skipDamage;
 
     if (node->m_rect == node->t->prevLocalRect)
@@ -428,7 +416,7 @@ void AKScene::calculateNewDamage(AKNode *node)
         // Both current and prev clip need to be repainted
         t->m_damage.op(node->t->prevLocalClip, SkRegion::Op::kUnion_Op);
         t->m_damage.op(clip, SkRegion::Op::kUnion_Op);
-        node->t->changes.set(AKRenderable::Chg_Size);
+        node->t->changes.set(AKRenderable::CHSize);
     }
 
 skipDamage:

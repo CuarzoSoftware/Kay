@@ -43,23 +43,23 @@ void AKRenderable::handleCommonChanges() noexcept
 
     if (m_renderableHint == SolidColor)
     {
-        if (c.test(Chg_Color) ||
-            c.test(Chg_Opacity) ||
-            c.test(Chg_ColorFactor) ||
-            c.test(Chg_CustomBlendFuncEnabled) ||
-            (customBlendFuncEnabled() && c.test(Chg_CustomBlendFunc)))
+        if (c.test(CHColor) ||
+            c.test(CHOpacity) ||
+            c.test(CHColorFactor) ||
+            c.test(CHCustomBlendFuncEnabled) ||
+            (customBlendFuncEnabled() && c.test(CHCustomBlendFunc)))
             addDamage(AK_IRECT_INF);
 
         m_colorHint = opacity() < 1.f || colorFactor().fA < 1.f ? ColorHint::Translucent : ColorHint::Opaque;
     }
     else
     {
-        if (c.test(Chg_Opacity) ||
-            c.test(Chg_ColorFactor) ||
-            c.test(Chg_CustomBlendFuncEnabled) ||
-            c.test(Chg_CustomTextureColorEnabled) ||
-            (customTextureColorEnabled() && c.test(Chg_Color)) ||
-            (customBlendFuncEnabled() && c.test(Chg_CustomBlendFunc)))
+        if (c.test(CHOpacity) ||
+            c.test(CHColorFactor) ||
+            c.test(CHCustomBlendFuncEnabled) ||
+            c.test(CHCustomTextureColorEnabled) ||
+            (customTextureColorEnabled() && c.test(CHColor)) ||
+            (customBlendFuncEnabled() && c.test(CHCustomBlendFunc)))
             addDamage(AK_IRECT_INF);
 
         m_colorHint = opacity() < 1.f || colorFactor().fA < 1.f ? ColorHint::Translucent : ColorHint::UseRegion;

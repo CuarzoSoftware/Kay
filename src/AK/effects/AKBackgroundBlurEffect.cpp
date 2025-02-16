@@ -21,10 +21,10 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
 
     const auto &chgs { changes() };
 
-    if (chgs.test(Chg_Sigma) || chgs.test(Chg_ClipMode))
+    if (chgs.test(CHSigma) || chgs.test(CHClipMode))
         addDamage(AK_IRECT_INF);
 
-    if (!m_brush.getImageFilter() || chgs.test(Chg_Sigma))
+    if (!m_brush.getImageFilter() || chgs.test(CHSigma))
         m_brush.setImageFilter(SkImageFilters::Blur(m_sigma.x(), m_sigma.y(), SkTileMode::kMirror, nullptr));
 }
 

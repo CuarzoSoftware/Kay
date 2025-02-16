@@ -71,13 +71,13 @@ public:
 
     enum Changes : Change
     {
-        Chg_Layout,
-        Chg_LayoutPos,
-        Chg_LayoutSize,
-        Chg_LayoutScale,
-        Chg_Parent,
-        Chg_ChildrenClipping,
-        Chg_Last
+        CHLayout,
+        CHLayoutPos,
+        CHLayoutSize,
+        CHLayoutScale,
+        CHParent,
+        CHChildrenClipping,
+        CHLast
     };
     void addChange(Change change) noexcept;
 
@@ -162,7 +162,7 @@ public:
             return;
 
         m_flags.setFlag(ChildrenClipping, enable);
-        addChange(Chg_ChildrenClipping);
+        addChange(CHChildrenClipping);
     }
 
     void setInputRegion(SkRegion *region) noexcept { m_inputRegion = region ? std::make_unique<SkRegion>(*region) : nullptr; }

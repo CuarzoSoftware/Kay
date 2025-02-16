@@ -12,11 +12,11 @@ class AK::AKSimpleText : public AKBakeable
 public:
     enum Changes
     {
-        Chg_Font = AKBakeable::Chg_Last,
-        Chg_Text,
-        Chg_Brush,
-        Chg_Pen,
-        Chg_Last
+        CHFont = AKBakeable::CHLast,
+        CHText,
+        CHBrush,
+        CHPen,
+        CHLast
     };
 
     AKSimpleText(const std::string &text, AKNode *parent = nullptr) noexcept :
@@ -33,7 +33,7 @@ public:
         if (m_font == font)
             return;
 
-        addChange(Chg_Font);
+        addChange(CHFont);
         m_font = font;
         updateDimensions();
         signalFontChanged.notify();
@@ -68,7 +68,7 @@ public:
             return;
 
         m_brush = brush;
-        addChange(Chg_Brush);
+        addChange(CHBrush);
     }
 
     const AKBrush &brush() const noexcept
@@ -82,7 +82,7 @@ public:
             return;
 
         m_pen = pen;
-        addChange(Chg_Pen);
+        addChange(CHPen);
     }
 
     const AKPen &pen() const noexcept

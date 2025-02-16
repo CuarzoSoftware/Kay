@@ -120,22 +120,22 @@ public:
     // a scene render pass
     enum Changes
     {
-        Chg_ShadowRadius = AKBakeable::Chg_Last,
-        Chg_ShadowOffset,
-        Chg_ShadowColor,
-        Chg_BorderRadius,
-        Chg_Brush,
-        Chg_Pen,
-        Chg_Last
+        CHShadowRadius = AKBakeable::CHLast,
+        CHShadowOffset,
+        CHShadowColor,
+        CHBorderRadius,
+        CHBrush,
+        CHPen,
+        CHLast
     };
 
     Menu(AKNode *parent = nullptr) noexcept : AKBakeable(parent)
     {
         blur.on.targetLayoutUpdated.subscribe(this, [this](){
             const auto &chgs { changes() };
-            bool blurNeedsUpdate { chgs.test(Chg_Size) };
+            bool blurNeedsUpdate { chgs.test(CHSize) };
 
-            for (UInt32 flag = Chg_ShadowRadius; flag <= Chg_BorderRadius; flag++)
+            for (UInt32 flag = CHShadowRadius; flag <= CHBorderRadius; flag++)
                 blurNeedsUpdate |= chgs.test(flag);
 
             if (!blurNeedsUpdate)
@@ -191,7 +191,7 @@ public:
             return;
 
         m_shadowBrush.setColor(color);
-        addChange(Chg_ShadowColor);
+        addChange(CHShadowColor);
     }
 
     void setShadowRadius(SkScalar radius) noexcept
@@ -200,7 +200,7 @@ public:
             return;
 
         m_shadowRadius = radius;
-        addChange(Chg_ShadowRadius);
+        addChange(CHShadowRadius);
         updateShadow();
     }
 
@@ -210,7 +210,7 @@ public:
             return;
 
         m_shadowOffset = offset;
-        addChange(Chg_ShadowOffset);
+        addChange(CHShadowOffset);
         updateShadow();
     }
 
@@ -220,7 +220,7 @@ public:
             return;
 
         m_brush = brush;
-        addChange(Chg_Brush);
+        addChange(CHBrush);
     }
 
     void setPen(const AKPen &pen) noexcept
@@ -229,7 +229,7 @@ public:
             return;
 
         m_pen = pen;
-        addChange(Chg_Pen);
+        addChange(CHPen);
     }
 
     AKContainer itemsContainer { YGFlexDirectionColumn, true, this };
@@ -247,8 +247,8 @@ protected:
     void updateShadow() noexcept
     {
         const auto chgs { changes() };
-        const bool needsShadowUpdate { chgs.test(Chg_ShadowRadius) };
-        const bool needsPaddingUpdate { needsShadowUpdate || chgs.test(Chg_ShadowOffset) };
+        const bool needsShadowUpdate { chgs.test(CHShadowRadius) };
+        const bool needsPaddingUpdate { needsShadowUpdate || chgs.test(CHShadowOffset) };
 
         // Add padding to prevent itemsContainer from overlapping the shadow
         if (needsPaddingUpdate)
@@ -272,12 +272,12 @@ protected:
 
         const bool needsRebake {
             !params->damage->isEmpty() || // If the scene explicitly adds damage it means the node's size changed
-            chgs.test(Chg_ShadowRadius) ||
-            chgs.test(Chg_ShadowColor) ||
-            chgs.test(Chg_ShadowOffset) ||
-            chgs.test(Chg_BorderRadius) ||
-            chgs.test(Chg_Brush) ||
-            chgs.test(Chg_Pen)
+            chgs.test(CHShadowRadius) ||
+            chgs.test(CHShadowColor) ||
+            chgs.test(CHShadowOffset) ||
+            chgs.test(CHBorderRadius) ||
+            chgs.test(CHBrush) ||
+            chgs.test(CHPen)
         };
 
         if (!needsRebake) // Nothing to do

@@ -21,7 +21,7 @@ void AKLayout::setDisplay(YGDisplay display) noexcept
     {
         for (auto &t : m_akNode.m_targets)
         {
-            t.second.changes.set(AKNode::Chg_Layout);
+            t.second.changes.set(AKNode::CHLayout);
             t.first->markDirty();
         }
     }
@@ -32,7 +32,7 @@ void AKLayout::setDisplay(YGDisplay display) noexcept
 void AKLayout::checkIsDirty() noexcept
 {
     if (YGNodeIsDirty(m_node))
-        m_akNode.addChange(AKNode::Chg_Layout);
+        m_akNode.addChange(AKNode::CHLayout);
 }
 
 void AKLayout::apply(bool calculate) noexcept
@@ -110,14 +110,14 @@ void AKLayout::applyTree(AKNode *node)
         if (newRect.topLeft() != node->m_globalRect.topLeft())
         {
             changes.add(AKNode::LayoutChanges::Pos);
-            node->addChange(AKNode::Chg_LayoutPos);
+            node->addChange(AKNode::CHLayoutPos);
             node->m_flags.add(AKNode::ChildrenNeedPosUpdate);
         }
 
         if (newRect.size() != node->m_globalRect.size())
         {
             changes.add(AKNode::LayoutChanges::Size);
-            node->addChange(AKNode::Chg_LayoutSize);
+            node->addChange(AKNode::CHLayoutSize);
         }
 
         node->m_globalRect = newRect;
@@ -146,7 +146,7 @@ void AKLayout::applyTree(AKNode *node)
         {
             node->m_scale = newScale;
             changes.add(AKNode::LayoutChanges::Scale);
-            node->addChange(AKNode::Chg_LayoutScale);
+            node->addChange(AKNode::CHLayoutScale);
             node->m_flags.add(AKNode::ChildrenNeedScaleUpdate);
         }
     }

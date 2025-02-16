@@ -16,6 +16,8 @@ public:
 protected:
     void onEvent(const AKEvent &event) override;
     void updateDimensions() noexcept;
+    void updateScale() noexcept;
+    void updateTextPosition() noexcept;
     AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
     AKText m_text { "😊😃😆", &m_content };

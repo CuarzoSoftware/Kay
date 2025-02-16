@@ -22,7 +22,7 @@ void AKSimpleText::setText(const std::string &text) noexcept
     m_text = text;
     m_skText = text;
     replaceAllInPlace(m_skText, "\t", "    ");
-    addChange(Chg_Text);
+    addChange(CHText);
     updateDimensions();
     signalTextChanged.notify();
 }
@@ -56,7 +56,7 @@ void AKSimpleText::onBake(OnBakeParams *params)
 
     SkCanvas &c { *params->surface->surface()->getCanvas() };
 
-    bool needsRepaint { changes().test(Chg_Text) || changes().test(Chg_Font) || changes().test(Chg_Brush) || changes().test(Chg_Pen) };
+    bool needsRepaint { changes().test(CHText) || changes().test(CHFont) || changes().test(CHBrush) || changes().test(CHPen) };
 
     if (!params->damage->isEmpty())
     {

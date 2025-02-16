@@ -15,7 +15,7 @@ AKSubScene::AKSubScene(AKNode *parent) noexcept : AKBakeable(parent)
     m_target = m_scene.createTarget();
     m_target->setRenderCalculatesLayout(false);
     m_target->on.markedDirty.subscribe(this, [this](AKTarget &){
-        addChange(Chg_Layout);
+        addChange(CHLayout);
         m_target->m_isDirty = false;
     });
 

@@ -15,15 +15,15 @@ public:
 
     enum Changes
     {
-        Chg_Opacity = AKNode::Chg_Last,
-        Chg_CustomTextureColorEnabled,
-        Chg_Color,
-        Chg_ColorFactor,
-        Chg_CustomBlendFuncEnabled,
-        Chg_CustomBlendFunc,
-        Chg_Size,
-        Chg_DiminishOpacityOnInactive,
-        Chg_Last
+        CHOpacity = AKNode::CHLast,
+        CHCustomTextureColorEnabled,
+        CHColor,
+        CHColorFactor,
+        CHCustomBlendFuncEnabled,
+        CHCustomBlendFunc,
+        CHSize,
+        CHDiminishOpacityOnInactive,
+        CHLast
     };
 
     AKRenderable(RenderableHint hint, AKNode *parent = nullptr) noexcept :
@@ -42,7 +42,7 @@ public:
             return;
 
         m_color.fA = alpha;
-        addChange(Chg_Opacity);
+        addChange(CHOpacity);
     }
 
     SkScalar opacity() const noexcept
@@ -56,7 +56,7 @@ public:
             return;
 
         m_customTextureColorEnabled = enable;
-        addChange(Chg_CustomTextureColorEnabled);
+        addChange(CHCustomTextureColorEnabled);
     }
 
     bool customTextureColorEnabled() const noexcept
@@ -73,13 +73,13 @@ public:
             m_color.fR = color.fR;
             m_color.fG = color.fG;
             m_color.fB = color.fB;
-            addChange(Chg_Color);
+            addChange(CHColor);
         }
 
         if (color.fA != m_color.fA)
         {
             m_color.fA = color.fA;
-            addChange(Chg_Opacity);
+            addChange(CHOpacity);
         }
     }
 
@@ -98,7 +98,7 @@ public:
         m_color.fR = color.fR;
         m_color.fG = color.fG;
         m_color.fB = color.fB;
-        addChange(Chg_Color);
+        addChange(CHColor);
     }
 
     void setColorWithoutAlpha(SkColor color) noexcept
@@ -117,7 +117,7 @@ public:
             return;
 
         m_colorFactor = colorFactor;
-        addChange(Chg_ColorFactor);
+        addChange(CHColorFactor);
     }
 
     void setColorFactor(SkColor colorFactor) noexcept
@@ -136,7 +136,7 @@ public:
             return;
 
         m_customBlendFuncEnabled = enable;
-        addChange(Chg_CustomBlendFuncEnabled);
+        addChange(CHCustomBlendFuncEnabled);
     }
 
     bool customBlendFuncEnabled() const noexcept
@@ -150,7 +150,7 @@ public:
             return;
 
         m_customBlendFunc = blendFunc;
-        addChange(Chg_CustomBlendFunc);
+        addChange(CHCustomBlendFunc);
     }
 
     const AKBlendFunc &customBlendFunc() const noexcept
@@ -164,7 +164,7 @@ public:
             return;
 
         m_flags.setFlag(DiminishOpacityOnInactive, enable);
-        addChange(Chg_DiminishOpacityOnInactive);
+        addChange(CHDiminishOpacityOnInactive);
     }
 
     bool diminishOpacityOnInactive() const noexcept

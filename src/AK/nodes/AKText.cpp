@@ -5,6 +5,15 @@
 
 using namespace AK;
 
+static void replaceAllInPlace(std::string &dst, const std::string &find, const std::string &replace) {
+    size_t pos { 0 };
+    while ((pos = dst.find(find, pos)) != std::string::npos) {
+        dst.replace(pos, 1, replace);
+        pos += replace.size();
+    }
+}
+
+
 AKText::AKText(const std::string &text, AKNode *parent) noexcept : AKBakeable(parent)
 {
     m_paragraphStyle.setTextDirection(skia::textlayout::TextDirection::kLtr);
@@ -19,14 +28,17 @@ AKText::AKText(const std::string &text, AKNode *parent) noexcept : AKBakeable(pa
     setText(text);
 }
 
-void AKText::setText(const std::string &text) noexcept
+bool AKText::setText(const std::string &text) noexcept
 {
     if (m_text == text)
-        return;
+        return false;
 
     m_text = text;
+    m_skText = text;
+    replaceAllInPlace(m_skText, "\t", "    ");
     addChange(CHText);
     updateDimensions();
+    return true;
 }
 
 void AKText::onBake(OnBakeParams *p)
@@ -51,11 +63,11 @@ void AKText::updateDimensions() noexcept
 {
     m_builder = skia::textlayout::ParagraphBuilderImpl::make(m_paragraphStyle, m_collection);
     m_builder->pushStyle(m_textStyle);
-    m_builder->addText(m_text.c_str());
+    m_builder->addText(m_skText.c_str());
     m_builder->pop();
     m_paragraph = m_builder->Build();
     m_paragraph->layout(3000000);
-    layout().setWidth(m_paragraph->getLongestLine());
+    layout().setWidth(m_paragraph->getMaxIntrinsicWidth());
     layout().setHeight(m_paragraph->getHeight());
     layout().setMaxWidth(layout().width().value);
     layout().setMaxHeight(layout().height().value);

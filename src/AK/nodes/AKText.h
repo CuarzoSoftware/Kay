@@ -11,7 +11,7 @@ class AK::AKText : public AKBakeable
 public:
     enum Changes
     {
-        CHParagraphStyle = AKBakeable::Chg_Last,
+        CHParagraphStyle = AKBakeable::CHLast,
         CHTextStyle,
         CHText,
         CHLast
@@ -19,7 +19,7 @@ public:
 
     AKText(const std::string &text, AKNode *parent = nullptr) noexcept;
 
-    void setText(const std::string &text) noexcept;
+    bool setText(const std::string &text) noexcept;
 
     const std::string &text() const noexcept
     {
@@ -45,7 +45,7 @@ public:
 protected:
     void onBake(OnBakeParams *p) override;
     void updateDimensions() noexcept;
-    std::string m_text;
+    std::string m_text, m_skText;
     skia::textlayout::TextStyle m_textStyle;
     skia::textlayout::ParagraphStyle m_paragraphStyle;
     sk_sp<skia::textlayout::FontCollection> m_collection;

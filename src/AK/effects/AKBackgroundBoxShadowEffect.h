@@ -11,11 +11,11 @@ public:
 
     enum Changes
     {
-        Chg_Radius = AKBackgroundEffect::Chg_Last,
-        Chg_Offset,
-        Chg_FillBackground,
-        Chg_BorderRadius,
-        Chg_Last
+        CHRadius = AKBackgroundEffect::CHLast,
+        CHOffset,
+        CHFillBackground,
+        CHBorderRadius,
+        CHLast
     };
 
     explicit AKBackgroundBoxShadowEffect(SkScalar radius,
@@ -38,7 +38,7 @@ public:
         if (m_radius == radius)
             return;
 
-        addChange(Chg_Radius);
+        addChange(CHRadius);
         m_radius = radius;
     }
 
@@ -52,7 +52,7 @@ public:
         if (m_offset == offset)
             return;
 
-        addChange(Chg_Offset);
+        addChange(CHOffset);
         m_offset = offset;
     }
 
@@ -71,7 +71,7 @@ public:
         if (m_fillBackgroundEnabled == enabled)
             return;
 
-        addChange(Chg_FillBackground);
+        addChange(CHFillBackground);
         m_fillBackgroundEnabled = enabled;
     }
 
@@ -85,7 +85,7 @@ public:
         if (m_borderRadius == borderRadius)
             return;
 
-        addChange(Chg_BorderRadius);
+        addChange(CHBorderRadius);
         m_borderRadius = borderRadius;
     }
 
