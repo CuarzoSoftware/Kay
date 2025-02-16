@@ -12,7 +12,7 @@ AKButton::AKButton(const std::string &text, AKNode *parent) noexcept : AKSubScen
     m_text(text, &m_content)
 {
     setCursor(AKCursor::Pointer);
-    m_text.setFont(AKTheme::ButtonFont);
+    m_text.setTextStyle(theme()->ButtonTextStyle);
     m_hThreePatch.layout().setFlex(1.f);
     m_hThreePatch.layout().setPadding(YGEdgeLeft, AKTheme::ButtonPadding.left());
     m_hThreePatch.layout().setPadding(YGEdgeRight, AKTheme::ButtonPadding.right());
@@ -139,6 +139,7 @@ void AKButton::updateStyle() noexcept
         m_hThreePatch.setImage(theme()->buttonPlainHThreePatchImage(scale()));
         m_hThreePatch.setSideSrcRect(AKTheme::ButtonPlainHThreePatchSideSrcRect);
         m_hThreePatch.setCenterSrcRect(AKTheme::ButtonPlainHThreePatchCenterSrcRect);
+        m_text.enableCustomTextureColor(false);
         m_text.setColorWithoutAlpha(SK_ColorBLACK);
     }
     else
@@ -146,11 +147,12 @@ void AKButton::updateStyle() noexcept
         m_hThreePatch.setImage(theme()->buttonTintedHThreePatchImage(scale()));
         m_hThreePatch.setSideSrcRect(AKTheme::ButtonTintedHThreePatchSideSrcRect);
         m_hThreePatch.setCenterSrcRect(AKTheme::ButtonTintedHThreePatchCenterSrcRect);
+        m_text.enableCustomTextureColor(true);
 
         if (enabled())
             m_text.setColorWithoutAlpha(SK_ColorWHITE);
         else
-            m_text.setColorWithoutAlpha(SK_ColorBLACK);
+           m_text.enableCustomTextureColor(false);
     }
 
     m_text.setOpacity(contentOpacity);

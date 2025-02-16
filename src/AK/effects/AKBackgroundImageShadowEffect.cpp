@@ -36,7 +36,7 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
 
     if (needsNewSurface)
     {
-        const SkSize surfaceSize { SkSize::Make(effectRect.size()) };
+        const SkISize surfaceSize { effectRect.size() };
 
         if (m_surface)
             m_surface->resize(surfaceSize, bakeableTarget->scale(), true);

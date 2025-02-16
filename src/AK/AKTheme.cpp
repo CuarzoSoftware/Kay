@@ -21,13 +21,14 @@ AK::AKTheme::AKTheme() noexcept
         SkFontStyle::Slant::kUpright_Slant)));
     DefaultFont.setSize(12);
 
-    ButtonFont.setTypeface(
-        AKApp()->fontManager()->matchFamilyStyle("Inter",
+    ButtonTextStyle.setColor(SK_ColorBLACK);
+    ButtonTextStyle.setFontFamilies(std::vector<SkString>({SkString("Inter")}));
+    ButtonTextStyle.setFontStyle(
         SkFontStyle(
-            SkFontStyle::kSemiBold_Weight,
+            SkFontStyle::kMedium_Weight,
             SkFontStyle::Width::kNormal_Width,
-            SkFontStyle::Slant::kUpright_Slant)));
-    ButtonFont.setSize(12);
+            SkFontStyle::Slant::kUpright_Slant));
+    ButtonTextStyle.setFontSize(12);
 }
 
 SkRegion AK::AKTheme::buttonPlainOpaqueRegion(Int32 width) noexcept
@@ -54,7 +55,7 @@ sk_sp<SkImage> AK::AKTheme::buttonPlainHThreePatchImage(Int32 scale) noexcept
         return it->second;
 
     auto surface = AKSurface::Make(
-        SkSize(ButtonPlainHThreePatchSideSrcRect.width() + ButtonPlainHThreePatchCenterSrcRect.width(),
+        SkISize(ButtonPlainHThreePatchSideSrcRect.width() + ButtonPlainHThreePatchCenterSrcRect.width(),
                ButtonPlainHThreePatchSideSrcRect.height()),
         scale, true);
 
@@ -105,7 +106,7 @@ sk_sp<SkImage> AK::AKTheme::buttonTintedHThreePatchImage(Int32 scale) noexcept
         return it->second;
 
     auto surface = AKSurface::Make(
-        SkSize(ButtonTintedHThreePatchSideSrcRect.width() + ButtonTintedHThreePatchCenterSrcRect.width(),
+        SkISize(ButtonTintedHThreePatchSideSrcRect.width() + ButtonTintedHThreePatchCenterSrcRect.width(),
                ButtonTintedHThreePatchSideSrcRect.height()),
                 scale, true);
 
@@ -157,7 +158,7 @@ sk_sp<SkImage> AK::AKTheme::textFieldRoundHThreePatchImage(Int32 scale) noexcept
     if (it != m_textFieldRoundHThreePatchImage.end())
         return it->second;
 
-    auto surface = AKSurface::Make(SkSize(TextFieldRoundHThreePatchSideSrcRect.width() + TextFieldRoundHThreePatchCenterSrcRect.width(),
+    auto surface = AKSurface::Make(SkISize(TextFieldRoundHThreePatchSideSrcRect.width() + TextFieldRoundHThreePatchCenterSrcRect.width(),
                                           TextFieldRoundHThreePatchSideSrcRect.height()),
                                    scale, true);
 
@@ -207,7 +208,7 @@ sk_sp<SkImage> AK::AKTheme::textCaretVThreePatchImage(Int32 scale) noexcept
     if (it != m_textCaretVThreePatchImage.end())
         return it->second;
 
-    auto surface = AKSurface::Make(SkSize(TextCaretVThreePatchSideSrcRect.width(),
+    auto surface = AKSurface::Make(SkISize(TextCaretVThreePatchSideSrcRect.width(),
                                           TextCaretVThreePatchSideSrcRect.height() + TextCaretVThreePatchCenterSrcRect.height()),
                                    scale, true);
 
@@ -238,7 +239,7 @@ sk_sp<SkImage> AK::AKTheme::edgeShadowImage(Int32 scale) noexcept
     if (it != m_edgeShadowImage.end())
         return it->second;
 
-    auto surface = AKSurface::Make(SkSize(1, EdgeShadowRadius), scale, true);
+    auto surface = AKSurface::Make(SkISize(1, EdgeShadowRadius), scale, true);
     surface->surface()->recordingContext()->asDirectContext()->resetContext();
     SkCanvas &c { *surface->surface()->getCanvas() };
     c.scale(surface->scale(), surface->scale());

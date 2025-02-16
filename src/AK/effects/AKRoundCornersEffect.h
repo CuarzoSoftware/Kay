@@ -45,7 +45,7 @@ public:
         m_pen = pen;
     }
 
-    bool addDamage(const SkSize &nodeSize, const SkRegion *clip, SkRegion *damage) noexcept;
+    bool addDamage(const SkISize &nodeSize, const SkRegion *clip, SkRegion *damage) noexcept;
     bool clipCorners(SkCanvas *canvas, const SkRegion *clip, SkRegion *damage, SkRegion *opaque) noexcept;
 
 private:

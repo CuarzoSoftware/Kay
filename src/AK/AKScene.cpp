@@ -28,6 +28,8 @@ AKScene::AKScene() noexcept
     theme();
 }
 
+AKScene::~AKScene() {}
+
 AKTarget *AK::AKScene::createTarget() noexcept
 {
     m_targets.emplace_back(new AKTarget(this));
@@ -349,7 +351,6 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     if (bakeable && !clip.isEmpty() &&
         (node->t->changes.any()
-            || !node->t->clientDamage.isEmpty()
             || !bakeable->surface()
             || bakeable->surface()->scale() != node->scale()))
     {
@@ -360,27 +361,28 @@ void AKScene::calculateNewDamage(AKNode *node)
         {
             clipRegion.translate(-bakeable->m_rect.x(), -bakeable->m_rect.y());
 
+            SkRegion damage;
             bool surfaceChanged;
 
             if (bakeable->surface())
             {
                 surfaceChanged = bakeable->surface()->scale() != node->scale();
                 surfaceChanged |= bakeable->m_surface->resize(
-                    SkSize::Make(bakeable->globalRect().size()),
+                    bakeable->globalRect().size(),
                     node->scale(), true);
             }
             else
             {
                 surfaceChanged = true;
                 bakeable->m_surface = AKSurface::Make(
-                    SkSize::Make(bakeable->globalRect().size()),
+                    bakeable->globalRect().size(),
                     node->scale(), true);
             }
 
             AKBakeable::OnBakeParams params
             {
                 .clip = &clipRegion,
-                .damage = &bakeable->t->clientDamage,
+                .damage = &damage,
                 .opaque = &bakeable->opaqueRegion,
                 .surface = bakeable->m_surface
             };
@@ -397,6 +399,7 @@ void AKScene::calculateNewDamage(AKNode *node)
             bakeable->onBake(&params);
             canvas.restore();
             bakeable->m_onBakeGeneratedDamage = !params.damage->isEmpty();
+            bakeable->t->clientDamage.op(damage, SkRegion::Op::kUnion_Op);
 
             //params.surface->surface()->recordingContext()->asDirectContext()->resetContext();
             //params.surface->surface()->flush();

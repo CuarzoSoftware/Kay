@@ -145,7 +145,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
             m_radius,
             m_radius);
 
-        const SkSize surfaceSize { 2.f * m_radius + centerSize, 2.f * m_radius + centerSize };
+        const SkISize surfaceSize (2.f * m_radius + centerSize, 2.f * m_radius + centerSize);
 
         if (m_surface)
             m_surface->resize(surfaceSize, targetNode()->scale());
@@ -200,7 +200,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
 
     if (needsNewSurface)
     {
-        const SkSize surfaceSize { SkSize::Make(effectRect.size()) };
+        const SkISize surfaceSize { effectRect.size() };
 
         if (m_surface)
             m_surface->resize(surfaceSize, targetNode()->scale());

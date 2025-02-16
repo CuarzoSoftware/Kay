@@ -104,62 +104,6 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
         nullptr);
 }
 
-#include <modules/skparagraph/src/ParagraphImpl.h>
-#include <modules/skparagraph/src/ParagraphBuilderImpl.h>
-
-#include <AK/AKSurface.h>
-
-class ParagraphTest : public AKBakeable
-{
-public:
-    ParagraphTest(AKNode *parent) : AKBakeable(parent)
-    {
-        layout().setWidth(200);
-        layout().setHeight(200);
-        layout().setPosition(YGEdgeLeft, 200.f);
-        layout().setPosition(YGEdgeTop, 200.f);
-    }
-
-    void onBake(OnBakeParams *p) override
-    {
-        SkCanvas *c { p->surface->surface()->getCanvas() };
-        c->clear(SK_ColorWHITE);
-
-        skia::textlayout::ParagraphStyle paraStyle;
-
-        paraStyle.setTextDirection(skia::textlayout::TextDirection::kLtr);
-
-        auto fontCollection = sk_make_sp<skia::textlayout::FontCollection>();
-        fontCollection->setDefaultFontManager(AKFontManager());
-        fontCollection->enableFontFallback();
-
-
-        /*fontCollection->defaultFallback(' ', SkFontStyle::Bold(), SkString("es_ES.UTF-8"));
-        fontCollection->setAssetFontManager(AKFontManager());
-        fontCollection->setDynamicFontManager(AKFontManager());*/
-
-        auto builder =  skia::textlayout::ParagraphBuilderImpl::make(paraStyle, fontCollection);
-
-
-        skia::textlayout::TextStyle textStyle;
-        //textStyle.setWordSpacing(40);
-        textStyle.setFontSize(12);
-        textStyle.setColor(SK_ColorBLACK);
-        std::vector<SkString> fams;
-        fams.push_back(SkString("Inter"));
-        textStyle.setFontFamilies(fams);
-        builder->pushStyle(textStyle);
-
-        builder->addText("Hello 😊");
-        builder->pop();
-        auto paragraph = builder->Build();
-
-        paragraph->layout(100000);
-
-        paragraph->paint(c, SkScalar(0), SkScalar(0));
-    }
-};
-
 /**
  * @brief Example Context Menu Component
  *
@@ -481,7 +425,6 @@ public:
         AKContainer background { YGFlexDirectionColumn, false, &root };
         AKContainer surfaces { YGFlexDirectionColumn, false, &root };
         AKContainer overlay { YGFlexDirectionColumn, false, &root};
-        ParagraphTest paragraph { &overlay };
         Menu menu { &overlay };
         MenuItem item1 { "New Folder", &menu.itemsContainer };
         MenuItem item2 { "Open Terminal", &menu.itemsContainer };
@@ -932,6 +875,11 @@ public:
                 imgSizeMode.setText(sizeModeName[Int32(assetsView.sizeMode())]);
             });
 
+            auto textStyle = instructions.textStyle();
+            textStyle.setFontSize(16);
+            textStyle.setFontStyle(SkFontStyle::Bold());
+            instructions.setTextStyle(textStyle);
+
         }
         ~Kay()
         {
@@ -964,8 +912,9 @@ public:
 
         LWeak<Output> output;
         AKContainer background { YGFlexDirectionColumn, false, &comp()->kay->background };
-        AKSimpleText instructions { "F1: Launch Weston Terminal - Right Click: Show Context Menu.", &background};
-        AKSimpleText instructions2 { "Note: Blur only works if launched from a TTY (DRM backend)", &background};
+        AKText instructions {
+            "F1: Launch Weston Terminal\nRight Click: Show Context Menu.\nNote: Blur only works if launched from a TTY (DRM backend)",
+            &background };
 
         AKContainer buttonsGroup1 { YGFlexDirectionRow, false, &background };
         AKButton normalButton { "Normal Button", &buttonsGroup1};

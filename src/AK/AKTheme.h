@@ -2,6 +2,7 @@
 #define AKTHEME_H
 
 #include <AK/AK.h>
+#include <modules/skparagraph/include/TextStyle.h>
 #include <include/core/SkImage.h>
 #include <include/core/SkRegion.h>
 #include <include/core/SkFont.h>
@@ -44,7 +45,8 @@ public:
     static inline SkScalar  ButtonPressedBackgroundDarkness         { 0.95f };
     static inline SkScalar  ButtonContentPressedOpacity             { 0.85f };
     static inline SkScalar  ButtonDisabledOpacity                   { 0.3f };
-    static inline SkFont    ButtonFont;
+    skia::
+    textlayout::TextStyle   ButtonTextStyle;
     static inline SkRect    ButtonPadding                           { 16.f, 2.f, 16.f, 2.f };
     static inline SkRect    ButtonPlainHThreePatchSideSrcRect       { SkRect::MakeWH(8.f, 24.f) };
     static inline SkRect    ButtonTintedHThreePatchSideSrcRect      { ButtonPlainHThreePatchSideSrcRect };

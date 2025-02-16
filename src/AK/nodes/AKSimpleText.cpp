@@ -1,4 +1,3 @@
-#include "AK/AKLog.h"
 #include <include/core/SkCanvas.h>
 #include <include/core/SkFontMetrics.h>
 #include <AK/nodes/AKSimpleText.h>

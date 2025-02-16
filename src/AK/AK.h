@@ -60,6 +60,7 @@ namespace AK
     /*********** BAKEABLES ***********/
 
     class AKSimpleText;
+    class AKText;
 
     /*********** SUBSCENES ***********/
 

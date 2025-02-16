@@ -6,7 +6,7 @@
 #include <AK/nodes/AKThreeImagePatch.h>
 #include <AK/nodes/AKTextCaret.h>
 #include <AK/nodes/AKContainer.h>
-#include <AK/nodes/AKSimpleText.h>
+#include <AK/nodes/AKText.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
 
 class AK::AKTextField : public AKContainer
@@ -18,7 +18,7 @@ protected:
     void updateDimensions() noexcept;
     AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
-    AKSimpleText m_text { "", &m_content };
+    AKText m_text { "😊😃😆", &m_content };
     AKTextCaret m_caret { &m_content };
     //AKBackgroundImageShadowEffect m_focusShadow { 8.f, {0, 0}, AKTheme::FocusOutlineColor, this };
 };

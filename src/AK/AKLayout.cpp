@@ -5,7 +5,12 @@
 
 using namespace AK;
 
-AKLayout::AKLayout(AKNode &akNode) noexcept : m_node(YGNodeNew()), m_akNode(akNode) {}
+AKLayout::AKLayout(AKNode &akNode) noexcept : m_node(YGNodeNew()), m_akNode(akNode)
+{
+    m_config = YGConfigNew();
+    YGConfigSetPointScaleFactor(m_config, 0.f);
+    YGNodeSetConfig(m_node, m_config);
+}
 
 void AKLayout::setDisplay(YGDisplay display) noexcept
 {
@@ -37,8 +42,8 @@ void AKLayout::apply(bool calculate) noexcept
         if (calculate)
             YGNodeCalculateLayout(
                 m_node,
-                m_akNode.parent()->globalRect().width(),
-                m_akNode.parent()->globalRect().height(),
+                m_akNode.parent()->layout().calculatedWidth(),
+                m_akNode.parent()->layout().calculatedHeight(),
                 YGDirectionInherit);
 
         applyTree(&m_akNode);
@@ -65,8 +70,8 @@ void AKLayout::calculate() noexcept
     {
         YGNodeCalculateLayout(
             m_akNode.parent()->layout().m_node,
-            m_akNode.parent()->globalRect().width(),
-            m_akNode.parent()->globalRect().height(),
+            m_akNode.parent()->layout().calculatedWidth(),
+            m_akNode.parent()->layout().calculatedHeight(),
             YGDirectionInherit);
     }
     else
@@ -96,11 +101,11 @@ void AKLayout::applyTree(AKNode *node)
 
     if (updateRect)
     {
-        SkIRect newRect;
-        newRect.fLeft = node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().calculatedLeft());
-        newRect.fTop = node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().calculatedTop());
-        newRect.fRight = newRect.fLeft + SkScalarFloorToInt(node->layout().calculatedWidth());
-        newRect.fBottom = newRect.fTop + SkScalarFloorToInt(node->layout().calculatedHeight());
+        SkIRect newRect = SkIRect::MakeXYWH(
+            node->parent()->globalRect().x() + SkScalarFloorToInt(node->layout().calculatedLeft()),
+            node->parent()->globalRect().y() + SkScalarFloorToInt(node->layout().calculatedTop()),
+            SkScalarRoundToInt(node->layout().calculatedWidth()),
+            SkScalarRoundToInt(node->layout().calculatedHeight()));
 
         if (newRect.topLeft() != node->m_globalRect.topLeft())
         {

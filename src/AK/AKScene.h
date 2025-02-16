@@ -11,6 +11,7 @@ class AK::AKScene : public AKObject
 {
 public:
     AKScene() noexcept;
+    ~AKScene();
     AKTarget *createTarget() noexcept;
     bool destroyTarget(AKTarget *target);
     bool render(AKTarget *target);

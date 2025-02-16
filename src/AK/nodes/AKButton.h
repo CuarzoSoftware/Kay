@@ -3,7 +3,7 @@
 
 #include <AK/nodes/AKSubScene.h>
 #include <AK/nodes/AKThreeImagePatch.h>
-#include <AK/nodes/AKSimpleText.h>
+#include <AK/nodes/AKText.h>
 #include <AK/nodes/AKContainer.h>
 
 class AK::AKButton : public AKSubScene
@@ -40,7 +40,7 @@ protected:
     void updateStyle() noexcept;
     AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
-    AKSimpleText m_text;
+    AKText m_text;
     SkColor m_backgroundColor { SK_ColorWHITE };
     bool m_enabled { true };
     bool m_pressed { false };

@@ -6,7 +6,7 @@ using namespace AK;
 static constexpr Int32 outset { 2 };
 static constexpr Int32 offset { 2 };
 
-bool AKRoundCornersEffect::addDamage(const SkSize &nodeSize, const SkRegion *clip, SkRegion *damage) noexcept
+bool AKRoundCornersEffect::addDamage(const SkISize &nodeSize, const SkRegion *clip, SkRegion *damage) noexcept
 {
     const bool nodeWidthChanged { Int32(nodeSize.width()) != m_rect[BR].fRight };
     const bool nodeHeightChanged { Int32(nodeSize.height()) != m_rect[BR].fBottom };

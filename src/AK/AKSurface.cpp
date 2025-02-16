@@ -10,7 +10,7 @@
 
 using namespace AK;
 
-std::shared_ptr<AKSurface> AKSurface::Make(const SkSize &size, SkScalar scale, bool hasAlpha) noexcept
+std::shared_ptr<AKSurface> AKSurface::Make(const SkISize &size, Int32 scale, bool hasAlpha) noexcept
 {
     auto surface = std::shared_ptr<AKSurface>(new AKSurface(hasAlpha));
     surface->resize(size, scale, true);
@@ -75,7 +75,7 @@ bool AKSurface::setHasAlpha(bool alpha) noexcept
     return shrink();
 }
 
-bool AKSurface::resize(const SkSize &size, SkScalar scale, bool shrink) noexcept
+bool AKSurface::resize(const SkISize &size, Int32 scale, bool shrink) noexcept
 {
     m_size = size;
     m_scale = scale;
