@@ -1,0 +1,25 @@
+<doxygenlayout version="1.0">
+
+	<navindex>
+
+    <tab type="mainpage" title="🏠 Home" visible="yes" url="@ref MainPage"></tab>
+    <tab type="usergroup" title="🎓 Tutorial" url="@ref tutorial_tmp"></tab>
+
+    <tab type="namespaces" visible="no" title="">
+    	<tab type="namespacelist" visible="no" title="" intro=""/>
+    	<tab type="namespacemembers" visible="no" title="" intro=""/>
+  	</tab>
+
+    <tab type="classes" visible="no" title="API">
+      <tab type="classes" visible="yes" title="📖 Classes"/>
+    </tab>
+    
+    <tab type="usergroup" visible="yes" title="📖 Classes" url="annotated.html"/>
+    <tab type="usergroup" visible="yes" title="🕹️ Examples" url="@ref examples_page"/>
+    <tab type="usergroup" visible="yes" title="📦 Downloads" url="@ref downloads_page"/>
+    <tab type="usergroup" visible="yes" title="⚙️ Environment" url="@ref environment_page"/>
+    <tab type="usergroup" visible="yes" title="💬 Contact" url="@ref contact_page"/>
+    
+  </navindex>
+  
+</doxygenlayout>

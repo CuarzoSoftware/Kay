@@ -202,12 +202,6 @@ public:
     UInt64 userFlags { 0 };
     void *userData { nullptr };
 
-    TargetData *targetData(AKTarget *target) const noexcept
-    {
-        auto it = m_targets.find(target);
-        return it == m_targets.end() ? nullptr : &it->second;
-    }
-
     AKScene *scene() const noexcept { return m_scene; }
     AKSubScene *subScene() const noexcept { return m_subScene; }
     AKNode *root() const noexcept;

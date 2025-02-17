@@ -399,7 +399,7 @@ public:
     {
         kay = std::make_unique<Kay>();
         LCompositor::initialized();
-        LLauncher::launch(std::string("swaybg -i ") + std::string(defaultAssetsPath() / "wallpaper.png"));
+        LLauncher::launch(std::string("swaybg -m fill -i ") + std::string(defaultAssetsPath() / "wallpaper.png"));
     }
 
     void uninitialized() override
