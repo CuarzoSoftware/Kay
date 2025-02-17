@@ -1,7 +1,12 @@
-<div style="margin-bottom:12px;display:flex; border-bottom:1px solid #CCC; align-items:end">
-<img style="height:64px;padding-bottom:7px;margin-right:2px" src="doxygen/img/Logo.png"/>
-<div style="font-weight:bold; font-size:40px">ay</div>
-</div>
+<img style="position:absolute;height:72px;margin:0px;padding:0;top:400px" src="doxygen/img/Logo.png"/>
+<p align="left">
+  <a href="https://github.com/CuarzoSoftware/Kay/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-LGPLv2.1-blue.svg" alt="Kay is released under the LGPLv2.1 license." />
+  </a>
+  <a href="https://github.com/CuarzoSoftware/Kay">
+    <img src="https://img.shields.io/badge/version-0.1.0-brightgreen" alt="Current Kay version." />
+  </a>
+</p>
 
 Named after Alan Kay, Kay is a C++ toolkit for building fast and efficient graphical user interfaces on top of OpenGL. Designed specifically for Wayland applications and compositors on Linux, it simplifies complex tasks like damage tracking and layout management, allowing you to focus on creating clean, responsive interfaces.  
 
