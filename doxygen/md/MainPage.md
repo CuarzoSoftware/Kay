@@ -1,9 +1,13 @@
 # 🏠 Home {#MainPage}
 
-<div style="margin-bottom:12px;display:flex; border-bottom:1px solid #CCC; align-items:end">
-<img style="height:64px;padding-bottom:7px;margin-right:2px" src="../img/Logo.png"/>
-<div style="font-weight:bold; font-size:40px">Kay</div>
-</div>
+<p align="left">
+  <a href="https://github.com/CuarzoSoftware/Kay/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-LGPLv2.1-blue.svg" alt="Kay is released under the LGPLv2.1 license." />
+  </a>
+  <a href="https://github.com/CuarzoSoftware/Kay">
+    <img src="https://img.shields.io/badge/version-0.1.0-brightgreen" alt="Current Kay version." />
+  </a>
+</p>
 
 > **⚠️ This project is still a work in progress.**
 
