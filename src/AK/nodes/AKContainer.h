@@ -5,6 +5,7 @@
 
 /**
  * @brief Container node that doesn't produce any output on its own.
+ * @ingroup AKNodes
  */
 class AK::AKContainer : public AKNode
 {

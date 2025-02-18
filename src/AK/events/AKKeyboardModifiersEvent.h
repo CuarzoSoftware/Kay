@@ -6,6 +6,7 @@
 
 /**
  * @brief Keyboard modifiers event.
+ * @ingroup AKEvents
  *
  * Keyboard modifiers events are automatically sent to client surfaces when they acquire keyboard focus.
  */

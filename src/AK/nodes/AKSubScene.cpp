@@ -22,31 +22,30 @@ AKSubScene::AKSubScene(AKNode *parent) noexcept : AKBakeable(parent)
     m_caps |= Scene;
 }
 
-void AKSubScene::bakeChildren(OnBakeParams *params) noexcept
+void AKSubScene::bakeChildren(const BakeEvent &event) noexcept
 {
     TargetData *parentTargetData { t };
 
-    if (!m_target->isDirty() && params->damage->isEmpty() && parentTargetData->changes.none())
+    if (!m_target->isDirty() && event.damage.isEmpty() && parentTargetData->changes.none())
         return;
 
-    m_target->setAge(params->damage->isEmpty() ? 1 : 0);
+    m_target->setAge(event.damage.isEmpty() ? 1 : 0);
     m_target->setBakedComponentsScale(scale());
-    m_target->setSurface(params->surface->surface());
-    m_target->setViewport(SkRect::MakeWH(params->surface->size().width(), params->surface->size().height()));
-    m_target->setDstRect(params->surface->imageSrcRect());
+    m_target->setSurface(event.surface.surface());
+    m_target->setViewport(SkRect::MakeWH(event.surface.size().width(), event.surface.size().height()));
+    m_target->setDstRect(event.surface.imageSrcRect());
     //m_target->inClipRegion = params->clip;
-    m_target->inDamageRegion = params->damage;
-    m_target->outDamageRegion = params->damage;
-    m_target->outOpaqueRegion = params->opaque;
-    SkCanvas &c { *params->surface->surface()->getCanvas() };
-    c.save();
-    c.resetMatrix();
+    m_target->inDamageRegion = &event.damage;
+    m_target->outDamageRegion = &event.damage;
+    m_target->outOpaqueRegion = &event.opaque;
+    event.canvas().save();
+    event.canvas().resetMatrix();
     m_scene.render(m_target);
-    c.restore();
+    event.canvas().restore();
     t = parentTargetData;
 }
 
-void AKSubScene::onBake(OnBakeParams *params)
+void AKSubScene::onBake(const BakeEvent &event)
 {
-    bakeChildren(params);
+    bakeChildren(event);
 }

@@ -21,29 +21,29 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
 
     const auto &chgs { changes() };
 
-    if (chgs.test(CHSigma) || chgs.test(CHClipMode))
+    if (chgs.testAnyOf(CHSigma, CHClipMode))
         addDamage(AK_IRECT_INF);
 
     if (!m_brush.getImageFilter() || chgs.test(CHSigma))
         m_brush.setImageFilter(SkImageFilters::Blur(m_sigma.x(), m_sigma.y(), SkTileMode::kMirror, nullptr));
 }
 
-void AKBackgroundBlurEffect::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
+void AKBackgroundBlurEffect::onRender(const OnRenderParams &p)
 {
-    if (!currentTarget()->image() || damage.isEmpty())
+    if (!p.target.image() || p.damage.isEmpty())
         return;
 
-    currentTarget()->surface()->recordingContext()->asDirectContext()->resetContext();
+    p.target.surface()->recordingContext()->asDirectContext()->resetContext();
 
-    SkCanvas &c { *currentTarget()->surface()->getCanvas() };
+    SkCanvas &c { *p.target.surface()->getCanvas() };
     c.save();
 
     SkPath path;
     path.setIsVolatile(true);
-    damage.getBoundaryPath(&path);
+    p.damage.getBoundaryPath(&path);
     c.clipPath(path);
 
-    const SkRect dstRect { SkRect::Make(rect) };
+    const SkRect dstRect { SkRect::Make(p.rect) };
 
     if (clipMode() == Manual)
     {
@@ -55,19 +55,19 @@ void AKBackgroundBlurEffect::onRender(AKPainter *painter, const SkRegion &damage
     // TODO: Handle AKTarget srcRect and custom transforms
 
     const SkRect srcRect { SkRect::MakeXYWH(
-        (dstRect.x() - currentTarget()->viewport().x()) * currentTarget()->bakedComponentsScale(),
-        (dstRect.y() - currentTarget()->viewport().y()) * currentTarget()->bakedComponentsScale(),
-        dstRect.width() * currentTarget()->bakedComponentsScale(),
-        dstRect.height() * currentTarget()->bakedComponentsScale()) };
+        (dstRect.x() - p.target.viewport().x()) * p.target.bakedComponentsScale(),
+        (dstRect.y() - p.target.viewport().y()) * p.target.bakedComponentsScale(),
+        dstRect.width() * p.target.bakedComponentsScale(),
+        dstRect.height() * p.target.bakedComponentsScale()) };
 
-    c.drawImageRect(currentTarget()->image(),
+    c.drawImageRect(p.target.image(),
                     srcRect,
                     dstRect,
                     SkFilterMode::kLinear,
                     &m_brush,
                     SkCanvas::kFast_SrcRectConstraint);
-    currentTarget()->surface()->recordingContext()->asDirectContext()->flush();
+    p.target.surface()->recordingContext()->asDirectContext()->flush();
     c.restore();
-    painter->bindProgram();
-    painter->bindTarget(currentTarget());
+    p.painter.bindProgram();
+    p.painter.bindTarget(&p.target);
 }

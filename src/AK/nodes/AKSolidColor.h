@@ -6,6 +6,10 @@
 #include <AK/AKBrush.h>
 #include <AK/AKPen.h>
 
+/**
+ * @brief Node for displaying solid colors.
+ * @ingroup AKNodes
+ */
 class AK::AKSolidColor : public AKRenderable
 {
 public:
@@ -18,7 +22,7 @@ public:
 protected:
     using AKRenderable::addDamage;
     using AKRenderable::opaqueRegion;
-    void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
+    void onRender(const OnRenderParams &params) override;
 };
 
 #endif // AKSOLIDCOLOR_H

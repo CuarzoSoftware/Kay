@@ -6,6 +6,7 @@
 
 /**
  * @brief Pointer hold begin gesture event.
+ * @ingroup AKEvents
  */
 class AK::AKPointerHoldBeginEvent final : public AKPointerEvent
 {

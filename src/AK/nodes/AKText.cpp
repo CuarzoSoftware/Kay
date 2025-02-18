@@ -41,21 +41,21 @@ bool AKText::setText(const std::string &text) noexcept
     return true;
 }
 
-void AKText::onBake(OnBakeParams *p)
+void AKText::onBake(const BakeEvent &event)
 {
     if (!m_paragraph)
         return;
-    const auto &ch { changes() };
 
-    if (p->damage->isEmpty() && !ch.test(CHText) && !ch.test(CHTextStyle) && !ch.test(CHParagraphStyle))
+    SkCanvas &c { event.canvas() };
+
+    if (event.damage.isEmpty() && !event.changes.testAnyOf(CHText, CHTextStyle, CHParagraphStyle))
         return;
 
     AKLog::debug("AKText repainted: Tint %d %dx%d %s", customTextureColorEnabled(), globalRect().width(), globalRect().height(), m_text.c_str());
-    SkCanvas &c { *p->surface->surface()->getCanvas() };
     c.save();
     c.clipIRect(SkIRect::MakeSize(globalRect().size()));
     c.clear(SK_ColorTRANSPARENT);
-    m_paragraph->paint(p->surface->surface()->getCanvas(), 0.f, 0.f);
+    m_paragraph->paint(&c, 0.f, 0.f);
     c.restore();
 }
 

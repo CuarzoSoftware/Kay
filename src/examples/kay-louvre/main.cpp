@@ -266,29 +266,24 @@ protected:
     // Always called by the scene except if the node is invisible or completly ocludded
     // Here the component renders into its own framebuffer.
     // Its the component's responsibility to avoid re-baking itself each time
-    void onBake(OnBakeParams *params) override
+    void onBake(const BakeEvent &event) override
     {
         const auto chgs { changes() };
 
         const bool needsRebake {
-            !params->damage->isEmpty() || // If the scene explicitly adds damage it means the node's size changed
-            chgs.test(CHShadowRadius) ||
-            chgs.test(CHShadowColor) ||
-            chgs.test(CHShadowOffset) ||
-            chgs.test(CHBorderRadius) ||
-            chgs.test(CHBrush) ||
-            chgs.test(CHPen)
+            !event.damage.isEmpty() || // If the scene explicitly adds damage it means the node's size changed
+            chgs.testAnyOf(CHShadowRadius, CHShadowColor, CHShadowOffset, CHBorderRadius, CHBrush, CHPen)
         };
 
         if (!needsRebake) // Nothing to do
             return;
 
-        SkCanvas &c { *params->surface->surface()->getCanvas() };
+        SkCanvas &c { event.canvas() };
 
         // To improve performance the framebuffer isn't automatically shrank
         // when the node is resized, but since menus aren't constatly resizing
         // calling shrink can free up some GPU memory
-        params->surface->shrink();
+        event.surface.shrink();
 
         // Ensure previus content or artifacts of newly created framebuffers are cleared
         c.clear(SK_ColorTRANSPARENT);
@@ -313,35 +308,35 @@ protected:
         c.drawRoundRect(rect, m_borderRadius, m_borderRadius, m_pen);
 
         // Mark node as dirty
-        params->damage->setRect(AK_IRECT_INF);
+        event.damage.setRect(AK_IRECT_INF);
 
         // Set the opaque region (to optimize composition)
         if (SkColorGetA(m_brush.getColor()) == 255) // Opaque
         {
             // Make entire rect opaque
-            params->opaque->setRect(rect.roundIn());
+            event.opaque.setRect(rect.roundIn());
 
             // But exclude round corners
 
             // Top Left
             SkIRect borderRadiusRect = SkRect::MakeXYWH(rect.x(), rect.y(), m_borderRadius, m_borderRadius).roundOut();
-            params->opaque->op(borderRadiusRect, SkRegion::Op::kDifference_Op);
+            event.opaque.op(borderRadiusRect, SkRegion::Op::kDifference_Op);
 
             // Top Right
             borderRadiusRect.offset(rect.width() - borderRadiusRect.width(), 0);
-            params->opaque->op(borderRadiusRect, SkRegion::Op::kDifference_Op);
+            event.opaque.op(borderRadiusRect, SkRegion::Op::kDifference_Op);
 
             // Bottom Right
             borderRadiusRect.offset(0, rect.height() - borderRadiusRect.height());
-            params->opaque->op(borderRadiusRect, SkRegion::Op::kDifference_Op);
+            event.opaque.op(borderRadiusRect, SkRegion::Op::kDifference_Op);
 
             // Bottom Left
             borderRadiusRect.offsetTo(rect.x(), borderRadiusRect.y());
-            params->opaque->op(borderRadiusRect, SkRegion::Op::kDifference_Op);
+            event.opaque.op(borderRadiusRect, SkRegion::Op::kDifference_Op);
         }
         // Make fully translucent
         else
-            params->opaque->setEmpty();
+            event.opaque.setEmpty();
     }
 
     // Keep the default onRender() implementation

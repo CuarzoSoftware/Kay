@@ -9,6 +9,10 @@
 #include <AK/nodes/AKText.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
 
+/**
+ * @brief A node with text-input capabilities.
+ * @ingroup AKNodes
+ */
 class AK::AKTextField : public AKContainer
 {
 public:

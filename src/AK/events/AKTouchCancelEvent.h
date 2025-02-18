@@ -6,6 +6,7 @@
 
 /**
  * @brief Touch cancel event.
+ * @ingroup AKEvents
  */
 class AK::AKTouchCancelEvent final : public AKTouchEvent
 {

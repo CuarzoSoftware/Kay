@@ -6,6 +6,7 @@
 
 /**
  * @brief Deactivated event.
+ * @ingroup AKEvents
  *
  * This event is triggered when the scene to which the node belongs becomes deactivated.
  * In desktop applications, each window should have its own dedicated scene, so this

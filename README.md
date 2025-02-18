@@ -8,6 +8,8 @@
   </a>
 </p>
 
+> **⚠️ This project is still a work in progress.**
+
 Named after Alan Kay, Kay is a C++ toolkit for building fast and efficient graphical user interfaces on top of OpenGL. Designed specifically for Wayland applications and compositors on Linux, it simplifies complex tasks like damage tracking and layout management, allowing you to focus on creating clean, responsive interfaces.  
 
 ### Key Features  

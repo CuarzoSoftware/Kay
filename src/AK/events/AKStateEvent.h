@@ -3,6 +3,10 @@
 
 #include <AK/events/AKEvent.h>
 
+/**
+ * @brief Base class for state events.
+ * @ingroup AKEvents
+ */
 class AK::AKStateEvent : public AKEvent
 {
 protected:

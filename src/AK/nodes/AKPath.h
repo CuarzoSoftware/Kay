@@ -8,6 +8,7 @@
 
 /**
  * @brief Baked path node.
+ * @ingroup AKNodes
  *
  * This node can be used to display paths, such as vector graphics from SVG files.
  *
@@ -115,7 +116,7 @@ public:
 
 protected:
     void onSceneBegin() override;
-    void onBake(OnBakeParams *) override;
+    void onBake(const BakeEvent &event) override;
     SkPath m_path;
     AKBrush m_brush;
     SkRect m_bounds;

@@ -6,6 +6,7 @@
 
 /**
  * @brief Represents a touch frame event.
+ * @ingroup AKEvents
  *
  * This event marks a set of touch events that belong logically together.
  */

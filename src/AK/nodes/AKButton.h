@@ -6,6 +6,10 @@
 #include <AK/nodes/AKText.h>
 #include <AK/nodes/AKContainer.h>
 
+/**
+ * @brief A button.
+ * @ingroup AKNodes
+ */
 class AK::AKButton : public AKSubScene
 {
 public:

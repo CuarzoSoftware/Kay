@@ -50,9 +50,9 @@ void AKNode::repaint() noexcept
         t->markDirty();
 }
 
-const std::bitset<128> &AKNode::changes() const noexcept
+const AKChanges &AKNode::changes() const noexcept
 {
-    static std::bitset<128> emptyChanges;
+    static AKChanges emptyChanges;
 
     if (t && t->target)
         return m_targets[t->target].changes;
@@ -393,6 +393,7 @@ void AKNode::insertAfter(AKNode *other) noexcept
         insertBefore(parent()->children().front());
     }
 }
+
 
 AKTarget *AKNode::currentTarget() const noexcept
 {

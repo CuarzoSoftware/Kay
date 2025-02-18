@@ -4,6 +4,12 @@
 #include <AK/AK.h>
 
 /**
+ * @defgroup AKEvents Events
+ * @brief List of all event types.
+ * @{
+ */
+
+/**
  * @brief Base class for events.
  */
 class AK::AKEvent
@@ -152,5 +158,9 @@ protected:
     UInt64 m_us;
     void *m_userData { nullptr };
 };
+
+/**
+ * @}
+ */
 
 #endif // AKEVENT_H

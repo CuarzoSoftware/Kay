@@ -6,8 +6,8 @@
 #include <AK/AKWeak.h>
 #include <AK/AKBitset.h>
 #include <AK/AKLayout.h>
+#include <AK/AKChanges.h>
 
-#include <bitset>
 #include <include/core/SkImage.h>
 #include <include/core/SkSurface.h>
 #include <include/core/SkRegion.h>
@@ -17,6 +17,15 @@
 #include <memory>
 #include <vector>
 
+/**
+ * @defgroup AKNodes Components
+ * @brief List of all components.
+ * @{
+ */
+
+/**
+ * @brief Base class for components.
+ */
 class AK::AKNode : public AKObject
 {
 public:
@@ -41,20 +50,6 @@ public:
     private:
         AKNode *m_node, *m_end;
         bool m_done;
-    };
-
-    struct TargetData : public AKObject
-    {
-        TargetData() noexcept { changes.set(); }
-        AKTarget *target { nullptr };
-        size_t targetLink;
-        SkRegion prevLocalClip; // Rel to root
-        SkIRect prevLocalRect;
-        SkRegion clientDamage,
-            opaque, translucent,
-            opaqueOverlay;
-        std::bitset<128> changes;
-        bool visible { true };
     };
 
     enum Caps : UInt32
@@ -92,7 +87,7 @@ public:
      */
     void repaint() noexcept;
 
-    const std::bitset<128> &changes() const noexcept;
+    const AKChanges &changes() const noexcept;
 
     void setVisible(bool visible) noexcept
     {
@@ -114,8 +109,6 @@ public:
     {
         return m_flags.check(PointerGrab);
     }
-
-    AKNode *topmostInvisibleParent() const noexcept;
 
     /* Insert at the end, nullptr unsets */
     void setParent(AKNode *parent) noexcept;
@@ -151,7 +144,7 @@ public:
 
     bool isRoot() const noexcept { return m_flags.check(IsRoot); }
 
-    AKTarget *currentTarget() const noexcept;
+    //AKTarget *currentTarget() const noexcept;
 
     const std::vector<AKTarget*> &intersectedTargets() const noexcept { return m_intersectedTargets; }
     bool childrenClippingEnabled() const noexcept { return m_flags.check(ChildrenClipping); }
@@ -169,7 +162,7 @@ public:
     SkRegion *inputRegion() const noexcept { return m_inputRegion.get(); }
     bool insideLastTarget() const noexcept { return m_flags.check(InsideLastTarget); }
     bool renderedOnLastTarget() const noexcept { return m_flags.check(RenderedOnLastTarget); }
-
+    AKTarget *currentTarget() const noexcept;
     /* Layout */
 
     /* Relative to the closest subscene */
@@ -272,6 +265,20 @@ private:
         Skip                        = 1 << 12
     };
 
+    struct TargetData : public AKObject
+    {
+        TargetData() noexcept { changes.set(); }
+        AKTarget *target { nullptr };
+        size_t targetLink;
+        SkRegion prevLocalClip; // Rel to root
+        SkIRect prevLocalRect;
+        SkRegion clientDamage,
+            opaque, translucent,
+            opaqueOverlay;
+        AKChanges changes;
+        bool visible { true };
+    };
+
     AKNode(AKNode *parent = nullptr) noexcept;
     AKNode *closestClipperParent() const noexcept;
     void setScene(AKScene *scene) noexcept;
@@ -281,6 +288,7 @@ private:
     void addFlagsAndPropagate(UInt32 flags) noexcept;
     void removeFlagsAndPropagate(UInt32 flags) noexcept;
     void setFlagsAndPropagateToParents(UInt32 flags, bool set) noexcept;
+    AKNode *topmostInvisibleParent() const noexcept;
 
     AKBitset<Flags> m_flags { 0 };
     SkIRect m_globalRect { 0, 0, 0, 0 };
@@ -300,5 +308,9 @@ private:
     mutable std::unordered_map<AKTarget*, TargetData> m_targets;
     AKCursor m_cursor { AKCursor::Default };
 };
+
+/**
+ * @}
+ */
 
 #endif // AKNODE_H

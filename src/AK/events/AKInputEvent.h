@@ -5,6 +5,7 @@
 
 /**
  * @brief Base class for input events.
+ * @ingroup AKEvents
  */
 class AK::AKInputEvent : public AKEvent
 {

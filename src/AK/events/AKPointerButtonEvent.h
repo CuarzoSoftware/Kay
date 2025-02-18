@@ -7,6 +7,7 @@
 
 /**
  * @brief Pointer button event.
+ * @ingroup AKEvents
  */
 class AK::AKPointerButtonEvent final : public AKPointerEvent
 {

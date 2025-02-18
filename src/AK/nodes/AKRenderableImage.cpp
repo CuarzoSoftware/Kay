@@ -9,15 +9,14 @@ void AKRenderableImage::onSceneBegin()
 
     const auto &chg { changes() };
 
-    if (chg.test(CHSrcTransform) ||
-        chg.test(CHSrcRectMode) ||
-        (srcRectMode() == SrcRectMode::Custom && (chg.test(CHCustomSrcRect) || chg.test(CHCustomSrcRectScale))))
+    if (chg.testAnyOf(CHSrcTransform, CHSrcRectMode) ||
+        (srcRectMode() == SrcRectMode::Custom && (chg.testAnyOf(CHCustomSrcRect, CHCustomSrcRectScale))))
         addDamage(AK_IRECT_INF);
 }
 
-void AKRenderableImage::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
+void AKRenderableImage::onRender(const OnRenderParams &p)
 {
-    if (damage.isEmpty() || !image() || image()->width() <= 0 || image()->height() <= 0)
+    if (p.damage.isEmpty() || !image() || image()->width() <= 0 || image()->height() <= 0)
         return;
 
     AKPainter::TextureParams params;
@@ -40,10 +39,10 @@ void AKRenderableImage::onRender(AKPainter *painter, const SkRegion &damage, con
             params.srcRect.setWH(image()->width(), image()->height());
     }
 
-    params.pos = rect.topLeft();
-    params.dstSize = rect.size();
+    params.pos = p.rect.topLeft();
+    params.dstSize = p.rect.size();
     params.texture = image();
     params.srcTransform = srcTransform();
-    painter->bindTextureMode(params);
-    painter->drawRegion(damage);
+    p.painter.bindTextureMode(params);
+    p.painter.drawRegion(p.damage);
 }

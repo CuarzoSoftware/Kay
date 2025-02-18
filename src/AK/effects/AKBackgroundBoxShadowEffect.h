@@ -99,8 +99,8 @@ protected:
 
     void onSceneCalculatedRect() override;
     void onSceneCalculatedRectWithBorderRadius() noexcept;
-    void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
-    void onRenderWithBorderRadius(AKPainter *painter, const SkRegion &damage) noexcept;
+    void onRender(const OnRenderParams &params) override;
+    void onRenderWithBorderRadius(const OnRenderParams &params) noexcept;
     void onTargetNodeChanged() override;
 
     std::shared_ptr<AKSurface> m_surface;

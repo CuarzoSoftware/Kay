@@ -4,7 +4,8 @@
 #include <AK/nodes/AKRenderable.h>
 
 /**
- * @brief [AKRenderable] Displays a horizontal three-patch image.
+ * @brief Displays a horizontal three-patch image.
+ * @ingroup AKNodes
  *
  * This component renders a three-patch image composed of:
  * - A **fixed-width left side**, displaying the subrectangle of the image defined by `sideSrcRect()`.
@@ -170,7 +171,7 @@ public:
     }
 
 protected:
-    void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) override;
+    void onRender(const OnRenderParams &params) override;
     SkRect m_sideSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkRect m_centerSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkScalar m_imageScale { 1.f };

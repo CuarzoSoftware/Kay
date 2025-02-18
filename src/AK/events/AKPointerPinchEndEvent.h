@@ -6,6 +6,7 @@
 
 /**
  * @brief Pointer pinch end gesture event.
+ * @ingroup AKEvents
  */
 class AK::AKPointerPinchEndEvent final : public AKPointerEvent
 {

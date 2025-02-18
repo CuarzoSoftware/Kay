@@ -211,7 +211,7 @@ public:
      *
      * @param framebuffer The framebuffer to be bound.
      */
-    void bindTarget(AKTarget *target) noexcept;
+    void bindTarget(const AKTarget *target) noexcept;
 
     /**
      * @brief Retrieves the currently bound framebuffer.

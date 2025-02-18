@@ -6,6 +6,7 @@
 
 /**
  * @brief Event generated when a surface or view loses keyboard focus.
+ * @ingroup AKEvents
  */
 class AK::AKKeyboardLeaveEvent final : public AKKeyboardEvent
 {

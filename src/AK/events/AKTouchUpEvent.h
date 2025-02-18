@@ -6,6 +6,7 @@
 
 /**
  * @brief Touch up event.
+ * @ingroup AKEvents
  */
 class AK::AKTouchUpEvent final : public AKTouchEvent
 {

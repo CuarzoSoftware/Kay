@@ -7,6 +7,7 @@
 
 /**
  * @brief A frame for displaying images with flexible sizing and alignment options.
+ * @ingroup AKNodes
  *
  * The `AKImageFrame` node allows displaying `SkImage` objects with various sizing and alignment modes,
  * such as contained, cover, or fill. It is particularly useful for displaying wallpapers, icons, or other

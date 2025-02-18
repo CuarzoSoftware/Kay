@@ -5,18 +5,18 @@
 
 using namespace AK;
 
-void AKRoundContainer::onBake(OnBakeParams *params)
+void AKRoundContainer::onBake(const BakeEvent &event)
 {
     borderRadius().addDamage(
-        params->surface->size(),
-        params->clip,
-        params->damage);
+        event.surface.size(),
+        &event.clip,
+        &event.damage);
 
-    bakeChildren(params);
+    bakeChildren(event);
 
     borderRadius().clipCorners(
-        params->surface->surface()->getCanvas(),
-        params->clip,
-        params->damage,
-        params->opaque);
+        &event.canvas(),
+        &event.clip,
+        &event.damage,
+        &event.opaque);
 }

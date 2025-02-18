@@ -7,6 +7,7 @@
 
 /**
  * @brief Pointer scroll event.
+ * @ingroup AKEvents
  */
 class AK::AKPointerScrollEvent final : public AKPointerEvent
 {

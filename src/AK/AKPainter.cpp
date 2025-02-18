@@ -431,7 +431,7 @@ void AKPainter::clearScreen() noexcept
     glEnable(GL_BLEND);
 }
 
-void AKPainter::bindTarget(AKTarget *target) noexcept
+void AKPainter::bindTarget(const AKTarget *target) noexcept
 {
     if (!target)
     {
@@ -440,7 +440,7 @@ void AKPainter::bindTarget(AKTarget *target) noexcept
         return;
     }
 
-    t = target;
+    t = (AKTarget*)target;
     fbId = t->fbId();
     glBindFramebuffer(GL_FRAMEBUFFER, fbId);
 }

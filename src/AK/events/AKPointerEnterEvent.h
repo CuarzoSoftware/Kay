@@ -7,6 +7,7 @@
 
 /**
  * @brief Event generated when a surface or view gains pointer focus.
+ * @ingroup AKEvents
  */
 class AK::AKPointerEnterEvent final : public AKPointerEvent
 {

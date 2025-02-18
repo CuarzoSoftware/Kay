@@ -67,7 +67,6 @@ protected:
     }
 
     using AKRenderable::onRender;
-    using AKRenderable::currentTarget;
 private:
     friend class AKNode;
     friend class AKScene;

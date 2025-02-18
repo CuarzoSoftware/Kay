@@ -6,6 +6,7 @@
 
 /**
  * @brief Pointer swipe begin gesture event.
+ * @ingroup AKEvents
  */
 class AK::AKPointerSwipeBeginEvent final : public AKPointerEvent
 {

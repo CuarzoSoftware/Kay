@@ -6,6 +6,10 @@
 #include <modules/skparagraph/src/ParagraphImpl.h>
 #include <modules/skparagraph/src/ParagraphBuilderImpl.h>
 
+/**
+ * @brief Node for displaying text.
+ * @ingroup AKNodes
+ */
 class AK::AKText : public AKBakeable
 {
 public:
@@ -43,7 +47,7 @@ public:
     }
 
 protected:
-    void onBake(OnBakeParams *p) override;
+    void onBake(const BakeEvent &event) override;
     void updateDimensions() noexcept;
     std::string m_text, m_skText;
     skia::textlayout::TextStyle m_textStyle;

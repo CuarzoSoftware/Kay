@@ -6,6 +6,7 @@
 
 /**
  * @brief Pointer hold end gesture event.
+ * @ingroup AKEvents
  */
 class AK::AKPointerHoldEndEvent final : public AKPointerEvent
 {

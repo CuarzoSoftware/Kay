@@ -4,6 +4,10 @@
 #include <AK/nodes/AKBakeable.h>
 #include <AK/AKScene.h>
 
+/**
+ * @brief A node that renders its children into its own framebuffer.
+ * @ingroup AKNodes
+ */
 class AK::AKSubScene : public AKBakeable
 {
 public:
@@ -15,8 +19,8 @@ public:
     AKSubScene(AKNode *parent = nullptr) noexcept;
 
 protected:
-    void bakeChildren(OnBakeParams *params) noexcept;
-    void onBake(OnBakeParams *params) override;
+    void bakeChildren(const BakeEvent &event) noexcept;
+    void onBake(const BakeEvent &event) override;
 private:
     friend class AKScene;
     void handleParentSceneNotifyBegin();

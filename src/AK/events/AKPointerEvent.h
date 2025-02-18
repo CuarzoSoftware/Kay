@@ -5,6 +5,7 @@
 
 /**
  * @brief Base class for pointer events.
+ * @ingroup AKEvents
  *
  * All pointer events share the same AKEvent::Type::Pointer type.
  */

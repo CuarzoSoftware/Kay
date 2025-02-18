@@ -74,26 +74,25 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
 }
 
 
-void AKBackgroundImageShadowEffect::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
+void AKBackgroundImageShadowEffect::onRender(const OnRenderParams &p)
 {
     AKBakeable *bakeableTarget = dynamic_cast<AKBakeable*>(targetNode());
 
     if (!bakeableTarget || !bakeableTarget->surface())
         return;
 
-    const SkRect src { SkRect::MakeWH(rect.size().width(), rect.size().height()) };
+    const SkRect src { SkRect::MakeWH(p.rect.size().width(), p.rect.size().height()) };
 
-    painter->bindTextureMode({
+    p.painter.bindTextureMode({
         .texture = m_surface->image(),
-        .pos = { rect.x(), rect.y() },
+        .pos = { p.rect.x(), p.rect.y() },
         .srcRect = src,
-        .dstSize = rect.size(),
+        .dstSize = p.rect.size(),
         .srcTransform = AKTransform::Normal,
         .srcScale = SkScalar(m_surface->scale())
     });
 
-    painter->drawRegion(damage);
-
+    p.painter.drawRegion(p.damage);
 }
 
 void AKBackgroundImageShadowEffect::onTargetNodeChanged()

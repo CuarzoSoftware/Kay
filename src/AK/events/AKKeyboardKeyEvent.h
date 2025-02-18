@@ -7,6 +7,7 @@
 
 /**
  * @brief Keyboard key event.
+ * @ingroup AKEvents
  */
 class AK::AKKeyboardKeyEvent final : public AKKeyboardEvent
 {

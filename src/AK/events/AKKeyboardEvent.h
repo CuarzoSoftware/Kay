@@ -5,6 +5,7 @@
 
 /**
  * @brief Base class for keyboard events.
+ * @ingroup AKEvents
  *
  * All keyboard events share the same AKEvent::Type::Keyboard type.
  */

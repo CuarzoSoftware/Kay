@@ -3,6 +3,10 @@
 
 #include <AK/nodes/AKThreeImagePatch.h>
 
+/**
+ * @brief Blinking caret for text fields.
+ * @ingroup AKNodes
+ */
 class AK::AKTextCaret : public AKThreeImagePatch
 {
 public:

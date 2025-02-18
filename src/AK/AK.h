@@ -11,6 +11,10 @@
     class_name(class_name&&) = delete; \
     class_name &operator=(const class_name&) = delete;
 
+/**
+ * @defgroup AKCore Core
+ * @brief Core classes
+ */
 namespace AK
 {
     class AKApplication;
@@ -26,6 +30,7 @@ namespace AK
     class AKGLContext;
     class AKTheme;
     class AKTime;
+    class AKChanges;
 
     /* Utils */
     class AKImageLoader;

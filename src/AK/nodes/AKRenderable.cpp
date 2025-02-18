@@ -19,7 +19,7 @@ void AKRenderable::addDamage(const SkIRect &rect) noexcept
 const SkRegion &AKRenderable::damage() const noexcept
 {
     static const SkRegion emptyRegion;
-    return currentTarget() == nullptr ? emptyRegion : m_targets[currentTarget()].clientDamage;
+    return m_targets.empty() ? emptyRegion : m_targets.begin()->second.clientDamage;
 }
 
 void AKRenderable::onEvent(const AKEvent &event)
@@ -43,10 +43,7 @@ void AKRenderable::handleCommonChanges() noexcept
 
     if (m_renderableHint == SolidColor)
     {
-        if (c.test(CHColor) ||
-            c.test(CHOpacity) ||
-            c.test(CHColorFactor) ||
-            c.test(CHCustomBlendFuncEnabled) ||
+        if (c.testAnyOf(CHColor, CHOpacity, CHColorFactor, CHCustomBlendFuncEnabled) ||
             (customBlendFuncEnabled() && c.test(CHCustomBlendFunc)))
             addDamage(AK_IRECT_INF);
 
@@ -54,10 +51,7 @@ void AKRenderable::handleCommonChanges() noexcept
     }
     else
     {
-        if (c.test(CHOpacity) ||
-            c.test(CHColorFactor) ||
-            c.test(CHCustomBlendFuncEnabled) ||
-            c.test(CHCustomTextureColorEnabled) ||
+        if (c.testAnyOf(CHOpacity, CHColorFactor, CHCustomBlendFuncEnabled, CHCustomTextureColorEnabled) ||
             (customTextureColorEnabled() && c.test(CHColor)) ||
             (customBlendFuncEnabled() && c.test(CHCustomBlendFunc)))
             addDamage(AK_IRECT_INF);

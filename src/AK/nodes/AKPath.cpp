@@ -16,18 +16,16 @@ void AKPath::onSceneBegin()
     }
 }
 
-void AKPath::onBake(OnBakeParams *params)
+void AKPath::onBake(const BakeEvent &event)
 {
-    if (params->damage->isEmpty() && !changes().test(CHPath))
+    if (event.damage.isEmpty() && !event.changes.test(CHPath))
         return;
 
-    params->surface->shrink();
-
-    SkCanvas &c { *params->surface->surface()->getCanvas() };
-    c.save();
-    c.clipIRect(SkIRect::MakeSize(globalRect().size()));
-    c.clear(SK_ColorTRANSPARENT);
-    c.concat(m_matrix);
-    c.drawPath(path(), m_brush);
-    c.restore();
+    event.surface.shrink();
+    event.canvas().save();
+    event.canvas().clipIRect(SkIRect::MakeSize(globalRect().size()));
+    event.canvas().clear(SK_ColorTRANSPARENT);
+    event.canvas().concat(m_matrix);
+    event.canvas().drawPath(path(), m_brush);
+    event.canvas().restore();
 }

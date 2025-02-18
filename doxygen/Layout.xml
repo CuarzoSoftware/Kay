@@ -4,7 +4,7 @@
 
     <tab type="mainpage" title="🏠 Home" visible="yes" url="@ref MainPage"></tab>
     <tab type="usergroup" title="🎓 Tutorial" url="@ref tutorial_tmp"></tab>
-
+    <tab type="topics" title="📖 API"/>
     <tab type="namespaces" visible="no" title="">
     	<tab type="namespacelist" visible="no" title="" intro=""/>
     	<tab type="namespacemembers" visible="no" title="" intro=""/>

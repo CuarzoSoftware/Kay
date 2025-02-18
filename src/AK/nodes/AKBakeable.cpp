@@ -9,19 +9,19 @@ std::shared_ptr<AKSurface> AKBakeable::surface() const noexcept
     return m_surface;
 }
 
-void AKBakeable::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
+void AKBakeable::onRender(const OnRenderParams &p)
 {
     if (!m_surface)
         return;
 
-    painter->bindTextureMode({
+    p.painter.bindTextureMode({
         .texture = m_surface->image(),
-        .pos = rect.topLeft(),
-        .srcRect = SkRect::MakeWH(rect.width(), rect.height()),
-        .dstSize = rect.size(),
+        .pos = p.rect.topLeft(),
+        .srcRect = SkRect::MakeWH(p.rect.width(), p.rect.height()),
+        .dstSize = p.rect.size(),
         .srcTransform = AKTransform::Normal,
         .srcScale = SkScalar(m_surface->scale())
     });
 
-    painter->drawRegion(damage);
+    p.painter.drawRegion(p.damage);
 }

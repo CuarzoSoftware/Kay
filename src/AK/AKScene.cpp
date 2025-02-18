@@ -296,7 +296,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     }
     else
     {
-        if (node->t->changes.test(AKNode::CHLayoutPos) || node->t->changes.test(AKNode::CHLayoutSize))
+        if (node->t->changes.testAnyOf(AKNode::CHLayoutPos, AKNode::CHLayoutSize))
         {
             node->m_rect = SkIRect::MakeXYWH(
                 node->m_globalRect.x() - root()->m_globalRect.x(),
@@ -368,26 +368,27 @@ void AKScene::calculateNewDamage(AKNode *node)
                     node->scale(), true);
             }
 
-            AKBakeable::OnBakeParams params
+            const AKBakeable::BakeEvent event
             {
-                .clip = &clipRegion,
-                .damage = &node->t->clientDamage,
-                .opaque = &bakeable->opaqueRegion,
-                .surface = bakeable->m_surface
+                .changes = node->t->changes,
+                .target = *t,
+                .clip = clipRegion,
+                .damage = node->t->clientDamage,
+                .opaque = bakeable->opaqueRegion,
+                .surface = *bakeable->m_surface.get()
             };
 
             if (surfaceChanged)
             {
                 bakeable->t->changes.set(AKRenderable::CHSize);
-                params.damage->setRect(AK_IRECT_INF);
+                event.damage.setRect(AK_IRECT_INF);
             }
 
-            SkCanvas &canvas { *params.surface->surface()->getCanvas() };
-            canvas.save();
-            canvas.scale(params.surface->scale(), params.surface->scale());
-            bakeable->onBake(&params);
-            canvas.restore();
-            bakeable->m_onBakeGeneratedDamage = !params.damage->isEmpty();
+            event.canvas().save();
+            event.canvas().scale(event.surface.scale(), event.surface.scale());
+            bakeable->onBake(event);
+            event.canvas().restore();
+            bakeable->m_onBakeGeneratedDamage = !event.damage.isEmpty();
         }
     }
 
@@ -574,7 +575,12 @@ void AKScene::renderNodes(AKNode *node)
 
     m_painter->setParamsFromRenderable(rend);
     glEnable(GL_BLEND);
-    rend->onRender(m_painter.get(), node->t->translucent, rend->sceneRect());
+    rend->onRender({
+        .target = *t,
+        .damage = node->t->translucent,
+        .rect = rend->sceneRect(),
+        .painter = *m_painter.get()
+    });
 
     renderOpaque:
 
@@ -589,7 +595,12 @@ void AKScene::renderNodes(AKNode *node)
 
     m_painter->setParamsFromRenderable(rend);
     glDisable(GL_BLEND);
-    rend->onRender(m_painter.get(), node->t->opaque, rend->sceneRect());
+    rend->onRender({
+        .target = *t,
+        .damage = node->t->opaque,
+        .rect = rend->sceneRect(),
+        .painter = *m_painter.get()
+    });
 
     renderChildren:
 

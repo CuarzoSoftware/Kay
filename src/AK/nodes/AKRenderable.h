@@ -4,6 +4,10 @@
 #include <AK/nodes/AKNode.h>
 #include <AK/AKPainter.h>
 
+/**
+ * @brief A node that renders into an AKTarget.
+ * @ingroup AKNodes
+ */
 class AK::AKRenderable : public AKNode
 {
 public:
@@ -24,6 +28,14 @@ public:
         CHSize,
         CHDiminishOpacityOnInactive,
         CHLast
+    };
+
+    struct OnRenderParams
+    {
+        const AKTarget &target;
+        const SkRegion &damage;
+        const SkIRect &rect;
+        AKPainter &painter;
     };
 
     AKRenderable(RenderableHint hint, AKNode *parent = nullptr) noexcept :
@@ -189,7 +201,7 @@ protected:
     bool m_customBlendFuncEnabled { false };
     bool m_customTextureColorEnabled { false };
     virtual void onEvent(const AKEvent &event) override;
-    virtual void onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect) = 0;
+    virtual void onRender(const OnRenderParams &params) = 0;
 private:
     void handleCommonChanges() noexcept;
 };

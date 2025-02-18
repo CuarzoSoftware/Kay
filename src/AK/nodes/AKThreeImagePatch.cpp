@@ -4,11 +4,14 @@
 
 using namespace AK;
 
-void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage, const SkIRect &rect)
+void AKThreeImagePatch::onRender(const OnRenderParams &params)
 {
     if (!m_image || m_imageScale <= 0)
         return;
 
+    const SkIRect &rect { params.rect };
+    const SkRegion &damage { params.damage };
+    AKPainter &painter { params.painter };
     SkIRect dsts[3];
     SkRegion region;
 
@@ -29,7 +32,7 @@ void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage, con
             if (region.isEmpty())
                 continue;
 
-            painter->bindTextureMode({
+            painter.bindTextureMode({
                 .texture = m_image,
                 .pos = dsts[i].topLeft(),
                 .srcRect = srcs[i],
@@ -38,7 +41,7 @@ void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage, con
                 .srcScale = m_imageScale
             });
 
-            painter->drawRegion(region);
+            painter.drawRegion(region);
         }
     }
     else
@@ -59,7 +62,7 @@ void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage, con
             if (region.isEmpty())
                 continue;
 
-            painter->bindTextureMode({
+            painter.bindTextureMode({
                 .texture = m_image,
                 .pos = dsts[i].topLeft(),
                 .srcRect = srcs[i],
@@ -68,7 +71,7 @@ void AKThreeImagePatch::onRender(AKPainter *painter, const SkRegion &damage, con
                 .srcScale = m_imageScale
             });
 
-            painter->drawRegion(region);
+            painter.drawRegion(region);
         }
     }
 }

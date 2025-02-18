@@ -49,16 +49,14 @@ Int32 AKSimpleText::charIndexAtX(SkScalar x) const noexcept
     return m_skText.size() - 1;
 }
 
-void AKSimpleText::onBake(OnBakeParams *params)
+void AKSimpleText::onBake(const BakeEvent &event)
 {
     if (m_skText.empty())
         return;
 
-    SkCanvas &c { *params->surface->surface()->getCanvas() };
+    bool needsRepaint { event.changes.testAnyOf(CHText, CHFont, CHBrush, CHPen) };
 
-    bool needsRepaint { changes().test(CHText) || changes().test(CHFont) || changes().test(CHBrush) || changes().test(CHPen) };
-
-    if (!params->damage->isEmpty())
+    if (!event.damage.isEmpty())
     {
         //params->surface->shrink();
         needsRepaint = true;
@@ -66,6 +64,7 @@ void AKSimpleText::onBake(OnBakeParams *params)
 
     if (needsRepaint)
     {
+        SkCanvas &c { event.canvas() };
         c.save();
         c.clipIRect(SkIRect::MakeSize(globalRect().size()));
         c.clear(SK_ColorTRANSPARENT);
@@ -77,7 +76,7 @@ void AKSimpleText::onBake(OnBakeParams *params)
         if (pen().enabled)
             c.drawSimpleText(m_skText.c_str(), text().size(), SkTextEncoding::kUTF8, -m_bounds.x(), -m_bounds.y(), font(), pen());
 
-        params->damage->setRect(AK_IRECT_INF);
+        event.damage.setRect(AK_IRECT_INF);
     }
 }
 

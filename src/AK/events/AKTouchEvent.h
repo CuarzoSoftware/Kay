@@ -5,6 +5,7 @@
 
 /**
  * @brief Base class for touch events.
+ * @ingroup AKEvents
  *
  * All touch events share the same AKEvent::Type::Touch type.
  */

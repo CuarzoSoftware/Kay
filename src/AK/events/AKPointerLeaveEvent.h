@@ -7,6 +7,7 @@
 
 /**
  * @brief Event generated when a surface or view loses pointer focus.
+ * @ingroup AKEvents
  */
 class AK::AKPointerLeaveEvent final : public AKPointerEvent
 {
