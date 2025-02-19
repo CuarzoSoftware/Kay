@@ -21,14 +21,23 @@ AK::AKTheme::AKTheme() noexcept
         SkFontStyle::Slant::kUpright_Slant)));
     DefaultFont.setSize(12);
 
-    ButtonTextStyle.setColor(SK_ColorBLACK);
-    ButtonTextStyle.setFontFamilies(std::vector<SkString>({SkString("Inter")}));
-    ButtonTextStyle.setFontStyle(
+    SkPaint defaultTextStylePaint;
+    defaultTextStylePaint.setColor(SK_ColorBLACK);
+    defaultTextStylePaint.setAntiAlias(true);
+    DefaultTextStyle.setForegroundPaint(defaultTextStylePaint);
+    DefaultTextStyle.setFontSize(12);
+    DefaultTextStyle.setFontFamilies(std::vector<SkString>({SkString("Inter")}));
+    DefaultTextStyle.setFontStyle(
         SkFontStyle(
-            SkFontStyle::kMedium_Weight,
+            SkFontStyle::Weight::kNormal_Weight,
             SkFontStyle::Width::kNormal_Width,
             SkFontStyle::Slant::kUpright_Slant));
-    ButtonTextStyle.setFontSize(12);
+    ButtonTextStyle = DefaultTextStyle;
+    ButtonTextStyle.setFontStyle(
+        SkFontStyle(
+            SkFontStyle::Weight::kSemiBold_Weight,
+            SkFontStyle::Width::kNormal_Width,
+            SkFontStyle::Slant::kUpright_Slant));
 }
 
 SkRegion AK::AKTheme::buttonPlainOpaqueRegion(Int32 width) noexcept

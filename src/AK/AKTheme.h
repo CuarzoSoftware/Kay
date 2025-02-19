@@ -35,6 +35,8 @@ public:
     /* Fonts */
 
     static inline SkFont    DefaultFont;
+    skia::textlayout::TextStyle   DefaultTextStyle;
+    skia::textlayout::TextStyle   ButtonTextStyle;
 
     /* Renderables */
 
@@ -45,8 +47,6 @@ public:
     static inline SkScalar  ButtonPressedBackgroundDarkness         { 0.95f };
     static inline SkScalar  ButtonContentPressedOpacity             { 0.85f };
     static inline SkScalar  ButtonDisabledOpacity                   { 0.3f };
-    skia::
-    textlayout::TextStyle   ButtonTextStyle;
     static inline SkRect    ButtonPadding                           { 16.f, 2.f, 16.f, 2.f };
     static inline SkRect    ButtonPlainHThreePatchSideSrcRect       { SkRect::MakeWH(8.f, 24.f) };
     static inline SkRect    ButtonTintedHThreePatchSideSrcRect      { ButtonPlainHThreePatchSideSrcRect };

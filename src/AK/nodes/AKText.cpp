@@ -1,6 +1,7 @@
 #include <include/core/SkCanvas.h>
 #include <AK/nodes/AKText.h>
 #include <AK/AKSurface.h>
+#include <AK/AKTheme.h>
 #include <AK/AKLog.h>
 
 using namespace AK;
@@ -13,18 +14,13 @@ static void replaceAllInPlace(std::string &dst, const std::string &find, const s
     }
 }
 
-
 AKText::AKText(const std::string &text, AKNode *parent) noexcept : AKBakeable(parent)
 {
     m_paragraphStyle.setTextDirection(skia::textlayout::TextDirection::kLtr);
     m_collection = sk_make_sp<skia::textlayout::FontCollection>();
     m_collection->setDefaultFontManager(AKFontManager());
     m_collection->enableFontFallback();
-    m_textStyle.setFontSize(12);
-    m_textStyle.setColor(SK_ColorBLACK);
-    std::vector<SkString> fams;
-    fams.push_back(SkString("Inter"));
-    m_textStyle.setFontFamilies(fams);
+    m_textStyle = theme()->DefaultTextStyle;
     setText(text);
 }
 
