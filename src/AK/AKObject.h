@@ -2,6 +2,8 @@
 #define AKOBJECT_H
 
 #include <AK/AKSignal.h>
+#include <list>
+#include <unordered_map>
 
 /**
  * @brief Base class for AK objects.
@@ -53,6 +55,9 @@ public:
         AKSignal<AKObject*> destroyed;
     } on;
 
+    void installEventFilter(AKObject *monitor) const noexcept;
+    void removeEventFilter(AKObject *monitor) const noexcept;
+
 protected:
 
     /**
@@ -81,10 +86,20 @@ protected:
         return false;
     }
 
+    virtual bool eventFilter(const AKEvent &event, AKObject *target)
+    {
+        AK_UNUSED(event)
+        AK_UNUSED(target)
+        return false;
+    }
+
+
 private:
     friend class AKWeakUtils;
     friend class AKListener;
     friend class AKApplication;
+    mutable std::list<AKObject*> m_installedEventFilters;
+    mutable std::unordered_map<AKObject*, std::list<AKObject*>::iterator> m_eventFilterSubscriptions;
     std::vector<AKListener*> m_listeners;
     mutable std::vector<void*> m_weakRefs;
     mutable UIntPtr m_userData { 0 };

@@ -80,6 +80,10 @@ void AKApplication::freeGLContext() noexcept
 
 bool AKApplication::postEvent(const AKEvent &event, AKObject &object)
 {
+    for (AKObject *filter : object.m_installedEventFilters)
+        if (filter->eventFilter(event, &object))
+            return true;
+
     return object.event(event);
 }
 

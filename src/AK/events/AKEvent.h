@@ -153,6 +153,21 @@ public:
         return m_userData;
     }
 
+    bool isAccepted() const noexcept
+    {
+        return m_isAccepted;
+    }
+
+    void accept() const noexcept
+    {
+        m_isAccepted = true;
+    }
+
+    void ignore() const noexcept
+    {
+        m_isAccepted = false;
+    }
+
 protected:
     AKEvent(Type type, UInt32 serial, UInt32 ms, UInt64 us) noexcept :
         m_type(type),
@@ -165,6 +180,7 @@ protected:
     UInt32 m_ms;
     UInt64 m_us;
     void *m_userData { nullptr };
+    mutable bool m_isAccepted { true };
 };
 
 /**

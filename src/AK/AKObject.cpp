@@ -4,9 +4,44 @@
 
 using namespace AK;
 
+void AKObject::installEventFilter(AKObject *monitor) const noexcept
+{
+    if (!monitor)
+        return;
+
+    const auto &it { monitor->m_eventFilterSubscriptions.find((AKObject*)this) };
+
+    // Already installed, move to front
+    if (it != monitor->m_eventFilterSubscriptions.end())
+        m_installedEventFilters.erase(it->second);
+
+    m_installedEventFilters.push_front(monitor);
+    monitor->m_eventFilterSubscriptions[(AKObject*)this] = m_installedEventFilters.begin();
+}
+
+void AKObject::removeEventFilter(AKObject *monitor) const noexcept
+{
+    if (!monitor)
+        return;
+
+    const auto &it { monitor->m_eventFilterSubscriptions.find((AKObject*)this) };
+
+    if (it != monitor->m_eventFilterSubscriptions.end())
+    {
+        m_installedEventFilters.erase(it->second);
+        monitor->m_eventFilterSubscriptions.erase(it);
+    }
+}
+
 AKObject::~AKObject() noexcept
 {
     notifyDestruction();
+
+    while (!m_eventFilterSubscriptions.empty())
+        m_eventFilterSubscriptions.begin()->first->removeEventFilter(this);
+
+    while (!m_installedEventFilters.empty())
+        removeEventFilter(m_installedEventFilters.back());
 }
 
 void AKObject::notifyDestruction() noexcept
