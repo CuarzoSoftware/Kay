@@ -3,6 +3,8 @@
 
 #include <AK/AK.h>
 
+#define AKEVENT_DECLARE_COPY AKEvent *copy() const noexcept override { return new AK_GET_CLASS(this)(*this); }
+
 /**
  * @defgroup AKEvents Events
  * @brief List of all event types.
@@ -19,40 +21,39 @@ public:
     /**
      * @brief Defines the type of event.
      */
-    enum class Type : UInt8
+    enum Type
     {
-        Pointer, ///< Pointer event type.
-        Keyboard, ///< Keyboard event type.
-        Touch, ///< Touch event type.
-        State
-    };
+        PointerMove,
+        PointerScroll,
+        PointerButton,
+        PointerEnter,
+        PointerLeave,
+        PointerSwipeBegin,
+        PointerSwipeUpdate,
+        PointerSwipeEnd,
+        PointerPinchBegin,
+        PointerPinchUpdate,
+        PointerPinchEnd,
+        PointerHoldBegin,
+        PointerHoldEnd,
 
-    /**
-     * @brief Defines the subtype of event.
-     */
-    enum class Subtype : UInt8
-    {
-        Enter, ///< Enter event subtype.
-        Leave, ///< Leave event subtype.
-        Up, ///< Up event subtype.
-        Down, ///< Down event subtype.
-        Move, ///< Move event subtype.
-        Button, ///< Button event subtype.
-        Key, ///< Key event subtype.
-        Modifiers, ///< Modifiers event subtype.
-        Scroll, ///< Scroll event subtype.
-        Frame, ///< Frame event subtype.
-        Cancel, ///< Cancel event subtype.
-        SwipeBegin, ///< SwipeBegin event subtype.
-        SwipeUpdate, ///< SwipeUpdate event subtype.
-        SwipeEnd, ///< SwipeEnd event subtype.
-        PinchBegin, ///< PinchBegin event subtype.
-        PinchUpdate, ///< PinchUpdate event subtype.
-        PinchEnd, ///< PinchEnd event subtype.
-        HoldBegin, ///< HoldBegin event subtype.
-        HoldEnd, ///< HoldEnd event subtype.
-        Activated,
-        Deactivated
+        KeyboardKey,
+        KeyboardModifiers,
+        KeyboardEnter,
+        KeyboardLeave,
+
+        TouchMove,
+        TouchFrame,
+        TouchDown,
+        TouchUp,
+        TouchCancel,
+
+        WindowState,
+
+        RenderEvent,
+        BakeEvent,
+
+        UserEvent = 1000
     };
 
     /**
@@ -69,11 +70,17 @@ public:
     }
 
     /**
-     * @brief Retrieves the subtype of the event.
+     * @brief Checks if the event type is any of the given types.
+     *
+     * @return `true` if any of the types match, `false` otherwise.
      */
-    Subtype subtype() const noexcept
+    template<typename... Types>
+    constexpr bool typeIsAnyOf(Types...types) const noexcept
     {
-        return m_subtype;
+        for (const auto t : {types...})
+            if (t == type())
+                return true;
+        return false;
     }
 
     /**
@@ -131,7 +138,10 @@ public:
      *
      * @note The returned event must be deleted when no longer used.
      */
-    AKEvent *copy() const noexcept;
+    virtual AKEvent *copy() const noexcept
+    {
+        return new AKEvent(*this);
+    }
 
     void setUserData(void *data) noexcept
     {
@@ -144,15 +154,13 @@ public:
     }
 
 protected:
-    AKEvent(Type type, Subtype subtype, UInt32 serial, UInt32 ms, UInt64 us) noexcept :
+    AKEvent(Type type, UInt32 serial, UInt32 ms, UInt64 us) noexcept :
         m_type(type),
-        m_subtype(subtype),
         m_serial(serial),
         m_ms(ms),
         m_us(us)
     {}
     Type m_type;
-    Subtype m_subtype;
     UInt32 m_serial;
     UInt32 m_ms;
     UInt64 m_us;

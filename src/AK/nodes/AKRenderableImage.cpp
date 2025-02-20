@@ -1,4 +1,5 @@
 #include <AK/nodes/AKRenderableImage.h>
+#include <AK/events/AKRenderEvent.h>
 
 using namespace AK;
 
@@ -14,7 +15,7 @@ void AKRenderableImage::onSceneBegin()
         addDamage(AK_IRECT_INF);
 }
 
-void AKRenderableImage::onRender(const OnRenderParams &p)
+void AKRenderableImage::renderEvent(const AKRenderEvent &p)
 {
     if (p.damage.isEmpty() || !image() || image()->width() <= 0 || image()->height() <= 0)
         return;

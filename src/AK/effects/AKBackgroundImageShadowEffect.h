@@ -67,7 +67,7 @@ protected:
     using AKRenderable::enableCustomTextureColor;
 
     void onSceneCalculatedRect() override;
-    void onRender(const OnRenderParams &params) override;
+    void renderEvent(const AKRenderEvent &event) override;
     void onTargetNodeChanged() override;
 
     std::shared_ptr<AKSurface> m_surface;

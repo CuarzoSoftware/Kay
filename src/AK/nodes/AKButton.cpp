@@ -81,16 +81,13 @@ void AKButton::onEvent(const AKEvent &event)
 {
     AKSubScene::onEvent(event);
 
-    if (event.type() == AKEvent::Type::State)
+    if (event.type() == AKEvent::WindowState)
     {
-        if (event.subtype() == AKEvent::Subtype::Activated || event.subtype() == AKEvent::Subtype::Deactivated)
-        {
-            updateStyle();
-            return;
-        }
+        updateStyle();
+        return;
     }
 
-    if (event.type() != AKEvent::Type::Pointer || event.subtype() != AKEvent::Subtype::Button)
+    if (event.type() != AKEvent::Type::PointerButton)
         return;
 
     auto &e { static_cast<const AKPointerButtonEvent&>(event) };

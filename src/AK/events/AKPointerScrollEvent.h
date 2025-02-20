@@ -12,6 +12,8 @@
 class AK::AKPointerScrollEvent final : public AKPointerEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Source of a scroll event
      *
@@ -45,7 +47,7 @@ public:
      */
     AKPointerScrollEvent(const SkPoint &axes = SkPoint(0.f, 0.f), const SkPoint &axes120 = SkPoint(0.f, 0.f), Source source = Continuous,
                                UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKPointerEvent(AKEvent::Subtype::Scroll, serial, ms, us, device),
+        AKPointerEvent(PointerScroll, serial, ms, us, device),
         m_axes(axes),
         m_axes120(axes120),
         m_source(source)

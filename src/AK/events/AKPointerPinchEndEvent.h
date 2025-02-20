@@ -11,6 +11,7 @@
 class AK::AKPointerPinchEndEvent final : public AKPointerEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
 
     /**
      * @brief Constructs an AKPointerPinchEndEvent object.
@@ -24,7 +25,7 @@ public:
      */
     AKPointerPinchEndEvent(UInt32 fingers = 0, bool cancelled = false,
                                  UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKPointerEvent(AKEvent::Subtype::PinchEnd, serial, ms, us, device),
+        AKPointerEvent(PointerPinchEnd, serial, ms, us, device),
         m_fingers(fingers),
         m_cancelled(cancelled)
     {}

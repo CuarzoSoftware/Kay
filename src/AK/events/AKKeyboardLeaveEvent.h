@@ -11,6 +11,8 @@
 class AK::AKKeyboardLeaveEvent final : public AKKeyboardEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Constructor for AKKeyboardLeaveEvent.
      *
@@ -21,7 +23,7 @@ public:
      */
     AKKeyboardLeaveEvent(UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(),
                         UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept:
-        AKKeyboardEvent(AKEvent::Subtype::Leave, serial, ms, us, device)
+        AKKeyboardEvent(KeyboardLeave, serial, ms, us, device)
     {}
 };
 

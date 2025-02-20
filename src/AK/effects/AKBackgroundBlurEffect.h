@@ -132,7 +132,7 @@ public:
     using AKBackgroundEffect::effectRect;
 protected:
     void onSceneCalculatedRect() override;
-    void onRender(const OnRenderParams &params) override;
+    void renderEvent(const AKRenderEvent &event) override;
     void onTargetNodeChanged() override { /* Nothing to free here */ }
 private:
     AKBrush m_brush;

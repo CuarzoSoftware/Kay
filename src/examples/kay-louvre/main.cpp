@@ -51,6 +51,7 @@
 #include <AK/events/AKPointerMoveEvent.h>
 #include <AK/events/AKPointerButtonEvent.h>
 #include <AK/events/AKKeyboardKeyEvent.h>
+#include <AK/events/AKBakeEvent.h>
 #include <AK/input/AKKeymap.h>
 
 #include <AK/AKApplication.h>
@@ -266,7 +267,7 @@ protected:
     // Always called by the scene except if the node is invisible or completly ocludded
     // Here the component renders into its own framebuffer.
     // Its the component's responsibility to avoid re-baking itself each time
-    void onBake(const BakeEvent &event) override
+    void bakeEvent(const AKBakeEvent &event) override
     {
         const auto chgs { changes() };
 
@@ -968,7 +969,7 @@ public:
 
         moveEvent.setX(cursor()->pos().x());
         moveEvent.setY(cursor()->pos().y());
-        static_cast<Compositor*>(compositor())->kay->scene.postEvent(moveEvent);
+        AKApp()->postEvent(moveEvent, static_cast<Compositor*>(compositor())->kay->scene);
 
         MenuItem *newFocus { (MenuItem*)nodeAt(SkIPoint(cursor()->pos().x(), cursor()->pos().y()), MENU_ITEM) };
 
@@ -1010,7 +1011,7 @@ public:
         buttonEvent.setSerial(event.serial());
         buttonEvent.setMs(event.ms());
         buttonEvent.setUs(event.us());
-        static_cast<Compositor*>(compositor())->kay->scene.postEvent(buttonEvent);
+        AKApp()->postEvent(buttonEvent, static_cast<Compositor*>(compositor())->kay->scene);
 
         if (event.button() == BTN_RIGHT && event.state() == LPointerButtonEvent::Pressed)
         {
@@ -1061,7 +1062,7 @@ public:
         keyboardKeyEvent.setState((AKKeyboardKeyEvent::State)event.state());
         keyboardKeyEvent.setMs(event.ms());
         keyboardKeyEvent.setSerial(event.serial());
-        static_cast<Compositor*>(compositor())->kay->scene.postEvent(keyboardKeyEvent);
+        AKApp()->postEvent(keyboardKeyEvent, static_cast<Compositor*>(compositor())->kay->scene);
     }
 };
 

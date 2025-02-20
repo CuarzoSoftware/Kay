@@ -12,8 +12,8 @@
 class AK::AKPointerEvent : public AKInputEvent
 {
 protected:
-    AKPointerEvent(Subtype subtype, UInt32 serial, UInt32 ms, UInt64 us, AKInputDevice *device) :
-        AKInputEvent(Type::Pointer, subtype, serial, ms, us, device)
+    AKPointerEvent(Type type, UInt32 serial, UInt32 ms, UInt64 us, AKInputDevice *device) :
+        AKInputEvent(type, serial, ms, us, device)
     {}
 };
 

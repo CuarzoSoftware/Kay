@@ -119,7 +119,7 @@ public:
     }
 protected:
     virtual void onSceneBegin() override;
-    virtual void onRender(const OnRenderParams &params) override;
+    void renderEvent(const AKRenderEvent &event) override;
     sk_sp<SkImage> m_image;
     SkRect m_customSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkScalar m_customSrcRectScale { 1.f };

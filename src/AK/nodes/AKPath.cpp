@@ -1,5 +1,6 @@
 #include <AK/AKSurface.h>
 #include <AK/nodes/AKPath.h>
+#include <AK/events/AKBakeEvent.h>
 #include <include/core/SkCanvas.h>
 
 using namespace AK;
@@ -16,7 +17,7 @@ void AKPath::onSceneBegin()
     }
 }
 
-void AKPath::onBake(const BakeEvent &event)
+void AKPath::bakeEvent(const AKBakeEvent &event)
 {
     if (event.damage.isEmpty() && !event.changes.test(CHPath))
         return;

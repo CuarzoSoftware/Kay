@@ -30,8 +30,8 @@ public:
     }
 
 protected:
-    AKInputEvent(Type type, Subtype subtype, UInt32 serial, UInt32 ms, UInt64 us, AKInputDevice *device) noexcept :
-        AKEvent(type, subtype, serial, ms, us)
+    AKInputEvent(Type type, UInt32 serial, UInt32 ms, UInt64 us, AKInputDevice *device) noexcept :
+        AKEvent(type, serial, ms, us)
     {
         setDevice(device);
     }

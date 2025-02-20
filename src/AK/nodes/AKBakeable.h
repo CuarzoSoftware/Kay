@@ -37,44 +37,6 @@ public:
     };
 
     /**
-     * @brief Parameters of an onBake() event.
-     *
-     * This structure contains the parameters needed during an onBake() event.
-     */
-    struct BakeEvent
-    {
-        const AKChanges &changes;
-        const AKTarget &target;
-        /**
-         * @brief Region in node-local coordinates that is not currently occluded (never nullptr).
-         */
-        const SkRegion &clip;
-
-        /**
-         * @brief Region in node-local coordinates used by both the AKScene to explicitly indicate regions that need
-         * to be repainted, and to indicate new damage generated during the onBake() event (never nullptr).
-         * The resulting damage should be the union of the incoming damage and the newly generated damage.
-         */
-        SkRegion &damage;
-
-        /**
-         * @brief The resulting opaque region during onBake() in node-local coordinates, persistent across calls (never nullptr).
-         * Should be updated only when required.
-         */
-        SkRegion &opaque;
-
-        /**
-         * @brief The surface to render to.
-         */
-        AKSurface &surface;
-
-        SkCanvas &canvas() const noexcept
-        {
-            return *surface.surface()->getCanvas();
-        }
-    };
-
-    /**
      * @brief AKSurface associated with an AKTarget.
      *
      * @note During an onBake() or onRender() event, there is always a surface for the AKNode::currentTarget().
@@ -97,8 +59,9 @@ protected:
      *
      * Triggered after onSceneBegin(), onSceneCalculatedRect() and before onRender().
      */
-    virtual void onBake(const BakeEvent &event) = 0;
-    virtual void onRender(const OnRenderParams &params) override;
+    virtual void bakeEvent(const AKBakeEvent &event) = 0;
+    void renderEvent(const AKRenderEvent &event) override;
+    bool event(const AKEvent &event) override;
 
 private:
     std::shared_ptr<AKSurface> m_surface;

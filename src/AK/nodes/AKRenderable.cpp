@@ -22,18 +22,29 @@ const SkRegion &AKRenderable::damage() const noexcept
     return m_targets.empty() ? emptyRegion : m_targets.begin()->second.clientDamage;
 }
 
+bool AKRenderable::event(const AKEvent &event)
+{
+    switch (event.type())
+    {
+    case AKEvent::RenderEvent:
+        renderEvent((const AKRenderEvent&)event);
+        break;
+    default:
+        return false;
+    }
+
+    return true;
+}
+
 void AKRenderable::onEvent(const AKEvent &event)
 {
     AKNode::onEvent(event);
 
-    if (diminishOpacityOnInactive() && event.type() == AKEvent::Type::State)
+    if (diminishOpacityOnInactive() && event.type() == AKEvent::WindowState)
     {
-        if (event.subtype() == AKEvent::Subtype::Activated || event.subtype() == AKEvent::Subtype::Deactivated)
-        {
-            addDamage(AK_IRECT_INF);
-            repaint();
-            return;
-        }
+        addDamage(AK_IRECT_INF);
+        repaint();
+        return;
     }
 }
 

@@ -20,7 +20,7 @@ public:
      * @param device The input device that originated the event.
      */
     AKKeyboardEnterEvent(UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKKeyboardEvent(AKEvent::Subtype::Enter, serial, ms, us, device)
+        AKKeyboardEvent(KeyboardEnter, serial, ms, us, device)
     {}
 };
 

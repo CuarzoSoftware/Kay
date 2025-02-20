@@ -13,6 +13,7 @@
 class AK::AKKeyboardModifiersEvent final : public AKKeyboardEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
 
     /**
      * @brief Keyboard modifiers.
@@ -44,7 +45,7 @@ public:
     AKKeyboardModifiersEvent(const Modifiers &modifiers = {0, 0, 0, 0},
                                    UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(),
                                    UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept:
-        AKKeyboardEvent(AKEvent::Subtype::Modifiers, serial, ms, us, device),
+        AKKeyboardEvent(KeyboardModifiers, serial, ms, us, device),
         m_modifiers(modifiers)
     {}
 

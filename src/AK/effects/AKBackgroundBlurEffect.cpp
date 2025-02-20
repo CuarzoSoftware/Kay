@@ -2,6 +2,7 @@
 #include <include/effects/SkImageFilters.h>
 #include <include/gpu/ganesh/GrDirectContext.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
+#include <AK/events/AKRenderEvent.h>
 #include <AK/AKTarget.h>
 #include <AK/AKLog.h>
 
@@ -28,7 +29,7 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
         m_brush.setImageFilter(SkImageFilters::Blur(m_sigma.x(), m_sigma.y(), SkTileMode::kMirror, nullptr));
 }
 
-void AKBackgroundBlurEffect::onRender(const OnRenderParams &p)
+void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
 {
     if (!p.target.image() || p.damage.isEmpty())
         return;

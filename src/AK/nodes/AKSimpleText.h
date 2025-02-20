@@ -94,7 +94,7 @@ public:
     AKSignal<> signalFontChanged;
 
 protected:
-    void onBake(const BakeEvent &event) override;
+    void bakeEvent(const AKBakeEvent &event) override;
     void updateDimensions() noexcept;
     std::string m_text, m_skText;
     SkColor m_color { SK_ColorBLACK };

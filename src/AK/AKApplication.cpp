@@ -78,3 +78,8 @@ void AKApplication::freeGLContext() noexcept
     _app->m_glContexts.erase(it);
 }
 
+bool AKApplication::postEvent(const AKEvent &event, AKObject &object)
+{
+    return object.event(event);
+}
+

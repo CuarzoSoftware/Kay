@@ -22,7 +22,7 @@ public:
         return m_borderRadiusEffect;
     }
 protected:
-    void onBake(const BakeEvent &event) override;
+    void bakeEvent(const AKBakeEvent &event) override;
 private:
     AKRoundCornersEffect m_borderRadiusEffect;
 };

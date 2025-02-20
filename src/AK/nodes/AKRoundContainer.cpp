@@ -1,11 +1,12 @@
 #include <include/core/SkCanvas.h>
 #include <AK/nodes/AKRoundContainer.h>
+#include <AK/events/AKBakeEvent.h>
 #include <AK/AKBrush.h>
 #include <AK/AKSurface.h>
 
 using namespace AK;
 
-void AKRoundContainer::onBake(const BakeEvent &event)
+void AKRoundContainer::bakeEvent(const AKBakeEvent &event)
 {
     borderRadius().addDamage(
         event.surface.size(),

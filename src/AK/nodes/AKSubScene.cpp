@@ -1,6 +1,5 @@
-#include "AK/AKTime.h"
-#include <cassert>
 #include <include/core/SkCanvas.h>
+#include <AK/events/AKBakeEvent.h>
 #include <AK/nodes/AKSubScene.h>
 #include <AK/AKSurface.h>
 #include <AK/AKLog.h>
@@ -22,7 +21,7 @@ AKSubScene::AKSubScene(AKNode *parent) noexcept : AKBakeable(parent)
     m_caps |= Scene;
 }
 
-void AKSubScene::bakeChildren(const BakeEvent &event) noexcept
+void AKSubScene::bakeChildren(const AKBakeEvent &event) noexcept
 {
     TargetData *parentTargetData { t };
 
@@ -45,7 +44,7 @@ void AKSubScene::bakeChildren(const BakeEvent &event) noexcept
     t = parentTargetData;
 }
 
-void AKSubScene::onBake(const BakeEvent &event)
+void AKSubScene::bakeEvent(const AKBakeEvent &event)
 {
     bakeChildren(event);
 }

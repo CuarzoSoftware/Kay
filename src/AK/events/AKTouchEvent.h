@@ -20,8 +20,8 @@ public:
     Int32 id() const noexcept;
 
 protected:
-    AKTouchEvent(Subtype subtype, UInt32 serial, UInt32 ms, UInt64 us, AKInputDevice *device) noexcept :
-        AKInputEvent(Type::Touch, subtype, serial, ms, us, device)
+    AKTouchEvent(Type type, UInt32 serial, UInt32 ms, UInt64 us, AKInputDevice *device) noexcept :
+        AKInputEvent(type, serial, ms, us, device)
     {}
 };
 

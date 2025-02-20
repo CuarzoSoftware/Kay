@@ -12,6 +12,8 @@
 class AK::AKPointerSwipeUpdateEvent final : public AKPointerEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Constructs an AKPointerSwipeUpdateEvent object.
      *
@@ -25,7 +27,7 @@ public:
      */
     AKPointerSwipeUpdateEvent(UInt32 fingers = 0, const SkPoint &delta = SkPoint(0.f, 0.f), const SkPoint &deltaUnaccelerated = SkPoint(0.f, 0.f),
                                     UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKPointerEvent(AKEvent::Subtype::SwipeUpdate, serial, ms, us, device),
+        AKPointerEvent(PointerSwipeUpdate, serial, ms, us, device),
         m_fingers(fingers),
         m_delta(delta),
         m_deltaUnaccelerated(deltaUnaccelerated)

@@ -2,6 +2,7 @@
 #include <include/effects/SkBlurMaskFilter.h>
 #include <include/effects/SkColorMatrixFilter.h>
 #include <include/core/SkRRect.h>
+#include <AK/events/AKRenderEvent.h>
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
 #include <AK/AKTarget.h>
 #include <AK/AKSurface.h>
@@ -256,7 +257,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
 }
 
 
-void AKBackgroundBoxShadowEffect::onRender(const OnRenderParams &p)
+void AKBackgroundBoxShadowEffect::renderEvent(const AKRenderEvent &p)
 {
     if (m_borderRadius.fBL != 0 || m_borderRadius.fBR != 0 || m_borderRadius.fTL != 0 || m_borderRadius.fTR != 0)
     {
@@ -287,7 +288,7 @@ void AKBackgroundBoxShadowEffect::onRender(const OnRenderParams &p)
     }
 }
 
-void AKBackgroundBoxShadowEffect::onRenderWithBorderRadius(const OnRenderParams &p) noexcept
+void AKBackgroundBoxShadowEffect::onRenderWithBorderRadius(const AKRenderEvent &p) noexcept
 {
     SkRegion finalDamage { p.damage };
 

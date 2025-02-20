@@ -12,6 +12,7 @@
 class AK::AKPointerButtonEvent final : public AKPointerEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
 
     /**
      * @brief Pointer buttons.
@@ -73,7 +74,7 @@ public:
      */
     AKPointerButtonEvent(Button button = Left, State state = Pressed, UInt32 serial = AKTime::nextSerial(),
                                UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKPointerEvent(AKEvent::Subtype::Button, serial, ms, us, device),
+        AKPointerEvent(PointerButton, serial, ms, us, device),
         m_button(button),
         m_state(state)
     {}

@@ -30,14 +30,6 @@ public:
         CHLast
     };
 
-    struct OnRenderParams
-    {
-        const AKTarget &target;
-        const SkRegion &damage;
-        const SkIRect &rect;
-        AKPainter &painter;
-    };
-
     AKRenderable(RenderableHint hint, AKNode *parent = nullptr) noexcept :
         AKNode(parent),
         m_renderableHint(hint)
@@ -200,8 +192,9 @@ protected:
     ColorHint m_colorHint { UseRegion };
     bool m_customBlendFuncEnabled { false };
     bool m_customTextureColorEnabled { false };
+    bool event(const AKEvent &event) override;
     virtual void onEvent(const AKEvent &event) override;
-    virtual void onRender(const OnRenderParams &params) = 0;
+    virtual void renderEvent(const AKRenderEvent &event) = 0;
 private:
     void handleCommonChanges() noexcept;
 };

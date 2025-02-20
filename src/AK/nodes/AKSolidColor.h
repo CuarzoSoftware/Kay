@@ -22,7 +22,7 @@ public:
 protected:
     using AKRenderable::addDamage;
     using AKRenderable::opaqueRegion;
-    void onRender(const OnRenderParams &params) override;
+    void renderEvent(const AKRenderEvent &event) override;
 };
 
 #endif // AKSOLIDCOLOR_H

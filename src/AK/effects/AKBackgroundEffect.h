@@ -66,7 +66,6 @@ protected:
         effectRect = SkIRect::MakeSize(targetNode()->globalRect().size());
     }
 
-    using AKRenderable::onRender;
 private:
     friend class AKNode;
     friend class AKScene;

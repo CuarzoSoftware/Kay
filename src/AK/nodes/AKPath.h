@@ -116,7 +116,7 @@ public:
 
 protected:
     void onSceneBegin() override;
-    void onBake(const BakeEvent &event) override;
+    void bakeEvent(const AKBakeEvent &event) override;
     SkPath m_path;
     AKBrush m_brush;
     SkRect m_bounds;

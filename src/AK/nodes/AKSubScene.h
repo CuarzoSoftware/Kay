@@ -19,8 +19,8 @@ public:
     AKSubScene(AKNode *parent = nullptr) noexcept;
 
 protected:
-    void bakeChildren(const BakeEvent &event) noexcept;
-    void onBake(const BakeEvent &event) override;
+    void bakeChildren(const AKBakeEvent &event) noexcept;
+    void bakeEvent(const AKBakeEvent &event) override;
 private:
     friend class AKScene;
     void handleParentSceneNotifyBegin();

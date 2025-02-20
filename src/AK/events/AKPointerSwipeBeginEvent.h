@@ -11,6 +11,8 @@
 class AK::AKPointerSwipeBeginEvent final : public AKPointerEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Constructs an AKPointerSwipeBeginEvent object.
      *
@@ -22,7 +24,7 @@ public:
      */
     AKPointerSwipeBeginEvent(UInt32 fingers = 0,
                                    UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKPointerEvent(AKEvent::Subtype::SwipeBegin, serial, ms, us, device),
+        AKPointerEvent(PointerSwipeBegin, serial, ms, us, device),
         m_fingers(fingers)
     {}
 

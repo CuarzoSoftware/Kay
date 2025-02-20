@@ -12,8 +12,8 @@
 class AK::AKKeyboardEvent : public AKInputEvent
 {
 protected:
-    AKKeyboardEvent(Subtype subtype, UInt32 serial, UInt32 ms, UInt64 us, AKInputDevice *device) noexcept :
-        AKInputEvent(Type::Keyboard, subtype, serial, ms, us, device)
+    AKKeyboardEvent(Type type, UInt32 serial, UInt32 ms, UInt64 us, AKInputDevice *device) noexcept :
+        AKInputEvent(type, serial, ms, us, device)
     {}
 };
 

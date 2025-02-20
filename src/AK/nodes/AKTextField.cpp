@@ -70,7 +70,7 @@ void AKTextField::onEvent(const AKEvent &event)
 {
     AKContainer::onEvent(event);
 
-    if (event.type() != AKEvent::Type::Keyboard || event.subtype() != AKEvent::Subtype::Key)
+    if (event.type() != AKEvent::KeyboardKey)
         return;
 
     const auto &e { static_cast<const AKKeyboardKeyEvent&>(event) };

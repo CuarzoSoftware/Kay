@@ -7,12 +7,15 @@ using namespace AK;
 
 Int32 AKTouchEvent::id() const noexcept
 {
-    if (subtype() == AKEvent::Subtype::Down)
+    switch (type())
+    {
+    case TouchDown:
         return static_cast<const AKTouchDownEvent*>(this)->m_id;
-    else if (subtype() == AKEvent::Subtype::Move)
+    case TouchMove:
         return static_cast<const AKTouchMoveEvent*>(this)->m_id;
-    else if (subtype() == AKEvent::Subtype::Up)
+    case TouchUp:
         return static_cast<const AKTouchUpEvent*>(this)->m_id;
-
-    return -1;
+    default:
+        return -1;
+    }
 }

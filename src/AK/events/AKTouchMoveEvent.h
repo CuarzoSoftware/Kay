@@ -12,6 +12,8 @@
 class AK::AKTouchMoveEvent final : public AKTouchEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Constructs an AKTouchMoveEvent object.
      *
@@ -24,7 +26,7 @@ public:
      */
     AKTouchMoveEvent(Int32 id = 0, const SkPoint &pos = SkPoint(0.f, 0.f), UInt32 serial = AKTime::nextSerial(),
                            UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKTouchEvent(AKEvent::Subtype::Move, serial, ms, us, device),
+        AKTouchEvent(TouchMove, serial, ms, us, device),
         m_id(id),
         m_pos(pos)
     {}

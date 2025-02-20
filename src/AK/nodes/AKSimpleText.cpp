@@ -3,6 +3,7 @@
 #include <AK/nodes/AKSimpleText.h>
 #include <AK/AKSurface.h>
 #include <AK/events/AKPointerMoveEvent.h>
+#include <AK/events/AKBakeEvent.h>
 
 using namespace AK;
 
@@ -49,7 +50,7 @@ Int32 AKSimpleText::charIndexAtX(SkScalar x) const noexcept
     return m_skText.size() - 1;
 }
 
-void AKSimpleText::onBake(const BakeEvent &event)
+void AKSimpleText::bakeEvent(const AKBakeEvent &event)
 {
     if (m_skText.empty())
         return;

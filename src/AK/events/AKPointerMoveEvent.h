@@ -12,6 +12,8 @@
 class AK::AKPointerMoveEvent final : public AKPointerEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Constructs an AKPointerMoveEvent object.
      *
@@ -24,7 +26,7 @@ public:
      */
     AKPointerMoveEvent(const SkPoint &pos = SkPoint(0.f, 0.f), const SkPoint &delta = SkPoint(0.f, 0.f), const SkPoint &deltaUnaccelerated = SkPoint(0.f, 0.f),
                              UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKPointerEvent(AKEvent::Subtype::Move, serial, ms, us, device),
+        AKPointerEvent(PointerMove, serial, ms, us, device),
         m_pos(pos),
         m_delta(delta),
         m_deltaUnaccelerated(deltaUnaccelerated)

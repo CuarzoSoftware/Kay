@@ -1,6 +1,7 @@
 #include <include/core/SkCanvas.h>
 #include <include/effects/SkImageFilters.h>
 #include <include/effects/SkColorMatrixFilter.h>
+#include <AK/events/AKRenderEvent.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
 #include <AK/nodes/AKBakeable.h>
 #include <AK/AKTarget.h>
@@ -74,7 +75,7 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
 }
 
 
-void AKBackgroundImageShadowEffect::onRender(const OnRenderParams &p)
+void AKBackgroundImageShadowEffect::renderEvent(const AKRenderEvent &p)
 {
     AKBakeable *bakeableTarget = dynamic_cast<AKBakeable*>(targetNode());
 

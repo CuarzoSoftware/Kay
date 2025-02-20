@@ -11,6 +11,8 @@
 class AK::AKTouchCancelEvent final : public AKTouchEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Constructs an AKTouchCancelEvent object.
      *
@@ -21,7 +23,7 @@ public:
      */
     AKTouchCancelEvent(UInt32 serial = AKTime::nextSerial(),
                              UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKTouchEvent(AKEvent::Subtype::Cancel, serial, ms, us, device)
+        AKTouchEvent(TouchCancel, serial, ms, us, device)
     {}
 };
 

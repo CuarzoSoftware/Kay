@@ -171,7 +171,7 @@ public:
     }
 
 protected:
-    void onRender(const OnRenderParams &params) override;
+    void renderEvent(const AKRenderEvent &event) override;
     SkRect m_sideSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkRect m_centerSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkScalar m_imageScale { 1.f };

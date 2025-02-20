@@ -1,4 +1,5 @@
 #include <AK/nodes/AKBakeable.h>
+#include <AK/events/AKRenderEvent.h>
 #include <AK/AKSurface.h>
 #include <AK/AKPainter.h>
 
@@ -9,7 +10,7 @@ std::shared_ptr<AKSurface> AKBakeable::surface() const noexcept
     return m_surface;
 }
 
-void AKBakeable::onRender(const OnRenderParams &p)
+void AKBakeable::renderEvent(const AKRenderEvent &p)
 {
     if (!m_surface)
         return;
@@ -24,4 +25,18 @@ void AKBakeable::onRender(const OnRenderParams &p)
     });
 
     p.painter.drawRegion(p.damage);
+}
+
+bool AKBakeable::event(const AKEvent &event)
+{
+    switch (event.type())
+    {
+    case AKEvent::BakeEvent:
+        bakeEvent((const AKBakeEvent&)event);
+        break;
+    default:
+        return AKRenderable::event(event);
+    }
+
+    return true;
 }

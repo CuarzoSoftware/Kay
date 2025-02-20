@@ -4,8 +4,9 @@
 #include <cstdint>
 #include <include/core/SkFontMgr.h>
 
+#define AK_GET_CLASS(identifier) typename std::remove_const<std::remove_pointer<decltype(identifier)>::type>::type
 #define AK_MAX_BUFFER_AGE 10
-
+#define AK_UNUSED(object){(void)object;}
 #define AKCLASS_NO_COPY(class_name) \
     class_name(const class_name&) = delete; \
     class_name(class_name&&) = delete; \
@@ -92,9 +93,8 @@ namespace AK
     class AKInputEvent;
     class AKInputDevice;
 
-    class AKStateEvent;
-    class AKStateActivatedEvent;
-    class AKStateDeactivatedEvent;
+    class AKWindowEvent;
+    class AKWindowStateEvent;
 
     class AKPointerEvent;
     class AKPointerEnterEvent;
@@ -127,6 +127,9 @@ namespace AK
     class AKTouchFrameEvent;
     class AKTouchCancelEvent;
     class AKTouchPoint;
+
+    class AKRenderEvent;
+    class AKBakeEvent;
 
     /// @brief 64 bits unsigned integer
     typedef uint64_t        UInt64;
@@ -194,7 +197,6 @@ namespace AK
     AKTheme *theme() noexcept;
     void setTheme(AKTheme *theme) noexcept;
     sk_sp<SkFontMgr> AKFontManager() noexcept;
-
     AKKeymap *keymap() noexcept;
 };
 

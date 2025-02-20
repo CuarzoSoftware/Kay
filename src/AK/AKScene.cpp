@@ -20,6 +20,9 @@
 #include <AK/events/AKPointerEnterEvent.h>
 #include <AK/events/AKPointerLeaveEvent.h>
 #include <AK/events/AKPointerButtonEvent.h>
+#include <AK/events/AKWindowStateEvent.h>
+#include <AK/events/AKRenderEvent.h>
+#include <AK/events/AKBakeEvent.h>
 
 using namespace AK;
 
@@ -368,15 +371,13 @@ void AKScene::calculateNewDamage(AKNode *node)
                     node->scale(), true);
             }
 
-            const AKBakeable::BakeEvent event
-            {
-                .changes = node->t->changes,
-                .target = *t,
-                .clip = clipRegion,
-                .damage = node->t->clientDamage,
-                .opaque = bakeable->opaqueRegion,
-                .surface = *bakeable->m_surface.get()
-            };
+            const AKBakeEvent event (
+                node->t->changes,
+                *t,
+                clipRegion,
+                node->t->clientDamage,
+                bakeable->opaqueRegion,
+                *bakeable->m_surface.get());
 
             if (surfaceChanged)
             {
@@ -386,7 +387,7 @@ void AKScene::calculateNewDamage(AKNode *node)
 
             event.canvas().save();
             event.canvas().scale(event.surface.scale(), event.surface.scale());
-            bakeable->onBake(event);
+            AKApp()->postEvent(event, *bakeable);
             event.canvas().restore();
             bakeable->m_onBakeGeneratedDamage = !event.damage.isEmpty();
         }
@@ -575,13 +576,7 @@ void AKScene::renderNodes(AKNode *node)
 
     m_painter->setParamsFromRenderable(rend);
     glEnable(GL_BLEND);
-    rend->onRender({
-        .target = *t,
-        .damage = node->t->translucent,
-        .rect = rend->sceneRect(),
-        .painter = *m_painter.get()
-    });
-
+    AKApp()->postEvent(AKRenderEvent(*t, node->t->translucent, rend->sceneRect(), *m_painter.get()), *rend);
     renderOpaque:
 
     if (node->t->opaque.isEmpty())
@@ -595,12 +590,7 @@ void AKScene::renderNodes(AKNode *node)
 
     m_painter->setParamsFromRenderable(rend);
     glDisable(GL_BLEND);
-    rend->onRender({
-        .target = *t,
-        .damage = node->t->opaque,
-        .rect = rend->sceneRect(),
-        .painter = *m_painter.get()
-    });
+    AKApp()->postEvent(AKRenderEvent(*t, node->t->opaque, rend->sceneRect(), *m_painter.get()), *rend);
 
     renderChildren:
 
@@ -715,48 +705,35 @@ void AKScene::renderNodes(AKNode *node)
         return nullptr;
     }
 
-    void AKScene::postEvent(const AKEvent &event)
+    bool AKScene::event(const AKEvent &event)
     {
-        if (!m_root) return;
+        if (!m_root)
+            return AKObject::event(event);
+
         e = &event;
 
         switch (event.type()) {
-        case AKEvent::Type::Pointer:
-            switch (event.subtype()) {
-            case AKEvent::Subtype::Move:
-                handlePointerMoveEvent();
-                break;
-            case AKEvent::Subtype::Button:
-                handlePointerButtonEvent();
-                break;
-            default:
-                break;
-            }
+        case AKEvent::PointerMove:
+            handlePointerMoveEvent();
             break;
-        case AKEvent::Type::Keyboard:
-            switch (event.subtype()) {
-            case AKEvent::Subtype::Key:
-                handleKeyboardKeyEvent();
-                break;
-            default:
-                break;
-            }
+        case AKEvent::PointerButton:
+            handlePointerButtonEvent();
             break;
-        case AKEvent::Type::State:
-            switch (event.subtype()) {
-            case AKEvent::Subtype::Activated:
+        case AKEvent::KeyboardKey:
+            handleKeyboardKeyEvent();
+            break;
+        case AKEvent::WindowState:
+            if (static_cast<const AKWindowStateEvent&>(event).activated())
                 handleStateActivatedEvent();
-                break;
-            case AKEvent::Subtype::Deactivated:
+            else
                 handleStateDeactivatedEvent();
-                break;
-            default:
-                break;
-            }
             break;
         default:
+            return AKObject::event(event);
             break;
         }
+
+        return true;
     }
 
     void AKScene::handlePointerMoveEvent()

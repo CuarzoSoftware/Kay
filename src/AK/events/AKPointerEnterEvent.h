@@ -12,6 +12,8 @@
 class AK::AKPointerEnterEvent final : public AKPointerEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Constructs an AKPointerEnterEvent object.
      *
@@ -22,7 +24,7 @@ public:
      */
     AKPointerEnterEvent(const SkPoint &pos = SkPoint(0.f, 0.f), UInt32 serial = AKTime::nextSerial(),
                               UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKPointerEvent(AKEvent::Subtype::Enter, serial, ms, us, device),
+        AKPointerEvent(PointerEnter, serial, ms, us, device),
         m_pos(pos)
     {}
 

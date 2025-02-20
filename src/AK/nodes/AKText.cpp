@@ -1,5 +1,6 @@
 #include <include/core/SkCanvas.h>
 #include <AK/nodes/AKText.h>
+#include <AK/events/AKBakeEvent.h>
 #include <AK/AKSurface.h>
 #include <AK/AKTheme.h>
 #include <AK/AKLog.h>
@@ -37,7 +38,7 @@ bool AKText::setText(const std::string &text) noexcept
     return true;
 }
 
-void AKText::onBake(const BakeEvent &event)
+void AKText::bakeEvent(const AKBakeEvent &event)
 {
     if (!m_paragraph)
         return;

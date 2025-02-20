@@ -13,6 +13,8 @@
 class AK::AKTouchFrameEvent final : public AKTouchEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Constructs an AKTouchFrameEvent object.
      *
@@ -23,7 +25,7 @@ public:
      */
     AKTouchFrameEvent(UInt32 serial = AKTime::nextSerial(),
                             UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKTouchEvent(AKEvent::Subtype::Frame, serial, ms, us, device)
+        AKTouchEvent(TouchFrame, serial, ms, us, device)
     {}
 };
 

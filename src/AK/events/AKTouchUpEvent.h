@@ -11,6 +11,8 @@
 class AK::AKTouchUpEvent final : public AKTouchEvent
 {
 public:
+    AKEVENT_DECLARE_COPY
+
     /**
      * @brief Constructs an AKTouchUpEvent object.
      *
@@ -21,7 +23,7 @@ public:
      * @param device The input device that originated the event.
      */
     AKTouchUpEvent(Int32 id = 0, UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKTouchEvent(AKEvent::Subtype::Up, serial, ms, us, device),
+        AKTouchEvent(TouchUp, serial, ms, us, device),
         m_id(id)
     {}
 

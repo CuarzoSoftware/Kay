@@ -47,7 +47,7 @@ public:
     }
 
 protected:
-    void onBake(const BakeEvent &event) override;
+    void bakeEvent(const AKBakeEvent &event) override;
     void updateDimensions() noexcept;
     std::string m_text, m_skText;
     skia::textlayout::TextStyle m_textStyle;

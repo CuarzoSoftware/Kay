@@ -75,9 +75,16 @@ protected:
      */
     void notifyDestruction() noexcept;
 
+    virtual bool event(const AKEvent &event)
+    {
+        AK_UNUSED(event)
+        return false;
+    }
+
 private:
     friend class AKWeakUtils;
     friend class AKListener;
+    friend class AKApplication;
     std::vector<AKListener*> m_listeners;
     mutable std::vector<void*> m_weakRefs;
     mutable UIntPtr m_userData { 0 };

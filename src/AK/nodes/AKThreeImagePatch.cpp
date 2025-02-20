@@ -1,10 +1,11 @@
 #include <AK/nodes/AKThreeImagePatch.h>
+#include <AK/events/AKRenderEvent.h>
 #include <AK/AKLog.h>
 #include <AK/AKTime.h>
 
 using namespace AK;
 
-void AKThreeImagePatch::onRender(const OnRenderParams &params)
+void AKThreeImagePatch::renderEvent(const AKRenderEvent &params)
 {
     if (!m_image || m_imageScale <= 0)
         return;

@@ -15,6 +15,7 @@ public:
     static void freeGLContext() noexcept;
     const GrContextOptions &skContextOptions() const noexcept { return m_skContextOptions; };
     std::vector<AKNode*> animated;
+    bool postEvent(const AKEvent &event, AKObject &object);
 protected:
     GrContextOptions m_skContextOptions;
     sk_sp<SkFontMgr> m_fontManager;
