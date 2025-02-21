@@ -333,6 +333,7 @@ public:
     }
 
 protected:
+    void layoutEvent(const AKLayoutEvent &event) override;
     void init() noexcept;
     void updateDimensions() noexcept;
     AKRenderableImage m_renderableImage;

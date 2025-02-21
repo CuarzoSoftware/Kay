@@ -2,6 +2,7 @@
 #include <AK/events/AKPointerLeaveEvent.h>
 #include <AK/events/AKPointerMoveEvent.h>
 #include <AK/events/AKPointerButtonEvent.h>
+#include <AK/events/AKLayoutEvent.h>
 #include <AK/nodes/AKButton.h>
 #include <AK/AKTheme.h>
 #include <AK/AKLog.h>
@@ -23,13 +24,6 @@ AKButton::AKButton(const std::string &text, AKNode *parent) noexcept : AKSubScen
     m_content.layout().setAlignItems(YGAlignCenter);
     m_content.layout().setFlexDirection(YGFlexDirectionRow);
     updateStyle();
-
-    signalLayoutChanged.subscribe(this, [this](AKBitset<LayoutChanges> changes){
-        if (changes.check(LayoutChanges::Scale))
-            updateStyle();
-        else if (changes.check(LayoutChanges::Size))
-            updateOpaqueRegion();
-    });
 }
 
 void AKButton::setText(const std::string &text) noexcept
@@ -75,6 +69,16 @@ void AKButton::setPressed(bool pressed) noexcept
     m_pressed = pressed;
     addChange(CHPressed);
     updateStyle();
+}
+
+void AKButton::layoutEvent(const AKLayoutEvent &event)
+{
+    AKSubScene::layoutEvent(event);
+    if (event.changes().check(AKLayoutEvent::Changes::Scale))
+        updateStyle();
+    else if (event.changes().check(AKLayoutEvent::Changes::Size))
+        updateOpaqueRegion();
+    event.accept();
 }
 
 void AKButton::onEvent(const AKEvent &event)

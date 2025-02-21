@@ -14,6 +14,7 @@ public:
 
     void setAnimated(bool enabled) noexcept;
 protected:
+    void layoutEvent(const AKLayoutEvent &event) override;
     void updateDimensions() noexcept;
     void onSceneBegin() override;
     UInt32 m_animStartMs { 0 };

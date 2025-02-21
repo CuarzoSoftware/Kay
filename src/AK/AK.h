@@ -131,6 +131,8 @@ namespace AK
     class AKRenderEvent;
     class AKBakeEvent;
 
+    class AKLayoutEvent;
+
     /// @brief 64 bits unsigned integer
     typedef uint64_t        UInt64;
 

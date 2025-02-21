@@ -31,7 +31,7 @@ bool AKBakeable::event(const AKEvent &event)
 {
     switch (event.type())
     {
-    case AKEvent::BakeEvent:
+    case AKEvent::Bake:
         bakeEvent((const AKBakeEvent&)event);
         break;
     default:

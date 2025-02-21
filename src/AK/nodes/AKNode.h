@@ -30,13 +30,6 @@ class AK::AKNode : public AKObject
 {
 public:
 
-    enum LayoutChanges
-    {
-        Pos = 1 << 0,
-        Size = 1 << 1,
-        Scale = 1 << 2
-    };
-
     class RIterator
     {
     public:
@@ -233,10 +226,10 @@ public:
         AKSignal<const AKEvent&> event;
     } on;
 
-    AKSignal<AKBitset<LayoutChanges>> signalLayoutChanged;
-
 protected:
     virtual void onEvent(const AKEvent &event) { on.event.notify(event); }
+    bool event(const AKEvent &event) override;
+    virtual void layoutEvent(const AKLayoutEvent &event);
 
 private:
     friend class AKBackgroundEffect;

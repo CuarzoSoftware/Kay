@@ -1,4 +1,5 @@
 #include <AK/nodes/AKTextCaret.h>
+#include <AK/events/AKLayoutEvent.h>
 #include <AK/AKTheme.h>
 #include <AK/AKTarget.h>
 #include <AK/AKTime.h>
@@ -13,14 +14,8 @@ AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(Vertical, 
     setCenterSrcRect(AKTheme::TextCaretVThreePatchCenterSrcRect);
     enableCustomTextureColor(true);
     setColorWithAlpha(AKTheme::SystemBlue);
-
     layout().setWidth(AKTheme::TextCaretVThreePatchSideSrcRect.width());
     layout().setHeight(16);
-
-    signalLayoutChanged.subscribe(this, [this](auto changes){
-        if (changes.check(LayoutChanges::Scale))
-            updateDimensions();
-    });
     updateDimensions();
 }
 
@@ -38,6 +33,16 @@ void AKTextCaret::setAnimated(bool enabled) noexcept
     }
     else
         setOpacity(1.f);
+}
+
+void AKTextCaret::layoutEvent(const AKLayoutEvent &event)
+{
+    AKThreeImagePatch::layoutEvent(event);
+
+    if (event.changes().check(AKLayoutEvent::Changes::Scale))
+        updateDimensions();
+
+    event.accept();
 }
 
 void AKTextCaret::updateDimensions() noexcept

@@ -21,7 +21,7 @@ public:
         UInt32 serial = AKTime::nextSerial(),
         UInt32 ms = AKTime::ms(),
         UInt64 us = AKTime::us()) noexcept :
-        AKEvent(RenderEvent, serial, ms, us),
+        AKEvent(Render, serial, ms, us),
         target(target),
         damage(damage),
         rect(rect),

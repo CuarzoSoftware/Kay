@@ -50,10 +50,12 @@ public:
 
         WindowState,
 
-        RenderEvent,
-        BakeEvent,
+        Render,
+        Bake,
 
-        UserEvent = 1000
+        Layout,
+
+        User = 1000
     };
 
     /**

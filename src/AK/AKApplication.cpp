@@ -1,3 +1,4 @@
+#include "AK/events/AKEvent.h"
 #include <AK/AKApplication.h>
 #include <AK/AKGLContext.h>
 #include <AK/AKLog.h>
@@ -80,6 +81,8 @@ void AKApplication::freeGLContext() noexcept
 
 bool AKApplication::postEvent(const AKEvent &event, AKObject &object)
 {
+    event.accept();
+
     for (AKObject *filter : object.m_installedEventFilters)
         if (filter->eventFilter(event, &object))
             return true;

@@ -1,5 +1,6 @@
-#include <AK/nodes/AKTextField.h>
 #include <AK/events/AKKeyboardKeyEvent.h>
+#include <AK/events/AKLayoutEvent.h>
+#include <AK/nodes/AKTextField.h>
 #include <AK/AKTheme.h>
 #include <linux/input-event-codes.h>
 
@@ -25,19 +26,21 @@ AKTextField::AKTextField(AKNode *parent) noexcept : AKContainer(YGFlexDirection:
     m_content.layout().setFlexDirection(YGFlexDirectionRow);
     layout().setWidth(200);
     layout().setHeight(24);
-
-    signalLayoutChanged.subscribe(this, [this](AKBitset<LayoutChanges> changes){
-        if (changes.check(LayoutChanges::Size))
-        {
-            updateDimensions();
-            updateTextPosition();
-        }
-        if (changes.check(LayoutChanges::Scale))
-            updateScale();
-    });
-
     updateDimensions();
     updateScale();
+}
+
+void AKTextField::layoutEvent(const AKLayoutEvent &event)
+{
+    AKContainer::layoutEvent(event);
+    if (event.changes().check(AKLayoutEvent::Changes::Size))
+    {
+        updateDimensions();
+        updateTextPosition();
+    }
+    if (event.changes().check(AKLayoutEvent::Changes::Scale))
+        updateScale();
+    event.accept();
 }
 
 static size_t utf8CharLenght(char c)

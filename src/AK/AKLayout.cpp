@@ -1,7 +1,9 @@
+#include "AK/AKApplication.h"
 #include <AK/AKLayout.h>
 #include <AK/AKTarget.h>
 #include <AK/AKLog.h>
 #include <AK/nodes/AKSubScene.h>
+#include <AK/events/AKLayoutEvent.h>
 
 using namespace AK;
 
@@ -97,7 +99,7 @@ void AKLayout::applyTree(AKNode *node)
 
     YGNodeSetHasNewLayout(node->layout().m_node, false);
 
-    AKBitset<AKNode::LayoutChanges> changes;
+    AKBitset<AKLayoutEvent::Changes> changes;
 
     if (updateRect)
     {
@@ -109,14 +111,14 @@ void AKLayout::applyTree(AKNode *node)
 
         if (newRect.topLeft() != node->m_globalRect.topLeft())
         {
-            changes.add(AKNode::LayoutChanges::Pos);
+            changes.add(AKLayoutEvent::Changes::Pos);
             node->addChange(AKNode::CHLayoutPos);
             node->m_flags.add(AKNode::ChildrenNeedPosUpdate);
         }
 
         if (newRect.size() != node->m_globalRect.size())
         {
-            changes.add(AKNode::LayoutChanges::Size);
+            changes.add(AKLayoutEvent::Changes::Size);
             node->addChange(AKNode::CHLayoutSize);
         }
 
@@ -145,14 +147,14 @@ void AKLayout::applyTree(AKNode *node)
         if (newScale != node->m_scale)
         {
             node->m_scale = newScale;
-            changes.add(AKNode::LayoutChanges::Scale);
+            changes.add(AKLayoutEvent::Changes::Scale);
             node->addChange(AKNode::CHLayoutScale);
             node->m_flags.add(AKNode::ChildrenNeedScaleUpdate);
         }
     }
 
     if (changes.get() != 0)
-        node->signalLayoutChanged.notify(changes);
+        AKApp()->postEvent(AKLayoutEvent(changes), *node);
 
     for (AKNode *child : node->children())
         applyTree(child);

@@ -1,4 +1,5 @@
 #include <AK/nodes/AKImageFrame.h>
+#include <AK/events/AKLayoutEvent.h>
 #include <AK/AKLog.h>
 
 using namespace AK;
@@ -17,16 +18,20 @@ AKImageFrame::AKImageFrame(sk_sp<SkImage> image, AKNode *parent) noexcept :
     init();
 }
 
+void AKImageFrame::layoutEvent(const AKLayoutEvent &event)
+{
+    AKContainer::layoutEvent(event);
+    if (sizeMode() != SizeMode::Fill && event.changes().check(AKLayoutEvent::Changes::Size))
+        updateDimensions();
+    event.accept();
+}
+
 void AKImageFrame::init() noexcept
 {
     layout().setOverflow(YGOverflowHidden);
     m_renderableImage.layout().setPositionType(YGPositionTypeAbsolute);
     m_renderableImage.layout().setFlex(1.f);
     updateDimensions();
-    signalLayoutChanged.subscribe(this, [this](auto changes){
-        if (sizeMode() != SizeMode::Fill && changes.check(LayoutChanges::Size))
-            updateDimensions();
-    });
 }
 
 void AKImageFrame::updateDimensions() noexcept

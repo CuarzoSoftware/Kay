@@ -7,6 +7,9 @@ class AK::AKEdgeShadow : public AKRenderableImage
 {
 public:
     AKEdgeShadow(AKNode *parent = nullptr) noexcept;
+
+protected:
+    void layoutEvent(const AKLayoutEvent &event) override;
 };
 
 #endif // AKEDGESHADOW_H

@@ -460,6 +460,17 @@ public:
 
     void layerChanged() override
     {
+        // Check if the surface has a toplevel role
+        if (LToplevelRole *tl = toplevel())
+        {
+            // Add the activated flag
+            tl->configureState(tl->pendingConfiguration().state | LToplevelRole::Activated);
+
+            // Now tl->pendingConfiguration().state contains Activated and the configuration
+            // will be sent later to the client.
+            // To know when the surface becomes active check LToplevelRole::atomsChanged()
+        }
+
         LSurface::layerChanged();
         if (layer() == LLayerBackground)
             node.setParent(&comp()->kay->wallpaper);

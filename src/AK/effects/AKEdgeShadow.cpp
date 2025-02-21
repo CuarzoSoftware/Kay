@@ -1,4 +1,5 @@
 #include <AK/effects/AKEdgeShadow.h>
+#include <AK/events/AKLayoutEvent.h>
 #include <AK/AKTheme.h>
 
 using namespace AK;
@@ -12,12 +13,15 @@ AKEdgeShadow::AKEdgeShadow(AKNode *parent) noexcept : AKRenderableImage(parent)
     enableCustomTextureColor(true);
     setColorWithAlpha(AKTheme::EdgeShadowColor);
     setImage(theme()->edgeShadowImage(scale()));
+}
 
-    signalLayoutChanged.subscribe(this, [this](auto changes){
-        if (changes.check(LayoutChanges::Scale))
-        {
-            setImage(theme()->edgeShadowImage(scale()));
-            addDamage(AK_IRECT_INF);
-        }
-    });
+void AKEdgeShadow::layoutEvent(const AKLayoutEvent &event)
+{
+    AKRenderableImage::layoutEvent(event);
+    if (event.changes().check(AKLayoutEvent::Changes::Scale))
+    {
+        setImage(theme()->edgeShadowImage(scale()));
+        addDamage(AK_IRECT_INF);
+    }
+    event.accept();
 }

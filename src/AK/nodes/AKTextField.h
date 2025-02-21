@@ -18,6 +18,7 @@ class AK::AKTextField : public AKContainer
 public:
     AKTextField(AKNode *parent = nullptr) noexcept;
 protected:
+    void layoutEvent(const AKLayoutEvent &event) override;
     void onEvent(const AKEvent &event) override;
     void updateDimensions() noexcept;
     void updateScale() noexcept;

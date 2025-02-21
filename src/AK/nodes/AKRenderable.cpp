@@ -26,11 +26,11 @@ bool AKRenderable::event(const AKEvent &event)
 {
     switch (event.type())
     {
-    case AKEvent::RenderEvent:
+    case AKEvent::Render:
         renderEvent((const AKRenderEvent&)event);
         break;
     default:
-        return false;
+        return AKNode::event(event);
     }
 
     return true;

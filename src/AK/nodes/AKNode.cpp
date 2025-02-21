@@ -465,6 +465,27 @@ void AKNode::setAnimated(bool enabled) noexcept
     }
 }
 
+bool AKNode::event(const AKEvent &event)
+{
+    switch (event.type())
+    {
+    case AKEvent::Layout:
+        layoutEvent((const AKLayoutEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
+    default:
+        return AKObject::event(event);
+    }
+
+    return true;
+}
+
+void AKNode::layoutEvent(const AKLayoutEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
 void AKNode::RIterator::reset(AKNode *node) noexcept
 {
     m_node = node;
