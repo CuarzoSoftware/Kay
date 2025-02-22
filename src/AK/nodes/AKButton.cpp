@@ -2,6 +2,7 @@
 #include <AK/events/AKPointerLeaveEvent.h>
 #include <AK/events/AKPointerMoveEvent.h>
 #include <AK/events/AKPointerButtonEvent.h>
+#include <AK/events/AKWindowStateEvent.h>
 #include <AK/events/AKLayoutEvent.h>
 #include <AK/nodes/AKButton.h>
 #include <AK/AKTheme.h>
@@ -71,6 +72,14 @@ void AKButton::setPressed(bool pressed) noexcept
     updateStyle();
 }
 
+void AKButton::windowStateEvent(const AKWindowStateEvent &event)
+{
+    AKSubScene::windowStateEvent(event);
+    if (event.changes().check(AKActivated))
+        updateStyle();
+    event.accept();
+}
+
 void AKButton::layoutEvent(const AKLayoutEvent &event)
 {
     AKSubScene::layoutEvent(event);
@@ -84,12 +93,6 @@ void AKButton::layoutEvent(const AKLayoutEvent &event)
 void AKButton::onEvent(const AKEvent &event)
 {
     AKSubScene::onEvent(event);
-
-    if (event.type() == AKEvent::WindowState)
-    {
-        updateStyle();
-        return;
-    }
 
     if (event.type() != AKEvent::Type::PointerButton)
         return;

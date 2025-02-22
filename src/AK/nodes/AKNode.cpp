@@ -435,7 +435,7 @@ AKNode *AKNode::root() const noexcept
 
 bool AKNode::activated() const noexcept
 {
-    return scene() && scene()->activated();
+    return scene() && scene()->windowState().check(AKActivated);
 }
 
 void AKNode::setAnimated(bool enabled) noexcept
@@ -474,6 +474,11 @@ bool AKNode::event(const AKEvent &event)
         if (!event.isAccepted())
             return false;
         break;
+    case AKEvent::WindowState:
+        windowStateEvent((const AKWindowStateEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
     default:
         return AKObject::event(event);
     }
@@ -482,6 +487,11 @@ bool AKNode::event(const AKEvent &event)
 }
 
 void AKNode::layoutEvent(const AKLayoutEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::windowStateEvent(const AKWindowStateEvent &event)
 {
     ((const AKEvent&)event).ignore();
 }

@@ -230,6 +230,7 @@ protected:
     virtual void onEvent(const AKEvent &event) { on.event.notify(event); }
     bool event(const AKEvent &event) override;
     virtual void layoutEvent(const AKLayoutEvent &event);
+    virtual void windowStateEvent(const AKWindowStateEvent &event);
 
 private:
     friend class AKBackgroundEffect;

@@ -1,6 +1,7 @@
 #ifndef AKSCENE_H
 #define AKSCENE_H
 
+#include <AK/AKWindowState.h>
 #include <AK/AKObject.h>
 #include <AK/AKTarget.h>
 #include <AK/nodes/AKNode.h>
@@ -35,10 +36,11 @@ public:
     }
 
     bool isSubScene() const noexcept { return m_isSubScene; };
-    bool activated() const noexcept { return m_activated; };
-    bool event(const AKEvent &event) override;
-
     AKNode *pointerFocus() const noexcept { return m_pointerFocus; };
+
+    AKBitset<AKWindowState> windowState() const noexcept { return m_windowState; }
+protected:
+    bool event(const AKEvent &event) override;
 private:
     friend class AKTarget;
     friend class AKNode;
@@ -54,7 +56,7 @@ private:
     bool m_isSubScene { false };
     bool m_treeChanged { false };
     bool m_eventWithoutTarget { false };
-    bool m_activated { true };
+    AKBitset<AKWindowState> m_windowState { AKActivated };
     void validateTarget(AKTarget *target) noexcept;
     void updateMatrix() noexcept;
     void createOrAssignTargetDataForNode(AKNode *node) noexcept;
@@ -66,8 +68,7 @@ private:
     void handlePointerMoveEvent();
     void handlePointerButtonEvent();
     void handleKeyboardKeyEvent();
-    void handleStateActivatedEvent();
-    void handleStateDeactivatedEvent();
+    void handleWindowStateEvent();
 };
 
 #endif // AKSCENE_H

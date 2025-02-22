@@ -723,10 +723,7 @@ void AKScene::renderNodes(AKNode *node)
             handleKeyboardKeyEvent();
             break;
         case AKEvent::WindowState:
-            if (static_cast<const AKWindowStateEvent&>(event).activated())
-                handleStateActivatedEvent();
-            else
-                handleStateDeactivatedEvent();
+            handleWindowStateEvent();
             break;
         default:
             return AKObject::event(event);
@@ -849,12 +846,15 @@ void AKScene::renderNodes(AKNode *node)
         }
     }
 
-    void AKScene::handleStateActivatedEvent()
+    void AKScene::handleWindowStateEvent()
     {
-        if (m_activated)
+        const AKWindowStateEvent &event { static_cast<const AKWindowStateEvent &>(*e) };
+        AKBitset<AKWindowState> newState { m_windowState.get() ^ event.changes().get() };
+
+        if (newState.get() == m_windowState.get())
             return;
 
-        m_activated = true;
+        m_windowState = newState;
         m_root->removeFlagsAndPropagate(AKNode::Notified);
         AKNode::RIterator it { nullptr };
 
@@ -871,38 +871,7 @@ void AKScene::renderNodes(AKNode *node)
             }
 
             it.node()->m_flags.add(AKNode::Notified);
-            it.node()->onEvent(*e);
-
-            if (m_treeChanged)
-                goto retry;
-
-            it.next();
-        }
-    }
-
-    void AKScene::handleStateDeactivatedEvent()
-    {
-        if (!m_activated)
-            return;
-
-        m_activated = false;
-        m_root->removeFlagsAndPropagate(AKNode::Notified);
-        AKNode::RIterator it { nullptr };
-
-    retry:
-        it.reset(m_root->bottommostChild());
-        m_treeChanged = false;
-
-        while (!it.done())
-        {
-            if (it.node()->m_flags.check(AKNode::Notified))
-            {
-                it.next();
-                continue;
-            }
-
-            it.node()->m_flags.add(AKNode::Notified);
-            it.node()->onEvent(*e);
+            it.node()->event(*e);
 
             if (m_treeChanged)
                 goto retry;

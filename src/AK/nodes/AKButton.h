@@ -38,6 +38,7 @@ public:
     } on;
 
 protected:
+    void windowStateEvent(const AKWindowStateEvent &event) override;
     void layoutEvent(const AKLayoutEvent &event) override;
     void onEvent(const AKEvent &event) override;
     void applyLayoutConstraints() noexcept;

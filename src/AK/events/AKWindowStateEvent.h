@@ -2,6 +2,8 @@
 #define AKSTATEACTIVATEDEVENT_H
 
 #include <AK/events/AKWindowEvent.h>
+#include <AK/AKWindowState.h>
+#include <AK/AKBitset.h>
 #include <AK/AKTime.h>
 
 /**
@@ -26,21 +28,22 @@ public:
     /**
      * @brief Event constructor.
      */
-    AKWindowStateEvent(bool activated, UInt32 serial = AKTime::nextSerial(),
+    AKWindowStateEvent(AKBitset<AKWindowState> changes, UInt32 serial = AKTime::nextSerial(),
                           UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us()) noexcept :
-        AKWindowEvent(WindowState, serial, ms, us), m_activated(activated) {}
+        AKWindowEvent(WindowState, serial, ms, us), m_changes(changes) {}
 
-    bool activated() const noexcept
+    AKBitset<AKWindowState> changes() const noexcept
     {
-        return m_activated;
+        return m_changes;
     }
 
-    void setActivated(bool activated) noexcept
+    void setChanges(AKBitset<AKWindowState> changes) noexcept
     {
-        m_activated = activated;
+        m_changes = changes;
     }
+
 private:
-    bool m_activated;
+    AKBitset<AKWindowState> m_changes;
 };
 
 #endif // AKSTATEACTIVATEDEVENT_H
