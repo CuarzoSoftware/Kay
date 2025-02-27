@@ -2,8 +2,6 @@
 #include "modules/skparagraph/include/FontCollection.h"
 
 #include "include/core/SkTypeface.h"
-#include "modules/skparagraph/include/Paragraph.h"
-#include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skshaper/include/SkShaper_harfbuzz.h"
 
 namespace {

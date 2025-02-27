@@ -3,7 +3,7 @@
 
 #include "modules/skparagraph/include/FontArguments.h"
 #include "modules/skparagraph/include/ParagraphCache.h"
-#include "modules/skparagraph/src/ParagraphImpl.h"
+#include <AK/third_party/ParagraphImpl.h>
 #include "src/base/SkFloatBits.h"
 
 using namespace skia_private;
@@ -239,7 +239,7 @@ struct ParagraphCache::Entry {
 };
 
 ParagraphCache::ParagraphCache()
-    : fChecker([](ParagraphImpl* impl, const char*, bool){ })
+    : fChecker([](ParagraphImpl* /*impl*/, const char*, bool){ })
     , fLRUCacheMap(kMaxEntries)
     , fCacheIsOn(true)
     , fLastCachedValue(nullptr)

@@ -1,6 +1,5 @@
 #include <AK/AKTheme.h>
 #include <AK/AKApplication.h>
-#include <AK/input/AKKeymap.h>
 
 using namespace AK;
 
@@ -25,13 +24,17 @@ void AK::setTheme(AKTheme *theme) noexcept
         m_theme = new AKTheme();
 }
 
-AKKeymap *AK::keymap() noexcept
+class AKKeyboard &AK::akKeyboard() noexcept
 {
-    static AKKeymap keymap;
-    return &keymap;
+    return akApp()->keyboard();
 }
 
-sk_sp<SkFontMgr> AK::AKFontManager() noexcept
+sk_sp<SkFontMgr> AK::akFontManager() noexcept
 {
-    return AKApp()->fontManager();
+    return akApp()->fontManager();
+}
+
+AKPointer &AK::akPointer() noexcept
+{
+    return akApp()->pointer();
 }

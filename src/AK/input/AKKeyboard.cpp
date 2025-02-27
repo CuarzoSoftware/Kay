@@ -1,13 +1,13 @@
-#include <AK/input/AKKeymap.h>
+#include <AK/input/AKKeyboard.h>
+#include <AK/AKLog.h>
 #include <cstdlib>
 #include <algorithm>
 #include <string>
-#include <AK/AKLog.h>
 #include <cstring>
 
 using namespace AK;
 
-AKKeymap::AKKeymap() noexcept
+AKKeyboard::AKKeyboard() noexcept
 {
     const xkb_rule_names names {
         getenv("XKB_DEFAULT_RULES"),
@@ -24,7 +24,7 @@ AKKeymap::AKKeymap() noexcept
     loadComposeTable();
 }
 
-bool AKKeymap::setFromBuffer(const char *buffer, size_t size, xkb_keymap_format format) noexcept
+bool AKKeyboard::setFromBuffer(const char *buffer, size_t size, xkb_keymap_format format) noexcept
 {
     xkb_keymap *newKeymap { xkb_keymap_new_from_buffer(m_context, buffer, size, format, XKB_KEYMAP_COMPILE_NO_FLAGS) };
     if (!newKeymap) return false;
@@ -46,7 +46,7 @@ bool AKKeymap::setFromBuffer(const char *buffer, size_t size, xkb_keymap_format 
     return true;
 }
 
-bool AKKeymap::setFromString(const char *str, xkb_keymap_format format) noexcept
+bool AKKeyboard::setFromString(const char *str, xkb_keymap_format format) noexcept
 {
     xkb_keymap *newKeymap { xkb_keymap_new_from_string(m_context, str, format, XKB_KEYMAP_COMPILE_NO_FLAGS) };
     if (!newKeymap) return false;
@@ -68,10 +68,11 @@ bool AKKeymap::setFromString(const char *str, xkb_keymap_format format) noexcept
     return true;
 }
 
-const char *AKKeymap::keyString(UInt32 code) const noexcept
+const char *AKKeyboard::keyString(UInt32 code) const noexcept
 {
     static char buffer[128];
 
+    /*
     switch (composeStatus())
     {
     case XKB_COMPOSE_NOTHING:
@@ -86,7 +87,7 @@ const char *AKKeymap::keyString(UInt32 code) const noexcept
     case XKB_COMPOSE_CANCELLED:
         AKLog::debug("CANCELLED");
         break;
-    }
+    }*/
 
     switch (composeStatus())
     {
@@ -105,12 +106,12 @@ const char *AKKeymap::keyString(UInt32 code) const noexcept
     return buffer;
 }
 
-xkb_keysym_t AKKeymap::keySymbol(UInt32 code) const noexcept
+xkb_keysym_t AKKeyboard::keySymbol(UInt32 code) const noexcept
 {
     return xkb_state_key_get_one_sym(m_state, code + 8);
 }
 
-xkb_compose_status AKKeymap::composeStatus() const noexcept
+xkb_compose_status AKKeyboard::composeStatus() const noexcept
 {
     if (!m_composeState)
         return XKB_COMPOSE_NOTHING;
@@ -118,7 +119,7 @@ xkb_compose_status AKKeymap::composeStatus() const noexcept
     return xkb_compose_state_get_status(m_composeState);
 }
 
-void AKKeymap::updateKeyState(UInt32 code, UInt32 state) noexcept
+void AKKeyboard::updateKeyState(UInt32 code, UInt32 state) noexcept
 {
     auto it = std::find(m_pressedKeyCodes.begin(), m_pressedKeyCodes.end(), code);
     const UInt32 isPressed { it != m_pressedKeyCodes.end() };
@@ -141,12 +142,12 @@ void AKKeymap::updateKeyState(UInt32 code, UInt32 state) noexcept
         m_pressedKeyCodes.erase(it);
 }
 
-bool AKKeymap::isKeyCodePressed(UInt32 keyCode) const noexcept
+bool AKKeyboard::isKeyCodePressed(UInt32 keyCode) const noexcept
 {
     return std::find(m_pressedKeyCodes.begin(), m_pressedKeyCodes.end(), keyCode) != m_pressedKeyCodes.end();
 }
 
-void AKKeymap::updateModifiers(UInt32 depressed, UInt32 latched, UInt32 locked, UInt32 group) noexcept
+void AKKeyboard::updateModifiers(UInt32 depressed, UInt32 latched, UInt32 locked, UInt32 group) noexcept
 {
     xkb_state_update_mask(m_state, depressed, latched, locked, 0, 0, group);
 }
@@ -167,7 +168,7 @@ static std::string localePostDotToUpper(const std::string &locale)
     return result;
 }
 
-void AKKeymap::loadComposeTable(const char *locale) noexcept
+void AKKeyboard::loadComposeTable(const char *locale) noexcept
 {
     if (m_composeState)
     {
@@ -203,11 +204,9 @@ void AKKeymap::loadComposeTable(const char *locale) noexcept
         m_composeTable = nullptr;
         goto fail;
     }
-    AKLog::debug("[AKKeymap] Using locale %s.", locale);
+    AKLog::debug("[AKKeyboard] Using locale %s.", locale);
     return;
 fail:
-    AKLog::error("[AKKeymap] Failed to create compose table from locale %s.", locale);
-
     // Try with uppercase
     if (locale)
     {
@@ -215,10 +214,16 @@ fail:
         const std::string localeUpper { localePostDotToUpper(localeNormal) };
 
         if (localeNormal != localeUpper)
+        {
+            AKLog::warning("[AKKeyboard] Failed to create compose table from locale %s. Trying with %s.", locale, localeUpper.c_str());
             return loadComposeTable(localeUpper.c_str());
+        }
     }
 
     // Fallback
     if (strcmp(locale, "C") != 0)
+    {
+        AKLog::warning("[AKKeyboard] Failed to create compose table from locale %s. Falling back to locale C.", locale);
         loadComposeTable("C");
+    }
 }

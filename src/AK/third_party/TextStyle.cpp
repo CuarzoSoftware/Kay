@@ -1,5 +1,4 @@
 // Copyright 2019 Google LLC.
-#include "include/core/SkColor.h"
 #include "include/core/SkFontStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
 

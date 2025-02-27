@@ -16,7 +16,7 @@ static auto interface = GrGLMakeAssembledInterface(nullptr, (GrGLGetProc)*[](voi
     return (void *)eglGetProcAddress(p);
 });
 
-AKApplication *AK::AKApp() noexcept
+AKApplication *AK::akApp() noexcept
 {
     return _app;
 }
@@ -28,6 +28,9 @@ AKApplication::AKApplication() noexcept
     AKLog::init();
     m_fontManager = SkFontMgr_New_FontConfig(nullptr);
     assert("Failed to create the font manager" && m_fontManager);
+    m_fontCollection = sk_make_sp<skia::textlayout::FontCollection>();
+    m_fontCollection->setDefaultFontManager(akFontManager());
+    m_fontCollection->enableFontFallback();
     m_skContextOptions.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kBackendBinary;
     m_skContextOptions.fAvoidStencilBuffers = true;
     m_skContextOptions.fPreferExternalImagesOverES3 = true;
@@ -53,6 +56,11 @@ AKApplication::AKApplication() noexcept
 sk_sp<SkFontMgr> AKApplication::fontManager() const noexcept
 {
     return m_fontManager;
+}
+
+sk_sp<skia::textlayout::FontCollection> AKApplication::fontCollection() const noexcept
+{
+    return m_fontCollection;
 }
 
 AKGLContext *AKApplication::glContext() noexcept
@@ -84,9 +92,40 @@ bool AKApplication::postEvent(const AKEvent &event, AKObject &object)
     event.accept();
 
     for (AKObject *filter : object.m_installedEventFilters)
-        if (filter->eventFilter(event, &object))
+        if (filter->eventFilter(event, object))
             return true;
 
     return object.event(event);
 }
 
+AKPointer &AKApplication::pointer() noexcept
+{
+    if (!m_pointer)
+        m_pointer.reset(new AKPointer());
+
+    return *m_pointer.get();
+}
+
+AKKeyboard &AKApplication::keyboard() noexcept
+{
+    if (!m_keyboard)
+        m_keyboard.reset(new AKKeyboard());
+
+    return *m_keyboard.get();
+}
+
+void AKApplication::setPointer(AKPointer *pointer) noexcept
+{
+    if (m_pointer.get() == pointer)
+        return;
+
+    m_pointer.reset(pointer);
+}
+
+void AKApplication::setKeyboard(AKKeyboard *keyboard) noexcept
+{
+    if (m_keyboard.get() == keyboard)
+        return;
+
+    m_keyboard.reset(keyboard);
+}

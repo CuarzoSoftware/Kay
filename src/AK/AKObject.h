@@ -86,7 +86,7 @@ protected:
         return false;
     }
 
-    virtual bool eventFilter(const AKEvent &event, AKObject *target)
+    virtual bool eventFilter(const AKEvent &event, AKObject &target)
     {
         AK_UNUSED(event)
         AK_UNUSED(target)

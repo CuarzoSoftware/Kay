@@ -6,10 +6,9 @@
 #include "include/private/base/SkTo.h"
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/src/ParagraphImpl.h"
-#include "modules/skparagraph/src/Run.h"
+#include <AK/third_party/ParagraphImpl.h>
+#include <AK/third_party/Run.h>
 #include "modules/skshaper/include/SkShaper.h"
-#include "src/base/SkUTF.h"
 
 namespace skia {
 namespace textlayout {

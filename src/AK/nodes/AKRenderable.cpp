@@ -1,3 +1,4 @@
+#include <AK/events/AKWindowStateEvent.h>
 #include <AK/events/AKEvent.h>
 #include <AK/nodes/AKRenderable.h>
 #include <AK/AKTarget.h>
@@ -36,15 +37,15 @@ bool AKRenderable::event(const AKEvent &event)
     return true;
 }
 
-void AKRenderable::onEvent(const AKEvent &event)
+void AKRenderable::windowStateEvent(const AKWindowStateEvent &event)
 {
-    AKNode::onEvent(event);
+    AKNode::windowStateEvent(event);
 
-    if (diminishOpacityOnInactive() && event.type() == AKEvent::WindowState)
+    if (diminishOpacityOnInactive() && event.changes().check(AKActivated))
     {
         addDamage(AK_IRECT_INF);
         repaint();
-        return;
+        event.accept();
     }
 }
 

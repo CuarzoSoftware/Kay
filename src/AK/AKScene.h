@@ -37,6 +37,7 @@ public:
 
     bool isSubScene() const noexcept { return m_isSubScene; };
     AKNode *pointerFocus() const noexcept { return m_pointerFocus; };
+    AKNode *keyboardFocus() const noexcept { return m_keyboardFocus; };
 
     AKBitset<AKWindowState> windowState() const noexcept { return m_windowState; }
 protected:
@@ -52,6 +53,7 @@ private:
     std::vector<AKTarget*> m_targets;
     AKWeak<AKNode> m_root;
     AKWeak<AKNode> m_pointerFocus;
+    AKWeak<AKNode> m_keyboardFocus;
     std::shared_ptr<AKPainter> m_painter;
     bool m_isSubScene { false };
     bool m_treeChanged { false };

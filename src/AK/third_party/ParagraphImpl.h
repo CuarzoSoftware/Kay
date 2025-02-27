@@ -14,7 +14,6 @@
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkOnce.h"
 #include "include/private/base/SkTArray.h"
-#include "include/private/base/SkTemplates.h"
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/FontCollection.h"
 #include "modules/skparagraph/include/Paragraph.h"
@@ -22,13 +21,11 @@
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextShadow.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/src/Run.h"
-#include "modules/skparagraph/src/TextLine.h"
+#include <AK/third_party/Run.h>
+#include <AK/third_party/TextLine.h>
 #include "modules/skunicode/include/SkUnicode.h"
 #include "src/base/SkBitmaskEnum.h"
-#include "src/core/SkTHash.h"
 
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -147,6 +144,10 @@ public:
     TextIndex findNextGlyphClusterBoundary(TextIndex utf8) const;
     TextIndex findPreviousGlyphClusterBoundary(TextIndex utf8) const;
     size_t getUTF16Index(TextIndex index) const {
+        if (fUTF16IndexForUTF8Index.empty())
+            return 0;
+        else if (index >= (size_t)fUTF16IndexForUTF8Index.size())
+            fUTF16IndexForUTF8Index[fUTF16IndexForUTF8Index.size() - 1];
         return fUTF16IndexForUTF8Index[index];
     }
 

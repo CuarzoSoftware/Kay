@@ -4,7 +4,7 @@
 #include "include/core/SkMaskFilter.h"
 #include "include/effects/SkDashPathEffect.h"
 #include "include/effects/SkDiscretePathEffect.h"
-#include "modules/skparagraph/src/ParagraphPainterImpl.h"
+#include <AK/third_party/ParagraphPainterImpl.h>
 
 #include <array>
 

@@ -65,8 +65,8 @@ namespace AK
 
     /*********** BAKEABLES ***********/
 
-    class AKSimpleText;
     class AKText;
+    class AKCoreTextEditor;
 
     /*********** SUBSCENES ***********/
 
@@ -85,7 +85,8 @@ namespace AK
 
     /************ INPUT *************/
 
-    class AKKeymap;
+    class AKKeyboard;
+    class AKPointer;
 
     /************ EVENTS *************/
 
@@ -132,6 +133,8 @@ namespace AK
     class AKBakeEvent;
 
     class AKLayoutEvent;
+
+    class AKSafeEventQueue;
 
     /// @brief 64 bits unsigned integer
     typedef uint64_t        UInt64;
@@ -195,11 +198,12 @@ namespace AK
         }
     };
 
-    AKApplication *AKApp() noexcept;
+    AKApplication *akApp() noexcept;
     AKTheme *theme() noexcept;
     void setTheme(AKTheme *theme) noexcept;
-    sk_sp<SkFontMgr> AKFontManager() noexcept;
-    AKKeymap *keymap() noexcept;
+    sk_sp<SkFontMgr> akFontManager() noexcept;
+    AKPointer &akPointer() noexcept;
+    AKKeyboard &akKeyboard() noexcept;
 };
 
 #define AK_IRECT_INF SkIRect::MakeLTRB(-2147483, -2147483, 2147483, 2147483)

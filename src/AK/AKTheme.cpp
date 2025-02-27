@@ -14,7 +14,7 @@
 AK::AKTheme::AKTheme() noexcept
 {
     DefaultFont.setTypeface(
-        AKApp()->fontManager()->matchFamilyStyle("Inter",
+        akApp()->fontManager()->matchFamilyStyle("Inter",
         SkFontStyle(
         SkFontStyle::kNormal_Weight,
         SkFontStyle::Width::kNormal_Width,

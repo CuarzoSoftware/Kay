@@ -5,17 +5,17 @@
 #include "include/core/SkPath.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/src/TextLine.h"
+#include <AK/third_party/TextLine.h>
 
 namespace skia {
 namespace textlayout {
 
-class Decorations {
-    public:
+class Decorations
+{
+public:
     void paint(ParagraphPainter* painter, const TextStyle& textStyle, const TextLine::ClipContext& context, SkScalar baseline);
 
-    private:
-
+private:
     void calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface);
     void calculatePosition(TextDecoration decoration, SkScalar ascent);
     void calculatePaint(const TextStyle& textStyle);
@@ -29,6 +29,7 @@ class Decorations {
     ParagraphPainter::DecorationStyle fDecorStyle;
     SkPath fPath;
 };
+
 }  // namespace textlayout
 }  // namespace skia
 #endif

@@ -1,5 +1,5 @@
 // Copyright 2019 Google LLC.
-#include "modules/skparagraph/src/OneLineShaper.h"
+#include <AK/third_party/OneLineShaper.h>
 
 #include "modules/skparagraph/src/Iterators.h"
 #include "modules/skshaper/include/SkShaper_harfbuzz.h"
@@ -7,7 +7,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <unordered_set>
 
 using namespace skia_private;
 
@@ -622,7 +621,7 @@ bool OneLineShaper::shape() {
 
     auto result = iterateThroughShapingRegions(
             [this, limitlessWidth]
-            (TextRange textRange, SkSpan<Block> styleSpan, SkScalar& advanceX, TextIndex textStart, uint8_t defaultBidiLevel) {
+            (TextRange textRange, SkSpan<Block> styleSpan, SkScalar& advanceX, TextIndex /*textStart*/, uint8_t defaultBidiLevel) {
 
         // Set up the shaper and shape the next
         auto shaper = SkShapers::HB::ShapeDontWrapOrReorder(fParagraph->fUnicode,

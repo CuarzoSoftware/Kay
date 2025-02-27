@@ -2,8 +2,10 @@
 #include <include/gpu/ganesh/SkImageGanesh.h>
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
 
+#include <AK/events/AKKeyboardEnterEvent.h>
+#include <AK/events/AKKeyboardLeaveEvent.h>
 #include <AK/events/AKPointerEnterEvent.h>
-
+#include <AK/AKSafeEventQueue.h>
 #include <AK/AKApplication.h>
 #include <AK/AKTarget.h>
 #include <AK/AKScene.h>
@@ -75,7 +77,7 @@ void AKNode::enablePointerGrab(bool enabled) noexcept
     if (enabled && !hasPointerFocus())
     {
         m_flags.add(HasPointerFocus);
-        onEvent(AKPointerEnterEvent());
+        akApp()->postEvent(AKPointerEnterEvent(), *this);
     }
 }
 
@@ -403,6 +405,40 @@ AKTarget *AKNode::currentTarget() const noexcept
     return t->target;
 }
 
+bool AKNode::isPointerOver() const noexcept
+{
+    AKPointer &p { akApp()->pointer() };
+    return scene() && scene() == p.windowFocus() && globalRect().contains(p.pos().x(), p.pos().y());
+}
+
+void AKNode::setKeyboardFocus(bool set) noexcept
+{
+    if (!scene() || set == hasKeyboardFocus())
+        return;
+
+    if (set)
+    {
+        AKSafeEventQueue queue;
+
+        if (scene()->keyboardFocus())
+            queue.addEvent(AKKeyboardLeaveEvent(), *scene()->keyboardFocus());
+
+        scene()->m_keyboardFocus.reset(this);
+        queue.addEvent(AKKeyboardEnterEvent(), *this);
+        queue.dispatch();
+    }
+    else
+    {
+        scene()->m_keyboardFocus.reset();
+        akApp()->postEvent(AKKeyboardLeaveEvent(), *this);
+    }
+}
+
+bool AKNode::hasKeyboardFocus() const noexcept
+{
+    return scene() && scene()->keyboardFocus() == this;
+}
+
 void AKNode::addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept
 {
     if (!backgroundEffect || m_backgroundEffects.contains(backgroundEffect))
@@ -447,17 +483,17 @@ void AKNode::setAnimated(bool enabled) noexcept
 
     if (enabled)
     {
-        AKApp()->animated.push_back(this);
+        akApp()->animated.push_back(this);
         repaint();
     }
     else
     {
-        for (size_t i = 0; i < AKApp()->animated.size(); i++)
+        for (size_t i = 0; i < akApp()->animated.size(); i++)
         {
-            if (AKApp()->animated[i] == this)
+            if (akApp()->animated[i] == this)
             {
-                AKApp()->animated[i] = AKApp()->animated.back();
-                AKApp()->animated.pop_back();
+                akApp()->animated[i] = akApp()->animated.back();
+                akApp()->animated.pop_back();
                 return;
             }
         }
@@ -479,6 +515,46 @@ bool AKNode::event(const AKEvent &event)
         if (!event.isAccepted())
             return false;
         break;
+    case AKEvent::PointerEnter:
+        pointerEnterEvent((const AKPointerEnterEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
+    case AKEvent::PointerMove:
+        pointerMoveEvent((const AKPointerMoveEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
+    case AKEvent::PointerButton:
+        pointerButtonEvent((const AKPointerButtonEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
+    case AKEvent::PointerScroll:
+        pointerScrollEvent((const AKPointerScrollEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
+    case AKEvent::PointerLeave:
+        pointerLeaveEvent((const AKPointerLeaveEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
+    case AKEvent::KeyboardEnter:
+        keyboardEnterEvent((const AKKeyboardEnterEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
+    case AKEvent::KeyboardKey:
+        keyboardKeyEvent((const AKKeyboardKeyEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
+    case AKEvent::KeyboardLeave:
+        keyboardLeaveEvent((const AKKeyboardLeaveEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
     default:
         return AKObject::event(event);
     }
@@ -492,6 +568,46 @@ void AKNode::layoutEvent(const AKLayoutEvent &event)
 }
 
 void AKNode::windowStateEvent(const AKWindowStateEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::pointerEnterEvent(const AKPointerEnterEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::pointerMoveEvent(const AKPointerMoveEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::pointerButtonEvent(const AKPointerButtonEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::pointerScrollEvent(const AKPointerScrollEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::pointerLeaveEvent(const AKPointerLeaveEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::keyboardEnterEvent(const AKKeyboardEnterEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::keyboardKeyEvent(const AKKeyboardKeyEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::keyboardLeaveEvent(const AKKeyboardLeaveEvent &event)
 {
     ((const AKEvent&)event).ignore();
 }

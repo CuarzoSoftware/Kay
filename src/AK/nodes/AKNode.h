@@ -167,6 +167,10 @@ public:
     Int32 scale() const noexcept { return m_scale; }
     AKLayout &layout() noexcept { return m_layout; }
 
+    bool isPointerOver() const noexcept;
+    void setKeyboardFocus(bool set) noexcept;
+    bool hasKeyboardFocus() const noexcept;
+
     /* Effects */
 
     const std::unordered_set<AKBackgroundEffect*> &backgroundEffects() const noexcept { return m_backgroundEffects; }
@@ -222,16 +226,18 @@ public:
         return m_flags.check(Animated);
     }
 
-    struct {
-        AKSignal<const AKEvent&> event;
-    } on;
-
 protected:
-    virtual void onEvent(const AKEvent &event) { on.event.notify(event); }
     bool event(const AKEvent &event) override;
     virtual void layoutEvent(const AKLayoutEvent &event);
     virtual void windowStateEvent(const AKWindowStateEvent &event);
-
+    virtual void pointerEnterEvent(const AKPointerEnterEvent &event);
+    virtual void pointerMoveEvent(const AKPointerMoveEvent &event);
+    virtual void pointerButtonEvent(const AKPointerButtonEvent &event);
+    virtual void pointerScrollEvent(const AKPointerScrollEvent &event);
+    virtual void pointerLeaveEvent(const AKPointerLeaveEvent &event);
+    virtual void keyboardEnterEvent(const AKKeyboardEnterEvent &event);
+    virtual void keyboardKeyEvent(const AKKeyboardKeyEvent &event);
+    virtual void keyboardLeaveEvent(const AKKeyboardLeaveEvent &event);
 private:
     friend class AKBackgroundEffect;
     friend class AKRenderable;

@@ -193,7 +193,7 @@ protected:
     bool m_customBlendFuncEnabled { false };
     bool m_customTextureColorEnabled { false };
     bool event(const AKEvent &event) override;
-    virtual void onEvent(const AKEvent &event) override;
+    void windowStateEvent(const AKWindowStateEvent &event) override;
     virtual void renderEvent(const AKRenderEvent &event) = 0;
 private:
     void handleCommonChanges() noexcept;

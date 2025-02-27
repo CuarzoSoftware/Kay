@@ -22,7 +22,7 @@ sk_sp<SkSurface> AKSurface::surface() const noexcept
     if (!m_image)
         return nullptr;
 
-    AKGLContext *ctx {  AKApp()->glContext() };
+    AKGLContext *ctx {  akApp()->glContext() };
     const auto &fbo { ctx->getFBO(m_slot) };
 
     if (fbo.serial == m_serial && fbo.skSurface)
@@ -62,7 +62,7 @@ sk_sp<SkSurface> AKSurface::surface() const noexcept
 
 GLuint AKSurface::fbId() const noexcept
 {
-    return AKApp()->glContext()->getFBO(m_slot).id;
+    return akApp()->glContext()->getFBO(m_slot).id;
 }
 
 bool AKSurface::setHasAlpha(bool alpha) noexcept
@@ -115,7 +115,7 @@ bool AKSurface::resize(const SkISize &size, Int32 scale, bool shrink) noexcept
         m_textureInfo);
 
     m_image = SkImages::BorrowTextureFrom(
-        AKApp()->glContext()->skContext().get(),
+        akApp()->glContext()->skContext().get(),
         m_backendTexture,
         GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
         skiaFormat,
@@ -135,12 +135,12 @@ bool AKSurface::shrink() noexcept
 
 SkImage *AKSurface::releaseImage() noexcept
 {
-    AKApp()->glContext()->destroyFBO(m_slot);
+    akApp()->glContext()->destroyFBO(m_slot);
 
     if (m_image)
     {
         const auto skiaFormat = hasAlpha() ? kRGBA_8888_SkColorType : kRGB_888x_SkColorType;
-        m_image = SkImages::AdoptTextureFrom(AKApp()->glContext()->skContext().get(), m_backendTexture, GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin, skiaFormat, SkAlphaType::kPremul_SkAlphaType, m_colorSpace);
+        m_image = SkImages::AdoptTextureFrom(akApp()->glContext()->skContext().get(), m_backendTexture, GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin, skiaFormat, SkAlphaType::kPremul_SkAlphaType, m_colorSpace);
     }
 
     m_serial++;
@@ -149,7 +149,7 @@ SkImage *AKSurface::releaseImage() noexcept
 
 void AKSurface::destroyStorage() noexcept
 {
-    AKApp()->glContext()->destroyFBO(m_slot);
+    akApp()->glContext()->destroyFBO(m_slot);
 
     if (m_image)
     {

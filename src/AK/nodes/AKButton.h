@@ -38,9 +38,9 @@ public:
     } on;
 
 protected:
+    void pointerButtonEvent(const AKPointerButtonEvent &event) override;
     void windowStateEvent(const AKWindowStateEvent &event) override;
     void layoutEvent(const AKLayoutEvent &event) override;
-    void onEvent(const AKEvent &event) override;
     void applyLayoutConstraints() noexcept;
     void updateOpaqueRegion() noexcept;
     void updateStyle() noexcept;

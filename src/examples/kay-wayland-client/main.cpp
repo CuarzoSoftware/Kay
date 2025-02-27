@@ -1,3 +1,4 @@
+#include "AK/nodes/AKText.h"
 #include <wayland-client.h>
 #include <wayland-egl.h>
 #include <xdg-shell-client-protocol.h>
@@ -20,7 +21,6 @@
 #include <AK/nodes/AKRoundContainer.h>
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKSolidColor.h>
-#include <AK/nodes/AKSimpleText.h>
 #include <AK/nodes/AKPath.h>
 
 #include <include/gpu/ganesh/GrBackendSurface.h>
@@ -62,10 +62,12 @@ class Topbar : public AKSolidColor
 public:
     Topbar(AKNode *parent) noexcept : AKSolidColor(0xFFEEEEEE, parent)
     {
+        /*
         SkFont font = title.font();
         font.setEmbolden(true);
         font.setSize(32);
-        title.setFont(font);
+        title.setFont(font);*/
+
         title.layout().setMargin(YGEdgeAll, 16);
         enableChildrenClipping(true);
         layout().setHeightAuto();
@@ -79,7 +81,7 @@ public:
         32.f, { 0, 0 }, SkColorSetARGB(250, 0, 0, 0),
         true, this };
 
-    AKSimpleText title { "Hello Kay!", this };
+    AKText title { "Hello Kay!", this };
     AKBackgroundImageShadowEffect titleShadow { 8, {4, 4}, 0x88000000, &title };
 };
 
@@ -266,7 +268,7 @@ void Window::update() noexcept
             fbInfo);
 
         skSurface = SkSurfaces::WrapBackendRenderTarget(
-            AKApp()->glContext()->skContext().get(),
+            akApp()->glContext()->skContext().get(),
             backendTarget,
             GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin,
             SkColorType::kRGBA_8888_SkColorType,

@@ -31,6 +31,7 @@ yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
 
 header_dirs = [
     ['./src/AK', ''],
+    ['./src/AK/third_party', 'third_party'],
     ['./src/AK/nodes', 'nodes'],
     ['./src/AK/effects', 'effects'],
     ['./src/AK/events', 'events'],

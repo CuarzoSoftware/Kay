@@ -8,9 +8,8 @@
 #include "modules/skparagraph/include/ParagraphBuilder.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/src/ParagraphImpl.h"
+#include <AK/third_party/ParagraphImpl.h>
 #include "modules/skunicode/include/SkUnicode.h"
-#include "src/core/SkStringUtils.h"
 
 #if !defined(SK_DISABLE_LEGACY_PARAGRAPH_UNICODE)
 #if defined(SK_UNICODE_ICU_IMPLEMENTATION)

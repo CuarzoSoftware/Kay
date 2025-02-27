@@ -10,7 +10,7 @@
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/src/Run.h"
+#include <AK/third_party/Run.h>
 #include "src/base/SkBitmaskEnum.h"
 
 #include <stddef.h>

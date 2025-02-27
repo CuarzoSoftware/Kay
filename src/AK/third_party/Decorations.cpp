@@ -212,7 +212,7 @@ void Decorations::calculatePaint(const TextStyle& textStyle) {
     fDecorStyle = ParagraphPainter::DecorationStyle(color, fThickness, dashPathEffect);
 }
 
-void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
+void Decorations::calculateWaves(const TextStyle& /*textStyle*/, SkRect clip) {
 
     fPath.reset();
     int wave_count = 0;

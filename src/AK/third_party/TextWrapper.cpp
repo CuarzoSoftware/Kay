@@ -1,5 +1,5 @@
 // Copyright 2019 Google LLC.
-#include "modules/skparagraph/src/ParagraphImpl.h"
+#include <AK/third_party/ParagraphImpl.h>
 #include "modules/skparagraph/src/TextWrapper.h"
 
 namespace skia {
@@ -208,7 +208,7 @@ void TextWrapper::moveForward(bool hasEllipsis) {
 }
 
 // Special case for start/end cluster since they can be clipped
-void TextWrapper::trimEndSpaces(TextAlign align) {
+void TextWrapper::trimEndSpaces(TextAlign /*align*/) {
     // Remember the breaking position
     fEndLine.saveBreak();
     // Skip all space cluster at the end

@@ -1,6 +1,7 @@
 #ifndef AKTHEME_H
 #define AKTHEME_H
 
+#include "modules/skparagraph/include/FontCollection.h"
 #include <AK/AK.h>
 #include <modules/skparagraph/include/TextStyle.h>
 #include <include/core/SkImage.h>

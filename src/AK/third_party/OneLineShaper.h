@@ -2,12 +2,12 @@
 #ifndef LineBreaker_DEFINED
 #define LineBreaker_DEFINED
 
-#include <functional>  // std::function
-#include <queue>
+#include <functional>
+#include <deque>
 #include "include/core/SkSpan.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/src/ParagraphImpl.h"
-#include "modules/skparagraph/src/Run.h"
+#include <AK/third_party/ParagraphImpl.h>
+#include <AK/third_party/Run.h>
 
 namespace skia {
 namespace textlayout {
@@ -44,7 +44,7 @@ private:
         // First unresolved block
         explicit RunBlock(TextRange text) : fRun(nullptr), fText(text) { }
 
-        RunBlock(std::shared_ptr<Run> run, TextRange text, GlyphRange glyphs, size_t score)
+        RunBlock(std::shared_ptr<Run> run, TextRange text, GlyphRange glyphs, size_t /*score*/)
             : fRun(std::move(run))
             , fText(text)
             , fGlyphs(glyphs) { }

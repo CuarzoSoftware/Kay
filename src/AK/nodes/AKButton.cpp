@@ -72,6 +72,23 @@ void AKButton::setPressed(bool pressed) noexcept
     updateStyle();
 }
 
+void AKButton::pointerButtonEvent(const AKPointerButtonEvent &event)
+{
+    AKSubScene::pointerButtonEvent(event);
+
+    if (event.button() == AKPointerButtonEvent::Left)
+    {
+        const bool triggerOnClicked { !event.state() && pressed() && isPointerOver() };
+        setPressed(event.state());
+        enablePointerGrab(event.state());
+
+        if (triggerOnClicked)
+            on.clicked.notify();
+
+        event.accept();
+    }
+}
+
 void AKButton::windowStateEvent(const AKWindowStateEvent &event)
 {
     AKSubScene::windowStateEvent(event);
@@ -88,25 +105,6 @@ void AKButton::layoutEvent(const AKLayoutEvent &event)
     else if (event.changes().check(AKLayoutEvent::Changes::Size))
         updateOpaqueRegion();
     event.accept();
-}
-
-void AKButton::onEvent(const AKEvent &event)
-{
-    AKSubScene::onEvent(event);
-
-    if (event.type() != AKEvent::Type::PointerButton)
-        return;
-
-    auto &e { static_cast<const AKPointerButtonEvent&>(event) };
-    if (e.button() == AKPointerButtonEvent::Left)
-    {
-        const bool triggerOnClicked { !e.state() && pressed() };
-        setPressed(e.state());
-        enablePointerGrab(e.state());
-
-        if (triggerOnClicked)
-            on.clicked.notify();
-    }
 }
 
 void AKButton::applyLayoutConstraints() noexcept

@@ -19,14 +19,26 @@ public:
     AKTextField(AKNode *parent = nullptr) noexcept;
 protected:
     void layoutEvent(const AKLayoutEvent &event) override;
-    void onEvent(const AKEvent &event) override;
+    void keyboardEnterEvent(const AKKeyboardEnterEvent &event) override;
+    void keyboardKeyEvent(const AKKeyboardKeyEvent &event) override;
+    void keyboardLeaveEvent(const AKKeyboardLeaveEvent &event) override;
+    void pointerButtonEvent(const AKPointerButtonEvent &event) override;
+    void pointerMoveEvent(const AKPointerMoveEvent &event) override;
     void updateDimensions() noexcept;
     void updateScale() noexcept;
     void updateTextPosition() noexcept;
+    void updateCaretPos() noexcept;
+    void addUTF8(const char *utf8) noexcept;
+    void removeUTF8() noexcept;
+    void moveCaretRight() noexcept;
+    void moveCaretLeft() noexcept;
     AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
-    AKText m_text { "😊😃😆", &m_content };
-    AKTextCaret m_caret { &m_content };
+    AKText m_text { "", &m_content };
+    AKTextCaret m_caret { &m_text };
+    size_t m_caretRightOffset { 0 };
+    size_t m_selectionStart { 0 };
+    bool m_interactiveSelection { false };
     //AKBackgroundImageShadowEffect m_focusShadow { 8.f, {0, 0}, AKTheme::FocusOutlineColor, this };
 };
 

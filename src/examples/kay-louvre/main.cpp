@@ -41,7 +41,6 @@
 #include <AK/nodes/AKRoundContainer.h>
 #include <AK/nodes/AKButton.h>
 #include <AK/nodes/AKPath.h>
-#include <AK/nodes/AKSimpleText.h>
 #include <AK/nodes/AKTextField.h>
 
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
@@ -52,7 +51,7 @@
 #include <AK/events/AKPointerButtonEvent.h>
 #include <AK/events/AKKeyboardKeyEvent.h>
 #include <AK/events/AKBakeEvent.h>
-#include <AK/input/AKKeymap.h>
+#include <AK/input/AKKeyboard.h>
 
 #include <AK/AKApplication.h>
 #include <AK/AKScene.h>
@@ -95,7 +94,7 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
         skTextureInfo);
 
     return SkImages::BorrowTextureFrom(
-        AKApp()->glContext()->skContext().get(),
+        akApp()->glContext()->skContext().get(),
         skTexture,
         GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
         kBGRA_8888_SkColorType,
@@ -355,9 +354,11 @@ public:
         layout().setDisplay(YGDisplayFlex);
         m_backgroundColor.setOpacity(0.f);
         m_backgroundColor.layout().setPadding(YGEdgeAll, 6.f);
+
+        /*
         SkFont font = AKTheme::DefaultFont;
         font.setEmbolden(true);
-        m_text.setFont(font);
+        m_text.setFont(font);*/
     }
 
     void onPointerEnter()
@@ -384,7 +385,7 @@ public:
 
 protected:
     AKSolidColor m_backgroundColor { 0xFF2196F3, this };
-    AKSimpleText m_text;
+    AKText m_text { "" };
 };
 
 class Compositor final : public LCompositor
@@ -520,10 +521,10 @@ public:
     }
 };
 
-class Text final : public AKSimpleText
+class Text final : public AKText
 {
 public:
-    using AKSimpleText::AKSimpleText;
+    using AKText::AKText;
     AKBackgroundImageShadowEffect shadow { 6, {0,0}, 0x66000000, this };
 };
 
@@ -568,7 +569,7 @@ public:
             fbInfo);
 
         kay->target->setSurface(SkSurfaces::WrapBackendRenderTarget(
-            AKApp()->glContext()->skContext().get(),
+            akApp()->glContext()->skContext().get(),
             backendTarget,
             fbInfo.fFBOID == 0 ? GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin : GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
             SkColorType::kRGB_888x_SkColorType,
@@ -694,7 +695,7 @@ public:
     void uninitializeGL() override
     {
         kay.reset();
-        AKApp()->freeGLContext();
+        akApp()->freeGLContext();
     }
 
     bool inPaintGL { false };
@@ -765,13 +766,11 @@ public:
                     "Help"
                 };
 
-            SkFont font = AKTheme::DefaultFont;
-            font.setEmbolden(true);
             for (auto &name : topbarMenuNames)
             {
                 topbarMenus.push_back(new Text(name, &topbarBackground));
+                topbarMenus.back()->enableCustomTextureColor(true);
                 topbarMenus.back()->setColorWithAlpha(SK_ColorWHITE);
-                topbarMenus.back()->setFont(font);
                 topbarMenus.back()->setOpacity(0.75f);
             }
 
@@ -980,7 +979,7 @@ public:
 
         moveEvent.setX(cursor()->pos().x());
         moveEvent.setY(cursor()->pos().y());
-        AKApp()->postEvent(moveEvent, static_cast<Compositor*>(compositor())->kay->scene);
+        akApp()->postEvent(moveEvent, static_cast<Compositor*>(compositor())->kay->scene);
 
         MenuItem *newFocus { (MenuItem*)nodeAt(SkIPoint(cursor()->pos().x(), cursor()->pos().y()), MENU_ITEM) };
 
@@ -1022,7 +1021,7 @@ public:
         buttonEvent.setSerial(event.serial());
         buttonEvent.setMs(event.ms());
         buttonEvent.setUs(event.us());
-        AKApp()->postEvent(buttonEvent, static_cast<Compositor*>(compositor())->kay->scene);
+        akApp()->postEvent(buttonEvent, static_cast<Compositor*>(compositor())->kay->scene);
 
         if (event.button() == BTN_RIGHT && event.state() == LPointerButtonEvent::Pressed)
         {
@@ -1068,12 +1067,12 @@ public:
     void keyEvent(const LKeyboardKeyEvent &event) override
     {
         LKeyboard::keyEvent(event);
-        AK::keymap()->updateKeyState(event.keyCode(), event.state());
+        akKeyboard().updateKeyState(event.keyCode(), event.state());
         keyboardKeyEvent.setKeyCode(event.keyCode());
         keyboardKeyEvent.setState((AKKeyboardKeyEvent::State)event.state());
         keyboardKeyEvent.setMs(event.ms());
         keyboardKeyEvent.setSerial(event.serial());
-        AKApp()->postEvent(keyboardKeyEvent, static_cast<Compositor*>(compositor())->kay->scene);
+        akApp()->postEvent(keyboardKeyEvent, static_cast<Compositor*>(compositor())->kay->scene);
     }
 };
 

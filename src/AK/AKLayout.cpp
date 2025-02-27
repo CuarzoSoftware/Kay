@@ -154,7 +154,7 @@ void AKLayout::applyTree(AKNode *node)
     }
 
     if (changes.get() != 0)
-        AKApp()->postEvent(AKLayoutEvent(changes), *node);
+        akApp()->postEvent(AKLayoutEvent(changes), *node);
 
     for (AKNode *child : node->children())
         applyTree(child);

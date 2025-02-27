@@ -5,10 +5,9 @@
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
 
-class AK::AKKeymap : public AKObject
+class AK::AKKeyboard : public AKObject
 {
 public:
-    AKKeymap() noexcept;
     bool setFromBuffer(const char *buffer, size_t size, xkb_keymap_format format) noexcept;
     bool setFromString(const char *str, xkb_keymap_format format) noexcept;
 
@@ -28,7 +27,12 @@ public:
     }
     Int32 keyRepeatRateMs() const noexcept { return m_keyRepeatRateMs; }
     Int32 keyRepeatDelayMs() const noexcept { return m_keyRepeatDelayMs; }
+
+protected:
+    AKKeyboard() noexcept;
+
 private:
+    friend class AKApplication;
     xkb_context *m_context { nullptr };
     xkb_keymap *m_keymap { nullptr };
     xkb_state *m_state { nullptr };

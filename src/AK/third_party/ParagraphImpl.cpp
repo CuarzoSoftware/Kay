@@ -6,19 +6,18 @@
 #include "include/core/SkPictureRecorder.h"
 #include "include/core/SkSpan.h"
 #include "include/core/SkTypeface.h"
-#include "include/private/base/SkTFitsIn.h"
 #include "include/private/base/SkTo.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/src/OneLineShaper.h"
-#include "modules/skparagraph/src/ParagraphImpl.h"
-#include "modules/skparagraph/src/ParagraphPainterImpl.h"
-#include "modules/skparagraph/src/Run.h"
-#include "modules/skparagraph/src/TextLine.h"
-#include "modules/skparagraph/src/TextWrapper.h"
+#include <AK/third_party/OneLineShaper.h>
+#include <AK/third_party/ParagraphImpl.h>
+#include <AK/third_party/ParagraphPainterImpl.h>
+#include <AK/third_party/Run.h>
+#include <AK/third_party/TextLine.h>
+#include <AK/third_party/TextWrapper.h>
 #include "modules/skunicode/include/SkUnicode.h"
 #include "src/base/SkUTF.h"
 #include "src/core/SkTextBlobPriv.h"
@@ -128,7 +127,7 @@ std::unordered_set<SkUnichar> ParagraphImpl::unresolvedCodepoints() {
 void ParagraphImpl::addUnresolvedCodepoints(TextRange textRange) {
     fUnicode->forEachCodepoint(
         &fText[textRange.start], textRange.width(),
-        [&](SkUnichar unichar, int32_t start, int32_t end, int32_t count) {
+        [&](SkUnichar unichar, int32_t /*start*/, int32_t /*end*/, int32_t /*count*/) {
             fUnresolvedCodepoints.emplace(unichar);
         }
     );
@@ -380,7 +379,7 @@ Cluster::Cluster(ParagraphImpl* owner,
                                                SkUnicode::CodeUnitFlags::kHardLineBreakBefore);
 }
 
-SkScalar Run::calculateWidth(size_t start, size_t end, bool clip) const {
+SkScalar Run::calculateWidth(size_t start, size_t end, bool /*clip*/) const {
     SkASSERT(start <= end);
     // clip |= end == size();  // Clip at the end of the run?
     auto correction = 0.0f;
@@ -644,8 +643,8 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 ClusterRange clusters,
                 ClusterRange clustersWithGhosts,
                 SkScalar widthWithSpaces,
-                size_t startPos,
-                size_t endPos,
+                size_t /*startPos*/,
+                size_t /*endPos*/,
                 SkVector offset,
                 SkVector advance,
                 InternalLineMetrics metrics,
@@ -1402,7 +1401,7 @@ void ParagraphImpl::extendedVisit(const ExtendedVisitor& visitor) {
                 runOffsetInLine,
                 textRange,
                 StyleType::kNone,
-                [&](TextRange textRange,
+                [&](TextRange /*textRange*/,
                     const TextStyle& style,
                     const TextLine::ClipContext& context) {
                     SkScalar correctedBaseline = SkScalarFloorToScalar(
@@ -1462,7 +1461,7 @@ int ParagraphImpl::getPath(int lineNumber, SkPath* dest) {
           runOffsetInLine,
           textRange,
           StyleType::kNone,
-          [&](TextRange textRange,
+          [&](TextRange /*textRange*/,
               const TextStyle& style,
               const TextLine::ClipContext& context) {
               const SkFont& font = run->font();
@@ -1532,7 +1531,7 @@ bool ParagraphImpl::containsEmoji(SkTextBlob* textBlob) {
     while (!iter.done() && !result) {
         // Walk through all the text by codepoints
         this->getUnicode()->forEachCodepoint(iter.text(), iter.textSize(),
-           [&](SkUnichar unichar, int32_t start, int32_t end, int32_t count) {
+           [&](SkUnichar unichar, int32_t /*start*/, int32_t /*end*/, int32_t /*count*/) {
                 if (this->getUnicode()->isEmoji(unichar)) {
                     result = true;
                 }
@@ -1549,7 +1548,7 @@ bool ParagraphImpl::containsColorFontOrBitmap(SkTextBlob* textBlob) {
         iter.font().getPaths(
             (const SkGlyphID*) iter.glyphs(),
             iter.glyphCount(),
-            [](const SkPath* path, const SkMatrix& mx, void* ctx) {
+            [](const SkPath* path, const SkMatrix& /*mx*/, void* ctx) {
                 if (path == nullptr) {
                     bool* flag1 = (bool*)ctx;
                     *flag1 = true;

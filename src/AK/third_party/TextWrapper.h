@@ -4,7 +4,7 @@
 
 #include <string>
 #include "include/core/SkSpan.h"
-#include "modules/skparagraph/src/TextLine.h"
+#include <AK/third_party/TextLine.h>
 
 namespace skia {
 namespace textlayout {

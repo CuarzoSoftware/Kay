@@ -46,7 +46,7 @@ typedef SkRange<GlyphIndex> GlyphRange;
 // LTR: [start: end) where start <= end
 // RTL: [end: start) where start >= end
 class DirText {
-    DirText(bool dir, size_t s, size_t e) : start(s), end(e) { }
+    DirText(bool /*dir*/, size_t s, size_t e) : start(s), end(e) { }
     bool isLeftToRight() const { return start <= end; }
     size_t start;
     size_t end;
