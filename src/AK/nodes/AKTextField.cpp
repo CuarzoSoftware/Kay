@@ -6,6 +6,7 @@
 #include <AK/events/AKKeyboardKeyEvent.h>
 #include <AK/events/AKLayoutEvent.h>
 #include <AK/input/AKPointer.h>
+#include <AK/input/AKKeyboard.h>
 #include <AK/nodes/AKTextField.h>
 #include <AK/AKTheme.h>
 #include <AK/AKLog.h>
@@ -106,7 +107,12 @@ void AKTextField::keyboardKeyEvent(const AKKeyboardKeyEvent &e)
 
     e.accept();
 
-    if (e.keySymbol() == XKB_KEY_Tab)
+    if (akKeyboard().isKeyCodePressed(KEY_A) &&
+        (akKeyboard().isKeyCodePressed(KEY_LEFTCTRL) || akKeyboard().isKeyCodePressed(KEY_RIGHTCTRL)))
+    {
+        m_text.setSelection(0, m_text.codePointByteOffsets().size());
+    }
+    else if (e.keySymbol() == XKB_KEY_Tab)
     {
         if (scene())
         {
