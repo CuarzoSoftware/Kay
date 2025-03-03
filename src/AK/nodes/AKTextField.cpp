@@ -42,6 +42,7 @@ void removeUTF8CharAt(std::string &str, size_t index) {
 
 AKTextField::AKTextField(AKNode *parent) noexcept : AKContainer(YGFlexDirection::YGFlexDirectionRow, true, parent)
 {
+    setKeyboardFocusable(true);
     m_caret.setVisible(false);
     m_caret.setAnimated(false);
     m_caret.layout().setPositionType(YGPositionTypeAbsolute);
@@ -105,7 +106,16 @@ void AKTextField::keyboardKeyEvent(const AKKeyboardKeyEvent &e)
 
     e.accept();
 
-    if (e.keySymbol() == XKB_KEY_Left)
+    if (e.keySymbol() == XKB_KEY_Tab)
+    {
+        if (scene())
+        {
+            AKNode *next { scene()->nextKeyboardFocusable() };
+            if (next)
+                next->setKeyboardFocus(true);
+        }
+    }
+    else if (e.keySymbol() == XKB_KEY_Left)
     {
         moveCaretLeft();
     }

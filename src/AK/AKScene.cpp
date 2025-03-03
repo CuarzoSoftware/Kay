@@ -648,7 +648,7 @@ void AKScene::renderNodes(AKNode *node)
             return nullptr;
 
         const SkIPoint ipos(pos.x(), pos.y());
-        AKNode::RIterator it { m_root->bottommostChild() };
+        AKNode::RIterator it { m_root->bottommostRightChild() };
         AKNode *clipper, *topmostInvisibleParent;
 
         while (!it.done())
@@ -706,6 +706,63 @@ void AKScene::renderNodes(AKNode *node)
         return nullptr;
     }
 
+    static AKNode *searchKeyboardFocusable(AKNode *node) noexcept
+    {
+        if (!node)
+            return nullptr;
+
+        AKNode *found;
+        for (AKNode *child : node->children())
+        {
+            if (child->isKeyboardFocusable())
+                return child;
+
+            found = searchKeyboardFocusable(child);
+
+            if (found)
+                return found;
+        }
+
+        return nullptr;
+    }
+
+    AKNode *AKScene::nextKeyboardFocusable() const noexcept
+    {
+        if (!keyboardFocus())
+            return nullptr;
+
+        AKNode *found;
+        AKNode::Iterator it { keyboardFocus() };
+        it.next();
+
+        while (!it.done())
+        {
+            if (it.node()->isKeyboardFocusable())
+                return it.node();
+            else if (it.node()->parent() == keyboardFocus()->parent())
+            {
+                found = searchKeyboardFocusable(it.node());
+
+                if (found)
+                    return found;
+            }
+
+            it.next();
+        }
+
+        it.reset(root()->bottommostLeftChild());
+
+        while (!it.done())
+        {
+            if (it.node()->isKeyboardFocusable())
+                return it.node();
+
+            it.next();
+        }
+
+        return nullptr;
+    }
+
     bool AKScene::event(const AKEvent &event)
     {
         if (!m_root)
@@ -750,7 +807,7 @@ void AKScene::renderNodes(AKNode *node)
         AKNode::RIterator it { nullptr };
 
     retry:
-        it.reset(m_root->bottommostChild());
+        it.reset(m_root->bottommostRightChild());
         m_treeChanged = false;
 
         while (!it.done())
@@ -799,7 +856,7 @@ void AKScene::renderNodes(AKNode *node)
         AKNode::RIterator it { nullptr };
 
     retry:
-        it.reset(m_root->bottommostChild());
+        it.reset(m_root->bottommostRightChild());
         m_treeChanged = false;
 
         while (!it.done())
@@ -841,7 +898,7 @@ void AKScene::renderNodes(AKNode *node)
         AKNode::RIterator it { nullptr };
 
     retry:
-        it.reset(m_root->bottommostChild());
+        it.reset(m_root->bottommostRightChild());
         m_treeChanged = false;
 
         while (!it.done())

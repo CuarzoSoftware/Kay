@@ -250,12 +250,22 @@ AKNode *AKNode::topmostParent() const noexcept
     return par;
 }
 
-AKNode *AKNode::bottommostChild() const noexcept
+AKNode *AKNode::bottommostRightChild() const noexcept
 {
     const AKNode *child { this };
 
     while (child && !child->children().empty())
         child = child->children().back();
+
+    return child == this ? nullptr : (AKNode*)child;
+}
+
+AKNode *AKNode::bottommostLeftChild() const noexcept
+{
+    const AKNode *child { this };
+
+    while (child && !child->children().empty())
+        child = child->children().front();
 
     return child == this ? nullptr : (AKNode*)child;
 }
@@ -418,6 +428,9 @@ void AKNode::setKeyboardFocus(bool set) noexcept
 
     if (set)
     {
+        if (!isKeyboardFocusable())
+            return;
+
         AKSafeEventQueue queue;
 
         if (scene()->keyboardFocus())
@@ -437,6 +450,14 @@ void AKNode::setKeyboardFocus(bool set) noexcept
 bool AKNode::hasKeyboardFocus() const noexcept
 {
     return scene() && scene()->keyboardFocus() == this;
+}
+
+void AKNode::setKeyboardFocusable(bool enabled) noexcept
+{
+    m_flags.setFlag(KeyboardFocusable, enabled);
+
+    if (!enabled && hasKeyboardFocus())
+        setKeyboardFocus(false);
 }
 
 void AKNode::addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept
@@ -631,6 +652,52 @@ void AKNode::RIterator::reset(AKNode *node) noexcept
     }
 }
 
+void AKNode::Iterator::reset(AKNode *node) noexcept
+{
+    m_node = node;
+
+    if (m_node)
+    {
+        m_done = false;
+        m_end = m_node->topmostParent();
+
+        if (!m_end)
+            m_end = m_node;
+    }
+    else
+    {
+        m_done = true;
+        m_end = node;
+    }
+}
+
+void AKNode::Iterator::next() noexcept
+{
+    m_done = m_end == m_node;
+
+    if (done()) return;
+
+    AKNode *next { m_node->next() };
+
+    if (!next)
+    {
+        m_node = m_node->parent();
+        return;
+    }
+    else
+    {
+        AKNode *bottommost { next->bottommostLeftChild() };
+
+        if (bottommost)
+        {
+            m_node = bottommost;
+            return;
+        }
+        else
+            m_node = next;
+    }
+}
+
 void AKNode::RIterator::next() noexcept
 {
     m_done = m_end == m_node;
@@ -646,7 +713,7 @@ void AKNode::RIterator::next() noexcept
     }
     else
     {
-        AKNode *bottommost { prev->bottommostChild() };
+        AKNode *bottommost { prev->bottommostRightChild() };
 
         if (bottommost)
         {
@@ -655,6 +722,27 @@ void AKNode::RIterator::next() noexcept
         }
         else
             m_node = prev;
+    }
+}
+
+void AKNode::Iterator::jumpTo(AKNode *node) noexcept
+{
+    if (node == m_node) return;
+
+    if (node)
+    {
+        if (m_end)
+        {
+            m_done = false;
+            m_node = node;
+        }
+        else
+            reset(node);
+    }
+    else
+    {
+        m_done = true;
+        m_node = m_end = nullptr;
     }
 }
 

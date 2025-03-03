@@ -39,6 +39,7 @@ public:
     bool isSubScene() const noexcept { return m_isSubScene; };
     AKNode *pointerFocus() const noexcept { return m_pointerFocus; };
     AKNode *keyboardFocus() const noexcept { return m_keyboardFocus; };
+    AKNode *nextKeyboardFocusable() const noexcept;
 
     AKBitset<AKWindowState> windowState() const noexcept { return m_windowState; }
 protected:

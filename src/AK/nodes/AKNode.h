@@ -30,15 +30,154 @@ class AK::AKNode : public AKObject
 {
 public:
 
+    /**
+     * @brief Iterator for traversing a tree of nodes in order.
+     *
+     * This class allows iterating through a tree of nodes in order, that is,
+     * from the first child to the first child and from the bottom-most node to the root.
+     */
+    class Iterator
+    {
+    public:
+        /**
+         * @brief Constructs an iterator.
+         *
+         * Initializes the iterator with the given starting node.
+         *
+         * @param node The starting point of the iteration.
+         */
+        Iterator(AKNode *node) noexcept { reset(node); }
+
+        /**
+         * @brief Resets the starting point of the iterator.
+         *
+         * Sets the starting node for the iteration.
+         *
+         * @param node The new starting point for the iteration.
+         */
+        void reset(AKNode *node) noexcept;
+
+        /**
+         * @brief Checks if the end of the iteration has been reached.
+         *
+         * Determines whether the reverse iteration has reached the end.
+         *
+         * @return `true` if the end has been reached, `false` otherwise.
+         */
+        bool done() const noexcept { return m_done; }
+
+        /**
+         * @brief Advances the iterator to the next node.
+         *
+         * Moves the iterator to the next node.
+         */
+        void next() noexcept;
+
+        /**
+         * @brief Jumps to a specified node.
+         *
+         * More efficient than reset, but assumes the node has the same root as the current node.
+         * If not, a segmentation fault may occur.
+         *
+         * @warning Use with caution, as it assumes the node shares the same root as the current node.
+         *
+         * @param node The node to jump to.
+         */
+        void jumpTo(AKNode *node) noexcept;
+
+        /**
+         * @brief Gets the root node.
+         *
+         * Always returns the root node of the tree.
+         *
+         * @return A pointer to the root node.
+         */
+        AKNode *end() const noexcept { return m_end; }
+
+        /**
+         * @brief Gets the current node.
+         *
+         * Returns the current node being pointed to by the iterator.
+         *
+         * @return A pointer to the current node.
+         */
+        AKNode *node() const noexcept { return m_node; }
+    private:
+        AKNode *m_node, *m_end;
+        bool m_done;
+    };
+
+    /**
+     * @brief Reverse iterator for traversing a tree of nodes in reverse order.
+     *
+     * This class allows iterating through a tree of nodes in reverse order, that is,
+     * from the last child to the first child and from the bottom-most node to the root.
+     */
     class RIterator
     {
     public:
+        /**
+         * @brief Constructs a reverse iterator.
+         *
+         * Initializes the reverse iterator with the given starting node.
+         *
+         * @param node The starting point of the reverse iteration.
+         */
         RIterator(AKNode *node) noexcept { reset(node); }
+
+        /**
+         * @brief Resets the starting point of the reverse iterator.
+         *
+         * Sets the starting node for the reverse iteration.
+         *
+         * @param node The new starting point for the reverse iteration.
+         */
         void reset(AKNode *node) noexcept;
+
+        /**
+         * @brief Checks if the end of the iteration has been reached.
+         *
+         * Determines whether the reverse iteration has reached the end.
+         *
+         * @return True if the end has been reached, false otherwise.
+         */
         bool done() const noexcept { return m_done; }
+
+        /**
+         * @brief Advances the iterator to the next node.
+         *
+         * Moves the iterator to the next node in the reverse order.
+         */
         void next() noexcept;
+
+        /**
+         * @brief Jumps to a specified node.
+         *
+         * More efficient than reset, but assumes the node has the same root as the current node.
+         * If not, a segmentation fault may occur.
+         *
+         * @warning Use with caution, as it assumes the node shares the same root as the current node.
+         *
+         * @param node The node to jump to.
+         */
         void jumpTo(AKNode *node) noexcept;
+
+        /**
+         * @brief Gets the root node.
+         *
+         * Always returns the root node of the tree.
+         *
+         * @return A pointer to the root node.
+         */
         AKNode *end() const noexcept { return m_end; }
+
+        /**
+         * @brief Gets the current node.
+         *
+         * Returns the current node being pointed to by the iterator.
+         *
+         * @return A pointer to the current node.
+         */
         AKNode *node() const noexcept { return m_node; }
     private:
         AKNode *m_node, *m_end;
@@ -108,7 +247,8 @@ public:
     void setParent(AKNode *parent) noexcept;
     AKNode *parent() const noexcept { return m_parent; }
     AKNode *topmostParent() const noexcept;
-    AKNode *bottommostChild() const noexcept;
+    AKNode *bottommostRightChild() const noexcept;
+    AKNode *bottommostLeftChild() const noexcept;
     void insertBefore(AKNode *other) noexcept;
     void insertAfter(AKNode *other) noexcept;
     AKNode *next() const noexcept
@@ -169,8 +309,33 @@ public:
     AKLayout &layout() noexcept { return m_layout; }
 
     bool isPointerOver() const noexcept;
-    void setKeyboardFocus(bool set) noexcept;
+    void setKeyboardFocus(bool focused) noexcept;
     bool hasKeyboardFocus() const noexcept;
+
+    /**
+     * @brief Sets the keyboard focusable state for the object.
+     *
+     * By default, nodes are not keyboard focusable. This method enables or disables the ability for the object to gain keyboard focus.
+     *
+     * @param enabled `true` to make focusable, `false` otherwise.
+     */
+    void setKeyboardFocusable(bool enabled) noexcept;
+
+    /**
+     * @brief Checks if the object is keyboard focusable.
+     *
+     * Determines if keyboard focus can be assigned to the object.
+     * This hint is used by functionalities like AKKeyboard::nextFocusableNode() and implementations such
+     * as passing focus to the next text field on tab press.
+     *
+     * @see setKeyboardFocusable()
+     *
+     * @return `true` if the object is keyboard focusable, `false` otherwise.
+     */
+    bool isKeyboardFocusable() const noexcept
+    {
+        return m_flags.check(KeyboardFocusable);
+    }
 
     /* Effects */
 
@@ -263,7 +428,8 @@ private:
         Animated                    = 1 << 9,
         ChildrenNeedPosUpdate       = 1 << 10,
         ChildrenNeedScaleUpdate     = 1 << 11,
-        Skip                        = 1 << 12
+        Skip                        = 1 << 12,
+        KeyboardFocusable           = 1 << 13
     };
 
     struct TargetData : public AKObject
