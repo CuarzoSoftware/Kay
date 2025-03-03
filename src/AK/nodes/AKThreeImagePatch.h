@@ -47,6 +47,8 @@ public:
         AKRenderable(RenderableHint::Texture, parent),
         m_orientation(orientation) {};
 
+    AKCLASS_NO_COPY(AKThreeImagePatch)
+
     void setOrientation(Orientation orientation) noexcept
     {
         if (m_orientation == orientation)

@@ -38,6 +38,7 @@ public:
 
 protected:
     AKPointer() = default;
+    AKCLASS_NO_COPY(AKPointer)
 
 private:
     friend class AKApplication;

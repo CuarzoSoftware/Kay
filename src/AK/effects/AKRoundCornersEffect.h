@@ -30,6 +30,8 @@ public:
         m_brush.setAntiAlias(true);
     }
 
+    AKCLASS_NO_COPY(AKRoundCornersEffect)
+
     void setCorners(const AKBorderRadius &corners) noexcept
     {
         m_corners = corners;

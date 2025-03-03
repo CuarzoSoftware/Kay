@@ -11,7 +11,7 @@ class AK::AKTextCaret : public AKThreeImagePatch
 {
 public:
     AKTextCaret(AKNode *parent = nullptr) noexcept;
-
+    AKCLASS_NO_COPY(AKTextCaret)
     void setAnimated(bool enabled) noexcept;
 protected:
     void layoutEvent(const AKLayoutEvent &event) override;

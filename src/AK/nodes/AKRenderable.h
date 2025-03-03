@@ -35,6 +35,8 @@ public:
         m_renderableHint(hint)
     { m_caps |= Render; }
 
+    AKCLASS_NO_COPY(AKRenderable)
+
     void addDamage(const SkRegion &region) noexcept;
     void addDamage(const SkIRect &rect) noexcept;
     const SkRegion &damage() const noexcept;

@@ -17,8 +17,6 @@ class AK::AKBooleanEventSource
 {
 public:
 
-    AKCLASS_NO_COPY(AKBooleanEventSource);
-
     /**
      * @brief Callback function type. Called when the event is triggered.
      */
@@ -50,6 +48,7 @@ public:
 
 private:
     AKBooleanEventSource() noexcept = default;
+    AKCLASS_NO_COPY(AKBooleanEventSource);
     AKEventSource *m_source { nullptr };
     Callback m_callback { nullptr };
     bool m_state;

@@ -56,6 +56,8 @@ protected:
         m_caps |= BackgroundEffect;
     }
 
+    AKCLASS_NO_COPY(AKBackgroundEffect)
+
     // Rect relative to target
     SkIRect effectRect;
 

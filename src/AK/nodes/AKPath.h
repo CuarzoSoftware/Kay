@@ -74,6 +74,8 @@ public:
         enableCustomTextureColor(true);
     };
 
+    AKCLASS_NO_COPY(AKPath)
+
     /**
      * @brief Sets the path.
      */

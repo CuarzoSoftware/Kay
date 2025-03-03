@@ -12,6 +12,8 @@ public:
         AKSubScene(parent),
         m_borderRadiusEffect(radius) {}
 
+    AKCLASS_NO_COPY(AKRoundContainer)
+
     const AKRoundCornersEffect &borderRadius() const noexcept
     {
         return m_borderRadiusEffect;

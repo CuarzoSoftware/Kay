@@ -64,6 +64,7 @@ template<class...Args>
 class AK::AKSignal : public AKSignalBase
 {
 public:
+
     AKListener *subscribe(AKObject *listenerOwner, const std::function<void(Args...)> &callback) noexcept
     {
         assert("Invalid subscriber object" && listenerOwner);

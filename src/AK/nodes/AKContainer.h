@@ -15,6 +15,8 @@ public:
         enableChildrenClipping(clipsChildren);
         layout().setFlexDirection(flexDirection);
     }
+
+    AKCLASS_NO_COPY(AKContainer)
 };
 
 #endif // AKCONTAINER_H

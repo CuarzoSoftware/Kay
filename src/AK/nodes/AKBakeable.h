@@ -54,6 +54,8 @@ protected:
      */
     AKBakeable(AKNode *parent = nullptr) noexcept : AKRenderable(Texture, parent) { m_caps |= Bake; }
 
+    AKCLASS_NO_COPY(AKBakeable)
+
     /**
      * @brief Bake event
      *

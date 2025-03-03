@@ -12,6 +12,7 @@ class AK::AKScene : public AKObject
 {
 public:
     AKScene() noexcept;
+    AKCLASS_NO_COPY(AKScene)
     ~AKScene();
     AKTarget *createTarget() noexcept;
     bool destroyTarget(AKTarget *target);

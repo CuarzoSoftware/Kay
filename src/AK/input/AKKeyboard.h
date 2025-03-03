@@ -30,6 +30,7 @@ public:
 
 protected:
     AKKeyboard() noexcept;
+    AKCLASS_NO_COPY(AKKeyboard)
 
 private:
     friend class AKApplication;

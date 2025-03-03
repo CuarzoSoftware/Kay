@@ -13,6 +13,8 @@ public:
     AKRenderableImage(AKNode *parent = nullptr) noexcept : AKRenderable(Texture, parent) {}
     AKRenderableImage(sk_sp<SkImage> image, AKNode *parent = nullptr) noexcept : AKRenderable(Texture, parent), m_image(image) {}
 
+    AKCLASS_NO_COPY(AKRenderableImage)
+
     enum Changes
     {
         CHImage = AKRenderable::CHLast,

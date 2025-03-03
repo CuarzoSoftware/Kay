@@ -22,6 +22,8 @@ public:
     };
 
     AKButton(const std::string &text, AKNode *parent = nullptr) noexcept;
+    AKCLASS_NO_COPY(AKButton)
+
     void setText(const std::string &text) noexcept;
 
     void setBackgroundColor(SkColor color) noexcept;

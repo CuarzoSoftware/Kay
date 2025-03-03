@@ -56,7 +56,7 @@ public:
      */
     explicit AKImageFrame(sk_sp<SkImage> image, AKNode* parent = nullptr) noexcept;
 
-    AKCLASS_NO_COPY(AKImageFrame) ///< Disables copying of `AKImageFrame`.
+    AKCLASS_NO_COPY(AKImageFrame)
 
     /**
      * @brief Enumeration of size modes for the image within the frame.

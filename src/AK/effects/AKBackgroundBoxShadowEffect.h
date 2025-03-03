@@ -33,6 +33,8 @@ public:
             targetNode->addBackgroundEffect(this);
     }
 
+    AKCLASS_NO_COPY(AKBackgroundBoxShadowEffect)
+
     void setRadius(SkScalar radius) noexcept
     {
         if (m_radius == radius)

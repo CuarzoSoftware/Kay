@@ -462,6 +462,7 @@ private:
     friend class AKScene;
     void apply(bool calculate) noexcept;
     AKLayout(AKNode &akNode) noexcept;
+    AKCLASS_NO_COPY(AKLayout)
     ~AKLayout() { YGNodeFree(m_node); YGConfigFree(m_config); }
     void checkIsDirty() noexcept;
     static void applyTree(AKNode *node);

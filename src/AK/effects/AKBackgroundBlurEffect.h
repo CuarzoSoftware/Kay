@@ -64,6 +64,8 @@ public:
             target->addBackgroundEffect(this);
     }
 
+    AKCLASS_NO_COPY(AKBackgroundBlurEffect)
+
     /**
      * @brief Sets the clipping mode for the blur effect.
      */

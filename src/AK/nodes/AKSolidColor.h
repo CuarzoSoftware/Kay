@@ -19,6 +19,8 @@ public:
         setColorWithAlpha(color);
     }
 
+    AKCLASS_NO_COPY(AKSolidColor)
+
 protected:
     using AKRenderable::addDamage;
     using AKRenderable::opaqueRegion;

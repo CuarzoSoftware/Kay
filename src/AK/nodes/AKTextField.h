@@ -17,6 +17,7 @@ class AK::AKTextField : public AKContainer
 {
 public:
     AKTextField(AKNode *parent = nullptr) noexcept;
+    AKCLASS_NO_COPY(AKTextField)
 protected:
     void layoutEvent(const AKLayoutEvent &event) override;
     void keyboardEnterEvent(const AKKeyboardEnterEvent &event) override;

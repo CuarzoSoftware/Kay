@@ -53,6 +53,7 @@ public:
         BackgroundEffect    = 1 << 3
     };
     AKNode() noexcept { theme(); }
+    AKCLASS_NO_COPY(AKNode)
     virtual ~AKNode();
 
     typedef UInt32 Change;

@@ -294,6 +294,7 @@ private:
     friend class AKSubScene;
     friend class AKLayout;
     AKTarget(AKScene *scene) noexcept;
+    AKCLASS_NO_COPY(AKTarget)
     ~AKTarget();
     sk_sp<SkSurface>    m_surface;
     sk_sp<SkImage>      m_image;

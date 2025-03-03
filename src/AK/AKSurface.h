@@ -58,6 +58,7 @@ private:
         m_fbInfo.fFormat = hasAlpha ? GL_RGBA8 : GL_RGB8;
         slot++;
     }
+    AKCLASS_NO_COPY(AKSurface)
     void destroyStorage() noexcept;
     sk_sp<SkImage> m_image;
     Int32 m_scale;

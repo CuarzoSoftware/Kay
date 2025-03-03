@@ -17,6 +17,7 @@ public:
     };
 
     AKSubScene(AKNode *parent = nullptr) noexcept;
+    AKCLASS_NO_COPY(AKSubScene)
 
 protected:
     void bakeChildren(const AKBakeEvent &event) noexcept;

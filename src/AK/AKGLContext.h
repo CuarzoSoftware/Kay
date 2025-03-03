@@ -14,7 +14,7 @@ class AK::AKGLContext : public AKObject
 {
 public:
     sk_sp<GrDirectContext> skContext() const noexcept { return m_skContext; }
-    std::shared_ptr<AKPainter> painter() const noexcept { return m_painter; };
+    std::shared_ptr<AKPainter> painter() const noexcept { return m_painter; };    
 private:
     friend class AKApplication;
     friend class AKSurface;
@@ -25,6 +25,7 @@ private:
         sk_sp<SkSurface> skSurface;
     };
     AKGLContext(sk_sp<GrDirectContext> skContext) noexcept;
+    AKCLASS_NO_COPY(AKGLContext);
     ~AKGLContext();
     const FBO &getFBO(UInt32 slot) const noexcept;
     void storeFBO(UInt32 slot, FBO fbo) noexcept;

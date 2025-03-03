@@ -17,6 +17,7 @@ class AK::AKApplication : public AKObject
 {
 public:
     AKApplication() noexcept;
+    AKCLASS_NO_COPY(AKApplication)
     sk_sp<SkFontMgr> fontManager() const noexcept;
     sk_sp<skia::textlayout::FontCollection> fontCollection() const noexcept;
     static AKGLContext *glContext() noexcept;

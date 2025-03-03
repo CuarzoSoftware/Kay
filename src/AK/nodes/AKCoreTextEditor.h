@@ -8,6 +8,7 @@ class AK::AKCoreTextEditor : public AKContainer
 {
 public:
     AKCoreTextEditor(AKNode *parent = nullptr) noexcept;
+    AKCLASS_NO_COPY(AKCoreTextEditor)
 };
 
 #endif // AKCORETEXTEDITOR_H
