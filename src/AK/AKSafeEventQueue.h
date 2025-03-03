@@ -25,6 +25,39 @@ public:
     AKSafeEventQueue() noexcept = default;
 
     /**
+     * @brief Move constructor.
+     *
+     * After the move, the other queue is left empty and can be safely reused.
+     */
+    AKSafeEventQueue(AKSafeEventQueue &&other) noexcept
+    {
+        *this = std::move(other);
+    }
+
+    /**
+     * @brief Move assignment operator.
+     *
+     * Transfers the contents from another AKSafeEventQueue to this one.
+     *
+     * After the move, the other queue is left empty and can be safely reused.
+     *
+     * @param other The other AKSafeEventQueue to move from.
+     * @return A reference to this AKSafeEventQueue.
+     */
+    AKSafeEventQueue &operator=(AKSafeEventQueue &&other) noexcept
+    {
+        if (this != &other)
+        {
+            m_queue = std::move(other.m_queue);
+            other.m_queue = std::queue<SafeEvent>();
+        }
+        return *this;
+    }
+
+    AKSafeEventQueue(const AKSafeEventQueue&) = delete;
+    AKSafeEventQueue& operator=(const AKSafeEventQueue&) = delete;
+
+    /**
      * @brief Adds an event to the queue.
      *
      * @param event The event to be added.

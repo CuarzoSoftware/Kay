@@ -19,7 +19,6 @@
 namespace AK
 {
     class AKApplication;
-    class AKEventSource;
     class AKObject;
     class AKWeakUtils;
     template <class T> class AKWeak;
@@ -32,6 +31,10 @@ namespace AK
     class AKTheme;
     class AKTime;
     class AKChanges;
+
+    /* Event sources */
+    class AKEventSource;
+    class AKBooleanEventSource;
 
     /* Utils */
     class AKImageLoader;

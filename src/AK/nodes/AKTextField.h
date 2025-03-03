@@ -24,6 +24,7 @@ protected:
     void keyboardLeaveEvent(const AKKeyboardLeaveEvent &event) override;
     void pointerButtonEvent(const AKPointerButtonEvent &event) override;
     void pointerMoveEvent(const AKPointerMoveEvent &event) override;
+    void windowStateEvent(const AKWindowStateEvent &event) override;
     void updateDimensions() noexcept;
     void updateScale() noexcept;
     void updateTextPosition() noexcept;

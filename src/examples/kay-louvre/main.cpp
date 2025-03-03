@@ -395,6 +395,12 @@ public:
     void initialized() override
     {
         kay = std::make_unique<Kay>();
+
+        addFdListener(kay->app.fd(), nullptr, [](auto, auto, auto) -> int {
+            akApp()->processLoop(0);
+            return 0;
+        });
+
         LCompositor::initialized();
         LLauncher::launch(std::string("swaybg -m fill -i ") + std::string(defaultAssetsPath() / "wallpaper.png"));
     }
@@ -979,7 +985,7 @@ public:
 
         moveEvent.setX(cursor()->pos().x());
         moveEvent.setY(cursor()->pos().y());
-        akApp()->postEvent(moveEvent, static_cast<Compositor*>(compositor())->kay->scene);
+        akApp()->sendEvent(moveEvent, static_cast<Compositor*>(compositor())->kay->scene);
 
         MenuItem *newFocus { (MenuItem*)nodeAt(SkIPoint(cursor()->pos().x(), cursor()->pos().y()), MENU_ITEM) };
 
@@ -1021,7 +1027,7 @@ public:
         buttonEvent.setSerial(event.serial());
         buttonEvent.setMs(event.ms());
         buttonEvent.setUs(event.us());
-        akApp()->postEvent(buttonEvent, static_cast<Compositor*>(compositor())->kay->scene);
+        akApp()->sendEvent(buttonEvent, static_cast<Compositor*>(compositor())->kay->scene);
 
         if (event.button() == BTN_RIGHT && event.state() == LPointerButtonEvent::Pressed)
         {
@@ -1072,7 +1078,7 @@ public:
         keyboardKeyEvent.setState((AKKeyboardKeyEvent::State)event.state());
         keyboardKeyEvent.setMs(event.ms());
         keyboardKeyEvent.setSerial(event.serial());
-        akApp()->postEvent(keyboardKeyEvent, static_cast<Compositor*>(compositor())->kay->scene);
+        akApp()->sendEvent(keyboardKeyEvent, static_cast<Compositor*>(compositor())->kay->scene);
     }
 };
 

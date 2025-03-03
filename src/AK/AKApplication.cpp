@@ -1,4 +1,5 @@
-#include "AK/events/AKEvent.h"
+#include <AK/events/AKEvent.h>
+#include <AK/AKBooleanEventSource.h>
 #include <AK/AKApplication.h>
 #include <AK/AKGLContext.h>
 #include <AK/AKLog.h>
@@ -51,6 +52,20 @@ AKApplication::AKApplication() noexcept
     m_skContextOptions.fDisableTessellationPathRenderer = false;
     m_skContextOptions.fAllowMSAAOnNewIntel = true;
     m_skContextOptions.fAlwaysUseTexStorageWhenAvailable = true;
+
+    m_epollFd = epoll_create1(EPOLL_CLOEXEC);
+
+    if (m_epollFd == -1)
+    {
+        AKLog::fatal("[AKApplication] Failed to create epoll fd.");
+        exit(EXIT_FAILURE);
+    }
+
+    m_mainEventSource = AKBooleanEventSource::Make(false, [this](auto)
+    {
+        AKSafeEventQueue tmp { std::move(m_eventQueue) };
+        tmp.dispatch();
+    });
 }
 
 sk_sp<SkFontMgr> AKApplication::fontManager() const noexcept
@@ -87,7 +102,7 @@ void AKApplication::freeGLContext() noexcept
     _app->m_glContexts.erase(it);
 }
 
-bool AKApplication::postEvent(const AKEvent &event, AKObject &object)
+bool AKApplication::sendEvent(const AKEvent &event, AKObject &object)
 {
     event.accept();
 
@@ -96,6 +111,12 @@ bool AKApplication::postEvent(const AKEvent &event, AKObject &object)
             return true;
 
     return object.event(event);
+}
+
+void AKApplication::postEvent(const AKEvent &event, AKObject &object) noexcept
+{
+    unlockLoop();
+    m_eventQueue.addEvent(event, object);
 }
 
 AKPointer &AKApplication::pointer() noexcept
@@ -112,6 +133,77 @@ AKKeyboard &AKApplication::keyboard() noexcept
         m_keyboard.reset(new AKKeyboard());
 
     return *m_keyboard.get();
+}
+
+AKEventSource *AKApplication::addEventSource(Int32 fd, UInt32 events, const AKEventSource::Callback &callback) noexcept
+{
+    epoll_event event;
+    event.events = events;
+    event.data.fd = fd;
+
+    if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, fd, &event) == -1)
+    {
+        AKLog::error("[AKApplication::addEventSource] Failed to add event source (epoll_ctl).");
+        return nullptr;
+    }
+    else
+        AKLog::debug("[AKApplication::addEventSource] Added fd %d.", fd);
+
+    m_eventSourcesChanged = true;
+    m_pendingEventSources.emplace_back(std::shared_ptr<AKEventSource>(new AKEventSource(fd, events, callback), AKEventSource::Deleter()));
+    return m_pendingEventSources.back().get();
+}
+
+void AKApplication::removeEventSource(AKEventSource *source) noexcept
+{
+    for (size_t i = 0; i < m_pendingEventSources.size(); i++)
+    {
+        if (m_pendingEventSources[i].get() == source)
+        {
+            AKLog::debug("[AKApplication::removeEventSource] Removed fd %d.", m_pendingEventSources[i].get()->fd());
+            epoll_ctl(m_epollFd, EPOLL_CTL_DEL, m_pendingEventSources[i].get()->fd(), NULL);
+            m_pendingEventSources.erase(m_pendingEventSources.begin() + i);
+            m_eventSourcesChanged = true;
+            return;
+        }
+    }
+}
+
+void AKApplication::unlockLoop() const noexcept
+{
+    m_mainEventSource->setState(true);
+}
+
+void AKApplication::processLoop(int timeout)
+{
+    if (m_eventSourcesChanged)
+    {
+        m_currentEventSources = m_pendingEventSources;
+        m_eventSourcesChanged = false;
+        m_epollEvents.clear();
+        m_epollEvents.reserve(m_pendingEventSources.size());
+
+        for (const auto &eventSource : m_currentEventSources)
+            m_epollEvents.emplace_back(eventSource->m_event);
+    }
+
+    epoll_wait(m_epollFd, m_epollEvents.data(), m_epollEvents.size(), timeout);
+
+    for (size_t i = 0; i < m_epollEvents.size(); i++)
+    {
+        if (m_epollEvents[i].events == 0 || !m_currentEventSources[i]->m_callback)
+            continue;
+
+        m_currentEventSources[i]->m_callback(m_epollEvents[i].data.fd, m_epollEvents[i].events);
+    }
+}
+
+int AKApplication::exec()
+{
+    while (1)
+        processLoop(-1);
+
+    return 0;
 }
 
 void AKApplication::setPointer(AKPointer *pointer) noexcept

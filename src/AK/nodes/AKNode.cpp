@@ -77,7 +77,7 @@ void AKNode::enablePointerGrab(bool enabled) noexcept
     if (enabled && !hasPointerFocus())
     {
         m_flags.add(HasPointerFocus);
-        akApp()->postEvent(AKPointerEnterEvent(), *this);
+        akApp()->sendEvent(AKPointerEnterEvent(), *this);
     }
 }
 
@@ -430,7 +430,7 @@ void AKNode::setKeyboardFocus(bool set) noexcept
     else
     {
         scene()->m_keyboardFocus.reset();
-        akApp()->postEvent(AKKeyboardLeaveEvent(), *this);
+        akApp()->sendEvent(AKKeyboardLeaveEvent(), *this);
     }
 }
 

@@ -448,6 +448,7 @@ static void initEGL() noexcept
 
 int main(void)
 {
+    setenv("KAY_DEBUG", "4", 0);
     app.wlDisplay = wl_display_connect(NULL);
     assert("wl_display_connect failed" && app.wlDisplay);
     app.wlRegistry = wl_display_get_registry(app.wlDisplay);
@@ -458,6 +459,10 @@ int main(void)
     initEGL();
 
     Window window;
-    while (wl_display_dispatch(app.wlDisplay) != -1) {}
-    return 0;
+
+    app.ak.addEventSource(wl_display_get_fd(app.wlDisplay), EPOLLIN | EPOLLOUT | EPOLLHUP, [](int, UInt32) {
+        wl_display_dispatch(app.wlDisplay);
+    });
+
+    return app.ak.exec();
 }

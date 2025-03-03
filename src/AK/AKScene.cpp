@@ -129,6 +129,7 @@ bool AKScene::render(AKTarget *target)
 
     if (!isNestedScene)
         for (AKNode *node : akApp()->animated)
+            if (node->visible())
                 node->repaint();
 
     return true;
@@ -387,7 +388,7 @@ void AKScene::calculateNewDamage(AKNode *node)
 
             event.canvas().save();
             event.canvas().scale(event.surface.scale(), event.surface.scale());
-            akApp()->postEvent(event, *bakeable);
+            akApp()->sendEvent(event, *bakeable);
             event.canvas().restore();
             bakeable->m_onBakeGeneratedDamage = !event.damage.isEmpty();
         }
@@ -576,7 +577,7 @@ void AKScene::renderNodes(AKNode *node)
 
     m_painter->setParamsFromRenderable(rend);
     glEnable(GL_BLEND);
-    akApp()->postEvent(AKRenderEvent(*t, node->t->translucent, rend->sceneRect(), *m_painter.get()), *rend);
+    akApp()->sendEvent(AKRenderEvent(*t, node->t->translucent, rend->sceneRect(), *m_painter.get()), *rend);
     renderOpaque:
 
     if (node->t->opaque.isEmpty())
@@ -590,7 +591,7 @@ void AKScene::renderNodes(AKNode *node)
 
     m_painter->setParamsFromRenderable(rend);
     glDisable(GL_BLEND);
-    akApp()->postEvent(AKRenderEvent(*t, node->t->opaque, rend->sceneRect(), *m_painter.get()), *rend);
+    akApp()->sendEvent(AKRenderEvent(*t, node->t->opaque, rend->sceneRect(), *m_painter.get()), *rend);
 
     renderChildren:
 
@@ -764,24 +765,24 @@ void AKScene::renderNodes(AKNode *node)
 
             if (it.node()->pointerGrabEnabled())
             {
-                akApp()->postEvent(*e, *it.node());
+                akApp()->sendEvent(*e, *it.node());
             }
             else
             {
                 if (it.node()->m_flags.check(AKNode::ChildHasPointerFocus))
                 {
                     if (it.node()->m_flags.check(AKNode::HasPointerFocus))
-                        akApp()->postEvent(*e, *it.node());
+                        akApp()->sendEvent(*e, *it.node());
                     else
                     {
                         it.node()->m_flags.add(AKNode::HasPointerFocus);
-                        akApp()->postEvent(enterEvent, *it.node());
+                        akApp()->sendEvent(enterEvent, *it.node());
                     }
                 }
                 else if (it.node()->m_flags.check(AKNode::HasPointerFocus))
                 {
                     it.node()->m_flags.remove(AKNode::HasPointerFocus);
-                    akApp()->postEvent(leaveEvent, *it.node());
+                    akApp()->sendEvent(leaveEvent, *it.node());
                 }
             }
 
@@ -812,7 +813,7 @@ void AKScene::renderNodes(AKNode *node)
             it.node()->m_flags.add(AKNode::Notified);
 
             if (it.node()->m_flags.check(AKNode::HasPointerFocus | AKNode::PointerGrab))
-                akApp()->postEvent(*e, *it.node());
+                akApp()->sendEvent(*e, *it.node());
 
             if (m_treeChanged)
                 goto retry;
@@ -824,7 +825,7 @@ void AKScene::renderNodes(AKNode *node)
     void AKScene::handleKeyboardKeyEvent()
     {
         if (keyboardFocus())
-            akApp()->postEvent(*e, *keyboardFocus());
+            akApp()->sendEvent(*e, *keyboardFocus());
     }
 
     void AKScene::handleWindowStateEvent()
@@ -852,7 +853,7 @@ void AKScene::renderNodes(AKNode *node)
             }
 
             it.node()->m_flags.add(AKNode::Notified);
-            akApp()->postEvent(*e, *it.node());
+            akApp()->sendEvent(*e, *it.node());
 
             if (m_treeChanged)
                 goto retry;

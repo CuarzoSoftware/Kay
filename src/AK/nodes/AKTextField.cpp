@@ -1,3 +1,4 @@
+#include <AK/events/AKWindowStateEvent.h>
 #include <AK/events/AKPointerMoveEvent.h>
 #include <AK/events/AKKeyboardEnterEvent.h>
 #include <AK/events/AKKeyboardLeaveEvent.h>
@@ -182,6 +183,23 @@ void AKTextField::pointerMoveEvent(const AKPointerMoveEvent &event)
             event.pos().y() - SkScalar(m_text.globalRect().y())) };
 
         m_text.setSelection(std::min(m_selectionStart, selectionEnd), std::abs(Int64(m_selectionStart) - Int64(selectionEnd)));
+    }
+
+    event.accept();
+}
+
+void AKTextField::windowStateEvent(const AKWindowStateEvent &event)
+{
+    AKContainer::windowStateEvent(event);
+
+    if (activated())
+    {
+        if (hasKeyboardFocus())
+            m_caret.setVisible(true);
+    }
+    else
+    {
+        m_caret.setVisible(false);
     }
 
     event.accept();
