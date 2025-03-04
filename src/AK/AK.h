@@ -33,10 +33,13 @@ namespace AK
     class AKChanges;
 
     /* Event sources */
+
     class AKEventSource;
     class AKBooleanEventSource;
+    class AKTimer;
 
     /* Utils */
+
     class AKImageLoader;
     class AKLog;
 
@@ -57,22 +60,14 @@ namespace AK
     class AKBakeable;   /* A node that draws into its own buffer, which is then blitted into an AKTarget */
     class AKSubScene;   /* A node whose children are drawn into its own buffer and then rendered into an AKTarget */
 
-    /*********** RENDERABLES ***********/
-
     class AKSolidColor;
     class AKPath;
     class AKRenderableImage;
     class AKImageFrame;
     class AKThreeImagePatch;
     class AKTextCaret;
-
-    /*********** BAKEABLES ***********/
-
     class AKText;
     class AKCoreTextEditor;
-
-    /*********** SUBSCENES ***********/
-
     class AKRoundContainer;
     class AKButton;
     class AKTextField;

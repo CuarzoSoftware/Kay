@@ -58,6 +58,7 @@
 #include <AK/AKSurface.h>
 #include <AK/AKTheme.h>
 #include <AK/AKGLContext.h>
+#include <AK/AKTimer.h>
 #include <AK/AKLog.h>
 
 #include <cassert>
@@ -891,6 +892,16 @@ public:
             textStyle.setFontSize(16);
             textStyle.setFontStyle(SkFontStyle::Bold());
             instructions.setTextStyle(textStyle);
+
+            AKWeak buttonRef { &customBackgroundButton };
+            AKTimer::OneShoot(1000, [buttonRef](AKTimer *timer){
+                if (buttonRef)
+                {
+                    buttonRef->setBackgroundColor(0xFF000000 | rand());
+                    timer->start(timer->timeoutMs());
+                    AKLog::debug("AKTimer timeout");
+                }
+            });
 
         }
         ~Kay()
