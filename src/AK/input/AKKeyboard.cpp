@@ -121,6 +121,11 @@ xkb_compose_status AKKeyboard::composeStatus() const noexcept
 
 void AKKeyboard::updateKeyState(UInt32 code, UInt32 state) noexcept
 {
+    if (!pressedKeyCodes().empty() && pressedKeyCodes().back() == code)
+    {
+
+    }
+
     auto it = std::find(m_pressedKeyCodes.begin(), m_pressedKeyCodes.end(), code);
     const UInt32 isPressed { it != m_pressedKeyCodes.end() };
 

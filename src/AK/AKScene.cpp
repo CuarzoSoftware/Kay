@@ -20,6 +20,7 @@
 #include <AK/events/AKPointerEnterEvent.h>
 #include <AK/events/AKPointerLeaveEvent.h>
 #include <AK/events/AKPointerButtonEvent.h>
+#include <AK/events/AKKeyboardKeyEvent.h>
 #include <AK/events/AKWindowStateEvent.h>
 #include <AK/events/AKRenderEvent.h>
 #include <AK/events/AKBakeEvent.h>
@@ -29,9 +30,22 @@ using namespace AK;
 AKScene::AKScene() noexcept
 {
     theme();
-}
+    m_isSubScene = false;
+    m_win = std::make_unique<Window>();
 
-AKScene::~AKScene() {}
+    m_win->keyDelayTimer.setCallback([this](AKTimer *) {
+        if (akKeyboard().keyRepeatRateMs() > 0 && !akKeyboard().pressedKeyCodes().empty() && m_win->repeatedKey == akKeyboard().pressedKeyCodes().back())
+            m_win->keyRepeatTimer.start(0);
+    });
+
+    m_win->keyRepeatTimer.setCallback([this](AKTimer *timer) {
+        if (akKeyboard().keyRepeatRateMs() > 0 && !akKeyboard().pressedKeyCodes().empty() && m_win->repeatedKey == akKeyboard().pressedKeyCodes().back())
+        {
+            event(AKKeyboardKeyEvent(m_win->repeatedKey, AKKeyboardKeyEvent::Pressed));
+            timer->start(akKeyboard().keyRepeatRateMs());
+        }
+    });
+}
 
 AKTarget *AK::AKScene::createTarget() noexcept
 {
@@ -765,10 +779,10 @@ void AKScene::renderNodes(AKNode *node)
 
     bool AKScene::event(const AKEvent &event)
     {
-        if (!m_root)
+        if (!m_root || m_isSubScene)
             return AKObject::event(event);
 
-        e = &event;
+        m_win->e = &event;
 
         switch (event.type()) {
         case AKEvent::PointerMove:
@@ -791,18 +805,20 @@ void AKScene::renderNodes(AKNode *node)
         return true;
     }
 
+
+
     void AKScene::handlePointerMoveEvent()
     {
-        auto &event { *static_cast<const AKPointerMoveEvent*>(e) };
+        auto &event { *static_cast<const AKPointerMoveEvent*>(m_win->e) };
         const AKPointerEnterEvent enterEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
         const AKPointerLeaveEvent leaveEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
         akApp()->pointer().m_pos = event.pos();
         akApp()->pointer().m_windowFocus.reset(this);
         m_root->removeFlagsAndPropagate(AKNode::Notified | AKNode::ChildHasPointerFocus);
-        m_pointerFocus.reset(nodeAt(event.pos()));
+        m_win->pointerFocus.reset(nodeAt(event.pos()));
 
-        if (m_pointerFocus)
-            m_pointerFocus->setFlagsAndPropagateToParents(AKNode::ChildHasPointerFocus, true);
+        if (m_win->pointerFocus)
+            m_win->pointerFocus->setFlagsAndPropagateToParents(AKNode::ChildHasPointerFocus, true);
 
         AKNode::RIterator it { nullptr };
 
@@ -822,14 +838,14 @@ void AKScene::renderNodes(AKNode *node)
 
             if (it.node()->pointerGrabEnabled())
             {
-                akApp()->sendEvent(*e, *it.node());
+                akApp()->sendEvent(*m_win->e, *it.node());
             }
             else
             {
                 if (it.node()->m_flags.check(AKNode::ChildHasPointerFocus))
                 {
                     if (it.node()->m_flags.check(AKNode::HasPointerFocus))
-                        akApp()->sendEvent(*e, *it.node());
+                        akApp()->sendEvent(*m_win->e, *it.node());
                     else
                     {
                         it.node()->m_flags.add(AKNode::HasPointerFocus);
@@ -870,7 +886,7 @@ void AKScene::renderNodes(AKNode *node)
             it.node()->m_flags.add(AKNode::Notified);
 
             if (it.node()->m_flags.check(AKNode::HasPointerFocus | AKNode::PointerGrab))
-                akApp()->sendEvent(*e, *it.node());
+                akApp()->sendEvent(*m_win->e, *it.node());
 
             if (m_treeChanged)
                 goto retry;
@@ -881,19 +897,33 @@ void AKScene::renderNodes(AKNode *node)
 
     void AKScene::handleKeyboardKeyEvent()
     {
+        if (akKeyboard().keyRepeatRateMs() == 0 || akKeyboard().pressedKeyCodes().empty())
+        {
+            m_win->keyDelayTimer.stop(false);
+            m_win->keyRepeatTimer.stop(false);
+            m_win->repeatedKey = -1;
+        }
+        else if (akKeyboard().pressedKeyCodes().back() != m_win->repeatedKey)
+        {
+            m_win->keyRepeatTimer.stop(false);
+            m_win->repeatedKey = akKeyboard().pressedKeyCodes().back();
+            m_win->keyDelayTimer.start(akKeyboard().keyRepeatDelayMs());
+        }
+
         if (keyboardFocus())
-            akApp()->sendEvent(*e, *keyboardFocus());
+            akApp()->sendEvent(*m_win->e, *keyboardFocus());
+
     }
 
     void AKScene::handleWindowStateEvent()
     {
-        const AKWindowStateEvent &event { static_cast<const AKWindowStateEvent &>(*e) };
-        AKBitset<AKWindowState> newState { m_windowState.get() ^ event.changes().get() };
+        const AKWindowStateEvent &event { static_cast<const AKWindowStateEvent &>(*m_win->e) };
+        AKBitset<AKWindowState> newState { m_win->windowState.get() ^ event.changes().get() };
 
-        if (newState.get() == m_windowState.get())
+        if (newState.get() == m_win->windowState.get())
             return;
 
-        m_windowState = newState;
+        m_win->windowState = newState;
         m_root->removeFlagsAndPropagate(AKNode::Notified);
         AKNode::RIterator it { nullptr };
 
@@ -910,7 +940,7 @@ void AKScene::renderNodes(AKNode *node)
             }
 
             it.node()->m_flags.add(AKNode::Notified);
-            akApp()->sendEvent(*e, *it.node());
+            akApp()->sendEvent(*m_win->e, *it.node());
 
             if (m_treeChanged)
                 goto retry;

@@ -8,7 +8,6 @@ using namespace AK;
 
 AKSubScene::AKSubScene(AKNode *parent) noexcept : AKBakeable(parent)
 {
-    m_scene.m_isSubScene = true;
     m_scene.setRoot(this);
     enableChildrenClipping(true);
     m_target = m_scene.createTarget();

@@ -73,26 +73,23 @@ AKTimer::AKTimer(bool oneShoot, const Callback &callback, UInt64 timeoutMs) noex
 
 void AKTimer::init() noexcept
 {
-    assert("AKObjects must be created after AKApplication" && akApp());
+    assert("AKTimers must be created after AKApplication" && akApp());
 
-    m_source = akApp()->addEventSource(timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK), EPOLLIN, [this](int fd, UInt32 events) {
+    m_source = akApp()->addEventSource(timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC), EPOLLIN, [this](int fd, UInt32) {
+        UInt64 expirations;
+        read(fd, &expirations, sizeof(expirations));
 
-        if (events & EPOLLIN)
-        {
-            constexpr itimerspec timeout { {0, 0}, {0, 0} };
-            timerfd_settime(fd, 0, &timeout, nullptr);
-            UInt64 expirations;
-            read(fd, &expirations, sizeof(expirations));
+        constexpr itimerspec timeout { {0, 0}, {0, 0} };
+        timerfd_settime(fd, 0, &timeout, nullptr);
 
-            const bool wasRunning { m_running };
-            AKWeak<AKTimer> ref { this };
-            m_running = false;
+        const bool wasRunning { m_running };
+        AKWeak<AKTimer> ref { this };
+        m_running = false;
 
-            if (wasRunning && m_callback)
-                m_callback(this);
+        if (wasRunning && m_callback)
+            m_callback(this);
 
-            if (ref && !m_running && m_oneShoot)
-                delete this;
-        }
+        if (ref && !m_running && m_oneShoot)
+            delete this;
     });
 }

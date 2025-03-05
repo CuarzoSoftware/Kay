@@ -137,11 +137,9 @@ AKKeyboard &AKApplication::keyboard() noexcept
 
 AKEventSource *AKApplication::addEventSource(Int32 fd, UInt32 events, const AKEventSource::Callback &callback) noexcept
 {
-    epoll_event event;
-    event.events = events;
-    event.data.fd = fd;
+    auto source = std::shared_ptr<AKEventSource>(new AKEventSource(fd, events, callback), AKEventSource::Deleter());
 
-    if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, fd, &event) == -1)
+    if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, source->fd(), &source->m_event) == -1)
     {
         AKLog::error("[AKApplication::addEventSource] Failed to add event source (epoll_ctl).");
         return nullptr;
@@ -150,7 +148,7 @@ AKEventSource *AKApplication::addEventSource(Int32 fd, UInt32 events, const AKEv
         AKLog::debug("[AKApplication::addEventSource] Added fd %d.", fd);
 
     m_eventSourcesChanged = true;
-    m_pendingEventSources.emplace_back(std::shared_ptr<AKEventSource>(new AKEventSource(fd, events, callback), AKEventSource::Deleter()));
+    m_pendingEventSources.emplace_back(source);
     return m_pendingEventSources.back().get();
 }
 
@@ -161,6 +159,8 @@ void AKApplication::removeEventSource(AKEventSource *source) noexcept
         if (m_pendingEventSources[i].get() == source)
         {
             AKLog::debug("[AKApplication::removeEventSource] Removed fd %d.", m_pendingEventSources[i].get()->fd());
+
+            // If unset it means EPOLL_CTL_ADD failed
             epoll_ctl(m_epollFd, EPOLL_CTL_DEL, m_pendingEventSources[i].get()->fd(), NULL);
             m_pendingEventSources.erase(m_pendingEventSources.begin() + i);
             m_eventSourcesChanged = true;
@@ -180,21 +180,31 @@ void AKApplication::processLoop(int timeout)
     {
         m_currentEventSources = m_pendingEventSources;
         m_eventSourcesChanged = false;
-        m_epollEvents.clear();
-        m_epollEvents.reserve(m_pendingEventSources.size());
 
-        for (const auto &eventSource : m_currentEventSources)
-            m_epollEvents.emplace_back(eventSource->m_event);
+        if (m_currentEventSources.size() > m_epollEvents.size())
+        {
+            m_epollEvents.reserve(m_pendingEventSources.size());
+
+            while (m_currentEventSources.size() > m_epollEvents.size())
+                m_epollEvents.emplace_back();
+        }
     }
 
-    epoll_wait(m_epollFd, m_epollEvents.data(), m_epollEvents.size(), timeout);
+    int events = epoll_wait(m_epollFd, m_epollEvents.data(), m_epollEvents.size(), timeout);
 
-    for (size_t i = 0; i < m_epollEvents.size(); i++)
+    if (events == -1)
+        return;
+
+    AKEventSource *source;
+
+    for (int i = 0; i < events; i++)
     {
-        if (m_epollEvents[i].events == 0 || !m_currentEventSources[i]->m_callback)
+        source = static_cast<AKEventSource*>(m_epollEvents[i].data.ptr);
+
+        if (!source->m_callback)
             continue;
 
-        m_currentEventSources[i]->m_callback(m_epollEvents[i].data.fd, m_epollEvents[i].events);
+        source->m_callback(source->fd(), m_epollEvents[i].events);
     }
 }
 

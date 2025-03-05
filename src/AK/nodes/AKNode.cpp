@@ -436,13 +436,13 @@ void AKNode::setKeyboardFocus(bool set) noexcept
         if (scene()->keyboardFocus())
             queue.addEvent(AKKeyboardLeaveEvent(), *scene()->keyboardFocus());
 
-        scene()->m_keyboardFocus.reset(this);
+        scene()->m_win->keyboardFocus.reset(this);
         queue.addEvent(AKKeyboardEnterEvent(), *this);
         queue.dispatch();
     }
     else
     {
-        scene()->m_keyboardFocus.reset();
+        scene()->m_win->keyboardFocus.reset();
         akApp()->sendEvent(AKKeyboardLeaveEvent(), *this);
     }
 }

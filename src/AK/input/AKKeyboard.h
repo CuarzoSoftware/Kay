@@ -1,9 +1,9 @@
 #ifndef AKKEYMAP_H
 #define AKKEYMAP_H
 
-#include <AK/AKObject.h>
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
+#include <AK/AKObject.h>
 
 class AK::AKKeyboard : public AKObject
 {
@@ -20,8 +20,14 @@ public:
     bool isKeyCodePressed(UInt32 keyCode) const noexcept;
     void updateModifiers(UInt32 depressed, UInt32 latched, UInt32 locked, UInt32 group) noexcept;
 
+    /**
+     * A rate of 0 ms disables repeat.
+     */
     void setKeyRepeatInfo(Int32 delayMs, Int32 rateMs) noexcept
     {
+        if (delayMs < 0) delayMs = 0;
+        if (rateMs < 0) rateMs = 0;
+
         m_keyRepeatDelayMs = delayMs;
         m_keyRepeatRateMs = rateMs;
     }
