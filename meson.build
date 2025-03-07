@@ -25,7 +25,6 @@ glesv2_dep      = dependency('glesv2')
 skia_dep        = dependency('Skia')
 xkbcommon_dep   = dependency('xkbcommon')
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
-#skparagraph_dep = cpp.find_library('skparagraph')
 
 # -------------- HEADERS --------------
 
@@ -65,6 +64,11 @@ kay_dep = declare_dependency(
     dependencies: [skia_dep, yoga_dep, egl_dep, gl_dep, glesv2_dep],
     include_directories : ['./src'],
     link_with : kay)
+
+install_data(
+    ['./assets/logo.png'],
+    install_dir: '/usr/local/share/Kay/assets'
+)
 
 pkg.generate(
     kay,

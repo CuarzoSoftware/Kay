@@ -1,6 +1,6 @@
 // Copyright 2020 Google LLC.
 #include "include/core/SkPathBuilder.h"
-#include "modules/skparagraph/src/Decorations.h"
+#include "Decorations.h"
 
 using namespace skia_private;
 

@@ -144,8 +144,6 @@ AKEventSource *AKApplication::addEventSource(Int32 fd, UInt32 events, const AKEv
         AKLog::error("[AKApplication::addEventSource] Failed to add event source (epoll_ctl).");
         return nullptr;
     }
-    else
-        AKLog::debug("[AKApplication::addEventSource] Added fd %d.", fd);
 
     m_eventSourcesChanged = true;
     m_pendingEventSources.emplace_back(source);
@@ -158,8 +156,6 @@ void AKApplication::removeEventSource(AKEventSource *source) noexcept
     {
         if (m_pendingEventSources[i].get() == source)
         {
-            AKLog::debug("[AKApplication::removeEventSource] Removed fd %d.", m_pendingEventSources[i].get()->fd());
-
             // If unset it means EPOLL_CTL_ADD failed
             epoll_ctl(m_epollFd, EPOLL_CTL_DEL, m_pendingEventSources[i].get()->fd(), NULL);
             m_pendingEventSources.erase(m_pendingEventSources.begin() + i);

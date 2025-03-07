@@ -8,7 +8,7 @@
 class AK::AKImageLoader
 {
 public:
-    static sk_sp<SkImage> loadFile(GrDirectContext *context, const std::filesystem::path &path) noexcept;
+    static sk_sp<SkImage> loadFile(const std::filesystem::path &path) noexcept;
 };
 
 #endif // AKIMAGELOADER_H

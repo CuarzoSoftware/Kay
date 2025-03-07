@@ -1,6 +1,6 @@
 executable(
     'kay-srm',
-    sources : ['main.cpp'],
+    sources : ['main.cpp', 'Screen.cpp', 'Application.cpp', 'ProgressBar.cpp'],
     dependencies : [
         kay_dep,
         skia_dep,
