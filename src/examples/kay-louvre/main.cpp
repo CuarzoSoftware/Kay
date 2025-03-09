@@ -464,7 +464,7 @@ public:
 
     AKRenderableImage node { &comp()->kay->surfaces };
 
-    GLuint prevTexId { 0 };
+    GLuint prevTexSerial { 0 };
 
     void layerChanged() override
     {
@@ -601,11 +601,11 @@ public:
             s->node.layout().setWidth(s->size().w());
             s->node.layout().setHeight(s->size().h());
 
-            const GLuint newTexId { s->texture()->id(this) };
-            if (s->prevTexId != newTexId)
+            const GLuint newTexSerial { s->texture()->serial() };
+            if (s->prevTexSerial != newTexSerial || !s->node.image())
             {
                 s->node.setImage(louvreTex2SkiaImage(s->texture(), this));
-                s->prevTexId = newTexId;
+                s->prevTexSerial = newTexSerial;
             }
         }
 
@@ -899,7 +899,6 @@ public:
                 {
                     buttonRef->setBackgroundColor(0xFF000000 | rand());
                     timer->start(timer->timeoutMs());
-                    AKLog::debug("AKTimer timeout");
                 }
             });
 
@@ -1112,7 +1111,8 @@ LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType,
 
 int main(void)
 {
-    setenv("KAY_DEBUG", "4", 0);
+    setenv("LOUVRE_DEBUG", "3", 0);
+    setenv("KAY_DEBUG", "3", 0);
     setenv("LOUVRE_WAYLAND_DISPLAY", "louvre", 0);
     setenv("SRM_RENDER_MODE_ITSELF_FB_COUNT", "3", 0);
     setenv("SRM_FORCE_GL_ALLOCATION", "1", 0);

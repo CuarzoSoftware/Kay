@@ -1,7 +1,7 @@
 #ifndef PROGRESSBAR_H
 #define PROGRESSBAR_H
 
-#include "AK/AKTime.h"
+#include <AK/AKTime.h>
 #include <AK/nodes/AKBakeable.h>
 
 using namespace AK;
