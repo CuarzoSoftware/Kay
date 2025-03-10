@@ -31,7 +31,6 @@
 #include <LOpenGL.h>
 #include <LScreenshotRequest.h>
 #include <LExclusiveZone.h>
-#include <private/LOutputPrivate.h>
 #include <LKeyboardKeyEvent.h>
 
 #include <AK/nodes/AKSubScene.h>
@@ -585,7 +584,7 @@ public:
 
         kay->target->setImage(louvreTex2SkiaImage(
             usingFractionalScale() && fractionalOversamplingEnabled() ?
-            imp()->fractionalFb.texture(0) : bufferTexture(currentBuffer()), this));
+            oversamplingTexture() : bufferTexture(currentBuffer()), this));
 
         // We need to manually update each surface node
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
