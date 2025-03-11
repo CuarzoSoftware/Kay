@@ -138,13 +138,10 @@ bool AKScene::render(AKTarget *target)
     t->m_prevClip.setEmpty();
     t->m_translucent.setEmpty();
     t->m_reactive.clear();
-
     c->restore();
 
     if (!isNestedScene)
-        for (AKNode *node : akApp()->animated)
-            if (node->visible())
-                node->repaint();
+        akApp()->processAnimations();
 
     return true;
 }

@@ -367,31 +367,6 @@ public:
     AKCursor cursor() const noexcept { return m_cursor; }
     void setCursor(AKCursor cursor) { m_cursor = cursor; }
 
-    /**
-     * @brief Sets whether the node is being animated.
-     *
-     * When set to `true`, all intersected targets (retrieved via `intersectedTargets()`) will
-     * continuously be marked as dirty, causing the scene to repaint them continuously. This is useful
-     * for nodes that are actively being animated and need to trigger updates in the rendering loop.
-     *
-     * @param enabled `true` to mark the node as animated, `false` otherwise. The default value is `false`.
-     */
-    void setAnimated(bool enabled) noexcept;
-
-    /**
-     * @brief Returns whether the node is currently being animated.
-     *
-     * This function checks the internal flags to determine if the node is in an animated state.
-     * An animated node will continuously mark its intersected targets as dirty, causing scenes
-     * to repaint them as long as the animation is active.
-     *
-     * @return `true` if the node is being animated, `false` otherwise.
-     */
-    bool animated() const noexcept
-    {
-        return m_flags.check(Animated);
-    }
-
 protected:
     bool event(const AKEvent &event) override;
     virtual void layoutEvent(const AKLayoutEvent &event);
@@ -425,11 +400,10 @@ private:
         ChildHasPointerFocus        = 1 << 6,
         PointerGrab                 = 1 << 7,
         DiminishOpacityOnInactive   = 1 << 8,
-        Animated                    = 1 << 9,
-        ChildrenNeedPosUpdate       = 1 << 10,
-        ChildrenNeedScaleUpdate     = 1 << 11,
-        Skip                        = 1 << 12,
-        KeyboardFocusable           = 1 << 13
+        ChildrenNeedPosUpdate       = 1 << 9,
+        ChildrenNeedScaleUpdate     = 1 << 10,
+        Skip                        = 1 << 11,
+        KeyboardFocusable           = 1 << 12
     };
 
     struct TargetData : public AKObject

@@ -1,4 +1,5 @@
 #include <AK/events/AKBakeEvent.h>
+#include <AK/AKAnimation.h>
 #include <ProgressBar.h>
 #include <AK/AKBrush.h>
 #include <AK/AKPen.h>
@@ -8,7 +9,10 @@ ProgressBar::ProgressBar(AKNode *parent) noexcept : AKBakeable(parent)
     layout().setMargin(YGEdgeTop, 40.f);
     layout().setHeight(10);
     layout().setWidth(256);
-    setAnimated(true);
+
+    AKAnimation::OneShot(duration, [this](AKAnimation *anim){
+        setPercent(std::pow(anim->value(), 3.f));
+    });
 }
 
 bool ProgressBar::setPercent(SkScalar percent) noexcept
@@ -22,12 +26,6 @@ bool ProgressBar::setPercent(SkScalar percent) noexcept
     m_percent = percent;
     addChange(CHPercent);
     return true;
-}
-
-void ProgressBar::onSceneBegin()
-{
-    const SkScalar animatedPercent { (SkScalar(AKTime::ms()) - startTime)/duration };
-    setPercent(std::pow(animatedPercent, 3.f));
 }
 
 void ProgressBar::bakeEvent(const AKBakeEvent &e)

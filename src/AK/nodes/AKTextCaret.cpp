@@ -17,6 +17,17 @@ AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(Vertical, 
     layout().setWidth(AKTheme::TextCaretVThreePatchSideSrcRect.width());
     layout().setHeight(16);
     updateDimensions();
+
+    m_blinkAnimation.setDuration(1200);
+
+    m_blinkAnimation.setOnUpdateCallback([this](AKAnimation *anim){
+        setOpacity((1.f + SkScalarCos(anim->value() * M_PI * 2.f)) * 0.5f);
+    });
+
+    m_blinkAnimation.setOnFinishCallback([this](AKAnimation *anim){
+        if (animated())
+            anim->start();
+    });
 }
 
 void AKTextCaret::setAnimated(bool enabled) noexcept
@@ -24,15 +35,15 @@ void AKTextCaret::setAnimated(bool enabled) noexcept
     if (enabled == animated())
         return;
 
-    AKNode::setAnimated(enabled);
+    m_animated = enabled;
 
     if (animated())
-    {
-        setOpacity(0.f);
-        m_animStartMs = AKTime::ms();
-    }
+        m_blinkAnimation.start();
     else
+    {
+        m_blinkAnimation.stop();
         setOpacity(1.f);
+    }
 }
 
 void AKTextCaret::layoutEvent(const AKLayoutEvent &event)
@@ -49,14 +60,4 @@ void AKTextCaret::updateDimensions() noexcept
 {
     setImage(theme()->textCaretVThreePatchImage(scale()));
     setImageScale(scale());
-}
-
-void AKTextCaret::onSceneBegin()
-{
-    if (animated())
-    {
-        const SkScalar anim { 0.5f + 0.5f * SkScalarCos(0.005f * SkScalar(AKTime::ms() - m_animStartMs)) };
-        setOpacity(1.f - SkScalarPow(anim, 5.f));
-    }
-    AKThreeImagePatch::onSceneBegin();
 }

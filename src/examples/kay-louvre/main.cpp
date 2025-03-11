@@ -463,8 +463,6 @@ public:
 
     AKRenderableImage node { &comp()->kay->surfaces };
 
-    GLuint prevTexSerial { 0 };
-
     void layerChanged() override
     {
         // Check if the surface has a toplevel role
@@ -600,12 +598,8 @@ public:
             s->node.layout().setWidth(s->size().w());
             s->node.layout().setHeight(s->size().h());
 
-            const GLuint newTexSerial { s->texture()->serial() };
-            if (s->prevTexSerial != newTexSerial || !s->node.image())
-            {
+            if (s->hasDamage())
                 s->node.setImage(louvreTex2SkiaImage(s->texture(), this));
-                s->prevTexSerial = newTexSerial;
-            }
         }
 
         // We can ask the scene which region was repainted

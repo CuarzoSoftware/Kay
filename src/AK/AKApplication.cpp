@@ -1,4 +1,5 @@
 #include <AK/events/AKEvent.h>
+#include <AK/AKAnimation.h>
 #include <AK/AKBooleanEventSource.h>
 #include <AK/AKApplication.h>
 #include <AK/AKGLContext.h>
@@ -226,4 +227,59 @@ void AKApplication::setKeyboard(AKKeyboard *keyboard) noexcept
         return;
 
     m_keyboard.reset(keyboard);
+}
+
+void AKApplication::processAnimations()
+{
+    Int64 elapsed;
+    Int64 duration;
+
+    for (AKAnimation *a : m_animations)
+        a->m_processed = false;
+
+retry:
+    m_animationsChanged = false;
+
+    for (AKAnimation *a : m_animations)
+    {
+        if (a->m_processed)
+            continue;
+
+        if (a->m_pendingDestroy)
+        {
+            delete a;
+            goto retry;
+        }
+
+        a->m_processed = true;
+
+        if (!a->m_running)
+            continue;
+
+        elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                      std::chrono::steady_clock::now() - a->m_beginTime).count();
+
+        duration = static_cast<Int64>(a->m_duration);
+
+        if (elapsed >= duration)
+            a->m_value = 1.0;
+        else
+            a->m_value = static_cast<Float64>(elapsed)/static_cast<Float64>(duration);
+
+        if (a->m_onUpdate)
+        {
+            a->m_onUpdate(a);
+
+            if (m_animationsChanged)
+                goto retry;
+        }
+
+        if (a->m_value == 1.0)
+        {
+            a->stop();
+
+            if (m_animationsChanged)
+                goto retry;
+        }
+    }
 }

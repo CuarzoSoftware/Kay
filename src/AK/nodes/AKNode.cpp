@@ -35,7 +35,6 @@ AKNode::~AKNode()
         t.second.target->m_damage.op(t.second.prevLocalClip, SkRegion::kUnion_Op);
 
     setParent(nullptr);
-    setAnimated(false);
 }
 
 void AKNode::addChange(Change change) noexcept
@@ -493,33 +492,6 @@ AKNode *AKNode::root() const noexcept
 bool AKNode::activated() const noexcept
 {
     return scene() && scene()->windowState().check(AKActivated);
-}
-
-void AKNode::setAnimated(bool enabled) noexcept
-{
-    if (enabled == m_flags.check(Animated))
-        return;
-
-    m_flags.setFlag(Animated, enabled);
-
-    if (enabled)
-    {
-        akApp()->animated.push_back(this);
-        repaint();
-    }
-    else
-    {
-        for (size_t i = 0; i < akApp()->animated.size(); i++)
-        {
-            if (akApp()->animated[i] == this)
-            {
-                akApp()->animated[i] = akApp()->animated.back();
-                akApp()->animated.pop_back();
-                return;
-            }
-        }
-
-    }
 }
 
 bool AKNode::event(const AKEvent &event)

@@ -40,6 +40,7 @@ namespace AK
 
     /* Utils */
 
+    class AKAnimation;
     class AKImageLoader;
     class AKLog;
 

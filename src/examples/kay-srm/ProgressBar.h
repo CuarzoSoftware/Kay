@@ -20,7 +20,6 @@ public:
     bool setPercent(SkScalar percent) noexcept;
     SkScalar percent() const noexcept { return m_percent; };
 
-    void onSceneBegin() override;
     void bakeEvent(const AKBakeEvent &e) override;
 
     // Just for the animaton

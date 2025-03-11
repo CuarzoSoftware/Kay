@@ -23,7 +23,6 @@ public:
     static AKGLContext *glContext() noexcept;
     static void freeGLContext() noexcept;
     const GrContextOptions &skContextOptions() const noexcept { return m_skContextOptions; };
-    std::vector<AKNode*> animated;
 
     /**
      * @brief Immediately sends an event to the specified object.
@@ -57,8 +56,13 @@ public:
     int exec();
     int fd() const noexcept { return m_epollFd; };
 protected:
+    friend class AKScene;
+    friend class AKAnimation;
     void setPointer(AKPointer *pointer) noexcept;
     void setKeyboard(AKKeyboard *keyboard) noexcept;
+    void processAnimations();
+    std::vector<AKAnimation*> m_animations;
+    bool m_animationsChanged { false };
     std::unique_ptr<AKPointer> m_pointer;
     std::unique_ptr<AKKeyboard> m_keyboard;
     GrContextOptions m_skContextOptions;
