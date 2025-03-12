@@ -200,6 +200,24 @@ public:
         checkIsDirty();
     }
 
+    void setWidthYGValue(YGValue value) noexcept
+    {
+        switch (value.unit)
+        {
+        case YGUnitAuto:
+            setWidthAuto();
+            break;
+        case YGUnitPoint:
+            setWidth(value.value);
+            break;
+        case YGUnitPercent:
+            setWidthPercent(value.value);
+            break;
+        default:
+            break;
+        }
+    }
+
     YGValue height() const noexcept
     {
         return YGNodeStyleGetHeight(m_node);
@@ -221,6 +239,24 @@ public:
     {
         YGNodeStyleSetHeightAuto(m_node);
         checkIsDirty();
+    }
+
+    void setHeightYGValue(YGValue value) noexcept
+    {
+        switch (value.unit)
+        {
+        case YGUnitAuto:
+            setHeightAuto();
+            break;
+        case YGUnitPoint:
+            setHeight(value.value);
+            break;
+        case YGUnitPercent:
+            setHeightPercent(value.value);
+            break;
+        default:
+            break;
+        }
     }
 
     void setMinWidth(float minWidth) noexcept
