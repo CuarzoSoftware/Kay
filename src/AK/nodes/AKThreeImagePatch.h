@@ -29,6 +29,7 @@ public:
         CHOrientation,
         CHImageScale,
         CHImage,
+        CHKeepSidesAspectRatio,
         CHLast
     };
 
@@ -172,6 +173,22 @@ public:
         return m_image;
     }
 
+    bool keepSidesAspectRatio() const noexcept
+    {
+        return m_keepSidesAspectRatio;
+    }
+
+    bool setKeepSidesAspectRatio(bool keepAspectRatio) noexcept
+    {
+        if (keepAspectRatio == m_keepSidesAspectRatio)
+            return false;
+
+        m_keepSidesAspectRatio = keepAspectRatio;
+        addChange(CHKeepSidesAspectRatio);
+        addDamage(AK_IRECT_INF);
+        return true;
+    }
+
 protected:
     void renderEvent(const AKRenderEvent &event) override;
     SkRect m_sideSrcRect { 0.f, 0.f, 0.f, 0.f };
@@ -179,6 +196,7 @@ protected:
     SkScalar m_imageScale { 1.f };
     Orientation m_orientation;
     sk_sp<SkImage> m_image;
+    bool m_keepSidesAspectRatio { true };
 };
 
 #endif // AKTHREEIMAGEPATCH_H

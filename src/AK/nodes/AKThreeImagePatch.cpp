@@ -20,10 +20,21 @@ void AKThreeImagePatch::renderEvent(const AKRenderEvent &params)
     {
         const SkRect srcs[] { m_sideSrcRect, m_centerSrcRect, m_sideSrcRect };
         constexpr static AKTransform transforms[] { AKTransform::Normal, AKTransform::Normal, AKTransform::Flipped };
-        const SkScalar centerWidth { std::max(1.f, SkScalar(rect.width()) - 2.f * m_sideSrcRect.width()) };
-        dsts[0].setXYWH(rect.x(), rect.y(), m_sideSrcRect.width(), rect.height());
-        dsts[1].setXYWH(dsts[0].fRight, rect.y(), centerWidth, dsts[0].height());
-        dsts[2].setXYWH(dsts[1].fRight, rect.y(), m_sideSrcRect.width(), rect.height());
+
+        if (keepSidesAspectRatio())
+        {
+            const SkScalar scaledWidth { m_sideSrcRect.height() == 0.f ? 0.f : (rect.height() * m_sideSrcRect.width())/m_sideSrcRect.height() };
+            dsts[0].setXYWH(rect.x(), rect.y(), scaledWidth, rect.height());
+            dsts[1].setXYWH(dsts[0].fRight, rect.y(), rect.width() - 2.f * scaledWidth, dsts[0].height());
+            dsts[2].setXYWH(dsts[1].fRight, rect.y(), scaledWidth, rect.height());
+        }
+        else
+        {
+            const SkScalar centerWidth { std::max(1.f, SkScalar(rect.width()) - 2.f * m_sideSrcRect.width()) };
+            dsts[0].setXYWH(rect.x(), rect.y(), m_sideSrcRect.width(), rect.height());
+            dsts[1].setXYWH(dsts[0].fRight, rect.y(), centerWidth, dsts[0].height());
+            dsts[2].setXYWH(dsts[1].fRight, rect.y(), m_sideSrcRect.width(), rect.height());
+        }
 
         for (Int32 i = 0; i < 3; i++)
         {
@@ -50,10 +61,21 @@ void AKThreeImagePatch::renderEvent(const AKRenderEvent &params)
         SkRect srcs[] { m_sideSrcRect, m_centerSrcRect, m_sideSrcRect };
         srcs[2].offset(0, m_centerSrcRect.height());
         constexpr static AKTransform transforms[] { AKTransform::Normal, AKTransform::Normal, AKTransform::Flipped180 };
-        const SkScalar centerHeight { std::max(1.f, SkScalar(rect.height()) - 2.f * m_sideSrcRect.height()) };
-        dsts[0].setXYWH(rect.x(), rect.y(), rect.width(), m_sideSrcRect.height());
-        dsts[1].setXYWH(rect.x(), dsts[0].fBottom, rect.width(), centerHeight);
-        dsts[2].setXYWH(rect.x(), dsts[1].fBottom, rect.width(), m_sideSrcRect.height());
+
+        if (keepSidesAspectRatio())
+        {
+            const SkScalar scaledHeight { m_sideSrcRect.width() == 0.f ? 0.f : (rect.width() * m_sideSrcRect.height())/m_sideSrcRect.width() };
+            dsts[0].setXYWH(rect.x(), rect.y(), rect.width(), scaledHeight);
+            dsts[1].setXYWH(rect.x(), dsts[0].fBottom, rect.width(), rect.height() - 2.f * scaledHeight);
+            dsts[2].setXYWH(rect.x(), dsts[1].fBottom, rect.width(), scaledHeight);
+        }
+        else
+        {
+            const SkScalar centerHeight { std::max(1.f, SkScalar(rect.height()) - 2.f * m_sideSrcRect.height()) };
+            dsts[0].setXYWH(rect.x(), rect.y(), rect.width(), m_sideSrcRect.height());
+            dsts[1].setXYWH(rect.x(), dsts[0].fBottom, rect.width(), centerHeight);
+            dsts[2].setXYWH(rect.x(), dsts[1].fBottom, rect.width(), m_sideSrcRect.height());
+        }
 
         for (Int32 i = 0; i < 3; i++)
         {
