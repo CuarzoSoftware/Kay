@@ -534,6 +534,9 @@ public:
 
 static std::mutex m;
 
+#include <modules/svg/include/SkSVGDOM.h>
+#include <include/core/SkStream.h>
+
 class Output final : public LOutput
 {
 public:
@@ -546,6 +549,7 @@ public:
         kay = std::make_unique<Kay>(this);
         m.unlock();
     }
+
 
     void paintGL() override
     {

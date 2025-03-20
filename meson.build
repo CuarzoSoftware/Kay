@@ -24,6 +24,8 @@ gl_dep          = dependency('gl')
 glesv2_dep      = dependency('glesv2')
 skia_dep        = dependency('Skia')
 xkbcommon_dep   = dependency('xkbcommon')
+plutovg_dep     = dependency('plutovg', fallback: ['plutovg', 'plutovg_dep'])
+plutosvg_dep     = dependency('plutosvg', fallback: ['plutosvg', 'plutosvg_dep'])
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
 
 # -------------- HEADERS --------------
@@ -55,6 +57,8 @@ kay = library(
         gl_dep,
         glesv2_dep,
         yoga_dep,
+        plutovg_dep,
+        plutosvg_dep,
         xkbcommon_dep
     ],
     soversion: VERSION_MAJOR,
