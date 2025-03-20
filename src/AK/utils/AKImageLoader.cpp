@@ -18,7 +18,7 @@ sk_sp<SkImage> AKImageLoader::loadFile(const std::filesystem::path &path, const 
 {
     SkISize customSize;
     plutovg_surface_t *svgSurf;
-    plutosvg_document_t *svgDoc = plutosvg_document_load_from_file(path.c_str(), size.width(), size.height());
+    plutosvg_document_t *svgDoc = plutosvg_document_load_from_file(path.c_str(), -1, -1);
     if (svgDoc == NULL)
         goto skia;
 
