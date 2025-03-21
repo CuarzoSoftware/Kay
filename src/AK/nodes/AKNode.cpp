@@ -31,10 +31,35 @@ AKNode::~AKNode()
     while (!m_backgroundEffects.empty())
         removeBackgroundEffect(*m_backgroundEffects.begin());
 
-    for (auto &t : m_targets)
-        t.second.target->m_damage.op(t.second.prevLocalClip, SkRegion::kUnion_Op);
-
     setParent(nullptr);
+}
+
+
+bool AKNode::damageTargets() noexcept
+{
+    if (!visible())
+        return false;
+
+    if (caps() != 0)
+        for (auto &t : m_targets)
+        {
+            if (m_intersectedTargets.contains(t.first))
+            {
+                t.second.target->m_damage.op(t.second.prevLocalRect, SkRegion::kUnion_Op);
+                t.first->markDirty();
+            }
+        }
+
+    return true;
+}
+
+void AKNode::damageTargetsAndPropagate() noexcept
+{
+    if (!damageTargets())
+        return;
+
+    for (AKNode *child : m_children)
+        child->damageTargetsAndPropagate();
 }
 
 void AKNode::addChange(Change change) noexcept
@@ -59,9 +84,6 @@ const AKChanges &AKNode::changes() const noexcept
         return m_targets[t->target].changes;
     else if (!m_targets.empty())
         return m_targets.begin()->second.changes;
-
-    //if (!emptyChanges.test(0))
-    //    emptyChanges.res();
 
     return emptyChanges;
 }
@@ -188,6 +210,8 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
 
         if (handleChanges)
         {
+            if (!isBackgroundEffect)
+                damageTargetsAndPropagate();
             parent->addChange(CHLayout);
             setScene(parent->scene());
             updateSubScene();
@@ -198,6 +222,9 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
     }
     else if (handleChanges)
     {
+        if (!isBackgroundEffect)
+            damageTargetsAndPropagate();
+
         if (isBackgroundEffect)
             m_scene.reset();
         else
@@ -302,6 +329,7 @@ void AKNode::insertBefore(AKNode *other) noexcept
             }
             else
             {
+                damageTargetsAndPropagate();
                 setScene(other->scene());
                 other->parent()->addChange(CHLayout);
             }
@@ -376,6 +404,7 @@ void AKNode::insertAfter(AKNode *other) noexcept
             }
             else
             {
+                damageTargetsAndPropagate();
                 setScene(other->scene());
                 other->parent()->addChange(CHLayout);
             }
@@ -477,6 +506,7 @@ void AKNode::removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexce
     if (!backgroundEffect || !m_backgroundEffects.contains(backgroundEffect))
         return;
 
+    backgroundEffect->damageTargetsAndPropagate();
     m_backgroundEffects.erase(backgroundEffect);
     backgroundEffect->m_targetNode.reset(nullptr);
     backgroundEffect->onTargetNodeChanged();

@@ -245,7 +245,7 @@ void AKScene::createOrAssignTargetDataForNode(AKNode *node) noexcept
             node->m_targets.erase(target);
         });
         node->t->clientDamage.setRect(AK_IRECT_INF);
-        node->m_intersectedTargets.push_back(t);
+        node->m_intersectedTargets.insert(t);
     }
     else
     {
@@ -338,7 +338,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     node->m_intersectedTargets.clear();
     for (AKTarget *target : targets())
         if (SkIRect::Intersects(node->globalRect(), target->m_globalIViewport))
-            node->m_intersectedTargets.push_back(target);
+            node->m_intersectedTargets.insert(target);
 
     if (node->t->visible)
         clip.setRect(node->m_rect);

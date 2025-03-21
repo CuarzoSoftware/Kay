@@ -5,6 +5,7 @@
 #include <include/core/SkImage.h>
 #include <filesystem>
 
+// TODO: Rename to AKImageUtils
 class AK::AKImageLoader
 {
 public:

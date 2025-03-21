@@ -280,7 +280,7 @@ public:
 
     //AKTarget *currentTarget() const noexcept;
 
-    const std::vector<AKTarget*> &intersectedTargets() const noexcept { return m_intersectedTargets; }
+    const std::unordered_set<AKTarget*> &intersectedTargets() const noexcept { return m_intersectedTargets; }
     bool childrenClippingEnabled() const noexcept { return m_flags.check(ChildrenClipping); }
 
     void enableChildrenClipping(bool enable) noexcept
@@ -429,6 +429,8 @@ private:
     void addFlagsAndPropagate(UInt32 flags) noexcept;
     void removeFlagsAndPropagate(UInt32 flags) noexcept;
     void setFlagsAndPropagateToParents(UInt32 flags, bool set) noexcept;
+    bool damageTargets() noexcept;
+    void damageTargetsAndPropagate() noexcept;
     AKNode *topmostInvisibleParent() const noexcept;
 
     AKBitset<Flags> m_flags { 0 };
@@ -445,7 +447,7 @@ private:
     std::vector<AKNode*> m_children;
     size_t m_parentLinkIndex;
     std::unique_ptr<SkRegion> m_inputRegion;
-    std::vector<AKTarget*> m_intersectedTargets;
+    std::unordered_set<AKTarget*> m_intersectedTargets;
     mutable std::unordered_map<AKTarget*, TargetData> m_targets;
     AKCursor m_cursor { AKCursor::Default };
 };
