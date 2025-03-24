@@ -785,6 +785,9 @@ void AKScene::renderNodes(AKNode *node)
         case AKEvent::PointerMove:
             handlePointerMoveEvent();
             break;
+        case AKEvent::PointerLeave:
+            handlePointerLeaveEvent();
+            break;
         case AKEvent::PointerButton:
             handlePointerButtonEvent();
             break;
@@ -854,6 +857,45 @@ void AKScene::renderNodes(AKNode *node)
                     it.node()->m_flags.remove(AKNode::HasPointerFocus);
                     akApp()->sendEvent(leaveEvent, *it.node());
                 }
+            }
+
+            if (m_treeChanged)
+                goto retry;
+
+            it.next();
+        }
+    }
+
+    void AKScene::handlePointerLeaveEvent()
+    {
+        auto &event { *static_cast<const AKPointerLeaveEvent*>(m_win->e) };
+        akApp()->pointer().m_pos = event.pos();
+
+        if (akApp()->pointer().m_windowFocus == this)
+            akApp()->pointer().m_windowFocus.reset();
+
+        m_root->removeFlagsAndPropagate(AKNode::Notified);
+
+        AKNode::RIterator it { nullptr };
+
+    retry:
+        it.reset(m_root->bottommostRightChild());
+        m_treeChanged = false;
+
+        while (!it.done())
+        {
+            if (it.node()->m_flags.check(AKNode::Notified))
+            {
+                it.next();
+                continue;
+            }
+
+            it.node()->m_flags.add(AKNode::Notified);
+
+            if (it.node()->m_flags.check(AKNode::HasPointerFocus))
+            {
+                it.node()->m_flags.remove(AKNode::HasPointerFocus);
+                akApp()->sendEvent(event, *it.node());
             }
 
             if (m_treeChanged)

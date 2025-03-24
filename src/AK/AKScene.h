@@ -81,6 +81,7 @@ private:
     void renderBackground() noexcept;
     void renderNodes(AKNode *node);
     void handlePointerMoveEvent();
+    void handlePointerLeaveEvent();
     void handlePointerButtonEvent();
     void handleKeyboardKeyEvent();
     void handleWindowStateEvent();
