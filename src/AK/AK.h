@@ -95,6 +95,7 @@ namespace AK
 
     class AKWindowEvent;
     class AKWindowStateEvent;
+    class AKWindowCloseEvent;
 
     class AKPointerEvent;
     class AKPointerEnterEvent;

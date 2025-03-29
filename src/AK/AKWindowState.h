@@ -13,7 +13,9 @@ namespace AK
         AKTiledRight  = 1 << 6,
         AKTiledTop    = 1 << 7,
         AKTiledBottom = 1 << 8,
-        AKSuspended   = 1 << 9
+        AKSuspended   = 1 << 9,
+        AKAllWindowStates = AKMaximized | AKFullscreen | AKResizing | AKActivated |
+                            AKTiledLeft | AKTiledRight | AKTiledTop | AKTiledBottom | AKSuspended
     };
 }
 

@@ -805,8 +805,6 @@ void AKScene::renderNodes(AKNode *node)
         return true;
     }
 
-
-
     void AKScene::handlePointerMoveEvent()
     {
         auto &event { *static_cast<const AKPointerMoveEvent*>(m_win->e) };
@@ -957,12 +955,7 @@ void AKScene::renderNodes(AKNode *node)
     void AKScene::handleWindowStateEvent()
     {
         const AKWindowStateEvent &event { static_cast<const AKWindowStateEvent &>(*m_win->e) };
-        AKBitset<AKWindowState> newState { m_win->windowState.get() ^ event.changes().get() };
-
-        if (newState.get() == m_win->windowState.get())
-            return;
-
-        m_win->windowState = newState;
+        m_win->windowState = event.states();
         m_root->removeFlagsAndPropagate(AKNode::Notified);
         AKNode::RIterator it { nullptr };
 

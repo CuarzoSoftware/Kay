@@ -49,6 +49,7 @@ public:
         TouchCancel,
 
         WindowState,
+        WindowClose,
 
         Render,
         Bake,

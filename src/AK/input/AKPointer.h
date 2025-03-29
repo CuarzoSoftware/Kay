@@ -31,6 +31,11 @@ public:
         return m_pos;
     }
 
+    void setPos(const SkPoint &pos) noexcept
+    {
+        m_pos = pos;
+    }
+
     const EventHistory &history() const noexcept
     {
         return m_history;

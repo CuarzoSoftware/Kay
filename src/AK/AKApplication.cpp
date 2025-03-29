@@ -27,6 +27,7 @@ AKApplication::AKApplication() noexcept
 {
     assert("Only a single AKApplication instance can exist per process" && _app == nullptr);
     _app = this;
+
     AKLog::init();
     m_fontManager = SkFontMgr_New_FontConfig(nullptr);
     assert("Failed to create the font manager" && m_fontManager);
@@ -62,10 +63,14 @@ AKApplication::AKApplication() noexcept
         exit(EXIT_FAILURE);
     }
 
-    m_mainEventSource = AKBooleanEventSource::Make(false, [this](auto)
-    {
-        AKSafeEventQueue tmp { std::move(m_eventQueue) };
-        tmp.dispatch();
+    m_mainEventSource = AKBooleanEventSource::Make(false, [this](auto) {
+       AKSafeEventQueue tmp { std::move(m_eventQueue) };
+       tmp.dispatch();
+    });
+
+    m_animationsTimer = std::make_unique<AKTimer>();
+    m_animationsTimer->setCallback([this](AKTimer*){
+        processAnimations();
     });
 }
 
@@ -233,6 +238,7 @@ void AKApplication::processAnimations()
 {
     Int64 elapsed;
     Int64 duration;
+    bool anyRunning { false };
 
     for (AKAnimation *a : m_animations)
         a->m_processed = false;
@@ -268,6 +274,7 @@ retry:
 
         if (a->m_onUpdate)
         {
+            anyRunning = true;
             a->m_onUpdate(a);
 
             if (m_animationsChanged)
@@ -282,4 +289,7 @@ retry:
                 goto retry;
         }
     }
+
+    if (anyRunning)
+        m_animationsTimer->start(8);
 }

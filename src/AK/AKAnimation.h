@@ -1,7 +1,7 @@
 #ifndef AKANIMATION_H
 #define AKANIMATION_H
 
-#include <AK/AKObject.h>
+#include <AK/AKTimer.h>
 #include <chrono>
 #include <functional>
 

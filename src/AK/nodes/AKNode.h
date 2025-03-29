@@ -367,6 +367,8 @@ public:
     AKCursor cursor() const noexcept { return m_cursor; }
     void setCursor(AKCursor cursor) { m_cursor = cursor; }
 
+    AKSignal<const AKLayoutEvent &> onLayoutChanged;
+
 protected:
     bool event(const AKEvent &event) override;
     virtual void layoutEvent(const AKLayoutEvent &event);

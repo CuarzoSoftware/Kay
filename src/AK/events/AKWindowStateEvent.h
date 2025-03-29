@@ -28,9 +28,19 @@ public:
     /**
      * @brief Event constructor.
      */
-    AKWindowStateEvent(AKBitset<AKWindowState> changes, UInt32 serial = AKTime::nextSerial(),
+    AKWindowStateEvent(AKBitset<AKWindowState> states, AKBitset<AKWindowState> changes, UInt32 serial = AKTime::nextSerial(),
                           UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us()) noexcept :
-        AKWindowEvent(WindowState, serial, ms, us), m_changes(changes) {}
+        AKWindowEvent(WindowState, serial, ms, us), m_states(states), m_changes(changes) {}
+
+    AKBitset<AKWindowState> states() const noexcept
+    {
+        return m_states;
+    }
+
+    void setStates(AKBitset<AKWindowState> states) noexcept
+    {
+        m_states = states;
+    }
 
     AKBitset<AKWindowState> changes() const noexcept
     {
@@ -43,6 +53,7 @@ public:
     }
 
 private:
+    AKBitset<AKWindowState> m_states;
     AKBitset<AKWindowState> m_changes;
 };
 

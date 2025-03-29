@@ -1,4 +1,3 @@
-#include "AK/AKLog.h"
 #include <AK/AKApplication.h>
 #include <AK/AKAnimation.h>
 #include <AK/AKTime.h>
@@ -61,7 +60,10 @@ void AKAnimation::start() noexcept
     m_running = true;
 
     if (m_onUpdate)
+    {
+        akApp()->m_animationsTimer->start(8);
         m_onUpdate(this);
+    }
 }
 
 void AKAnimation::stop()

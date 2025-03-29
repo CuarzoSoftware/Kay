@@ -1,6 +1,7 @@
 #ifndef AKAPPLICATION_H
 #define AKAPPLICATION_H
 
+#include <AK/AKTimer.h>
 #include <AK/input/AKPointer.h>
 #include <AK/input/AKKeyboard.h>
 #include <AK/AKEventSource.h>
@@ -61,7 +62,9 @@ protected:
     void setPointer(AKPointer *pointer) noexcept;
     void setKeyboard(AKKeyboard *keyboard) noexcept;
     void processAnimations();
+
     std::vector<AKAnimation*> m_animations;
+    std::unique_ptr<AKTimer> m_animationsTimer;
     bool m_animationsChanged { false };
     std::unique_ptr<AKPointer> m_pointer;
     std::unique_ptr<AKKeyboard> m_keyboard;

@@ -587,6 +587,7 @@ bool AKNode::event(const AKEvent &event)
 
 void AKNode::layoutEvent(const AKLayoutEvent &event)
 {
+    onLayoutChanged.notify(event);
     ((const AKEvent&)event).ignore();
 }
 
