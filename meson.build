@@ -13,7 +13,7 @@ VERSION_MINOR = meson.project_version().split('.')[1]
 VERSION_PATCH = meson.project_version().split('.')[2]
 VERSION_BUILD = run_command('cat', './BUILD', check : false).stdout()
 
-HEADERS_INSTALL_PATH = join_paths(get_option('prefix'), get_option('includedir'), 'AK')
+HEADERS_INSTALL_PATH = join_paths(get_option('prefix'), get_option('includedir'))
 
 # -------------- DEPENDENCIES --------------
 
@@ -25,20 +25,58 @@ glesv2_dep      = dependency('glesv2')
 skia_dep        = dependency('Skia')
 xkbcommon_dep   = dependency('xkbcommon')
 plutovg_dep     = dependency('plutovg', fallback: ['plutovg', 'plutovg_dep'])
-plutosvg_dep     = dependency('plutosvg', fallback: ['plutosvg', 'plutosvg_dep'])
+plutosvg_dep    = dependency('plutosvg', fallback: ['plutosvg', 'plutosvg_dep'])
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
 
-# -------------- HEADERS --------------
-
-header_dirs = [
-    ['./src/AK', ''],
-    ['./src/AK/third_party', 'third_party'],
-    ['./src/AK/nodes', 'nodes'],
-    ['./src/AK/effects', 'effects'],
-    ['./src/AK/events', 'events'],
-    ['./src/AK/utils', 'utils'],
-    ['./src/AK/input', 'input']
+deps = [
+  skia_dep,
+  egl_dep,
+  gl_dep,
+  glesv2_dep,
+  yoga_dep,
+  plutovg_dep,
+  plutosvg_dep,
+  xkbcommon_dep
 ]
+
+if get_option('build_examples') or get_option('build_marco')
+  wayland_client_dep  = dependency('wayland-client')
+  wayland_cursor_dep  = dependency('wayland-cursor')
+  wayland_egl_dep     = dependency('wayland-egl')
+endif
+
+if get_option('build_marco')
+  deps += [
+    wayland_client_dep,
+    wayland_cursor_dep,
+    wayland_egl_dep
+  ]
+endif
+
+# -------------- SOURCES --------------
+
+sources = run_command('find', './src/AK', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n')
+header_dirs = [
+  ['./src/AK', 'AK'],
+  ['./src/AK/third_party', 'AK/third_party'],
+  ['./src/AK/nodes', 'AK/nodes'],
+  ['./src/AK/effects', 'AK/effects'],
+  ['./src/AK/events', 'AK/events'],
+  ['./src/AK/utils', 'AK/utils'],
+  ['./src/AK/input', 'AK/input']
+]
+
+if get_option('build_marco')
+  header_dirs += [
+    ['./src/Marco', 'Marco'],
+    ['./src/Marco/private', 'Marco/private'],
+    ['./src/Marco/roles', 'Marco/roles'],
+    ['./src/Marco/nodes', 'Marco/nodes'],
+    ['./src/Marco/protocols', 'Marco/protocols'],
+    ['./src/Marco/input', 'Marco/input']
+  ]
+  sources += run_command('find', './src/Marco', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n')
+endif
 
 foreach header_dir : header_dirs
     header_files = run_command('find', header_dir[0], '-type', 'f', '-name', '*.h', '-maxdepth', '1', check : false).stdout().strip().split('\n')
@@ -49,18 +87,9 @@ endforeach
 
 kay = library(
     'Kay',
-    sources : run_command('find', './src/AK', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n'),
+    sources : sources,
     include_directories : ['./src'],
-    dependencies : [
-        skia_dep,
-        egl_dep,
-        gl_dep,
-        glesv2_dep,
-        yoga_dep,
-        plutovg_dep,
-        plutosvg_dep,
-        xkbcommon_dep
-    ],
+    dependencies : deps,
     soversion: VERSION_MAJOR,
     install : true)
 
@@ -89,9 +118,16 @@ if get_option('build_examples')
     pixmap_dep = dependency('pixman-1')
     srm_dep = dependency('SRM')
     wl_mod = import('unstable-wayland')
-    wayland_client_dep = dependency('wayland-client')
-    wayland_egl_dep = dependency('wayland-egl')
+    
     subdir('src/examples/kay-louvre')
     subdir('src/examples/kay-srm')
     subdir('src/examples/kay-wayland-client')
+    
+    if get_option('build_marco')
+      xdgkit_dep = dependency('XDGKit', fallback: ['XDGKit', 'xdgkit_dep'])
+      subdir('src/examples/marco-toplevel')
+      subdir('src/examples/marco-toplevel-custom-csd')
+      subdir('src/examples/marco-subsurfaces')
+      subdir('src/examples/marco-layer-shell')
+    endif
 endif

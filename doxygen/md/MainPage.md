@@ -11,7 +11,11 @@
 
 > **⚠️ This project is still a work in progress.**
 
-Named after Alan Kay, Kay is a C++ toolkit for building fast and efficient graphical user interfaces on top of OpenGL. Designed specifically for Wayland applications and compositors on Linux, it simplifies complex tasks like damage tracking and layout management, allowing you to focus on creating clean, responsive interfaces.  
+Named after Alan Kay, Kay is a C++ GUI rendering library that provides powerful drawing capabilities on top of OpenGL, powered by Skia. It enables the creation of scalable components that are efficiently composited by a scene and incorporates a robust layout system powered by Yoga.
+
+Kay can be integrated into any input event system and OpenGL context. For example, it can optimize the rendering of Wayland compositors and facilitate the development of complex user interfaces, which are typically challenging to achieve using only the built-in tools provided by libraries such as Louvre, Mir, wlroots, and others.
+
+Additionally, Kay includes a submodule named Marco, which is specifically designed for building Wayland client applications.
 
 ### Key Features  
 - **Prebuilt Components**: A collection of built-in components that react to user events.  
@@ -20,14 +24,8 @@ Named after Alan Kay, Kay is a C++ toolkit for building fast and efficient graph
 - **Damage Tracking**: Efficient rendering with built-in damage tracking.  
 - **Fractional Scaling**: Support for high-DPI displays and fractional scaling.  
 - **Screen Transforms**: Handle rotated or flipped screens with ease.  
-- **Event System**: Easy integration with input event subsystems.  
-
-### What Kay Doesn’t Do  
-Kay specializes in UI rendering and requires an OpenGL context along with external input events to function. For window management and related functionality, consider:
-- **[Marco](https://github.com/CuarzoSoftware/Marco)**: For building Wayland applications.  
-- **[Louvre](https://github.com/CuarzoSoftware/Louvre)**: For building Wayland compositors.  
-- **[SRM](https://github.com/CuarzoSoftware/SRM) + [Libinput](https://wayland.freedesktop.org/libinput/doc/latest/)**: A combination for creating DRM/KMS applications.
-
+- **Event System**: Easy integration with input event subsystems.
+- **Marco**: An optional high-level module designed specifically for simplifying the development of Wayland applications.
 
 ### Core Components of Kay  
 
