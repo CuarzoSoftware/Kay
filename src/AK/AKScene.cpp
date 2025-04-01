@@ -782,6 +782,14 @@ void AKScene::renderNodes(AKNode *node)
         m_win->e = &event;
 
         switch (event.type()) {
+        case AKEvent::PointerEnter:
+        {
+            const AKPointerEnterEvent &enterEvent { static_cast<const AKPointerEnterEvent &>(event) };
+            const AKPointerMoveEvent moveEvent { enterEvent.pos(), { 0.f, 0.f }, { 0.f, 0.f }, enterEvent.serial(), enterEvent.ms(), enterEvent.us(), enterEvent.device() };
+            m_win->e = &moveEvent;
+            handlePointerMoveEvent();
+            break;
+        }
         case AKEvent::PointerMove:
             handlePointerMoveEvent();
             break;
