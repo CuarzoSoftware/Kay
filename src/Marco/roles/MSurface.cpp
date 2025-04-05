@@ -76,6 +76,9 @@ const std::set<MScreen *> &MSurface::screens() const noexcept
 
 void MSurface::setMapped(bool mapped) noexcept
 {
+    if (imp()->flags.check(Imp::UserMapped) == mapped)
+        return;
+
     imp()->flags.setFlag(Imp::UserMapped, mapped);
     update();
 }

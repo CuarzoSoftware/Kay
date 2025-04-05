@@ -1,5 +1,6 @@
 #include <Marco/private/MToplevelPrivate.h>
 #include <Marco/private/MSurfacePrivate.h>
+#include <Marco/roles/MPopup.h>
 #include <Marco/MApplication.h>
 #include <Marco/MTheme.h>
 
@@ -107,6 +108,9 @@ MToplevel::MToplevel() noexcept : MSurface(Role::Toplevel)
 
 MToplevel::~MToplevel() noexcept
 {
+    while (!imp()->childPopups.empty())
+        (*imp()->childPopups.begin())->setParent(nullptr);
+
     setParentToplevel(nullptr);
 
     if (imp()->xdgDecoration)
@@ -409,6 +413,11 @@ MToplevel *MToplevel::parentToplevel() const noexcept
 const std::unordered_set<AK::MToplevel *> &MToplevel::childToplevels() const noexcept
 {
     return imp()->childToplevels;
+}
+
+const std::unordered_set<MPopup *> &MToplevel::childPopups() const noexcept
+{
+    return imp()->childPopups;
 }
 
 void MToplevel::wmCapabilitiesChanged()

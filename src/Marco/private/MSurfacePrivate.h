@@ -27,7 +27,8 @@ public:
         PendingChildren           = 1 << 7,
         PendingParent             = 1 << 8,
         BuiltinDecorations        = 1 << 9,
-        Last                      = 1 << 10,
+        HasBufferAttached         = 1 << 10,
+        Last                      = 1 << 11,
     };
 
     enum TmpFlags

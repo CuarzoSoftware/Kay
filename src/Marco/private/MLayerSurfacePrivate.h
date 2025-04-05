@@ -9,8 +9,6 @@
 class AK::MLayerSurface::Imp
 {
 public:
-
-
     Imp(MLayerSurface &obj) noexcept;
     MLayerSurface &obj;
     Layer layer;
@@ -21,6 +19,7 @@ public:
     AKWeak<MScreen> screen;
     SkIRect margin { 0, 0, 0, 0 };
     KeyboardInteractivity keyboardInteractivity { KeyboardInteractivity::None };
+    std::unordered_set<MPopup*> childPopups;
 
     SkISize suggestedSize { 0, 0 };
     UInt32 configureSerial { 0 };

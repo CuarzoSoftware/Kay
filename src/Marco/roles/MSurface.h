@@ -48,8 +48,9 @@ class AK::MSurface : public AKSolidColor
 public:
     enum class Role
     {
-        Toplevel,
         SubSurface,
+        Toplevel,
+        Popup,
         LayerSurface
     };
 

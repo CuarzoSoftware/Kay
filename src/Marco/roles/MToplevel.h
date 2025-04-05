@@ -396,6 +396,8 @@ public:
      */
     const std::unordered_set<MToplevel*> &childToplevels() const noexcept;
 
+    const std::unordered_set<MPopup*> &childPopups() const noexcept;
+
     /**
      * @brief Signal emitted when the window states change.
      *

@@ -42,6 +42,7 @@ public:
 
     AKWeak<MToplevel> parentToplevel;
     std::unordered_set<MToplevel*> childToplevels;
+    std::unordered_set<MPopup*> childPopups;
 
     void applyPendingParent() noexcept;
     void applyPendingChildren() noexcept;

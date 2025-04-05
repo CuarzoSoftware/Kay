@@ -6,6 +6,9 @@
 #include <include/gpu/ganesh/gl/GrGLAssembleInterface.h>
 #include <Marco/MApplication.h>
 #include <Marco/private/MSurfacePrivate.h>
+#include <Marco/private/MPopupPrivate.h>
+#include <Marco/private/MToplevelPrivate.h>
+#include <Marco/private/MLayerSurfacePrivate.h>
 #include <Marco/MTheme.h>
 
 #include <AK/input/AKKeyboard.h>
@@ -435,6 +438,8 @@ void MApplication::initWayland() noexcept
     wl_registry_add_listener(wl.registry, &wlRegistryListener, &wl);
     wl_display_roundtrip(wl.display);
     wl_display_roundtrip(wl.display);
+    wl_display_roundtrip(wl.display);
+    wl_display_roundtrip(wl.display);
 
     assert(wl.shm && "wl_shm not supported by the compositor");
     assert(wl.compositor && "wl_compositor not supported by the compositor");
@@ -483,7 +488,7 @@ void MApplication::updateSurfaces()
 {
     for (MSurface *surf : m_surfaces)
     {
-        if (surf->role() == MSurface::Role::SubSurface)
+        if (surf->role() == MSurface::Role::SubSurface || surf->role() == MSurface::Role::Popup)
             continue;
 
         updateSurface(surf);
@@ -494,9 +499,11 @@ void MApplication::updateSurfaces()
 
 void MApplication::updateSurface(MSurface *surf)
 {
+    // First handle child subsurfaces
     for (MSubsurface *subSurf : surf->subSurfaces())
         updateSurface((MSurface*)subSurf);
 
+    // Then the surface itself
     if (surf->imp()->flags.check(MSurface::Imp::PendingUpdate))
     {
         if (!surf->wlCallback())
@@ -504,4 +511,26 @@ void MApplication::updateSurface(MSurface *surf)
         surf->onUpdate();
         surf->imp()->tmpFlags.set(0);
     }
+
+    // Finally child popups if any
+    std::unordered_set<MPopup*> *childPopups { nullptr };
+
+    switch (surf->role())
+    {
+    case MSurface::Role::Popup:
+        childPopups = &((MPopup*)surf)->imp()->childPopups;
+        break;
+    case MSurface::Role::Toplevel:
+        childPopups = &((MToplevel*)surf)->imp()->childPopups;
+        break;
+    case MSurface::Role::LayerSurface:
+        childPopups = &((MLayerSurface*)surf)->imp()->childPopups;
+        break;
+    default:
+        break;
+    }
+
+    if (childPopups)
+        for (auto &child : *childPopups)
+            updateSurface((MSurface*)child);
 }

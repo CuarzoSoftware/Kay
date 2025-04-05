@@ -1,4 +1,7 @@
 #include <Marco/private/MSurfacePrivate.h>
+#include <Marco/private/MPopupPrivate.h>
+#include <Marco/private/MToplevelPrivate.h>
+#include <Marco/private/MLayerSurfacePrivate.h>
 #include <Marco/MApplication.h>
 
 #include <AK/AKGLContext.h>
@@ -107,6 +110,18 @@ void MSurface::Imp::createSurface() noexcept
         wlViewport = nullptr;
     }
 
+    if (eglSurface)
+    {
+        eglDestroySurface(app()->gl.eglDisplay, eglSurface);
+        eglSurface = EGL_NO_SURFACE;
+    }
+
+    if (eglWindow)
+    {
+        wl_egl_window_destroy(eglWindow);
+        eglWindow = nullptr;
+    }
+
     if (wlSurface)
     {
         wl_surface_destroy(wlSurface);
@@ -133,6 +148,33 @@ void MSurface::Imp::setMapped(bool mapped) noexcept
 {
     if (mapped == obj.mapped())
         return;
+
+    if (!mapped && wlCallback)
+    {
+        wl_callback_destroy(wlCallback);
+        wlCallback = nullptr;
+    }
+
+    std::unordered_set<MPopup*> *childPopups { nullptr };
+
+    switch (role)
+    {
+    case Role::Popup:
+        childPopups = &((MPopup*)&obj)->imp()->childPopups;
+        break;
+    case Role::Toplevel:
+        childPopups = &((MToplevel*)&obj)->imp()->childPopups;
+        break;
+    case Role::LayerSurface:
+        childPopups = &((MLayerSurface*)&obj)->imp()->childPopups;
+        break;
+    default:
+        break;
+    }
+
+    if (childPopups)
+        for (auto &child : *childPopups)
+            child->update();
 
     flags.setFlag(Mapped, mapped);
     obj.onMappedChanged.notify();
