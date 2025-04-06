@@ -1,6 +1,8 @@
 #include <AK/AKObject.h>
 #include <AK/AKWeak.h>
 #include <AK/AKSignal.h>
+#include <AK/AKApplication.h>
+#include <AK/events/AKDestroyEvent.h>
 
 using namespace AK;
 
@@ -31,6 +33,11 @@ void AKObject::removeEventFilter(AKObject *monitor) const noexcept
         m_installedEventFilters.erase(it->second);
         monitor->m_eventFilterSubscriptions.erase(it);
     }
+}
+
+void AKObject::destroyLater() noexcept
+{
+    akApp()->postEvent(AKDestroyEvent(), *this);
 }
 
 AKObject::~AKObject() noexcept

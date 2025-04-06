@@ -9,13 +9,21 @@ using namespace AK;
 MPopup::MPopup() noexcept : MSurface(MSurface::Role::Popup)
 {
     m_imp = std::make_unique<Imp>(*this);
-    imp()->xdgSurface = xdg_wm_base_get_xdg_surface(app()->wayland().xdgWmBase, wlSurface());
-    xdg_surface_add_listener(imp()->xdgSurface, &Imp::xdgSurfaceListener, this);
 }
 
 MPopup::~MPopup()
 {
+    setParent(nullptr);
     imp()->destroy();
+
+    while (!imp()->childPopups.empty())
+        (*imp()->childPopups.begin())->setParent(nullptr);
+
+    if (imp()->xdgSurface)
+    {
+        xdg_surface_destroy(imp()->xdgSurface);
+        imp()->xdgSurface = nullptr;
+    }
 }
 
 bool MPopup::setParent(MSurface *parent) noexcept
@@ -52,6 +60,7 @@ bool MPopup::setParent(MSurface *parent) noexcept
         imp()->unsetParent();
     }
 
+    imp()->paramsChanged = true;
     update();
     return true;
 }
@@ -71,6 +80,7 @@ void MPopup::setAnchorRect(const SkIRect &rect) noexcept
     if (anchorRect() == rect)
         return;
 
+    imp()->paramsChanged = true;
     imp()->anchorRect = rect;
     update();
 }
@@ -85,6 +95,7 @@ void MPopup::setAnchor(Anchor anchor) noexcept
     if (this->anchor() == anchor)
         return;
 
+    imp()->paramsChanged = true;
     imp()->anchor = anchor;
     update();
 }
@@ -99,6 +110,7 @@ void MPopup::setGravity(Gravity gravity) noexcept
     if (this->gravity() == gravity)
         return;
 
+    imp()->paramsChanged = true;
     imp()->gravity = gravity;
     update();
 }
@@ -115,6 +127,7 @@ void MPopup::setConstraintAdjustment(AKBitset<ConstraintAdjustment> adjustment) 
     if (adjustment.get() == constraintAdjustment().get())
         return;
 
+    imp()->paramsChanged = true;
     imp()->constraintAdjustment.set(adjustment.get());
     update();
 }
@@ -129,6 +142,7 @@ void MPopup::setOffset(const SkIPoint &offset) noexcept
     if (this->offset() == offset)
         return;
 
+    imp()->paramsChanged = true;
     imp()->offset = offset;
     update();
 }
@@ -138,9 +152,14 @@ const SkIPoint &MPopup::offset() const noexcept
     return imp()->offset;
 }
 
-void MPopup::grab(const AKInputEvent &event) noexcept
+void MPopup::setGrab(const AKInputEvent *event) noexcept
 {
-    imp()->grab.reset((AKInputEvent*)event.copy());
+    imp()->paramsChanged = true;
+    if (event)
+        imp()->grab.reset((AKInputEvent*)event->copy());
+    else
+        imp()->grab.reset();
+    update();
 }
 
 const SkIRect &MPopup::assignedRect() const noexcept
@@ -188,6 +207,12 @@ void MPopup::onUpdate() noexcept
 
     MSurface::onUpdate();
 
+    if (imp()->paramsChanged)
+    {
+        imp()->destroy();
+        imp()->paramsChanged = false;
+    }
+
     if (!flags.check(SF::UserMapped) || !parent() || !parent()->mapped())
         return imp()->destroy();
 
@@ -196,8 +221,6 @@ void MPopup::onUpdate() noexcept
         flags.add(SF::PendingFirstConfigure);
         flags.remove(SF::PendingNullCommit);
         imp()->create();
-        wl_surface_attach(wlSurface(), nullptr, 0, 0);
-        wl_surface_commit(wlSurface());
         update();
         return;
     }

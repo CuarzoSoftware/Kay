@@ -24,7 +24,7 @@ public:
     AKWeak<MSurface> parent;
 
     // When actually applied
-    AKWeak<MSurface> appliedParent;
+    bool paramsChanged { true };
     std::unordered_set<MPopup*> childPopups;
     xdg_surface *xdgSurface { nullptr };
     xdg_popup *xdgPopup { nullptr };

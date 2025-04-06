@@ -53,7 +53,10 @@ void MPopup::Imp::xdg_popup_done(void *data, xdg_popup */*xdgPopup*/)
     app()->sendEvent(AKWindowCloseEvent(), *popup);
 
     if (popup)
+    {
         popup->imp()->destroy();
+        popup->setMapped(false);
+    }
 }
 
 void MPopup::Imp::xdg_popup_repositioned(void */*data*/, xdg_popup */*xdgPopup*/, UInt32 /*token*/) {}
@@ -86,6 +89,17 @@ xdg_positioner *MPopup::Imp::createPositioner() noexcept
     xdg_positioner_set_constraint_adjustment(positioner, constraintAdjustment.get());
     xdg_positioner_set_offset(positioner, offset.x(), offset.y());
 
+    if (app()->wayland().xdgWmBase.version() >= 3)
+    {
+        parent->scene().root()->layout().calculate();
+        xdg_positioner_set_parent_size(positioner, parent->layout().calculatedWidth(), parent->layout().calculatedHeight());
+
+        if (parent->role() == Role::Toplevel)
+            xdg_positioner_set_parent_configure(positioner, ((MToplevel*)parent.get())->imp()->configureSerial);
+        else if (parent->role() == Role::Popup)
+            xdg_positioner_set_parent_configure(positioner, ((MPopup*)parent.get())->imp()->configureSerial);
+    }
+
     // set reactive
     // set parent size
     // set parent configure
@@ -96,6 +110,9 @@ xdg_positioner *MPopup::Imp::createPositioner() noexcept
 void MPopup::Imp::create() noexcept
 {
     if (xdgPopup || !parent || !parent->mapped()) return;
+
+    xdgSurface = xdg_wm_base_get_xdg_surface(app()->wayland().xdgWmBase, obj.wlSurface());
+    xdg_surface_add_listener(xdgSurface, &xdgSurfaceListener, &obj);
 
     xdg_positioner *positioner { createPositioner() };
 
@@ -115,13 +132,21 @@ void MPopup::Imp::create() noexcept
         break;
     }
 
+    if (grab)
+    {
+        xdg_popup_grab(xdgPopup, app()->wayland().seat, grab->serial());
+        grab.reset();
+    }
+
     xdg_popup_add_listener(xdgPopup, &xdgPopupListener, &obj);
     xdg_positioner_destroy(positioner);
+    wl_surface_attach(obj.wlSurface(), nullptr, 0, 0);
+    wl_surface_commit(obj.wlSurface());
 }
 
 void MPopup::Imp::destroy() noexcept
 {
-    for (auto &child : childPopups)
+    for (auto *child : childPopups)
         child->imp()->destroy();
 
     obj.MSurface::imp()->flags.remove(MSurface::Imp::PendingConfigureAck | MSurface::Imp::PendingFirstConfigure);
@@ -136,18 +161,11 @@ void MPopup::Imp::destroy() noexcept
         xdg_popup_destroy(xdgPopup);
         xdgPopup = nullptr;
 
-        if (xdgSurface)
-        {
-            xdg_surface_destroy(xdgSurface);
-            xdgSurface = nullptr;
-        }
-
-        xdgSurface = xdg_wm_base_get_xdg_surface(app()->wayland().xdgWmBase, obj.wlSurface());
-        xdg_surface_add_listener(xdgSurface, &xdgSurfaceListener, &obj);
+        xdg_surface_destroy(xdgSurface);
+        xdgSurface = nullptr;
     }
 
     obj.MSurface::imp()->setMapped(false);
-    obj.setMapped(false);
 }
 
 void MPopup::Imp::unsetParent() noexcept

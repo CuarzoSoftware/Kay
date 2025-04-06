@@ -109,8 +109,14 @@ void AKApplication::freeGLContext() noexcept
 }
 
 bool AKApplication::sendEvent(const AKEvent &event, AKObject &object)
-{
+{    
     event.accept();
+
+    if (event.type() == AKEvent::Destroy)
+    {
+        delete &object;
+        return true;
+    }
 
     for (AKObject *filter : object.m_installedEventFilters)
         if (filter->eventFilter(event, object))

@@ -6,6 +6,7 @@
 
 #include <AK/events/AKLayoutEvent.h>
 #include <AK/events/AKWindowStateEvent.h>
+#include <AK/events/AKPointerButtonEvent.h>
 #include <AK/AKLog.h>
 
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
@@ -440,6 +441,15 @@ void MToplevel::windowStateEvent(const AKWindowStateEvent &event)
     MSurface::windowStateEvent(event);
     onStatesChanged.notify(event);
     event.accept();
+}
+
+void MToplevel::pointerButtonEvent(const AKPointerButtonEvent &event)
+{
+    if (event.state() == AKPointerButtonEvent::Pressed)
+        for (auto &popup : childPopups())
+            popup->setMapped(false);
+
+    MSurface::pointerButtonEvent(event);
 }
 
 bool MToplevel::eventFilter(const AKEvent &event, AKObject &object)

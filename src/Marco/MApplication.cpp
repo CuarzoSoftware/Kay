@@ -222,6 +222,8 @@ void MApplication::wl_pointer_enter(void */*data*/, wl_pointer */*pointer*/, UIn
 
 void MApplication::wl_pointer_leave(void */*data*/, wl_pointer */*pointer*/, UInt32 serial, wl_surface *surface)
 {
+    if (!surface) return;
+
     MSurface *surf { static_cast<MSurface*>(wl_surface_get_user_data(surface)) };
     auto &p { app()->pointer() };
     p.m_focus.reset();
@@ -493,6 +495,11 @@ void MApplication::updateSurfaces()
 
         updateSurface(surf);
     }
+
+    if (!keyboard().focus())
+        for (MSurface *surf : m_surfaces)
+            if (surf->role() == MSurface::Role::Popup)
+                surf->setMapped(false);
 
     wl_display_flush(wl.display);
 }

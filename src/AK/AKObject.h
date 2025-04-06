@@ -58,6 +58,8 @@ public:
     void installEventFilter(AKObject *monitor) const noexcept;
     void removeEventFilter(AKObject *monitor) const noexcept;
 
+    void destroyLater() noexcept;
+
 protected:
 
     /**

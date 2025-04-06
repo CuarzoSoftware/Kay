@@ -44,7 +44,7 @@ public:
     };
 
     MPopup() noexcept;
-    AKCLASS_NO_COPY(MPopup);
+    AKCLASS_NO_COPY(MPopup)
     ~MPopup();
 
     // Applied only during map
@@ -78,7 +78,7 @@ public:
     const SkIPoint &offset() const noexcept;
 
     // Reset after unmap
-    void grab(const AKInputEvent &event) noexcept;
+    void setGrab(const AKInputEvent *event) noexcept;
 
     const SkIRect &assignedRect() const noexcept;
 

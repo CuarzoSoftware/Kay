@@ -90,6 +90,7 @@ namespace AK
     /************ EVENTS *************/
 
     class AKEvent;
+    class AKDestroyEvent;
     class AKInputEvent;
     class AKInputDevice;
 

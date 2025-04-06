@@ -23,6 +23,8 @@ public:
      */
     enum Type
     {
+        Destroy,
+
         PointerMove,
         PointerScroll,
         PointerButton,

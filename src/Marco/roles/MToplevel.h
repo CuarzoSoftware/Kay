@@ -529,6 +529,7 @@ protected:
      * @param event The event containing the state changes.
      */
     void windowStateEvent(const AKWindowStateEvent &event) override;
+    void pointerButtonEvent(const AKPointerButtonEvent &event) override;
     bool eventFilter(const AKEvent &event, AKObject &object) override;
     bool event(const AKEvent &e) override;
     void onUpdate() noexcept override;

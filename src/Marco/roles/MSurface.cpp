@@ -40,10 +40,16 @@ MSurface::~MSurface()
     imp()->resizeBuffer({0, 0});
 
     if (wlCallback())
+    {
         wl_callback_destroy(wlCallback());
+        imp()->wlCallback = nullptr;
+    }
 
     if (wlSurface())
+    {
         wl_surface_destroy(wlSurface());
+        imp()->wlSurface = nullptr;
+    }
 }
 
 MSurface::Role MSurface::role() noexcept
