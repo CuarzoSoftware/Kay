@@ -185,6 +185,8 @@ void MPopup::decorationMarginsChanged()
 void MPopup::assignedRectChanged()
 {
     onAssignedRectChanged.notify();
+    layout().setWidth(assignedRect().width());
+    layout().setHeight(assignedRect().height());
 }
 
 bool MPopup::event(const AKEvent &e)

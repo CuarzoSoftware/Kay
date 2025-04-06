@@ -44,7 +44,7 @@ void MPopup::Imp::xdg_surface_configure(void *data, xdg_surface */*xdgSurface*/,
 void MPopup::Imp::xdg_popup_configure(void *data, xdg_popup */*xdgPopup*/, Int32 x, Int32 y, Int32 width, Int32 height)
 {
     auto &popup { *static_cast<MPopup*>(data) };
-    popup.imp()->pendingAssignedRect = { x, y, width, height };
+    popup.imp()->pendingAssignedRect = SkIRect::MakeXYWH(x, y, width, height);
 }
 
 void MPopup::Imp::xdg_popup_done(void *data, xdg_popup */*xdgPopup*/)

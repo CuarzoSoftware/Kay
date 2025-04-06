@@ -5,7 +5,7 @@
 #include <AK/AKTime.h>
 
 /**
- * @brief Queued after calling AKObject::destroyLater().
+ * @brief Enqueued after calling AKObject::destroyLater().
  *
  * Unlike others, this event is not notified through AKObject::event().
  *

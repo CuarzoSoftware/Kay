@@ -106,11 +106,22 @@ public:
             menu->subMenu->subMenu->showButton.on.clicked.notify();
         });
 
+        longButton.on.clicked.subscribe(this, [this](){
+            Menu *menu = new Menu(this, false);
+            menu->onMappedChanged.subscribe(menu, [menu](){
+                if (!menu->mapped())
+                    menu->destroyLater();
+            });
+            menu->layout().setHeight(4000);
+            menu->setMapped(true);
+        });
+
         exitButton.on.clicked.subscribe(this, [](){ exit(0); });
     }
 
     AKButton showButton { "Show popup", this};
     AKButton multiButton { "Show 4 popups at once", this};
+    AKButton longButton { "Show long popup", this};
     AKButton exitButton { "Exit", this };
     Menu menu { this , true };
 };
