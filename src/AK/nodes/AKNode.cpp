@@ -7,7 +7,7 @@
 #include <AK/events/AKPointerEnterEvent.h>
 #include <AK/AKSafeEventQueue.h>
 #include <AK/AKApplication.h>
-#include <AK/AKTarget.h>
+#include <AK/AKSceneTarget.h>
 #include <AK/AKScene.h>
 #include <AK/nodes/AKNode.h>
 #include <AK/nodes/AKSubScene.h>
@@ -39,6 +39,9 @@ bool AKNode::damageTargets() noexcept
 {
     if (!visible())
         return false;
+
+    for (auto *bg : m_backgroundEffects)
+        bg->damageTargets();
 
     if (caps() != 0)
         for (auto &t : m_targets)
@@ -435,7 +438,7 @@ void AKNode::insertAfter(AKNode *other) noexcept
 }
 
 
-AKTarget *AKNode::currentTarget() const noexcept
+AKSceneTarget *AKNode::currentTarget() const noexcept
 {
     assert("The current target can only be accessed during onSceneBegin(), onSceneCalculatedRect(), onRender() or onBake() events" && t);
     assert("The current target can only be accessed during onSceneBegin(), onSceneCalculatedRect(), onRender() or onBake() events" && scene() != nullptr);

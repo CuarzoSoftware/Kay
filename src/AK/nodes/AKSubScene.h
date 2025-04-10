@@ -26,7 +26,7 @@ private:
     friend class AKScene;
     void handleParentSceneNotifyBegin();
     AKScene m_scene { true };
-    AKWeak<AKTarget> m_target;
+    AKWeak<AKSceneTarget> m_target;
     using AKNode::enableChildrenClipping; // Always true
 };
 

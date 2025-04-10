@@ -20,7 +20,7 @@ struct Screen : public AKContainer
     void updateDimensions() noexcept;
     void updateTarget() noexcept;
 
-    AKTarget *target { nullptr };
+    AKSceneTarget *target { nullptr };
     SRMConnector *connector { nullptr };
     AKImageFrame logo { this };
     ProgressBar progressBar { this };

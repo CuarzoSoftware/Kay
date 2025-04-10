@@ -1,6 +1,6 @@
 #include <AK/AKApplication.h>
 #include <AK/AKTheme.h>
-#include <AK/AKTarget.h>
+#include <AK/AKSceneTarget.h>
 #include <AK/AKSurface.h>
 #include <AK/AKLog.h>
 

@@ -9,6 +9,8 @@
 #include <Marco/protocols/xdg-decoration-unstable-v1-client.h>
 #include <Marco/protocols/wlr-layer-shell-unstable-v1-client.h>
 #include <Marco/protocols/viewporter-client.h>
+#include <Marco/protocols/background-blur-client.h>
+#include <Marco/protocols/svg-path-client.h>
 #include <AK/AKApplication.h>
 #include <AK/AKWeak.h>
 #include <AK/events/AKPointerEnterEvent.h>
@@ -39,6 +41,8 @@ public:
         MProxy<wl_keyboard> keyboard;
         MProxy<wp_viewporter> viewporter;
         MProxy<zwlr_layer_shell_v1> layerShell;
+        MProxy<background_blur_manager> backgroundBlurManager;
+        MProxy<svg_path_manager> svgPathManager;
     };
 
     struct Graphics

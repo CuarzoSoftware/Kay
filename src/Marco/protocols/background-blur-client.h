@@ -43,6 +43,7 @@ extern "C" {
  */
 struct background_blur;
 struct background_blur_manager;
+struct svg_path;
 struct wl_region;
 struct wl_surface;
 
@@ -52,18 +53,22 @@ struct wl_surface;
  * @page page_iface_background_blur_manager background_blur_manager
  * @section page_iface_background_blur_manager_desc Description
  *
- * This interface allows a compositor to announce support for blurring the backgrounds of surfaces.
+ * This interface allows a compositor to announce support for blurring the 
+ * backgrounds of surfaces.
  *
- * Starting from version 2, clients are permitted to define the blurred region using SVG paths.
+ * Starting from version 2, clients are permitted to define the blurred region 
+ * using svg_path objects.
  * @section page_iface_background_blur_manager_api API
  * See @ref iface_background_blur_manager.
  */
 /**
  * @defgroup iface_background_blur_manager The background_blur_manager interface
  *
- * This interface allows a compositor to announce support for blurring the backgrounds of surfaces.
+ * This interface allows a compositor to announce support for blurring the 
+ * backgrounds of surfaces.
  *
- * Starting from version 2, clients are permitted to define the blurred region using SVG paths.
+ * Starting from version 2, clients are permitted to define the blurred region 
+ * using svg_path objects.
  */
 extern const struct wl_interface background_blur_manager_interface;
 #endif
@@ -131,7 +136,8 @@ background_blur_manager_get_version(struct background_blur_manager *background_b
 /**
  * @ingroup iface_background_blur_manager
  *
- * Destroy the background blur manager. This doesn't destroy objects created with the manager.
+ * Destroy the background blur manager. This doesn't destroy objects 
+ * created with the manager.
  */
 static inline void
 background_blur_manager_destroy(struct background_blur_manager *background_blur_manager)
@@ -145,15 +151,20 @@ background_blur_manager_destroy(struct background_blur_manager *background_blur_
  *
  * Creates a new background blur object for a given surface.
  *
- * The surface must not already have an associated background blur, otherwise the already_constructed error is emitted.
+ * The surface must not already have an associated background blur, otherwise 
+ * the already_constructed error is emitted.
  *
- * Immediately after the object is created, the compositor will send a state event, a style event, and finally a configure event.
+ * Immediately after the object is created, the compositor will send a state 
+ * event, a style event, and finally a configure event.
  *
- * Surfaces must acknowledge the configure event and may then define the blur region or path before the next commit.
+ * Surfaces must acknowledge the configure event and may then define the blur 
+ * region or path before the next commit.
  *
  * The client may ignore all configure events except for the last one.
  *
- * A client can send multiple ack_configure requests before committing, but only the last request sent prior to the commit indicates which configure event the client is responding to.
+ * A client can send multiple ack_configure requests before committing, but only 
+ * the last request sent prior to the commit indicates which configure event the 
+ * client is responding to.
  */
 static inline struct background_blur *
 background_blur_manager_get_background_blur(struct background_blur_manager *background_blur_manager, struct wl_surface *surface)
@@ -178,10 +189,14 @@ enum background_blur_error {
 	 */
 	BACKGROUND_BLUR_ERROR_INVALID_SERIAL = 1,
 	/**
+	 * the region or path extends beyond the surface bounds
+	 */
+	BACKGROUND_BLUR_ERROR_OUT_OF_BOUNDS = 2,
+	/**
 	 * invalid svg path
 	 * @since 2
 	 */
-	BACKGROUND_BLUR_ERROR_INVALID_PATH = 2,
+	BACKGROUND_BLUR_ERROR_INVALID_PATH = 3,
 };
 /**
  * @ingroup iface_background_blur
@@ -193,11 +208,11 @@ enum background_blur_error {
 #define BACKGROUND_BLUR_STATE_ENUM
 enum background_blur_state {
 	/**
-	 * the blur effect is disabled
+	 * the blur effect is not displayed by the compositor
 	 */
 	BACKGROUND_BLUR_STATE_DISABLED = 0,
 	/**
-	 * the blur effect is enabled
+	 * the blur effect is displayed by the compositor
 	 */
 	BACKGROUND_BLUR_STATE_ENABLED = 1,
 };
@@ -226,8 +241,10 @@ struct background_blur_listener {
 	 * Indicates whether the blur effect is enabled
 	 *
 	 * Specifies whether the blur effect is being applied by the
-	 * compositor. If the effect is disabled, the surface should no
-	 * longer make the blurred region transparent.
+	 * compositor.
+	 *
+	 * If the effect is disabled, the surface should no longer make the
+	 * blurred region transparent.
 	 *
 	 * The change must be followed by a configure event to take effect.
 	 *
@@ -240,10 +257,10 @@ struct background_blur_listener {
 	/**
 	 * Indicates the color tone of the blur effect.
 	 *
-	 * The style specifies the color tone of the blur effect. Clients
-	 * can adapt their content accordingly, for example, displaying
-	 * white text if the tone is dark or black text if the tone is
-	 * light.
+	 * The style specifies the color tone of the blur effect so that
+	 * clients can adapt their content accordingly, for example,
+	 * displaying white text if the tone is dark or black text if the
+	 * tone is light.
 	 *
 	 * The change must be followed by a configure event to take effect.
 	 *
@@ -352,16 +369,22 @@ background_blur_destroy(struct background_blur *background_blur)
  * Sets the blurred region.
  *
  * This is a double-buffered operation, refer to wl_surface.commit. 
- * The region is defined in local surface coordinates and may not extend beyond the surface bounds. 
- * The compositor may apply additional clipping at its discretion. 
- * The client should avoid both rendering opaque content within the blurred region and marking the blurred region as opaque.
+ * The region is defined in local surface coordinates and must not 
+ * extend beyond the surface bounds otherwise the out_of_bounds 
+ * error is emitted. 
+ * The client should avoid both rendering opaque content within the 
+ * blurred region and marking the blurred region as opaque.
  *
- * Setting the pending blur region has copy semantics, allowing the wl_region object to be destroyed immediately. 
- * Setting a null region disables the blur effect.
+ * Setting the pending blur region has copy semantics, allowing the 
+ * wl_region object to be destroyed immediately. 
+ * Setting a null region means that the region will always match the 
+ * entire surface.
  *
- * For the compositor to display the blur effect, it must be configured as enabled, and the client must commit a non-null region or path.
+ * For the compositor to display the blur effect, it must be 
+ * configured as enabled, and the client must commit a non-empty 
+ * region or path.
  *
- * The initial value is null.
+ * The initial value is an empty region (no blurring).
  */
 static inline void
 background_blur_set_region(struct background_blur *background_blur, struct wl_region *blur_region)
@@ -373,7 +396,8 @@ background_blur_set_region(struct background_blur *background_blur, struct wl_re
 /**
  * @ingroup iface_background_blur
  *
- * Acknowledging a serial that has not been sent, or one that has already been acknowledged, triggers the invalid_serial error.
+ * Acknowledging a serial that has not been sent, or one that has already 
+ * been acknowledged, triggers the invalid_serial error.
  */
 static inline void
 background_blur_ack_configure(struct background_blur *background_blur, uint32_t serial)
@@ -385,23 +409,26 @@ background_blur_ack_configure(struct background_blur *background_blur, uint32_t 
 /**
  * @ingroup iface_background_blur
  *
- * Sets the blurred region using an SVG path.
- *
- * The string of commands must describe a valid SVG path, as specified here:
- *
- * https://svgwg.org/specs/paths/
+ * Sets the blurred region using an svg_path object.
  *
  * This operation has identical semantics to set_region. 
- * The SVG path coordinates must be defined in local surface coordinates. 
- * Using either set_path or set_region invalidates the other.
+ * The SVG path coordinates must be defined in local surface coordinates
+ * and must not extend beyond the surface bounds. 
+ * Setting the pending blur path has copy semantics, allowing the 
+ * svg_path object to be destroyed immediately. 
+ * Setting a null path means that the region will always match the 
+ * entire surface.
+ * Using either set_path or set_region replaces the other.
  *
- * Setting a non null invalid path triggers the invalid_path error.
+ * Setting an unconstructed or invalid path triggers the invalid_path error.
+ *
+ * The initial value is an empty path (no blurring).
  */
 static inline void
-background_blur_set_path(struct background_blur *background_blur, const char *commands)
+background_blur_set_path(struct background_blur *background_blur, struct svg_path *path)
 {
 	wl_proxy_marshal_flags((struct wl_proxy *) background_blur,
-			 BACKGROUND_BLUR_SET_PATH, NULL, wl_proxy_get_version((struct wl_proxy *) background_blur), 0, commands);
+			 BACKGROUND_BLUR_SET_PATH, NULL, wl_proxy_get_version((struct wl_proxy *) background_blur), 0, path);
 }
 
 #ifdef  __cplusplus

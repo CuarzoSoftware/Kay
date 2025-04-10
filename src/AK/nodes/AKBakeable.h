@@ -21,8 +21,8 @@
  * For larger nodes, OnBakeParams::clip can be useful as it indicates which regions of the node are currently exposed (not occluded by other
  * nodes or clipped by the viewport).
  *
- * An AKSurface is automatically created for each AKTarget the node is displayed in, ensuring a pixel-perfect
- * rendering based on the AKTarget scaling factor.
+ * An AKSurface is automatically created for each AKSceneTarget the node is displayed in, ensuring a pixel-perfect
+ * rendering based on the AKSceneTarget scaling factor.
  *
  * To improve performance, the surfaces only grow in size when the node is resized. AKSurface::shrink() must be
  * manually called if memory usage needs to be reduced.
@@ -37,7 +37,7 @@ public:
     };
 
     /**
-     * @brief AKSurface associated with an AKTarget.
+     * @brief AKSurface associated with an AKSceneTarget.
      *
      * @note During an onBake() or onRender() event, there is always a surface for the AKNode::currentTarget().
      *

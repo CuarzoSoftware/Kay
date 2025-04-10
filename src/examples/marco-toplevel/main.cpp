@@ -19,7 +19,7 @@ class Window : public MToplevel
 {
 public:
     Window() noexcept : MToplevel() {
-        setColorWithAlpha(0xffF0F0F0);
+        setColorWithAlpha(/*0xffF0F0F0*/0x00FFFFFF);
         setTitle("Hello world!");
         shadow.enableDiminishOpacityOnInactive(true);
         topbar.enableDiminishOpacityOnInactive(true);

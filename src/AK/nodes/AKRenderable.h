@@ -5,7 +5,7 @@
 #include <AK/AKPainter.h>
 
 /**
- * @brief A node that renders into an AKTarget.
+ * @brief A node that renders into an AKSceneTarget.
  * @ingroup AKNodes
  */
 class AK::AKRenderable : public AKNode

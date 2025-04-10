@@ -11,6 +11,7 @@
 
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
 #include <include/core/SkColorSpace.h>
+#include <include/utils/SkParsePath.h>
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -583,6 +584,17 @@ void MToplevel::onUpdate() noexcept
     render();
 }
 
+std::vector<std::string> splitString(const std::string& input, size_t chunkSize) {
+    std::vector<std::string> chunks;
+
+    for (size_t i = 0; i < input.size(); i += chunkSize) {
+        // Create substrings of chunkSize
+        chunks.push_back(input.substr(i, chunkSize));
+    }
+
+    return chunks;
+}
+
 void MToplevel::render() noexcept
 {
     scene().root()->layout().calculate();
@@ -647,6 +659,40 @@ void MToplevel::render() noexcept
             imp()->shadowMargins.fTop,
             layout().calculatedWidth(),
             layout().calculatedHeight());
+
+        if (MSurface::imp()->backgroundBlur && app()->wayland().svgPathManager)
+        {
+            SkPath path = SkPath::RRect(
+                SkRect::MakeXYWH(
+                    imp()->shadowMargins.fLeft,
+                    imp()->shadowMargins.fTop,
+                    layout().calculatedWidth(),
+                    layout().calculatedHeight()),
+                MTheme::CSDBorderRadius,
+                MTheme::CSDBorderRadius);
+
+            auto str = std::string(SkParsePath::ToSVGString(path).c_str());
+            svg_path *svg { svg_path_manager_get_svg_path(app()->wayland().svgPathManager) };
+
+            size_t sent { 0 };
+            size_t toWrite;
+            char *start;
+            char c;
+            while (sent < str.size())
+            {
+                start = (char*)&str.c_str()[sent];
+                toWrite = std::min(str.size() - sent, 1024UL);
+                c = start[toWrite];
+                start[toWrite] = '\0';
+                svg_path_concat_commands(svg, start);
+                start[toWrite] = c;
+                sent += toWrite;
+            }
+
+            svg_path_done(svg);
+            background_blur_set_path(MSurface::imp()->backgroundBlur, svg);
+            svg_path_destroy(svg);
+        }
     }
 
     repaint |= target()->isDirty() || target()->bakedComponentsScale() != scale();
@@ -684,6 +730,7 @@ void MToplevel::render() noexcept
     glScissor(0, 0, 1000000, 100000);
     glViewport(0, 0, 1000000, 100000);
     glClear(GL_COLOR_BUFFER_BIT);*/
+
     scene().render(target());
 
     if (decorationMode() == ClientSide && builtinDecorationsEnabled())

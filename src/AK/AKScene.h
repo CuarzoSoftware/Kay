@@ -4,7 +4,7 @@
 #include <AK/nodes/AKNode.h>
 #include <AK/AKWindowState.h>
 #include <AK/AKObject.h>
-#include <AK/AKTarget.h>
+#include <AK/AKSceneTarget.h>
 #include <AK/AKTimer.h>
 #include <memory.h>
 #include <vector>
@@ -15,9 +15,9 @@ public:
     AKScene() noexcept;
     AKCLASS_NO_COPY(AKScene)
     ~AKScene() = default;
-    AKTarget *createTarget() noexcept;
-    bool destroyTarget(AKTarget *target);
-    bool render(AKTarget *target);
+    AKSceneTarget *createTarget() noexcept;
+    bool destroyTarget(AKSceneTarget *target);
+    bool render(AKSceneTarget *target);
 
     /**
      * @brief Root node.
@@ -32,7 +32,7 @@ public:
         return m_root;
     }
 
-    const std::vector<AKTarget*> &targets() const noexcept
+    const std::vector<AKSceneTarget*> &targets() const noexcept
     {
         return m_targets;
     }
@@ -45,15 +45,15 @@ public:
 protected:
     bool event(const AKEvent &event) override;
 private:
-    friend class AKTarget;
+    friend class AKSceneTarget;
     friend class AKNode;
     friend class AKSubScene;
     // For AKSubScene
     AKScene(bool) noexcept { m_isSubScene = true; }
     SkCanvas *c;
-    AKTarget *t;
+    AKSceneTarget *t;
     SkMatrix m_matrix;
-    std::vector<AKTarget*> m_targets;
+    std::vector<AKSceneTarget*> m_targets;
     AKWeak<AKNode> m_root;
     std::shared_ptr<AKPainter> m_painter;
 
@@ -72,12 +72,14 @@ private:
     bool m_isSubScene { false };
     bool m_treeChanged { false };
     bool m_eventWithoutTarget { false };
-    void validateTarget(AKTarget *target) noexcept;
+    void addNodeDamage(AKNode &node, const SkRegion &damage) noexcept;
+    void validateTarget(AKSceneTarget *target) noexcept;
     void updateMatrix() noexcept;
     void createOrAssignTargetDataForNode(AKNode *node) noexcept;
     void notifyBegin(AKNode *node);
     void calculateNewDamage(AKNode *node);
     void updateDamageRing() noexcept;
+    void updateDamageTrackers() noexcept;
     void renderBackground() noexcept;
     void renderNodes(AKNode *node);
     void handlePointerMoveEvent();

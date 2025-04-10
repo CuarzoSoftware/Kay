@@ -12,7 +12,7 @@ AKSubScene::AKSubScene(AKNode *parent) noexcept : AKBakeable(parent)
     enableChildrenClipping(true);
     m_target = m_scene.createTarget();
     m_target->setRenderCalculatesLayout(false);
-    m_target->on.markedDirty.subscribe(this, [this](AKTarget &){
+    m_target->on.markedDirty.subscribe(this, [this](AKSceneTarget &){
         addChange(CHLayout);
         m_target->m_isDirty = false;
     });

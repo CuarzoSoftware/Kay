@@ -89,6 +89,14 @@ void MApplication::wl_registry_global(void *data, wl_registry *registry, UInt32 
     {
         wl.layerShell.set(wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, version), name);
     }
+    else if (!wl.backgroundBlurManager && strcmp(interface, background_blur_manager_interface.name) == 0)
+    {
+        wl.backgroundBlurManager.set(wl_registry_bind(registry, name, &background_blur_manager_interface, version), name);
+    }
+    else if (!wl.svgPathManager && strcmp(interface, svg_path_manager_interface.name) == 0)
+    {
+        wl.svgPathManager.set(wl_registry_bind(registry, name, &svg_path_manager_interface, version), name);
+    }
 }
 
 void MApplication::wl_registry_global_remove(void */*data*/, wl_registry */*registry*/, UInt32 name)

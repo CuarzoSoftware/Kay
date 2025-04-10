@@ -18,6 +18,8 @@
  */
 namespace AK
 {
+struct BackgroundDamageTracker;
+
     class AKApplication;
     class AKObject;
     class AKWeakUtils;
@@ -38,8 +40,6 @@ namespace AK
     class AKBooleanEventSource;
     class AKTimer;
 
-    /* Utils */
-
     class AKAnimation;
     class AKImageLoader;
     class AKLog;
@@ -48,8 +48,9 @@ namespace AK
     class AKBrush;
     class AKPainter;
 
-    class AKScene;  /* Renders a root AKNode into an AKTarget */
-    class AKTarget; /* An AKScene render destination */
+    class AKScene;  /* Renders a root AKNode into an AKSceneTarget */
+    class AKTarget;
+    class AKSceneTarget; /* An AKScene render destination */
     class AKLayout; /* Yoga layout of an AKNode */
     class AKSurface;
 
@@ -57,9 +58,9 @@ namespace AK
 
     class AKNode;       /* Base class for nodes */
     class AKContainer;  /* Container for other nodes. Doesn't produce any output on its own */
-    class AKRenderable; /* A node that draws directly into an AKTarget */
-    class AKBakeable;   /* A node that draws into its own buffer, which is then blitted into an AKTarget */
-    class AKSubScene;   /* A node whose children are drawn into its own buffer and then rendered into an AKTarget */
+    class AKRenderable; /* A node that draws directly into an AKSceneTarget */
+    class AKBakeable;   /* A node that draws into its own buffer, which is then blitted into an AKSceneTarget */
+    class AKSubScene;   /* A node whose children are drawn into its own buffer and then rendered into an AKSceneTarget */
 
     class AKSolidColor;
     class AKPath;

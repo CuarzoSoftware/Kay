@@ -2,6 +2,7 @@
 #define AKBACKGROUNDBLUREFFECT_H
 
 #include <AK/effects/AKBackgroundEffect.h>
+#include <AK/AKSurface.h>
 #include <AK/AKSignal.h>
 #include <AK/AKBrush.h>
 #include <include/core/SkPath.h>
@@ -11,7 +12,7 @@
  *
  * This effect allows blurring the background of a node with optional clipping.
  *
- * It only works if an SkImage is provided to the current AKTarget and
+ * It only works if an SkImage is provided to the current AKSceneTarget and
  * shares the same backing storage as the target surface.
  */
 class AK::AKBackgroundBlurEffect : public AKBackgroundEffect
@@ -55,14 +56,7 @@ public:
      * @param sigma The x and y Gaussian sigma values for the blur effect. Default is {16.f, 16.f}.
      * @param target The target node to which the effect is attached. Default is nullptr.
      */
-    AKBackgroundBlurEffect(ClipMode clipMode = Automatic, const SkVector &sigma = { 16.f, 16.f }, AKNode *target = nullptr) noexcept :
-        AKBackgroundEffect(Behind),
-        m_sigma(sigma),
-        m_clipMode(clipMode)
-    {
-        if (target)
-            target->addBackgroundEffect(this);
-    }
+    AKBackgroundBlurEffect(ClipMode clipMode = Automatic, const SkVector &sigma = { 16.f, 16.f }, AKNode *target = nullptr) noexcept;
 
     AKCLASS_NO_COPY(AKBackgroundBlurEffect)
 
@@ -132,14 +126,23 @@ public:
      */
     SkPath clip;
     using AKBackgroundEffect::effectRect;
+    struct BlurData
+    {
+        std::shared_ptr<AKSurface> backgroundCopy;
+        std::shared_ptr<AKSurface> backgroundCopy2;
+        std::shared_ptr<AKSurface> backgroundCopy3;
+        std::shared_ptr<AKSurface> blur;
+    };
 protected:
     void onSceneCalculatedRect() override;
     void renderEvent(const AKRenderEvent &event) override;
     void onTargetNodeChanged() override { /* Nothing to free here */ }
 private:
+    using AKBackgroundEffect::setStackPosition;
     AKBrush m_brush;
     SkVector m_sigma;
     ClipMode m_clipMode;
+    std::unordered_map<const AKSceneTarget*, BlurData> m_blurData;
 };
 
 #endif // AKBACKGROUNDBLUREFFECT_H

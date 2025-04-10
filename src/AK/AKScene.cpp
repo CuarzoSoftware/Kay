@@ -47,13 +47,13 @@ AKScene::AKScene() noexcept
     });
 }
 
-AKTarget *AK::AKScene::createTarget() noexcept
+AKSceneTarget *AK::AKScene::createTarget() noexcept
 {
-    m_targets.emplace_back(new AKTarget(this));
+    m_targets.emplace_back(new AKSceneTarget(this));
     return m_targets.back();
 }
 
-bool AKScene::destroyTarget(AKTarget *target)
+bool AKScene::destroyTarget(AKSceneTarget *target)
 {
     if (std::find(m_targets.begin(), m_targets.end(), target) == m_targets.end())
         return false;
@@ -62,7 +62,7 @@ bool AKScene::destroyTarget(AKTarget *target)
     return true;
 }
 
-bool AKScene::render(AKTarget *target)
+bool AKScene::render(AKSceneTarget *target)
 {
     validateTarget(target);
 
@@ -137,7 +137,7 @@ bool AKScene::render(AKTarget *target)
     t->m_opaque.setEmpty();
     t->m_prevClip.setEmpty();
     t->m_translucent.setEmpty();
-    t->m_reactive.clear();
+    t->m_bdts.clear();
     c->restore();
 
     if (!isNestedScene)
@@ -146,11 +146,11 @@ bool AKScene::render(AKTarget *target)
     return true;
 }
 
-void AKScene::validateTarget(AKTarget *target) noexcept
+void AKScene::validateTarget(AKSceneTarget *target) noexcept
 {
-    assert("AKTarget is nullptr" && target);
-    assert("AKTarget wasn't created by this scene" && target->m_scene == this);
-    assert("AKTarget has no surface" && target->m_surface);
+    assert("AKSceneTarget is nullptr" && target);
+    assert("AKSceneTarget wasn't created by this scene" && target->m_scene == this);
+    assert("AKSceneTarget has no surface" && target->m_surface);
     assert("Invalid surface size" && target->m_surface->width() > 0 && target->m_surface->height() > 0);
     assert("Invalid viewport" && !target->viewport().isEmpty());
     assert("Invalid dstRect" && !target->dstRect().isEmpty());
@@ -241,7 +241,7 @@ void AKScene::createOrAssignTargetDataForNode(AKNode *node) noexcept
     {
         node->t->target = t;
         t->AKObject::on.destroyed.subscribe(node, [node](AKObject *object){
-            AKTarget *target { static_cast<AKTarget*>(object) };
+            AKSceneTarget *target { static_cast<AKSceneTarget*>(object) };
             node->m_targets.erase(target);
         });
         node->t->clientDamage.setRect(AK_IRECT_INF);
@@ -287,6 +287,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     AKRenderable *renderable { dynamic_cast<AKRenderable*>(node) };
     AKBakeable *bakeable { dynamic_cast<AKBakeable*>(node) };
     AKBackgroundEffect *backgroundEffect { dynamic_cast<AKBackgroundEffect*>(node) };
+    bool hasBDT { false };
 
     if (bakeable)
         static_cast<AKBakeable*>(node)->m_onBakeGeneratedDamage = false;
@@ -311,6 +312,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     }
     else
     {
+        /*
         if (node->t->changes.testAnyOf(AKNode::CHLayoutPos, AKNode::CHLayoutSize))
         {
             node->m_rect = SkIRect::MakeXYWH(
@@ -318,7 +320,7 @@ void AKScene::calculateNewDamage(AKNode *node)
                 node->m_globalRect.y() - root()->m_globalRect.y(),
                 node->m_globalRect.width(),
                 node->m_globalRect.height());
-        }
+        }*/
 
         bool parentIsVisible { node->parent() && !node->parent()->parent() && node->parent()->visible() };
         if (node->parent() && node->parent()->parent())
@@ -326,17 +328,20 @@ void AKScene::calculateNewDamage(AKNode *node)
         node->t->visible = node->visible() && parentIsVisible;
     }
 
-    if (!node->reactiveRegion.isEmpty())
+    node->bdt.damage.setEmpty();
+
+    if (!node->bdt.reactiveRegion.isEmpty())
     {
-        SkRegion reactive;
-        node->reactiveRegion.translate(node->m_rect.x(), node->m_rect.y(), &reactive);
-        //reactive.op(clip, SkRegion::Op::kIntersect_Op);
-        t->m_reactive.push_back(reactive);
-        t->m_opaque.op(reactive, SkRegion::Op::kDifference_Op);
+        hasBDT = true;
+        node->bdt.node = node;
+        node->bdt.reactiveRegion.translate(node->m_rect.x(), node->m_rect.y(), &node->bdt.reactiveRegionTranslated);
+        // reactive.op(clip, SkRegion::Op::kIntersect_Op); // remove?
+        t->m_bdts.emplace(&node->bdt);
+        t->m_opaque.op(node->bdt.reactiveRegionTranslated, SkRegion::Op::kDifference_Op);
     }
 
     node->m_intersectedTargets.clear();
-    for (AKTarget *target : targets())
+    for (AKSceneTarget *target : targets())
         if (SkIRect::Intersects(node->globalRect(), target->m_globalIViewport))
             node->m_intersectedTargets.insert(target);
 
@@ -416,20 +421,25 @@ void AKScene::calculateNewDamage(AKNode *node)
     {
         node->t->prevLocalClip.op(clip, SkRegion::Op::kXOR_Op);
 
-        t->m_damage.op(node->t->prevLocalClip, SkRegion::Op::kUnion_Op);
+        addNodeDamage(*node, node->t->prevLocalClip);
+        //t->m_damage.op(node->t->prevLocalClip, SkRegion::Op::kUnion_Op);
 
         node->t->clientDamage.translate(
             node->m_rect.x(),
             node->m_rect.y());
 
         node->t->clientDamage.op(clip, SkRegion::Op::kIntersect_Op);
-        t->m_damage.op(node->t->clientDamage, SkRegion::Op::kUnion_Op);
+        addNodeDamage(*node, node->t->clientDamage);
+        //t->m_damage.op(node->t->clientDamage, SkRegion::Op::kUnion_Op);
     }
     else
     {
         // Both current and prev clip need to be repainted
-        t->m_damage.op(node->t->prevLocalClip, SkRegion::Op::kUnion_Op);
-        t->m_damage.op(clip, SkRegion::Op::kUnion_Op);
+        addNodeDamage(*node, node->t->prevLocalClip);
+        //t->m_damage.op(node->t->prevLocalClip, SkRegion::Op::kUnion_Op);
+
+        addNodeDamage(*node, clip);
+        //t->m_damage.op(clip, SkRegion::Op::kUnion_Op);
         node->t->changes.set(AKRenderable::CHSize);
     }
 
@@ -446,6 +456,9 @@ skipDamage:
             backgroundEffect->insertBefore(node->parent()->children().front());
     }
 
+    if (hasBDT)
+        t->m_bdts.erase(&node->bdt);
+
     if (!(node->caps() & AKNode::Scene))
         for (Int64 i = node->children().size() - 1; i >= 0;)
         {
@@ -459,6 +472,9 @@ skipDamage:
             calculateNewDamage(node->children()[i]);
             i -= 1 - skip;
         }
+
+    if (hasBDT)
+        t->m_bdts.emplace(&node->bdt);
 
     if (!renderable)
         return;
@@ -491,6 +507,8 @@ skipDamage:
 
 void AKScene::updateDamageRing() noexcept
 {
+    updateDamageTrackers();
+
     if (t->age() == 0)
     {
         t->m_damage.setRect(AK_IRECT_INF);
@@ -500,24 +518,6 @@ void AKScene::updateDamageRing() noexcept
     {
         if (t->inDamageRegion)
             t->m_damage.op(*t->inDamageRegion, SkRegion::Op::kUnion_Op);
-
-        for (auto it = t->m_reactive.begin(); it != t->m_reactive.end(); it++)
-        {
-            if (t->m_damage.intersects(*it))
-            {
-                t->m_damage.op(*it, SkRegion::Op::kUnion_Op);
-                (*it).setEmpty();
-            }
-        }
-
-        for (auto it = t->m_reactive.rbegin(); it != t->m_reactive.rend(); it++)
-        {
-            if (t->m_damage.intersects(*it))
-            {
-                t->m_damage.op(*it, SkRegion::Op::kUnion_Op);
-                (*it).setEmpty();
-            }
-        }
 
         t->m_damageRing[t->m_damageIndex] = t->m_damage;
 
@@ -532,7 +532,7 @@ void AKScene::updateDamageRing() noexcept
         }
     }
 
-    t->m_reactive.clear();
+    t->m_bdts.clear();
     t->m_damage.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
     t->m_opaque.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
 
@@ -549,6 +549,32 @@ void AKScene::updateDamageRing() noexcept
         t->m_damageIndex = 0;
     else
         t->m_damageIndex++;
+}
+
+void AKScene::updateDamageTrackers() noexcept
+{
+    for (auto *bdt : t->m_bdts)
+    {
+        if (bdt->damage.isEmpty())
+            continue;
+
+        bdt->damage.op(bdt->node->sceneRect(), SkRegion::Op::kIntersect_Op);
+        bdt->damage.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
+
+        SkRegion outset;
+        SkRegion::Iterator it (bdt->damage);
+
+        while (!it.done())
+        {
+            outset.op(it.rect().makeOutset(250, 250), SkRegion::Op::kUnion_Op);
+            it.next();
+        }
+
+        bdt->damage = outset;
+        bdt->damage.op(bdt->node->sceneRect(), SkRegion::Op::kIntersect_Op);
+        bdt->damage.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
+        t->m_damage.op(bdt->damage, SkRegion::Op::kUnion_Op);
+    }
 }
 
 void AKScene::renderBackground() noexcept
@@ -646,7 +672,7 @@ void AKScene::renderNodes(AKNode *node)
             m_root->setScene(this);
         }
 
-        for (AKTarget *t : m_targets)
+        for (AKSceneTarget *t : m_targets)
         {
             t->m_needsFullRepaint = true;
             t->markDirty();
@@ -811,6 +837,15 @@ void AKScene::renderNodes(AKNode *node)
         }
 
         return true;
+    }
+
+    void AKScene::addNodeDamage(AKNode &node, const SkRegion &damage) noexcept
+    {
+        t->m_damage.op(damage, SkRegion::Op::kUnion_Op);
+
+        for (auto &bdt : t->m_bdts)
+            //if (bdt != &node.bdt)
+            bdt->damage.op(damage, SkRegion::Op::kUnion_Op);
     }
 
     void AKScene::handlePointerMoveEvent()

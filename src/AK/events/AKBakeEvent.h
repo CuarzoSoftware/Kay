@@ -17,7 +17,7 @@ class AK::AKBakeEvent : public AKEvent
 public:
     AKBakeEvent(
         const AKChanges &changes,
-        const AKTarget &target,
+        const AKSceneTarget &target,
         const SkRegion &clip,
         SkRegion &damage,
         SkRegion &opaque,
@@ -35,7 +35,7 @@ public:
     {}
 
     const AKChanges &changes;
-    const AKTarget &target;
+    const AKSceneTarget &target;
 
     /**
      * @brief Region in node-local coordinates that is not currently occluded (never nullptr).

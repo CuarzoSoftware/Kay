@@ -29,7 +29,7 @@ Screen::Screen(SRMConnector *connector) noexcept :
     srmConnectorSetUserData(connector, this);
     target = app()->scene.createTarget();
     target->setClearColor(SK_ColorBLACK);
-    target->on.markedDirty.subscribe(this, [connector](AKTarget&){
+    target->on.markedDirty.subscribe(this, [connector](AKSceneTarget&){
         srmConnectorRepaint(connector);
     });
 

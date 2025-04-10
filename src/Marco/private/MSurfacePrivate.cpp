@@ -21,6 +21,7 @@ using namespace AK;
 
 static wl_surface_listener wlSurfaceListener;
 static wl_callback_listener wlCallbackListener;
+static background_blur_listener backgroundBlurListener;
 
 MSurface::Imp::Imp(MSurface &obj) noexcept : obj(obj)
 {
@@ -29,6 +30,9 @@ MSurface::Imp::Imp(MSurface &obj) noexcept : obj(obj)
     wlSurfaceListener.preferred_buffer_scale = wl_surface_preferred_buffer_scale;
     wlSurfaceListener.preferred_buffer_transform = wl_surface_preferred_buffer_transform;
     wlCallbackListener.done = wl_callback_done;
+    backgroundBlurListener.state = background_blur_state;
+    backgroundBlurListener.style = background_blur_style;
+    backgroundBlurListener.configure = background_blur_configure;
 }
 
 void MSurface::Imp::wl_surface_enter(void *data, wl_surface */*surface*/, wl_output *output)
@@ -96,6 +100,24 @@ void MSurface::Imp::wl_callback_done(void *data, wl_callback *callback, UInt32 m
         surface.update();
 }
 
+void MSurface::Imp::background_blur_state(void *data, background_blur *backgroundBlur, UInt32 state)
+{
+    MSurface &surface { *static_cast<MSurface*>(data) };
+
+}
+
+void MSurface::Imp::background_blur_style(void *data, background_blur *backgroundBlur, UInt32 style)
+{
+
+}
+
+void MSurface::Imp::background_blur_configure(void *data, background_blur *backgroundBlur, UInt32 serial)
+{
+    MSurface &surface { *static_cast<MSurface*>(data) };
+    background_blur_ack_configure(backgroundBlur, serial);
+    surface.update(true);
+}
+
 void MSurface::Imp::createSurface() noexcept
 {
     if (wlCallback)
@@ -122,6 +144,12 @@ void MSurface::Imp::createSurface() noexcept
         eglWindow = nullptr;
     }
 
+    if (backgroundBlur)
+    {
+        background_blur_destroy(backgroundBlur);
+        backgroundBlur = nullptr;
+    }
+
     if (wlSurface)
     {
         wl_surface_destroy(wlSurface);
@@ -131,6 +159,11 @@ void MSurface::Imp::createSurface() noexcept
     wlSurface = wl_compositor_create_surface(app()->wayland().compositor);
     wl_surface_add_listener(wlSurface, &wlSurfaceListener, &obj);
     wlViewport = wp_viewporter_get_viewport(app()->wayland().viewporter, wlSurface);
+    if (app()->wayland().backgroundBlurManager)
+    {
+        backgroundBlur = background_blur_manager_get_background_blur(app()->wayland().backgroundBlurManager, wlSurface);
+        background_blur_add_listener(backgroundBlur, &backgroundBlurListener, &obj);
+    }
 }
 
 bool MSurface::Imp::createCallback() noexcept

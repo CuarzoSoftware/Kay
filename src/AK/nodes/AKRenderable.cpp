@@ -1,7 +1,7 @@
 #include <AK/events/AKWindowStateEvent.h>
 #include <AK/events/AKEvent.h>
 #include <AK/nodes/AKRenderable.h>
-#include <AK/AKTarget.h>
+#include <AK/AKSceneTarget.h>
 
 using namespace AK;
 

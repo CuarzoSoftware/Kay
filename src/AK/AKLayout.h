@@ -491,7 +491,39 @@ public:
         return YGNodeStyleGetAspectRatio(m_node);
     }
 
+    /**
+     * @brief Calculates the node layout.
+     *
+     * If the node has a parent, YGNodeCalculateLayout is called
+     * using the parent node and the already calculated width and height.
+     *
+     * If the node does not have a parent, YGNodeCalculateLayout is called
+     * from the node itself with YGUndefined for both width and height.
+     *
+     * @note This only updates the `calculated...()` values of the layout, which are
+     *       always relative to the parent node. Properties such as AKNode::rect() or
+     *       AKNode::globalRect() are only updated from AKScene::render().
+     */
     void calculate() noexcept;
+
+
+    /**
+     * @brief Calculates the node layout.
+     *
+     * @warning Use the alternative variant if you need to update the layout during
+     *          an AKNode::layoutEvent(). If the parent dimensions depend on its
+     *          children and the provided available width and height do not match
+     *          those of the parent, the scene may calculate incorrect values for
+     *          AKNode::rect() and AKNode::globalRect().
+     *
+     * @note This function only updates the `calculated...()` layout values, which are
+     *       always relative to the parent node. Properties such as AKNode::rect()
+     *       or AKNode::globalRect() are only updated via AKScene::render().
+     */
+    void calculate(float availableWidth, float availableHeight, YGDirection ownerDirection) noexcept
+    {
+        YGNodeCalculateLayout(m_node, availableWidth, availableHeight, ownerDirection);
+    }
 
 private:
     friend class AKNode;

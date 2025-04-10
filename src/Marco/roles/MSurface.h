@@ -20,13 +20,13 @@
  * Each MSurface is an AKSolidColor node that represents the central node of the surface.
  * From the data perspective, the MSurface class contains the following members:
  * - `AKScene` (accessible via `scene()`)
- * - `AKTarget` (accessible via `target()`)
+ * - `AKSceneTarget` (accessible via `target()`)
  * - `AKContainer` (accessible via `rootNode()`)
  *
  * From the UI perspective, the hierarchy is structured as follows:
  *
  * | - AKScene (scene())
- *   | - AKTarget (target())
+ *   | - AKSceneTarget (target())
  *     | - AKContainer (rootNode())
  *       |- MSurface (this class, the central node)
  *
@@ -74,7 +74,7 @@ public:
     const std::list<MSubsurface*> &subSurfaces() const noexcept;
 
     AKScene &scene() const noexcept;
-    AKTarget *target() const noexcept;
+    AKSceneTarget *target() const noexcept;
     AKNode *rootNode() const noexcept;
 
     wl_surface *wlSurface() const noexcept;

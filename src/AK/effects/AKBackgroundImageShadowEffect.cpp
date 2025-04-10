@@ -4,7 +4,7 @@
 #include <AK/events/AKRenderEvent.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
 #include <AK/nodes/AKBakeable.h>
-#include <AK/AKTarget.h>
+#include <AK/AKSceneTarget.h>
 #include <AK/AKSurface.h>
 #include <AK/AKBrush.h>
 

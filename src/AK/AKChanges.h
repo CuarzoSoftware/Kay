@@ -16,7 +16,7 @@
  * When a property changes within a node setter, the node registers the change using AKNode::addChange().
  *
  * Calling AKNode::addChange() stores the change in an internal instance of this class, created for
- * each AKTarget the node has been presented to, and marks all currently intersected targets as dirty.
+ * each AKSceneTarget the node has been presented to, and marks all currently intersected targets as dirty.
  *
  * Later, during AKNode::onSceneBegin(), AKRenderable::onRender(), and AKBakeable::onBake() events,
  * the node can use this information to update/repaint only what is necessary.

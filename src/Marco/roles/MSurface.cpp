@@ -20,7 +20,7 @@ MSurface::MSurface(Role role) noexcept : AK::AKSolidColor(SK_ColorWHITE)
     imp()->target.reset(scene().createTarget());
     scene().setRoot(rootNode());
 
-    target()->on.markedDirty.subscribe(this, [this](AK::AKTarget&){
+    target()->on.markedDirty.subscribe(this, [this](AK::AKSceneTarget&){
         update();
     });
 
@@ -128,7 +128,7 @@ AKScene &MSurface::scene() const noexcept
     return imp()->scene;
 }
 
-AKTarget *MSurface::target() const noexcept
+AKSceneTarget *MSurface::target() const noexcept
 {
     return imp()->target.get();
 }

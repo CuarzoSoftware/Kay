@@ -1,6 +1,6 @@
 #include "AK/AKApplication.h"
 #include <AK/AKLayout.h>
-#include <AK/AKTarget.h>
+#include <AK/AKSceneTarget.h>
 #include <AK/AKLog.h>
 #include <AK/nodes/AKSubScene.h>
 #include <AK/events/AKLayoutEvent.h>
@@ -123,6 +123,23 @@ void AKLayout::applyTree(AKNode *node)
         }
 
         node->m_globalRect = newRect;
+
+        if (node->subScene())
+        {
+            node->m_rect = SkIRect::MakeXYWH(
+                node->m_globalRect.x() - node->subScene()->m_globalRect.x(),
+                node->m_globalRect.y() - node->subScene()->m_globalRect.y(),
+                node->m_globalRect.width(),
+                node->m_globalRect.height());
+        }
+        else
+        {
+            node->m_rect = SkIRect::MakeXYWH(
+                node->m_globalRect.x() - node->root()->m_globalRect.x(),
+                node->m_globalRect.y() - node->root()->m_globalRect.y(),
+                node->m_globalRect.width(),
+                node->m_globalRect.height());
+        }
     }
 
     if (updateScale || updateRect)

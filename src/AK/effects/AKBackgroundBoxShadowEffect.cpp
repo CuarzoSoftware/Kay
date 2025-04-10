@@ -4,7 +4,7 @@
 #include <include/core/SkRRect.h>
 #include <AK/events/AKRenderEvent.h>
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
-#include <AK/AKTarget.h>
+#include <AK/AKSceneTarget.h>
 #include <AK/AKSurface.h>
 #include <AK/AKBrush.h>
 

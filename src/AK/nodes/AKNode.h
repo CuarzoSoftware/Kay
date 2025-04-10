@@ -17,6 +17,18 @@
 #include <memory>
 #include <vector>
 
+namespace AK
+{
+struct BackgroundDamageTracker
+{
+    AKNode *node;
+    SkRegion reactiveRegion;
+    SkRegion reactiveRegionTranslated;
+    SkRegion damage;
+};
+}
+
+
 /**
  * @defgroup AKNodes Components
  * @brief List of all components.
@@ -212,7 +224,7 @@ public:
     /**
      * @brief Marks all intersected targets as dirty.
      *
-     * This function triggers the AK::AKTarget::onMarkedDirty() signal
+     * This function triggers the AK::AKSceneTarget::onMarkedDirty() signal
      * for all intersected targets, which, depending on the implementation,
      * may lead to a window or screen repaint.
      *
@@ -278,9 +290,9 @@ public:
 
     bool isRoot() const noexcept { return m_flags.check(IsRoot); }
 
-    //AKTarget *currentTarget() const noexcept;
+    //AKSceneTarget *currentTarget() const noexcept;
 
-    const std::unordered_set<AKTarget*> &intersectedTargets() const noexcept { return m_intersectedTargets; }
+    const std::unordered_set<AKSceneTarget*> &intersectedTargets() const noexcept { return m_intersectedTargets; }
     bool childrenClippingEnabled() const noexcept { return m_flags.check(ChildrenClipping); }
 
     void enableChildrenClipping(bool enable) noexcept
@@ -296,7 +308,7 @@ public:
     SkRegion *inputRegion() const noexcept { return m_inputRegion.get(); }
     bool insideLastTarget() const noexcept { return m_flags.check(InsideLastTarget); }
     bool renderedOnLastTarget() const noexcept { return m_flags.check(RenderedOnLastTarget); }
-    AKTarget *currentTarget() const noexcept;
+    AKSceneTarget *currentTarget() const noexcept;
     /* Layout */
 
     /* Relative to the closest subscene */
@@ -352,14 +364,39 @@ public:
      *
      * This is a special region that causes damage to the scene
      * only when overlay or background damage from other nodes intersects with it.
+     *
+     * Relative to the node.
      */
-    SkRegion reactiveRegion;
+    BackgroundDamageTracker bdt;
 
     UInt64 userFlags { 0 };
     void *userData { nullptr };
 
+    /**
+     * @brief Retrieves the topmost scene.
+     *
+     * Represents the topmost scene (not subscene).
+     *
+     * @returns `nullptr` if the node is not the root node of a scene or is not a
+     * descendant of a root node.
+     */
     AKScene *scene() const noexcept { return m_scene; }
+
+    /**
+     * @brief Retrieves the closest parent subscene.
+     *
+     * @return `nullptr` if the node is not the root node or child of any subscene.
+     */
     AKSubScene *subScene() const noexcept { return m_subScene; }
+
+    /**
+     * @brief Retrieves the root node of the current scene.
+     *
+     * @note Returns a pointer to itself if the node is the root node of a scene
+     *       (not a subscene).
+     *
+     * @return `nullptr` if the node is not a child of any scene.
+     */
     AKNode *root() const noexcept;
 
     bool activated() const noexcept;
@@ -387,7 +424,7 @@ private:
     friend class AKBakeable;
     friend class AKSubScene;
     friend class AKContainer;
-    friend class AKTarget;
+    friend class AKSceneTarget;
     friend class AKScene;
     friend class AKLayout;
 
@@ -411,7 +448,7 @@ private:
     struct TargetData : public AKObject
     {
         TargetData() noexcept { changes.set(); }
-        AKTarget *target { nullptr };
+        AKSceneTarget *target { nullptr };
         size_t targetLink;
         SkRegion prevLocalClip; // Rel to root
         SkIRect prevLocalRect;
@@ -449,8 +486,8 @@ private:
     std::vector<AKNode*> m_children;
     size_t m_parentLinkIndex;
     std::unique_ptr<SkRegion> m_inputRegion;
-    std::unordered_set<AKTarget*> m_intersectedTargets;
-    mutable std::unordered_map<AKTarget*, TargetData> m_targets;
+    std::unordered_set<AKSceneTarget*> m_intersectedTargets;
+    mutable std::unordered_map<AKSceneTarget*, TargetData> m_targets;
     AKCursor m_cursor { AKCursor::Default };
 };
 

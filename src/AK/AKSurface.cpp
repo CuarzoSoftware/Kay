@@ -10,7 +10,7 @@
 
 using namespace AK;
 
-std::shared_ptr<AKSurface> AKSurface::Make(const SkISize &size, Int32 scale, bool hasAlpha) noexcept
+std::shared_ptr<AKSurface> AKSurface::Make(const SkISize &size, SkScalar scale, bool hasAlpha) noexcept
 {
     auto surface = std::shared_ptr<AKSurface>(new AKSurface(hasAlpha));
     surface->resize(size, scale, true);
@@ -60,8 +60,9 @@ sk_sp<SkSurface> AKSurface::surface() const noexcept
     return newFBO.skSurface;
 }
 
-GLuint AKSurface::fbId() const noexcept
+UInt32 AKSurface::fbId() const noexcept
 {
+    surface();
     return akApp()->glContext()->getFBO(m_slot).id;
 }
 
@@ -75,14 +76,17 @@ bool AKSurface::setHasAlpha(bool alpha) noexcept
     return shrink();
 }
 
-bool AKSurface::resize(const SkISize &size, Int32 scale, bool shrink) noexcept
+bool AKSurface::resize(const SkISize &size, SkScalar scale, bool shrink) noexcept
 {
     m_size = size;
     m_scale = scale;
 
     m_imageSrcRect = SkIRect::MakeWH(
-        size.width() * m_scale,
-        size.height() * m_scale);
+        SkScalar(size.width()) * m_scale,
+        SkScalar(size.height()) * m_scale);
+
+    m_viewport = SkRect::Make(m_imageSrcRect);
+    m_xyScale.set(scale, scale);
 
     const bool needsRecreation {
         !m_image ||

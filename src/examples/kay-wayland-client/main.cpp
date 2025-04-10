@@ -104,7 +104,7 @@ struct Window
                                             {0,0}, SK_ColorBLACK,
                                             false, &roundContainer};
 
-    AKTarget *target { nullptr };
+    AKSceneTarget *target { nullptr };
 
     wl_callback *wlCallback { nullptr };
     wl_surface *wlSurface;

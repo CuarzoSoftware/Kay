@@ -14,7 +14,7 @@ class AK::AKRenderEvent : public AKEvent
 {
 public:
     AKRenderEvent(
-        const AKTarget &target,
+        const AKSceneTarget &target,
         const SkRegion &damage,
         const SkIRect &rect,
         AKPainter &painter,
@@ -28,7 +28,7 @@ public:
         painter(painter)
     {}
 
-    const AKTarget &target;
+    const AKSceneTarget &target;
     const SkRegion &damage;
     const SkIRect &rect;
     AKPainter &painter;

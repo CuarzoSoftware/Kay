@@ -1,6 +1,7 @@
 #ifndef MSURFACEPRIVATE_H
 #define MSURFACEPRIVATE_H
 
+#include "Marco/protocols/background-blur-client.h"
 #include <Marco/roles/MSurface.h>
 
 class AK::MSurface::Imp
@@ -49,7 +50,7 @@ public:
 
     // Kay
     AKScene scene;
-    AKWeak<AKTarget> target;
+    AKWeak<AKSceneTarget> target;
     AKContainer root;
 
     // Current wl_surface scale factor
@@ -69,6 +70,7 @@ public:
     wl_callback *wlCallback { nullptr };
     wl_surface *wlSurface { nullptr };
     wp_viewport *wlViewport { nullptr };
+    background_blur *backgroundBlur { nullptr };
 
     wl_egl_window *eglWindow { nullptr };
     EGLSurface eglSurface { EGL_NO_SURFACE };
@@ -97,6 +99,10 @@ public:
     static void wl_surface_preferred_buffer_scale(void *data, wl_surface *surface, Int32 factor);
     static void wl_surface_preferred_buffer_transform(void *data, wl_surface *surface, UInt32 transform);
     static void wl_callback_done(void *data, wl_callback *callback, UInt32 ms);
+
+    static void background_blur_state(void *data, background_blur *backgroundBlur, UInt32 state);
+    static void background_blur_style(void *data, background_blur *backgroundBlur, UInt32 style);
+    static void background_blur_configure(void *data, background_blur *backgroundBlur, UInt32 serial);
 };
 
 #endif // MSURFACEPRIVATE_H

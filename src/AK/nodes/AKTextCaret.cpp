@@ -1,7 +1,7 @@
 #include <AK/nodes/AKTextCaret.h>
 #include <AK/events/AKLayoutEvent.h>
 #include <AK/AKTheme.h>
-#include <AK/AKTarget.h>
+#include <AK/AKSceneTarget.h>
 #include <AK/AKTime.h>
 
 using namespace AK;

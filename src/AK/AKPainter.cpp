@@ -5,7 +5,7 @@
 #include <AK/nodes/AKRenderable.h>
 #include <AK/AKPainter.h>
 #include <AK/AKTheme.h>
-#include <AK/AKTarget.h>
+#include <AK/AKSceneTarget.h>
 #include <EGL/egl.h>
 #include <GL/gl.h>
 #include <GL/glext.h>
@@ -74,7 +74,7 @@ void AKPainter::bindTextureMode(const TextureParams &p) noexcept
     userState.texture = p.texture;
 
     Float32 fbScale;
-    fbScale = t->scale().x();
+    fbScale = t->xyScale().x();
 
     SkIPoint pos = p.pos - SkIPoint::Make(t->viewport().x(), t->viewport().y());
     Float32 srcDstX, srcDstY;
@@ -865,7 +865,7 @@ void AKPainter::setViewport(Int32 x, Int32 y, Int32 w, Int32 h) noexcept
     Float32 fbScale;
 
     // TODO: Separate x and y
-    fbScale = t->scale().x();
+    fbScale = t->xyScale().x();
 
     const Int32 x2 = floorf(Float32(x + w) * fbScale);
     const Int32 y2 = floorf(Float32(y + h) * fbScale);

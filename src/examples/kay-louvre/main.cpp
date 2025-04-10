@@ -32,6 +32,7 @@
 #include <LScreenshotRequest.h>
 #include <LExclusiveZone.h>
 #include <LKeyboardKeyEvent.h>
+#include <LBackgroundBlur.h>
 
 #include <AK/nodes/AKSubScene.h>
 #include <AK/nodes/AKImageFrame.h>
@@ -64,6 +65,8 @@
 
 using namespace Louvre;
 using namespace AK;
+
+static SkScalar blurRadius { 0.f };
 
 enum NodeTypeFlags
 {
@@ -402,7 +405,8 @@ public:
         });
 
         LCompositor::initialized();
-        LLauncher::launch(std::string("swaybg -m fill -i ") + std::string(defaultAssetsPath() / "wallpaper.png"));
+
+        LLauncher::launch(std::string("swaybg -m fill -i ") + "/home/eduardo/.config/Louvre/wallpaper.jpg");//std::string(defaultAssetsPath() / "wallpaper.png"));
     }
 
     void uninitialized() override
@@ -458,6 +462,9 @@ public:
         node.enableAutoDamage(false);
         node.setSrcRectMode(AKRenderableImage::SrcRectMode::Custom);
         node.layout().setPositionType(YGPositionTypeAbsolute);
+        blur.on.targetLayoutUpdated.subscribe(&blur, [this](){
+            blur.effectRect = SkIRect::MakeWH(size().w(), size().h());
+        });
     }
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
 
@@ -523,13 +530,15 @@ public:
             srcRect().x(), srcRect().y(),
             srcRect().w(), srcRect().h()));
     }
+
+    AKBackgroundBlurEffect blur { AKBackgroundBlurEffect::Manual, {4,4}};
 };
 
 class Text final : public AKText
 {
 public:
     using AKText::AKText;
-    AKBackgroundImageShadowEffect shadow { 6, {0,0}, 0x66000000, this };
+    //AKBackgroundImageShadowEffect shadow { 6, {0,0}, 0x66000000, this };
 };
 
 static std::mutex m;
@@ -595,6 +604,8 @@ public:
 
             if (!s->node.visible())
                 continue;
+
+            s->blur.setSigma({blurRadius, blurRadius});
 
             const LPoint &pos { s->rolePos() };
             s->node.layout().setPosition(YGEdgeLeft, pos.x());
@@ -722,7 +733,7 @@ public:
             target->setViewport(SkRect::MakeXYWH(output->pos().x(), output->pos().y(), output->size().w(), output->size().h()));
             target->setBakedComponentsScale(output->scale());
 
-            target->on.markedDirty.subscribe(target, [output](AKTarget &){
+            target->on.markedDirty.subscribe(target, [output](AKSceneTarget &){
 
                 if (output->inPaintGL)
                     return;
@@ -750,7 +761,7 @@ public:
             SkPath path;
             SkParsePath::FromSVGString(logoSVG.c_str(), &path);
             logo.setPath(path);
-            logo.setColorWithAlpha(SK_ColorWHITE);
+            logo.setColorWithAlpha(SK_ColorBLACK);
             logo.setSizeMode(AKPath::ScalePath);
             logo.layout().setWidth(16);
             logo.layout().setHeight(16);
@@ -774,8 +785,11 @@ public:
             {
                 topbarMenus.push_back(new Text(name, &topbarBackground));
                 topbarMenus.back()->enableCustomTextureColor(true);
-                topbarMenus.back()->setColorWithAlpha(SK_ColorWHITE);
-                topbarMenus.back()->setOpacity(0.75f);
+                topbarMenus.back()->setColorWithAlpha(SK_ColorBLACK);
+                auto style = topbarMenus.back()->textStyle();
+                style.setFontStyle(SkFontStyle::Bold());
+                topbarMenus.back()->setTextStyle(style);
+                topbarMenus.back()->setOpacity(0.9f);
             }
 
             topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
@@ -930,7 +944,7 @@ public:
         }
 
         LWeak<Output> output;
-        AKContainer background { YGFlexDirectionColumn, false, &comp()->kay->background };
+        AKContainer background { YGFlexDirectionColumn, false, /*&comp()->kay->background */};
         AKText instructions {
             "F1: Launch Weston Terminal\nRight Click: Show Context Menu.\nNote: Blur only works if launched from a TTY (DRM backend)",
             &background };
@@ -957,7 +971,7 @@ public:
         LWeak<LTexture> assetsTexture;
         sk_sp<SkImage> assetsImage;
         AKImageFrame assetsView { &background };
-        AKTarget *target { nullptr };
+        AKSceneTarget *target { nullptr };
 
         AKSubScene topbar { &comp()->kay->overlay };
         AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
@@ -965,7 +979,7 @@ public:
         AKBackgroundBoxShadowEffect topbarShadow {
             16, {0, 0}, 0x45000000, false, &topbar};
         AKPath logo { &topbarBackground };
-        AKBackgroundImageShadowEffect logoShadow { 6, {0,0}, 0x66000000, &logo };
+        //AKBackgroundImageShadowEffect logoShadow { 6, {0,0}, 0x66000000, &logo };
         std::vector<Text*>topbarMenus;
         LExclusiveZone topbarExclusiveZone { LEdgeTop, 28 };
     };
@@ -1086,6 +1100,70 @@ public:
         keyboardKeyEvent.setMs(event.ms());
         keyboardKeyEvent.setSerial(event.serial());
         akApp()->sendEvent(keyboardKeyEvent, static_cast<Compositor*>(compositor())->kay->scene);
+
+        if (isKeyCodePressed(KEY_LEFTMETA) && isKeyCodePressed(KEY_UP))
+        {
+            blurRadius += 1.f;
+            compositor()->repaintAllOutputs();
+        }
+
+        if (isKeyCodePressed(KEY_LEFTMETA) && isKeyCodePressed(KEY_DOWN))
+        {
+            blurRadius -= 1.f;
+            if (blurRadius < 0.f)
+                blurRadius = 0.f;
+            compositor()->repaintAllOutputs();
+        }
+
+        if (isKeyCodePressed(KEY_O) && isKeyCodePressed(KEY_LEFTMETA))
+            compositor()->removeOutput(cursor()->output());
+
+        if (isKeyCodePressed(KEY_M) && isKeyCodePressed(KEY_LEFTMETA))
+        {
+
+            LOutputMode *bm { nullptr };
+            UInt32 brr { 0 };
+
+            for (LOutputMode *m : cursor()->output()->modes())
+            {
+                if (m->refreshRate() > brr)
+                {
+                    brr = m->refreshRate();
+                    bm = m;
+                }
+            }
+
+            if (bm)
+                cursor()->output()->setMode(bm);
+        }
+    }
+};
+
+class BackgroundBlur final : public LBackgroundBlur
+{
+public:
+    using LBackgroundBlur::LBackgroundBlur;
+
+    void propsChanged(LBitset<PropChanges> ch, const Props &) override
+    {
+        auto *surf { static_cast<Surface*>(surface()) };
+
+        if (isSvgPath() && ch.check(RegionOrPathChanged))
+        {
+            assert(SkParsePath::FromSVGString(svgPath().c_str(), &surf->blur.clip));
+            AKLog::debug("Blur changed");
+        }
+
+        if (visible() && isSvgPath())
+        {
+            AKLog::debug("Blur enabled");
+            surf->node.addBackgroundEffect(&surf->blur);
+        }
+        else
+        {
+            AKLog::debug("Blur disabled");
+            surf->node.removeBackgroundEffect(&surf->blur);
+        }
     }
 };
 
@@ -1102,6 +1180,9 @@ LFactoryObject *Compositor::createObjectRequest(LFactoryObject::Type objectType,
 
     if (objectType == LFactoryObject::Type::LKeyboard)
         return new Keyboard(params);
+
+    if (objectType == LFactoryObject::Type::LBackgroundBlur)
+        return new BackgroundBlur(params);
 
     return nullptr;
 }
