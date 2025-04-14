@@ -7,6 +7,7 @@
 #include <include/gpu/ganesh/GrRecordingContext.h>
 #include <include/gpu/ganesh/GrDirectContext.h>
 #include <include/effects/SkGradientShader.h>
+#include <include/effects/SkImageFilters.h>
 #include <include/core/SkMaskFilter.h>
 #include <include/core/SkBlurTypes.h>
 #include <include/core/SkCanvas.h>

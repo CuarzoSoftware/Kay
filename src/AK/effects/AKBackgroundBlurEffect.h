@@ -139,7 +139,7 @@ protected:
     void onTargetNodeChanged() override { /* Nothing to free here */ }
 private:
     using AKBackgroundEffect::setStackPosition;
-    AKBrush m_brush;
+    AKBrush m_brush1, m_brush2, m_brush3;
     SkVector m_sigma;
     ClipMode m_clipMode;
     std::unordered_map<const AKSceneTarget*, BlurData> m_blurData;

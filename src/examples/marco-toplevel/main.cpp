@@ -19,7 +19,8 @@ class Window : public MToplevel
 {
 public:
     Window() noexcept : MToplevel() {
-        setColorWithAlpha(/*0xffF0F0F0*/0x00FFFFFF);
+
+        setColorWithAlpha(app()->wayland().backgroundBlurManager ? 0x00FFFFFF : 0xffF0F0F0);
         setTitle("Hello world!");
         shadow.enableDiminishOpacityOnInactive(true);
         topbar.enableDiminishOpacityOnInactive(true);

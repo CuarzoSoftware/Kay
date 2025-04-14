@@ -174,6 +174,7 @@ public:
         // Fill menu
         itemsContainer.layout().setFlex(1.f);
         itemsContainer.layout().setPadding(YGEdgeAll, m_borderRadius);
+        updateShadow();
     }
 
     void showAt(Int32 x, Int32 y) noexcept
@@ -249,21 +250,11 @@ protected:
     // Called right before the scene calculates the layout
     void updateShadow() noexcept
     {
-        const auto chgs { changes() };
-        const bool needsShadowUpdate { chgs.test(CHShadowRadius) };
-        const bool needsPaddingUpdate { needsShadowUpdate || chgs.test(CHShadowOffset) };
-
-        // Add padding to prevent itemsContainer from overlapping the shadow
-        if (needsPaddingUpdate)
-        {
-            layout().setPadding(YGEdgeLeft, m_shadowRadius - m_shadowOffset.x());
-            layout().setPadding(YGEdgeTop, m_shadowRadius - m_shadowOffset.y());
-            layout().setPadding(YGEdgeRight, m_shadowRadius + m_shadowOffset.x());
-            layout().setPadding(YGEdgeBottom, m_shadowRadius + m_shadowOffset.x());
-        }
-
-        if (needsShadowUpdate)
-            m_shadowBrush.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, m_shadowRadius/3.f));
+        layout().setPadding(YGEdgeLeft, m_shadowRadius - m_shadowOffset.x());
+        layout().setPadding(YGEdgeTop, m_shadowRadius - m_shadowOffset.y());
+        layout().setPadding(YGEdgeRight, m_shadowRadius + m_shadowOffset.x());
+        layout().setPadding(YGEdgeBottom, m_shadowRadius + m_shadowOffset.x());
+        m_shadowBrush.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, m_shadowRadius/3.f));
     }
 
     // Always called by the scene except if the node is invisible or completly ocludded
@@ -303,43 +294,13 @@ protected:
         // Draw shadow
         c.drawRoundRect(shadowRect, m_borderRadius, m_borderRadius, m_shadowBrush);
 
-        // Draw container fill
-        m_brush.setBlendMode(SkBlendMode::kSrc);
-        c.drawRoundRect(rect, m_borderRadius, m_borderRadius, m_brush);
-
         // Draw container stroke
         c.drawRoundRect(rect, m_borderRadius, m_borderRadius, m_pen);
+        m_brush.setBlendMode(SkBlendMode::kClear);
+        c.drawRoundRect(rect, m_borderRadius, m_borderRadius, m_brush);
 
         // Mark node as dirty
         event.damage.setRect(AK_IRECT_INF);
-
-        // Set the opaque region (to optimize composition)
-        if (SkColorGetA(m_brush.getColor()) == 255) // Opaque
-        {
-            // Make entire rect opaque
-            event.opaque.setRect(rect.roundIn());
-
-            // But exclude round corners
-
-            // Top Left
-            SkIRect borderRadiusRect = SkRect::MakeXYWH(rect.x(), rect.y(), m_borderRadius, m_borderRadius).roundOut();
-            event.opaque.op(borderRadiusRect, SkRegion::Op::kDifference_Op);
-
-            // Top Right
-            borderRadiusRect.offset(rect.width() - borderRadiusRect.width(), 0);
-            event.opaque.op(borderRadiusRect, SkRegion::Op::kDifference_Op);
-
-            // Bottom Right
-            borderRadiusRect.offset(0, rect.height() - borderRadiusRect.height());
-            event.opaque.op(borderRadiusRect, SkRegion::Op::kDifference_Op);
-
-            // Bottom Left
-            borderRadiusRect.offsetTo(rect.x(), borderRadiusRect.y());
-            event.opaque.op(borderRadiusRect, SkRegion::Op::kDifference_Op);
-        }
-        // Make fully translucent
-        else
-            event.opaque.setEmpty();
     }
 
     // Keep the default onRender() implementation
@@ -944,7 +905,7 @@ public:
         }
 
         LWeak<Output> output;
-        AKContainer background { YGFlexDirectionColumn, false, /*&comp()->kay->background */};
+        AKContainer background { YGFlexDirectionColumn, false, /*&comp()->kay->background*/ };
         AKText instructions {
             "F1: Launch Weston Terminal\nRight Click: Show Context Menu.\nNote: Blur only works if launched from a TTY (DRM backend)",
             &background };
@@ -977,7 +938,7 @@ public:
         AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
         AKSolidColor topbarBackground { 0x22FFFFFF, &topbar };
         AKBackgroundBoxShadowEffect topbarShadow {
-            16, {0, 0}, 0x45000000, false, &topbar};
+            16, {0, 0}, 0x45000000, false, /*&topbar*/};
         AKPath logo { &topbarBackground };
         //AKBackgroundImageShadowEffect logoShadow { 6, {0,0}, 0x66000000, &logo };
         std::vector<Text*>topbarMenus;
@@ -1196,6 +1157,10 @@ int main(void)
     setenv("SRM_FORCE_GL_ALLOCATION", "1", 0);
 
     LLauncher::startDaemon();
+
+    // Enable screencasting through xdg-desktop-portal-wlr
+    LLauncher::launch("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=wlroots | systemctl --user restart xdg-desktop-portal");
+
     Compositor compositor;
     assert("Compositor failed to start" && compositor.start());
 

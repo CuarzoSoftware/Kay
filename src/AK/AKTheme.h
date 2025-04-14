@@ -3,6 +3,7 @@
 
 #include "modules/skparagraph/include/FontCollection.h"
 #include <AK/AK.h>
+#include <AK/AKBrush.h>
 #include <modules/skparagraph/include/TextStyle.h>
 #include <include/core/SkImage.h>
 #include <include/core/SkRegion.h>
@@ -77,6 +78,11 @@ public:
     static inline SkColor   EdgeShadowColor                         { 0x80000000 };
     virtual sk_sp<SkImage>  edgeShadowImage                         (Int32 scale) noexcept;
 
+
+    /* Blur */
+    static inline SkScalar  BlurVibrancySigma                       { 3.8f };
+    static inline SkColor4f BlurVibrancyLightColor                  { 0.86f, 0.86f, 0.86f, 0.68f };
+    static inline SkColor4f BlurVibrancyDarkColor                   { 0.05f, 0.05f, 0.05f, 0.92f };
 protected:
 
     /* AKButton */

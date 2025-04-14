@@ -566,7 +566,7 @@ void AKScene::updateDamageTrackers() noexcept
 
         while (!it.done())
         {
-            outset.op(it.rect().makeOutset(250, 250), SkRegion::Op::kUnion_Op);
+            outset.op(it.rect().makeOutset(50, 50), SkRegion::Op::kUnion_Op);
             it.next();
         }
 
@@ -839,13 +839,13 @@ void AKScene::renderNodes(AKNode *node)
         return true;
     }
 
-    void AKScene::addNodeDamage(AKNode &node, const SkRegion &damage) noexcept
+    void AKScene::addNodeDamage(AKNode &, const SkRegion &damage) noexcept
     {
         t->m_damage.op(damage, SkRegion::Op::kUnion_Op);
 
         for (auto &bdt : t->m_bdts)
-            //if (bdt != &node.bdt)
-            bdt->damage.op(damage, SkRegion::Op::kUnion_Op);
+            if (SkIRect::Intersects(bdt->reactiveRegionTranslated.getBounds(), damage.getBounds()))
+                bdt->damage.op(damage, SkRegion::Op::kUnion_Op);
     }
 
     void AKScene::handlePointerMoveEvent()

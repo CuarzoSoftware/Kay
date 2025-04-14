@@ -12,6 +12,7 @@
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
 #include <include/core/SkColorSpace.h>
 #include <include/utils/SkParsePath.h>
+#include <include/pathops/SkPathOps.h>
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -660,16 +661,26 @@ void MToplevel::render() noexcept
             layout().calculatedWidth(),
             layout().calculatedHeight());
 
-        if (MSurface::imp()->backgroundBlur && app()->wayland().svgPathManager)
+        if (MSurface::imp()->backgroundBlur && app()->wayland().svgPathManager && opacity() == 0.f)
         {
-            SkPath path = SkPath::RRect(
-                SkRect::MakeXYWH(
-                    imp()->shadowMargins.fLeft,
-                    imp()->shadowMargins.fTop,
-                    layout().calculatedWidth(),
-                    layout().calculatedHeight()),
-                MTheme::CSDBorderRadius,
-                MTheme::CSDBorderRadius);
+            int r = MTheme::CSDBorderRadius;
+            int r2 = r * 2;
+            int x = imp()->shadowMargins.fLeft;
+            int y = imp()->shadowMargins.fTop;
+            int w = layout().calculatedWidth();
+            int h = layout().calculatedHeight();
+
+            SkPath path;
+            path.moveTo(x + r, y);
+            path.rLineTo(w - r2, 0);
+            path.rQuadTo(r, 0, r,r);
+            path.rLineTo(0, h - r2);
+            path.rQuadTo(0, r, -r, r);
+            path.rLineTo(r2-w, 0);
+            path.rQuadTo(-r, 0, -r, -r);
+            path.rLineTo(0, r2-h);
+            path.rQuadTo(0, -r, r, -r);
+            path.close();
 
             auto str = std::string(SkParsePath::ToSVGString(path).c_str());
             svg_path *svg { svg_path_manager_get_svg_path(app()->wayland().svgPathManager) };
@@ -719,7 +730,11 @@ void MToplevel::render() noexcept
     target()->setAge(bufferAge);
     SkRegion skDamage, skOpaque;
     target()->outDamageRegion = &skDamage;
-    target()->outOpaqueRegion = &skOpaque;
+
+    if (opacity() == 1.f)
+        target()->outOpaqueRegion = &skOpaque;
+    else
+        target()->outOpaqueRegion = nullptr;
 
     /* CSD */
     if (decorationMode() == ClientSide && builtinDecorationsEnabled())
@@ -733,9 +748,10 @@ void MToplevel::render() noexcept
 
     scene().render(target());
 
-    if (decorationMode() == ClientSide && builtinDecorationsEnabled())
-        for (int i = 0; i < 4; i++)
-            target()->outOpaqueRegion->op(imp()->borderRadius[i].globalRect(), SkRegion::Op::kDifference_Op);
+    if (opacity() == 1.f)
+        if (decorationMode() == ClientSide && builtinDecorationsEnabled())
+            for (int i = 0; i < 4; i++)
+                target()->outOpaqueRegion->op(imp()->borderRadius[i].globalRect(), SkRegion::Op::kDifference_Op);
 
     wl_surface_set_buffer_scale(wlSurface(), scale());
 
@@ -794,17 +810,6 @@ void MToplevel::render() noexcept
 
     assert(app()->graphics().eglSwapBuffersWithDamageKHR(app()->graphics().eglDisplay, eglSurface(), damageRects, skDamage.computeRegionComplexity()) == EGL_TRUE);
     delete []damageRects;
-
-    /*
-    if (states().check(Resizing) && callbackMsDiff < 4)
-    {
-        wl_display_flush(Marco::app()->wayland().display);
-        usleep((4 - callbackMsDiff) * 1000);
-        AKLog::debug("Sleeping %d ms", (4 - callbackMsDiff));
-    }*/
-
-    //eglSwapBuffers(app()->graphics().eglDisplay, m_eglSurface);
-
     imp()->applyPendingParent();
     imp()->applyPendingChildren();
 }
