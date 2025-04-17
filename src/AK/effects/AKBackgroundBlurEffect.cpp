@@ -1,6 +1,7 @@
 #include <include/core/SkCanvas.h>
 #include <include/effects/SkImageFilters.h>
 #include <include/gpu/ganesh/GrDirectContext.h>
+#include <include/core/SkRRect.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
 #include <AK/events/AKRenderEvent.h>
 #include <AK/AKSceneTarget.h>
@@ -54,6 +55,189 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
     }
 }
 
+void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
+{
+    if (!p.target.image() || p.damage.isEmpty())
+        return;
+
+    glDisable(GL_BLEND);
+
+    SkIRect pathLocalRect;
+
+    int mod { 16 };
+    if (clipMode() == Manual)
+    {
+        pathLocalRect = clip.getBounds().round();
+        pathLocalRect.setXYWH(
+            pathLocalRect.x(),
+            pathLocalRect.y(),
+            pathLocalRect.width() + mod - (pathLocalRect.width() % mod),
+            pathLocalRect.height() + mod - (pathLocalRect.height() % mod));
+    }
+    else
+        pathLocalRect = SkIRect::MakeSize(p.rect.size());
+
+    const SkRect srcRect { SkRect::Make(pathLocalRect).makeOffset(p.rect.x(), p.rect.y()) };
+
+    constexpr SkScalar d1 { 0.25f };
+    constexpr SkScalar d4 { 0.125f };
+    const bool shrink { true };
+    const SkScalar q { SkScalar(p.target.xyScale().x())};
+
+    bool reblur { !bdt.damage.isEmpty() };
+    bool copyAll { false };
+
+    auto &bd { m_blurData.emplace(&p.target, BlurData()).first->second };
+
+    SkISize copySize = pathLocalRect.size();
+    copySize.fWidth += 16 - (copySize.fWidth % 16);
+    copySize.fHeight += 16 - (copySize.fHeight % 16);
+
+    if (bd.backgroundCopy)
+    {
+        copyAll = bd.backgroundCopy->resize(copySize, q * d1, false);
+        reblur |= copyAll;
+    }
+    else
+    {
+        copyAll = true;
+        bd.backgroundCopy = AKSurface::Make(copySize, q * d1, false);
+    }
+
+    /*
+    if (bd.backgroundCopy2)
+    {
+        bd.backgroundCopy2->resize(pathLocalRect.size(), q * d2, shrink);
+    }
+    else
+    {
+        bd.backgroundCopy2 = AKSurface::Make(pathLocalRect.size(), q * d2, false);
+    }  */
+
+    if (bd.blur)
+        reblur |= bd.blur->resize(copySize, q * d4, shrink);
+    else
+    {
+        reblur = true;
+        bd.blur = AKSurface::Make(copySize, q * d4, true);
+    }
+
+    SkIRect finalSrcRect = SkIRect::MakeWH(bd.blur->imageSrcRect().width() /2 , bd.blur->imageSrcRect().height() /2 );
+
+    if (reblur)
+    {
+        // Copy background 1/4 size
+        const SkIRect backgroundCopySrc { SkIRect::MakeSize(bd.backgroundCopy->size()) };
+        p.painter.bindTarget(bd.backgroundCopy.get());
+        glDisable(GL_BLEND);
+        p.painter.setAlpha(1.f);
+        p.painter.setColorFactor(1.f, 1.f, 1.f, 1.f);
+        p.painter.bindTextureMode({
+            .texture = p.target.image(),
+            .pos = {0, 0},
+            .srcRect = SkRect::MakeXYWH(srcRect.x() - p.target.viewport().x(), srcRect.y() - p.target.viewport().y(), srcRect.width(), srcRect.height()),
+            .dstSize =  SkISize( bd.backgroundCopy->size().width(), bd.backgroundCopy->size().height()),
+            .srcTransform = AKTransform::Normal,
+            .srcScale = p.target.xyScale().x()
+        });
+
+        if (copyAll)
+            p.painter.drawRect(backgroundCopySrc);
+        else
+        {
+            bdt.damage.translate(-srcRect.x(), -srcRect.y());
+            bdt.damage.op(backgroundCopySrc, SkRegion::Op::kIntersect_Op);
+            p.painter.drawRegion(bdt.damage);
+        }
+
+        // Copy to 1/4 and apply some blur
+        p.painter.bindTarget(bd.blur.get());
+        p.painter.bindTextureMode({
+            .texture = bd.backgroundCopy->image(),
+            .pos = {0, 0},
+            .srcRect = SkRect::Make(bd.backgroundCopy->imageSrcRect()),
+            .dstSize =  SkISize( bd.blur->size().width(), bd.blur->size().height()),
+            .srcTransform = AKTransform::Normal,
+            .srcScale = 1.f
+        });
+
+        p.painter.blendMode = AKPainter::Vibrancy1;
+        p.painter.drawRect(backgroundCopySrc);
+
+        p.painter.bindTextureMode({
+            .texture = bd.blur->image(),
+            .pos = {0, 0},
+            .srcRect = SkRect::Make(bd.blur->imageSrcRect()),
+            .dstSize =  SkISize( bd.blur->size().width() / 2, bd.blur->size().height() / 2),
+            .srcTransform = AKTransform::Normal,
+            .srcScale = 1.f
+        });
+
+        p.painter.blendMode = AKPainter::Vibrancy2;
+        p.painter.drawRect(backgroundCopySrc);
+        p.painter.blendMode = AKPainter::Normal;
+    }
+
+    // This means using an SkPath
+    if (clipMode() == Manual)
+    {
+        p.target.surface()->recordingContext()->asDirectContext()->resetContext();
+        auto &c { *p.target.surface()->getCanvas() };
+        c.save();
+
+        SkRegion damage = p.damage;
+        damage.op(srcRect.roundOut(), SkRegion::Op::kIntersect_Op);
+
+        SkPath damagePath;
+        damage.getBoundaryPath(&damagePath);
+        damagePath.setIsVolatile(true);
+        c.resetMatrix();
+        c.scale(p.target.xyScale().x(), p.target.xyScale().y());
+        c.translate(-p.target.viewport().x(), - p.target.viewport().y());
+
+        c.translate(p.rect.x(), p.rect.y());
+        c.clipPath(clip);
+
+        c.translate(-p.rect.x(), -p.rect.y());
+
+        c.clipPath(damagePath);
+
+        SkPaint paint;
+        paint.setAntiAlias(true);
+        c.drawImageRect(bd.blur->image(),
+                        SkRect::Make(finalSrcRect),
+                        srcRect,
+                        SkFilterMode::kLinear,
+                        &paint,
+                        SkCanvas::kFast_SrcRectConstraint);
+
+        p.target.surface()->recordingContext()->asDirectContext()->flush();
+        c.restore();
+
+        p.painter.bindProgram();
+        p.painter.bindTarget(&p.target);
+    }
+
+    // Using the full node size
+    else
+    {
+        p.painter.bindProgram();
+        p.painter.bindTarget(&p.target);
+        p.painter.setParamsFromRenderable(this);
+        glDisable(GL_BLEND);
+        p.painter.bindTextureMode({
+            .texture = bd.blur->image(),
+            .pos = p.rect.topLeft(),
+            .srcRect = SkRect::Make(finalSrcRect),
+            .dstSize = p.rect.size(),
+            .srcTransform = AKTransform::Normal,
+            .srcScale = 1.f
+        });
+        p.painter.drawRegion(p.damage);
+    }
+}
+
+/*
 void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
 {
     if (!p.target.image() || p.damage.isEmpty())
@@ -122,7 +306,6 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
     int bH = bd.blur->imageSrcRect().height() * 1.;
     SkRect blurSrc { SkRect::MakeWH(bW, bH) };
 
-
     if (reblur)
     {
         // Copy background 3/4 size
@@ -168,10 +351,6 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             p.painter.drawRect(backgroundCopySrc);
         else
             p.painter.drawRegion(bdt.damage);
-
-
-
-
 
         bd.backgroundCopy2->surface()->recordingContext()->asDirectContext()->resetContext();
         SkCanvas &c { *bd.backgroundCopy2->surface()->getCanvas() };
@@ -254,6 +433,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
 
         c.translate(p.rect.x(), p.rect.y());
         c.clipPath(clip);
+
         c.translate(-p.rect.x(), -p.rect.y());
 
         c.clipPath(damagePath);
@@ -291,7 +471,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         });
         p.painter.drawRegion(p.damage);
     }
-}
+}*/
 
 /*
 void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)

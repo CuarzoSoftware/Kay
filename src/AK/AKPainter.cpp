@@ -11,6 +11,7 @@
 #include <GL/glext.h>
 #include <GLES2/gl2.h>
 #include <GLES3/gl3.h>
+#include <iomanip>
 #include <iostream>
 
 #define AKPAINTER_TRACK_UNIFORMS 1
@@ -508,10 +509,6 @@ void AKPainter::bindProgram() noexcept
     glBlendColor(0, 0, 0, 0);
     glBlendEquation(GL_FUNC_ADD);
 
-    glUniform2f(currentUniforms->texSize,
-                currentState->texSize.width(),
-                currentState->texSize.height());
-
     glUniform4f(currentUniforms->srcRect,
                 currentState->srcRect.x(),
                 currentState->srcRect.y(),
@@ -547,12 +544,53 @@ void AKPainter::bindProgram() noexcept
     needsBlendFuncUpdate = true;
 }
 
+
+static std::string genHBlur(const std::vector<float> &kernel)
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(4); // Set precision for floats
+
+    // Start with the initial gl_FragColor assignment
+    oss << "gl_FragColor.xyz = " << kernel[0] << " * texture2D(tex, v_texcoord).xyz;\n";
+
+    // Loop over the remaining kernel elements
+    for (size_t i = 1; i < kernel.size(); ++i) {
+        float offset = static_cast<float>(i); // Offset for texSize.x
+        oss << "gl_FragColor.xyz += " << kernel[i] << " * texture2D(tex, v_texcoord + vec2("
+            << offset << " * texSize.x, 0)).xyz;\n";
+        oss << "gl_FragColor.xyz += " << kernel[i] << " * texture2D(tex, v_texcoord - vec2("
+            << offset << " * texSize.x, 0)).xyz;\n";
+    }
+
+    return oss.str();
+}
+
+
+static std::string genVBlur(const std::vector<float> &kernel)
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(4); // Set precision for floats
+
+    // Start with the initial gl_FragColor assignment
+    oss << "gl_FragColor.xyz = " << kernel[0] << " * texture2D(tex, v_texcoord).xyz;\n";
+
+    // Loop over the remaining kernel elements
+    for (size_t i = 1; i < kernel.size(); ++i) {
+        float offset = static_cast<float>(i); // Offset for texSize.y
+        oss << "gl_FragColor.xyz += " << kernel[i] << " * texture2D(tex, v_texcoord + vec2(0.0, "
+            << offset << " * texSize.y)).xyz;\n";
+        oss << "gl_FragColor.xyz += " << kernel[i] << " * texture2D(tex, v_texcoord - vec2(0.0, "
+            << offset << " * texSize.y)).xyz;\n";
+    }
+
+    return oss.str();
+}
+
 AKPainter::AKPainter() noexcept
 {
     GLchar vShaderStr[] = R"(
         precision mediump float;
         precision mediump int;
-        uniform mediump vec2 texSize;
         uniform mediump vec4 srcRect;
         attribute mediump vec4 vertexPosition;
         varying mediump vec2 v_texcoord;
@@ -581,7 +619,7 @@ AKPainter::AKPainter() noexcept
         }
         )";
 
-    GLchar fShaderStr[] =R"(
+    std::string fShaderStr =R"(
         uniform mediump sampler2D tex;
         uniform bool colorFactorEnabled;
         uniform lowp int mode;
@@ -590,11 +628,45 @@ AKPainter::AKPainter() noexcept
         varying mediump vec2 v_texcoord;
         uniform bool texColorEnabled;
         uniform bool premultipliedAlpha;
+        uniform mediump vec2 texSize;
+        precision highp float;
 
         void main()
         {
+            // Vibrancy
+            if (mode == 5)
+            {
+                <<HBLUR>>
+                gl_FragColor.w = 1.0;
+            }
+            else if (mode == 6)
+            {
+                <<VBLUR>>
+
+                const mat3 rgbToYuvMatrix = mat3(
+                    0.299,   0.587,   0.114,   // Y: Higher weight on green
+                   -0.14713, -0.28886, 0.436,  // U: Blue chroma adjusted
+                    0.615,  -0.51498, -0.10001  // V: Red-green chroma adjusted
+                );
+
+
+                const mat3 yuvToRgbMatrix = mat3(
+                    1.0,   0.0,      1.13983,  // R: Red channel
+                    1.0,  -0.39465, -0.58060,  // G: Green channel balance improved
+                    1.0,   2.03211,  0.0       // B: Blue channel balance
+                );
+
+                //gl_FragColor.xyz -= vec3(gl_FragColor.x * gl_FragColor.y * gl_FragColor.z) * 0.25;
+                gl_FragColor.xyz = gl_FragColor.xyz  * rgbToYuvMatrix;
+                gl_FragColor.y *= 24.0;
+                gl_FragColor.z *= 24.0;
+                gl_FragColor.x *= 12.0;
+                gl_FragColor.xyz = gl_FragColor.xyz * yuvToRgbMatrix;
+                gl_FragColor.xyz = ((0.1/6.0) * min(gl_FragColor.xyz, vec3(7.0))) + 0.78;
+                gl_FragColor.w = 1.0;
+            }
             // Texture
-            if (mode != 2)
+            else if (mode != 2)
             {
                 if (texColorEnabled)
                 {
@@ -635,12 +707,30 @@ AKPainter::AKPainter() noexcept
                 gl_FragColor.w = alpha;
             }
         }
-        )";
+    )";
+
+    // 6
+    std::vector<float> kernelH {0.0665,	0.0655,	0.0629,	0.0587,	0.0532,	0.0470,	0.0404,	0.0337,	0.0274,	0.0216,	0.0166
+
+
+
+};
+    std::vector<float> kernelV { 0.1324,	0.1253,	0.1063,	0.0807,	0.0549,	0.0334,	0.0183,	0.0089,
+
+};
+
+    //for (size_t i = 0; i < kernelH.size(); i++)
+    //    kernelH[i] *= 0.5f;
+
+    const std::string placeholderH { "<<HBLUR>>" };
+    const std::string placeholderV { "<<VBLUR>>" };
+    fShaderStr.replace(fShaderStr.find(placeholderH), placeholderH.length(), genHBlur(kernelH));
+    fShaderStr.replace(fShaderStr.find(placeholderV), placeholderV.length(), genVBlur(kernelV));
 
     std::string fShaderStrExternal = fShaderStr;
     makeExternalShader(fShaderStrExternal);
     vertexShader = compileShader(GL_VERTEX_SHADER, vShaderStr);
-    fragmentShader = compileShader(GL_FRAGMENT_SHADER, fShaderStr);
+    fragmentShader = compileShader(GL_FRAGMENT_SHADER, fShaderStr.c_str());
     fragmentShaderExternal = compileShader(GL_FRAGMENT_SHADER, fShaderStrExternal.c_str());
 
     GLint linked;
@@ -799,6 +889,21 @@ void AKPainter::switchTarget(GLenum target) noexcept
 
 void AKPainter::setViewport(Int32 x, Int32 y, Int32 w, Int32 h) noexcept
 {
+    if (blendMode == Vibrancy1)
+    {
+        glUniform1i(currentUniforms->mode, 5);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    }
+    else if (blendMode == Vibrancy2)
+    {
+        glUniform1i(currentUniforms->mode, 6);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    }
+    else
+        glUniform1i(currentUniforms->mode, currentState->mode);
+
     x -= t->viewport().x();
     y -= t->viewport().y();
 
@@ -885,6 +990,10 @@ void AKPainter::setViewport(Int32 x, Int32 y, Int32 w, Int32 h) noexcept
             (Float32(y2) - srcRect.y()) / srcRect.height(),
             (Float32(x2) - srcRect.x()) / srcRect.width(),
             (Float32(y) - srcRect.y()) / srcRect.height()));
+
+        glUniform2f(currentUniforms->texSize,
+                    w == 0 ? 0.f : 1.f/srcRect.width(),
+                    h == 0 ? 0.f : 1.f/srcRect.height());
     }
 }
 

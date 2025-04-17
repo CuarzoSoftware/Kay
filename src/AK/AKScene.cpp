@@ -566,7 +566,7 @@ void AKScene::updateDamageTrackers() noexcept
 
         while (!it.done())
         {
-            outset.op(it.rect().makeOutset(50, 50), SkRegion::Op::kUnion_Op);
+            outset.op(it.rect().makeOutset(400, 400), SkRegion::Op::kUnion_Op);
             it.next();
         }
 

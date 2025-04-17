@@ -11,6 +11,15 @@
 class AK::AKPainter : public AKObject
 {
 public:
+    enum BlendMode
+    {
+        Normal,
+        Vibrancy1,
+        Vibrancy2,
+    };
+
+    BlendMode blendMode = Normal;
+
     /**
      * @brief Parameters required for bindTextureMode().
      *
