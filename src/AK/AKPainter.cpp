@@ -715,7 +715,7 @@ AKPainter::AKPainter() noexcept
 
 
 };
-    std::vector<float> kernelV { 0.1324,	0.1253,	0.1063,	0.0807,	0.0549,	0.0334,	0.0183,	0.0089,
+    std::vector<float> kernelV { 0.1324,0.1253,	0.1063,	0.0807,	0.0549,	0.0334,	0.0183,	0.0089,
 
 };
 

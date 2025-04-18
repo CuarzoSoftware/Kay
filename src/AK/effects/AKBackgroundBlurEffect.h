@@ -126,13 +126,6 @@ public:
      */
     SkPath clip;
     using AKBackgroundEffect::effectRect;
-    struct BlurData
-    {
-        std::shared_ptr<AKSurface> backgroundCopy;
-        std::shared_ptr<AKSurface> backgroundCopy2;
-        std::shared_ptr<AKSurface> backgroundCopy3;
-        std::shared_ptr<AKSurface> blur;
-    };
 protected:
     void onSceneCalculatedRect() override;
     void renderEvent(const AKRenderEvent &event) override;
@@ -142,7 +135,10 @@ private:
     AKBrush m_brush1, m_brush2, m_brush3;
     SkVector m_sigma;
     ClipMode m_clipMode;
-    std::unordered_map<const AKSceneTarget*, BlurData> m_blurData;
+    SkRegion m_damage[3];
+    //std::shared_ptr<AKSurface> m_backgroundCopy[3];
+    std::shared_ptr<AKSurface> m_blur;
+    UInt8 m_i { 0 };
 };
 
 #endif // AKBACKGROUNDBLUREFFECT_H

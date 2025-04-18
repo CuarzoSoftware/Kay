@@ -82,8 +82,20 @@ bool AKSurface::resize(const SkISize &size, SkScalar scale, bool shrink) noexcep
     m_scale = scale;
 
     m_imageSrcRect = SkIRect::MakeWH(
-        SkScalar(size.width()) * m_scale,
-        SkScalar(size.height()) * m_scale);
+        SkScalarRoundToInt(SkScalar(size.width()) * m_scale),
+        SkScalarRoundToInt(SkScalar(size.height()) * m_scale));
+
+    if (m_imageSrcRect.width() == 0)
+    {
+        m_size.fWidth = 1;
+        m_imageSrcRect.fRight = 1;
+    }
+
+    if (m_imageSrcRect.height() == 0)
+    {
+        m_size.fHeight = 1;
+        m_imageSrcRect.fBottom = 1;
+    }
 
     m_viewport = SkRect::Make(m_imageSrcRect);
     m_xyScale.set(scale, scale);

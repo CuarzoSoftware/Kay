@@ -81,7 +81,10 @@ private:
     void updateDamageRing() noexcept;
     void updateDamageTrackers() noexcept;
     void renderBackground() noexcept;
+    void renderBackgroundOnTarget(AKTarget &target, SkRegion &region) noexcept;
     void renderNodes(AKNode *node);
+    void renderNodeTranslucentOnTarget(AKRenderable *node, AKTarget &target, SkRegion &region) noexcept;
+    void renderNodeOpaqueOnTarget(AKRenderable *node, AKTarget &target, SkRegion &region) noexcept;
     void handlePointerMoveEvent();
     void handlePointerLeaveEvent();
     void handlePointerButtonEvent();

@@ -21,10 +21,18 @@ namespace AK
 {
 struct BackgroundDamageTracker
 {
+    bool enabled { false };
     AKNode *node;
-    SkRegion reactiveRegion;
-    SkRegion reactiveRegionTranslated;
+    SkIRect reactiveRect;
+    SkIRect reactiveRectTranslated;
+    SkRegion repaintAnyway;
+    SkRegion repaintAnywayTranslated;
     SkRegion damage;
+    std::unordered_map<AKSceneTarget*,std::shared_ptr<AKSurface>> surfaces;
+    std::shared_ptr<AKSurface> currentSurface;
+    SkScalar q { 0.125f * 1.f };
+    Int32 r { 0 };
+    Int32 divisibleBy { 1 };
 };
 }
 
@@ -489,6 +497,8 @@ private:
     std::unordered_set<AKSceneTarget*> m_intersectedTargets;
     mutable std::unordered_map<AKSceneTarget*, TargetData> m_targets;
     AKCursor m_cursor { AKCursor::Default };
+    std::vector<BackgroundDamageTracker*> m_overlayBdts;
+
 };
 
 /**

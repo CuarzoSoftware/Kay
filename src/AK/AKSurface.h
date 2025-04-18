@@ -17,7 +17,7 @@ public:
 
     static std::shared_ptr<AKSurface> Make(const SkISize &size, SkScalar scale, bool hasAlpha = true) noexcept;
 
-    sk_sp<SkSurface> surface() const noexcept;
+    sk_sp<SkSurface> surface() const noexcept override;
 
     sk_sp<SkImage> image() const noexcept
     {

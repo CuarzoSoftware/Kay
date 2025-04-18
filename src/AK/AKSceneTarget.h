@@ -40,7 +40,7 @@ public:
         m_surface = surface;
     }
 
-    sk_sp<SkSurface> surface() const noexcept
+    sk_sp<SkSurface> surface() const noexcept override
     {
         return m_surface;
     }
@@ -303,7 +303,7 @@ private:
     bool                m_isDirty { false };
     bool                m_needsFullRepaint { true };
     bool                m_renderCalculatesLayout { true };
-    std::unordered_set<BackgroundDamageTracker*> m_bdts;
+    std::vector<BackgroundDamageTracker*> m_bdts;
     SkColor             m_clearColor { SK_ColorTRANSPARENT };
     UInt32              m_age { 0 };
 };
