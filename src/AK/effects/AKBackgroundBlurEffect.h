@@ -138,6 +138,7 @@ private:
     SkRegion m_damage[3];
     //std::shared_ptr<AKSurface> m_backgroundCopy[3];
     std::shared_ptr<AKSurface> m_blur;
+    std::shared_ptr<AKSurface> m_blur2;
     UInt8 m_i { 0 };
 };
 
