@@ -335,13 +335,13 @@ void AKScene::calculateNewDamage(AKNode *node)
         if (modH != 0)
             size.fHeight += node->bdt.divisibleBy - modH;
 
-
         if (node->bdt.surfaces.contains(t))
             node->bdt.surfaces[t]->resize(size, scale, false);
         else
             node->bdt.surfaces[t] = AKSurface::Make(size, scale, false);
 
         node->bdt.currentSurface = node->bdt.surfaces[t];
+        node->bdt.currentSurface->setViewportPos(t->viewport().x(), t->viewport().y());
         hasBDT = true;
         node->bdt.node = node;
         node->bdt.reactiveRectTranslated = node->bdt.reactiveRect.makeOffset(node->m_rect.x(), node->m_rect.y());

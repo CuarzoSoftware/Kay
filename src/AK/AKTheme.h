@@ -83,20 +83,25 @@ public:
     static inline SkScalar  BlurVibrancySigma                       { 3.8f };
     static inline SkColor4f BlurVibrancyLightColor                  { 0.86f, 0.86f, 0.86f, 0.68f };
     static inline SkColor4f BlurVibrancyDarkColor                   { 0.05f, 0.05f, 0.05f, 0.92f };
+
+
+    /* Generators */
+    virtual sk_sp<SkImage>  topLeftRoundCornerMask                  (Int32 radius, Int32 scale) noexcept;
 protected:
 
     /* AKButton */
-
     std::unordered_map<Int32,sk_sp<SkImage>> m_buttonPlainHThreePatchImage;
     std::unordered_map<Int32,sk_sp<SkImage>> m_buttonTintedHThreePatchImage;
 
     /* AKTextField */
-
     std::unordered_map<Int32,sk_sp<SkImage>> m_textFieldRoundHThreePatchImage;
     std::unordered_map<Int32,sk_sp<SkImage>> m_textCaretVThreePatchImage;
 
     /* AKEdgeShadow */
     std::unordered_map<Int32,sk_sp<SkImage>> m_edgeShadowImage;
+
+    /* Round Corner Masks [scale][size] */
+    std::unordered_map<Int32,std::unordered_map<Int32,sk_sp<SkImage>>> m_topLeftRoundCornerMasks;
 };
 
 #endif // AKTHEME_H

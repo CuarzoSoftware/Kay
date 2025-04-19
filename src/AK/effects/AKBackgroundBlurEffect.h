@@ -4,7 +4,7 @@
 #include <AK/effects/AKBackgroundEffect.h>
 #include <AK/AKSurface.h>
 #include <AK/AKSignal.h>
-#include <AK/AKBrush.h>
+#include <AK/AKRRect.h>
 #include <include/core/SkPath.h>
 
 /**
@@ -24,122 +24,82 @@ public:
      */
     enum Changes
     {
-        /// The sigma() value has changed.
-        CHSigma = AKBackgroundEffect::CHLast,
-
-        /// The clipMode() value has changed.
-        CHClipMode,
+        CHArea,
         CHLast
     };
 
     /**
      * @brief Specifies how the effect is positioned and clipped relative to the target node.
      */
-    enum ClipMode
+    enum AreaType
     {
-        /**
-         * The effectRect is automatically matched with the target node and clipped by it.
-         * In this mode, the custom clip path is ignored.
-         */
-        Automatic,
-
-        /**
-         * Both effectRect and the clip path are manually specified by subscribing to onSceneCalculatedRectSignal.
-         */
-        Manual
+        FullSize,
+        Region,
+        RoundRect,
+        Path
     };
 
-    /**
-     * @brief Creates a background blur effect with the specified Gaussian sigma, attached to the target node.
-     *
-     * @param clipMode Specifies the clipping mode for the effect. Default is ClipMode::Automatic.
-     * @param sigma The x and y Gaussian sigma values for the blur effect. Default is {16.f, 16.f}.
-     * @param target The target node to which the effect is attached. Default is nullptr.
-     */
-    AKBackgroundBlurEffect(ClipMode clipMode = Automatic, const SkVector &sigma = { 16.f, 16.f }, AKNode *target = nullptr) noexcept;
+    AKBackgroundBlurEffect(AKNode *target = nullptr) noexcept;
 
     AKCLASS_NO_COPY(AKBackgroundBlurEffect)
 
-    /**
-     * @brief Sets the clipping mode for the blur effect.
-     */
-    void setClipMode(ClipMode mode) noexcept
+    void setFullSize() noexcept
     {
-        if (m_clipMode == mode)
+        if (m_areaType == FullSize)
             return;
 
-        m_clipMode = mode;
-        addChange(CHClipMode);
+        m_areaType = FullSize;
+        addChange(CHArea);
     }
 
-    /**
-     * @brief Gets the current clipping mode.
-     */
-    ClipMode clipMode() const noexcept
+    void setRoundRect(const AKRRect &rRect) noexcept
     {
-        return m_clipMode;
+        m_areaType = RoundRect;
+        m_rRect = rRect;
+        addChange(CHArea);
     }
 
-    /**
-     * @brief Sets the Gaussian sigma values for the blur effect.
-     *
-     * @param sigma The new x and y Gaussian sigma values.
-     */
-    void setSigma(const SkVector &sigma) noexcept
-    {
-        if (m_sigma == sigma)
-            return;
+    const AKRRect &roundRect() const noexcept { return m_rRect; };
 
-        m_sigma = sigma;
-        addChange(CHSigma);
+    void setRegion(const SkRegion &region) noexcept
+    {
+        m_areaType = Region;
+        m_region = region;
+        addChange(CHArea);
     }
 
-    /**
-     * @brief Gets the current Gaussian sigma values.
-     */
-    const SkVector &sigma() const noexcept
+    const SkRegion &region() const noexcept { return m_region; };
+
+    void setPath(const SkPath &path) noexcept
     {
-        return m_sigma;
+        m_areaType = Path;
+        m_path = path;
+        addChange(CHArea);
     }
 
-    struct
-    {
-        /**
-         * @brief Signal triggered after the target node layout has been calculated.
-         *
-         * This signal is triggered only when using ClipMode::Manual.
-         * During the callback, both effectRect and clipPath should be specified.
-         */
-        AKSignal<> targetLayoutUpdated;
-    } on;
+    const SkPath &path() const noexcept { return m_path; };
 
-    /**
-     * @brief Clip path for the blur area.
-     *
-     * This path is only used by the ClipMode::Manual mode and must be specified
-     * relative to the effectRect. Parts that fall outside effectRect are ignored.
-     *
-     * Should be set during the callback of onSceneCalculatedRectSignal which is triggered right after the target
-     * node layout has been calculated.
-     *
-     * @note Performance tip: Avoid updating when not required as Skia regenerates the clipping mask each time.
-     */
-    SkPath clip;
-    using AKBackgroundEffect::effectRect;
+    AreaType areaType() const noexcept
+    {
+        return m_areaType;
+    }
+
+    AKSignal<> onTargetLayoutUpdated;
+
 protected:
+    using AKBackgroundEffect::effectRect;
     void onSceneCalculatedRect() override;
     void renderEvent(const AKRenderEvent &event) override;
     void onTargetNodeChanged() override { /* Nothing to free here */ }
 private:
     using AKBackgroundEffect::setStackPosition;
-    AKBrush m_brush1, m_brush2, m_brush3;
-    SkVector m_sigma;
-    ClipMode m_clipMode;
-    SkRegion m_damage[3];
-    //std::shared_ptr<AKSurface> m_backgroundCopy[3];
+    AKRRect m_rRect;
+    SkRegion m_region;
+    SkPath m_path;
+    AreaType m_areaType { FullSize };
     std::shared_ptr<AKSurface> m_blur;
     std::shared_ptr<AKSurface> m_blur2;
-    UInt8 m_i { 0 };
+    std::shared_ptr<AKSurface> m_roundCorners[4]; // TL, TR, BR, BL
 };
 
 #endif // AKBACKGROUNDBLUREFFECT_H

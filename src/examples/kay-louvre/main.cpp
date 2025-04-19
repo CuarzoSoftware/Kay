@@ -134,7 +134,7 @@ public:
 
     Menu(AKNode *parent = nullptr) noexcept : AKBakeable(parent)
     {
-        blur.on.targetLayoutUpdated.subscribe(this, [this](){
+        blur.onTargetLayoutUpdated.subscribe(this, [this](){
             const auto &chgs { changes() };
             bool blurNeedsUpdate { chgs.test(CHSize) };
 
@@ -144,16 +144,16 @@ public:
             if (!blurNeedsUpdate)
                 return;
 
-            blur.effectRect.setXYWH(
-                itemsContainer.layout().calculatedLeft(),
-                itemsContainer.layout().calculatedTop(),
-                itemsContainer.layout().calculatedWidth(),
-                itemsContainer.layout().calculatedHeight());
-            blur.clip.reset();
-            blur.clip.addRRect(SkRRect::MakeRectXY(
-                SkRect::MakeWH(blur.effectRect.size().width(), blur.effectRect.size().height()),
+            SkPath path;
+            path.addRRect(SkRRect::MakeRectXY(
+                SkRect::MakeXYWH(
+                    itemsContainer.layout().calculatedLeft(),
+                    itemsContainer.layout().calculatedTop(),
+                    itemsContainer.layout().calculatedWidth(),
+                    itemsContainer.layout().calculatedHeight()),
                 m_borderRadius,
                 m_borderRadius));
+            blur.setPath(path);
         });
 
         enableChildrenClipping(true);
@@ -237,7 +237,7 @@ public:
     }
 
     AKContainer itemsContainer { YGFlexDirectionColumn, true, this };
-    AKBackgroundBlurEffect blur { AKBackgroundBlurEffect::Manual, { 16.f, 16.f }, this };
+    AKBackgroundBlurEffect blur { this };
 protected:
     AKBrush m_shadowBrush; // Shadow style (color basically)
     AKBrush m_brush; // Fill style
@@ -423,9 +423,6 @@ public:
         node.enableAutoDamage(false);
         node.setSrcRectMode(AKRenderableImage::SrcRectMode::Custom);
         node.layout().setPositionType(YGPositionTypeAbsolute);
-        blur.on.targetLayoutUpdated.subscribe(&blur, [this](){
-            blur.effectRect = SkIRect::MakeWH(size().w(), size().h());
-        });
     }
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
 
@@ -492,7 +489,7 @@ public:
             srcRect().w(), srcRect().h()));
     }
 
-    AKBackgroundBlurEffect blur { AKBackgroundBlurEffect::Manual, {4,4}};
+    AKBackgroundBlurEffect blur { };
 };
 
 class Text final : public AKText
@@ -565,8 +562,6 @@ public:
 
             if (!s->node.visible())
                 continue;
-
-            s->blur.setSigma({blurRadius, blurRadius});
 
             const LPoint &pos { s->rolePos() };
             s->node.layout().setPosition(YGEdgeLeft, pos.x());
@@ -935,7 +930,7 @@ public:
         AKSceneTarget *target { nullptr };
 
         AKSubScene topbar { &comp()->kay->overlay };
-        AKBackgroundBlurEffect topbarBlur { AKBackgroundBlurEffect::Automatic, {200.f, 200.f}, &topbar};
+        AKBackgroundBlurEffect topbarBlur { &topbar };
         AKSolidColor topbarBackground { 0x22FFFFFF, &topbar };
         AKBackgroundBoxShadowEffect topbarShadow {
             16, {0, 0}, 0x45000000, false, /*&topbar*/};
@@ -1109,13 +1104,15 @@ public:
     {
         auto *surf { static_cast<Surface*>(surface()) };
 
-        if (isSvgPath() && ch.check(RegionOrPathChanged))
+        if (areaType() == SVGPath && ch.check(AreaChanged))
         {
-            assert(SkParsePath::FromSVGString(svgPath().c_str(), &surf->blur.clip));
+            SkPath path;
+            assert(SkParsePath::FromSVGString(area().svgPath.c_str(), &path));
+            surf->blur.setPath(path);
             AKLog::debug("Blur changed");
         }
 
-        if (visible() && isSvgPath())
+        if (visible() && areaType() == SVGPath)
         {
             AKLog::debug("Blur enabled");
             surf->node.addBackgroundEffect(&surf->blur);

@@ -656,7 +656,7 @@ AKPainter::AKPainter() noexcept
                     1.0,   2.03211,  0.0       // B: Blue channel balance
                 );
 
-                //gl_FragColor.xyz -= vec3(gl_FragColor.x * gl_FragColor.y * gl_FragColor.z) * 0.25;
+                gl_FragColor.xyz *= vec3(1.3);
                 gl_FragColor.xyz = gl_FragColor.xyz  * rgbToYuvMatrix;
                 gl_FragColor.y *= 24.0;
                 gl_FragColor.z *= 24.0;

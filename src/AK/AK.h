@@ -47,6 +47,7 @@ struct BackgroundDamageTracker;
     class AKPen;
     class AKBrush;
     class AKPainter;
+    class AKRRect;
 
     class AKScene;  /* Renders a root AKNode into an AKSceneTarget */
     class AKTarget;

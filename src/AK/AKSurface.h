@@ -49,6 +49,7 @@ public:
     bool shrink() noexcept;
     SkImage *releaseImage() noexcept;
 
+    void setViewportPos(SkScalar x, SkScalar y) noexcept { m_viewport.offsetTo(x, y); }
     const SkRect &viewport() const noexcept override { return m_viewport; };
     AKTransform transform() const noexcept override { return AKTransform::Normal; };
     const SkVector &xyScale() const noexcept override { return m_xyScale; };

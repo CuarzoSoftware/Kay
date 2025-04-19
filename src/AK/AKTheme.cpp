@@ -268,3 +268,33 @@ sk_sp<SkImage> AK::AKTheme::edgeShadowImage(Int32 scale) noexcept
     return result;
 }
 
+sk_sp<SkImage> AK::AKTheme::topLeftRoundCornerMask(Int32 radius, Int32 scale) noexcept
+{
+    assert(radius > 0 && scale > 0);
+
+    auto &scalesMap { m_topLeftRoundCornerMasks[scale] };
+
+    const auto &it { scalesMap.find(radius) };
+
+    if (it != scalesMap.end())
+        return it->second;
+
+    auto surface = AKSurface::Make(SkISize(radius, radius), scale, true);
+    surface->surface()->recordingContext()->asDirectContext()->resetContext();
+    SkCanvas &c { *surface->surface()->getCanvas() };
+    c.scale(surface->scale(), surface->scale());
+    c.clear(SK_ColorTRANSPARENT);
+
+    SkPaint paint;
+    paint.setStroke(false);
+    paint.setAntiAlias(true);
+    paint.setColor(SK_ColorWHITE);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    c.drawCircle(SkPoint::Make(radius, radius), radius, paint);
+    surface->surface()->recordingContext()->asDirectContext()->flush();
+
+    sk_sp<SkImage> result { surface->releaseImage() };
+    scalesMap[radius] = result;
+    return result;
+}
+
