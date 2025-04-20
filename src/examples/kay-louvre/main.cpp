@@ -107,6 +107,13 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
         nullptr);
 }
 
+static void louvreRegion2Skia(const LRegion &lRegion, SkRegion *skRegion) noexcept
+{
+    Int32 n;
+    const LBox *boxes { lRegion.boxes(&n) };
+    skRegion->setRects((const SkIRect*)boxes, n);
+}
+
 /**
  * @brief Example Context Menu Component
  *
@@ -144,16 +151,13 @@ public:
             if (!blurNeedsUpdate)
                 return;
 
-            SkPath path;
-            path.addRRect(SkRRect::MakeRectXY(
-                SkRect::MakeXYWH(
+            blur.setRoundRect(AKRRect(
+                SkIRect::MakeXYWH(
                     itemsContainer.layout().calculatedLeft(),
                     itemsContainer.layout().calculatedTop(),
                     itemsContainer.layout().calculatedWidth(),
                     itemsContainer.layout().calculatedHeight()),
-                m_borderRadius,
-                m_borderRadius));
-            blur.setPath(path);
+                m_borderRadius, m_borderRadius, m_borderRadius, m_borderRadius));
         });
 
         enableChildrenClipping(true);
@@ -1104,15 +1108,39 @@ public:
     {
         auto *surf { static_cast<Surface*>(surface()) };
 
-        if (areaType() == SVGPath && ch.check(AreaChanged))
+        if (ch.check(AreaChanged))
         {
-            SkPath path;
-            assert(SkParsePath::FromSVGString(area().svgPath.c_str(), &path));
-            surf->blur.setPath(path);
-            AKLog::debug("Blur changed");
+
+            switch (areaType())
+            {
+            case Region: {
+                SkRegion region;
+                louvreRegion2Skia(area().region, &region);
+                surf->blur.setRegion(region);
+                break;
+            }
+            case RoundRect:
+                surf->blur.setRoundRect(AKRRect(SkIRect::MakeXYWH(
+                    area().roundRect.x(),
+                    area().roundRect.y(),
+                    area().roundRect.w(),
+                    area().roundRect.h()),
+                    area().roundRect.fRadTL,
+                    area().roundRect.fRadTR,
+                    area().roundRect.fRadBR,
+                    area().roundRect.fRadBL));
+                break;
+            case SVGPath: {
+                // TODO: Check bounds
+                SkPath path;
+                assert(SkParsePath::FromSVGString(area().svgPath.c_str(), &path));
+                surf->blur.setPath(path);
+                break;
+            }
+            }
         }
 
-        if (visible() && areaType() == SVGPath)
+        if (visible())
         {
             AKLog::debug("Blur enabled");
             surf->node.addBackgroundEffect(&surf->blur);

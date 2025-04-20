@@ -646,9 +646,8 @@ AKPainter::AKPainter() noexcept
                 const mat3 rgbToYuvMatrix = mat3(
                     0.299,   0.587,   0.114,   // Y: Higher weight on green
                    -0.14713, -0.28886, 0.436,  // U: Blue chroma adjusted
-                    0.615,  -0.51498, -0.10001  // V: Red-green chroma adjusted
+                    0.615,  -0.51498, -0.10001 // V: Red-green chroma adjusted
                 );
-
 
                 const mat3 yuvToRgbMatrix = mat3(
                     1.0,   0.0,      1.13983,  // R: Red channel
@@ -656,7 +655,6 @@ AKPainter::AKPainter() noexcept
                     1.0,   2.03211,  0.0       // B: Blue channel balance
                 );
 
-                gl_FragColor.xyz *= vec3(1.3);
                 gl_FragColor.xyz = gl_FragColor.xyz  * rgbToYuvMatrix;
                 gl_FragColor.y *= 24.0;
                 gl_FragColor.z *= 24.0;
@@ -709,19 +707,11 @@ AKPainter::AKPainter() noexcept
         }
     )";
 
-    // 6
-    std::vector<float> kernelH {0.0665,	0.0655,	0.0629,	0.0587,	0.0532,	0.0470,	/*0.0404,	0.0337,	0.0274,	0.0216,	0.0166*/
+    // Sigma 6
+    std::vector<float> kernelH {0.0665,	0.0655,	0.0629,	0.0587,	0.0532,	0.0470,	0.0404,	0.0337,	0.0274,	0.0216,	0.0166 };
 
-
-
-};
-    // 3
-    std::vector<float> kernelV { 0.1324,0.1253,	0.1063,	0.0807,	0.0549,	/*0.0334,	0.0183,	0.0089,*/
-
-};
-
-    //for (size_t i = 0; i < kernelH.size(); i++)
-    //    kernelH[i] *= 0.5f;
+    // Sigma 3
+    std::vector<float> kernelV { 0.1324,0.1253,	0.1063,	0.0807,	0.0549,	0.0334,	0.0183,	0.0089 };
 
     const std::string placeholderH { "<<HBLUR>>" };
     const std::string placeholderV { "<<VBLUR>>" };

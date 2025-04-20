@@ -664,12 +664,13 @@ void MToplevel::render() noexcept
         if (MSurface::imp()->backgroundBlur && app()->wayland().svgPathManager && opacity() == 0.f)
         {
             int r = MTheme::CSDBorderRadius;
-            int r2 = r * 2;
+            //int r2 = r * 2;
             int x = imp()->shadowMargins.fLeft;
             int y = imp()->shadowMargins.fTop;
             int w = layout().calculatedWidth();
             int h = layout().calculatedHeight();
 
+            /*
             SkPath path;
             path.moveTo(x + r, y);
             path.rLineTo(w - r2, 0);
@@ -703,6 +704,9 @@ void MToplevel::render() noexcept
             svg_path_done(svg);
             background_blur_set_path(MSurface::imp()->backgroundBlur, svg);
             svg_path_destroy(svg);
+            */
+
+            background_blur_set_round_rect(MSurface::imp()->backgroundBlur, x, y, w, h, r, r, r, r);
         }
     }
 
