@@ -5,7 +5,7 @@
 #include <include/core/SkFontMgr.h>
 
 #define AK_GET_CLASS(identifier) typename std::remove_const<std::remove_pointer<decltype(identifier)>::type>::type
-#define AK_MAX_BUFFER_AGE 10
+#define AK_MAX_BUFFER_AGE 3
 #define AK_UNUSED(object){(void)object;}
 #define AKCLASS_NO_COPY(class_name) \
     class_name(const class_name&) = delete; \
@@ -18,8 +18,6 @@
  */
 namespace AK
 {
-struct BackgroundDamageTracker;
-
     class AKApplication;
     class AKObject;
     class AKWeakUtils;
@@ -33,6 +31,7 @@ struct BackgroundDamageTracker;
     class AKTheme;
     class AKTime;
     class AKChanges;
+    class AKBackgroundDamageTracker;
 
     /* Event sources */
 

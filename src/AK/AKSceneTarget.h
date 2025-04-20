@@ -1,6 +1,7 @@
 #ifndef AKSCENETARGET_H
 #define AKSCENETARGET_H
 
+#include <AK/AKBackgroundDamageTracker.h>
 #include <AK/AKTarget.h>
 #include <AK/AKSignal.h>
 #include <AK/AKWeak.h>
@@ -8,7 +9,6 @@
 #include <include/core/SkMatrix.h>
 #include <include/core/SkRegion.h>
 #include <yoga/Yoga.h>
-#include <unordered_set>
 
 /**
  * @brief A rendering destination.
@@ -303,7 +303,10 @@ private:
     bool                m_isDirty { false };
     bool                m_needsFullRepaint { true };
     bool                m_renderCalculatesLayout { true };
-    std::vector<BackgroundDamageTracker*> m_bdts;
+
+    std::vector<AKWeak<AKBackgroundDamageTracker>>    m_bdts;
+    std::vector<AKWeak<AKBackgroundDamageTracker>>    m_bdtsPrev;
+    std::vector<SkIRect>            m_bdtPrevRectsTranslated;
     SkColor             m_clearColor { SK_ColorTRANSPARENT };
     UInt32              m_age { 0 };
 };

@@ -33,6 +33,7 @@
 #include <LExclusiveZone.h>
 #include <LKeyboardKeyEvent.h>
 #include <LBackgroundBlur.h>
+#include <LLayerRole.h>
 
 #include <AK/nodes/AKSubScene.h>
 #include <AK/nodes/AKImageFrame.h>
@@ -430,8 +431,6 @@ public:
     }
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
 
-    AKRenderableImage node { &comp()->kay->surfaces };
-
     void layerChanged() override
     {
         // Check if the surface has a toplevel role
@@ -459,6 +458,10 @@ public:
     void opaqueRegionChanged() override
     {
         LSurface::opaqueRegionChanged();
+
+        if (isWallpaper)
+            return;
+
         Int32 n;
         const LBox *boxes = opaqueRegion().boxes(&n);
         node.opaqueRegion.setRects((const SkIRect*)boxes, n);
@@ -493,6 +496,17 @@ public:
             srcRect().w(), srcRect().h()));
     }
 
+    void mappingChanged() override
+    {
+        LSurface::mappingChanged();
+        isWallpaper = layerRole() && layerRole()->scope() == "wallpaper";
+
+        if (isWallpaper)
+            node.opaqueRegion.setRect(AK_IRECT_INF);
+    }
+
+    bool isWallpaper { false };
+    AKRenderableImage node { &comp()->kay->surfaces };
     AKBackgroundBlurEffect blur { };
 };
 

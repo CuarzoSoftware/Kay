@@ -1,6 +1,7 @@
 #ifndef AKNODE_H
 #define AKNODE_H
 
+#include <AK/AKBackgroundDamageTracker.h>
 #include <AK/AKCursor.h>
 #include <AK/AKObject.h>
 #include <AK/AKWeak.h>
@@ -16,26 +17,6 @@
 #include <unordered_map>
 #include <memory>
 #include <vector>
-
-namespace AK
-{
-struct BackgroundDamageTracker
-{
-    bool enabled { false };
-    AKNode *node;
-    SkIRect reactiveRect;
-    SkIRect reactiveRectTranslated;
-    SkRegion repaintAnyway;
-    SkRegion repaintAnywayTranslated;
-    SkRegion damage;
-    std::unordered_map<AKSceneTarget*,std::shared_ptr<AKSurface>> surfaces;
-    std::shared_ptr<AKSurface> currentSurface;
-    SkScalar q { 0.125f * 1.f };
-    Int32 r { 0 };
-    Int32 divisibleBy { 1 };
-};
-}
-
 
 /**
  * @defgroup AKNodes Components
@@ -244,7 +225,13 @@ public:
 
     void setVisible(bool visible) noexcept
     {
+        if (visible == this->visible())
+            return;
+
         layout().setDisplay(visible ? YGDisplayFlex : YGDisplayNone);
+
+        if (!visible)
+            damageTargetsAndPropagate();
     }
 
     bool visible() const noexcept
@@ -375,7 +362,7 @@ public:
      *
      * Relative to the node.
      */
-    BackgroundDamageTracker bdt;
+    AKBackgroundDamageTracker bdt;
 
     UInt64 userFlags { 0 };
     void *userData { nullptr };
@@ -497,8 +484,7 @@ private:
     std::unordered_set<AKSceneTarget*> m_intersectedTargets;
     mutable std::unordered_map<AKSceneTarget*, TargetData> m_targets;
     AKCursor m_cursor { AKCursor::Default };
-    std::vector<BackgroundDamageTracker*> m_overlayBdts;
-
+    std::vector<AKWeak<AKBackgroundDamageTracker>> m_overlayBdts;
 };
 
 /**

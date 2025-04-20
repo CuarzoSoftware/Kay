@@ -106,6 +106,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
     else
         m_blur2 = AKSurface::Make(copySize, scale * 0.5, false);
 
+    copyAll = reblur = true;
     if (reblur)
     {
         p.painter.bindTarget(m_blur.get());
