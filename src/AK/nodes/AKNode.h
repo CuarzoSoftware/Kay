@@ -449,7 +449,7 @@ private:
         SkIRect prevLocalRect;
         SkRegion clientDamage,
             opaque, translucent,
-            opaqueOverlay;
+            opaqueOverlay, invisble;
         AKChanges changes;
         bool visible { true };
     };

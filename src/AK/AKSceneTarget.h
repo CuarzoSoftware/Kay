@@ -181,6 +181,8 @@ public:
      */
     SkRegion* outInputRegion { nullptr };
 
+    SkRegion* outInvisibleRegion { nullptr };
+
     void setBakedComponentsScale(Int32 scale) noexcept;
 
     Int32 bakedComponentsScale() const noexcept

@@ -211,10 +211,14 @@ void AKTextField::windowStateEvent(const AKWindowStateEvent &event)
     if (activated())
     {
         if (hasKeyboardFocus())
+        {
+            m_caret.setAnimated(true);
             m_caret.setVisible(true);
+        }
     }
     else
     {
+        m_caret.setAnimated(false);
         m_caret.setVisible(false);
     }
 

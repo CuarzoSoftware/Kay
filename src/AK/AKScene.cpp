@@ -88,6 +88,14 @@ bool AKScene::render(AKSceneTarget *target)
         root()->m_flags.remove(AKNode::ChildrenNeedScaleUpdate);
     }
 
+    if (t->outInvisibleRegion)
+    {
+        if (SkColorGetA(t->m_clearColor) == 0)
+            t->outInvisibleRegion->setRect(t->viewport().roundOut());
+        else
+            t->outInvisibleRegion->setEmpty();
+    }
+
     for (auto it = root()->children().rbegin(); it != root()->children().rend(); it++)
         notifyBegin(*it);
 
@@ -504,6 +512,11 @@ skipDamage:
 
     renderable->t->opaqueOverlay = t->m_opaque;
 
+    if (renderable->m_color.fA <= 0.f || renderable->m_colorFactor.fA <= 0.f)
+        renderable->invisbleRegion.setRect(node->m_rect);
+    else
+        renderable->invisbleRegion.translate(node->m_rect.x(), node->m_rect.y(), &renderable->t->invisble);
+
     switch (renderable->m_colorHint)
     {
     case AKRenderable::ColorHint::Opaque:
@@ -518,9 +531,16 @@ skipDamage:
         break;
     }
 
+    renderable->t->opaque.op(renderable->t->invisble, SkRegion::kDifference_Op);
     t->m_opaque.op(renderable->t->opaque, SkRegion::kUnion_Op);
     renderable->t->translucent = clip;
     renderable->t->translucent.op(renderable->t->opaque, SkRegion::kDifference_Op);
+
+    if (t->outInvisibleRegion)
+    {
+        t->outInvisibleRegion->op(renderable->t->opaque, SkRegion::kDifference_Op);
+        t->outInvisibleRegion->op(renderable->t->translucent, SkRegion::kDifference_Op);
+    }
 }
 
 void AKScene::updateDamageRing() noexcept
@@ -676,6 +696,7 @@ void AKScene::renderNodes(AKNode *node)
     if (node->t->translucent.isEmpty())
         goto renderOpaque;
 
+    rend->t->translucent.op(rend->t->invisble, SkRegion::kDifference_Op);
     rend->t->translucent.op(t->m_damage, SkRegion::kIntersect_Op);
     rend->t->translucent.op(rend->t->opaqueOverlay, SkRegion::kDifference_Op);
 

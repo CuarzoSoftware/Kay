@@ -36,6 +36,7 @@ void AKSubScene::bakeChildren(const AKBakeEvent &event) noexcept
     m_target->inDamageRegion = &event.damage;
     m_target->outDamageRegion = &event.damage;
     m_target->outOpaqueRegion = &event.opaque;
+    m_target->outInvisibleRegion = &invisbleRegion;
     event.canvas().save();
     event.canvas().resetMatrix();
     m_scene.render(m_target);
