@@ -150,6 +150,12 @@ void MSurface::Imp::createSurface() noexcept
         backgroundBlur = nullptr;
     }
 
+    if (invisibleRegion)
+    {
+        invisible_region_destroy(invisibleRegion);
+        invisibleRegion = nullptr;
+    }
+
     if (wlSurface)
     {
         wl_surface_destroy(wlSurface);
@@ -159,6 +165,10 @@ void MSurface::Imp::createSurface() noexcept
     wlSurface = wl_compositor_create_surface(app()->wayland().compositor);
     wl_surface_add_listener(wlSurface, &wlSurfaceListener, &obj);
     wlViewport = wp_viewporter_get_viewport(app()->wayland().viewporter, wlSurface);
+
+    if (app()->wayland().invisibleRegionManager)
+        invisibleRegion = invisible_region_manager_get_invisible_region(app()->wayland().invisibleRegionManager, wlSurface);
+
     if (app()->wayland().backgroundBlurManager)
     {
         backgroundBlur = background_blur_manager_get_background_blur(app()->wayland().backgroundBlurManager, wlSurface);

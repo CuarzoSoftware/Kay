@@ -41,7 +41,7 @@ public:
     void addDamage(const SkIRect &rect) noexcept;
     const SkRegion &damage() const noexcept;
     SkRegion opaqueRegion;
-    SkRegion invisbleRegion;
+    SkRegion invisibleRegion;
 
     void setOpacity(SkScalar alpha) noexcept
     {

@@ -732,10 +732,10 @@ void MToplevel::render() noexcept
     target()->setBakedComponentsScale(scale());
     target()->setRenderCalculatesLayout(false);
     target()->setAge(bufferAge);
-    SkRegion skDamage, skOpaque;
+    SkRegion skDamage, skOpaque, skInvisible;
     target()->outDamageRegion = &skDamage;
 
-    if (opacity() == 1.f)
+    if (true || opacity() == 1.f)
         target()->outOpaqueRegion = &skOpaque;
     else
         target()->outOpaqueRegion = nullptr;
@@ -750,9 +750,14 @@ void MToplevel::render() noexcept
     glViewport(0, 0, 1000000, 100000);
     glClear(GL_COLOR_BUFFER_BIT);*/
 
+    if (wlInvisibleRegion())
+        target()->outInvisibleRegion = &skInvisible;
+    else
+        target()->outInvisibleRegion = nullptr;
+
     scene().render(target());
 
-    if (opacity() == 1.f)
+    if (true || opacity() == 1.f)
         if (decorationMode() == ClientSide && builtinDecorationsEnabled())
             for (int i = 0; i < 4; i++)
                 target()->outOpaqueRegion->op(imp()->borderRadius[i].globalRect(), SkRegion::Op::kDifference_Op);
@@ -779,15 +784,36 @@ void MToplevel::render() noexcept
         opaqueClip.inset(1, 1);
         skOpaque.op(opaqueClip, SkRegion::Op::kIntersect_Op);
     }
-    wl_region *wlOpaqueRegion = wl_compositor_create_region(app()->wayland().compositor);
-    SkRegion::Iterator opaqueIt(skOpaque);
-    while (!opaqueIt.done())
+
+    // Opaque
     {
-        wl_region_add(wlOpaqueRegion, opaqueIt.rect().x(), opaqueIt.rect().y(), opaqueIt.rect().width(), opaqueIt.rect().height());
-        opaqueIt.next();
+        wl_region *wlOpaqueRegion = wl_compositor_create_region(app()->wayland().compositor);
+        SkRegion::Iterator opaqueIt(skOpaque);
+        while (!opaqueIt.done())
+        {
+            wl_region_add(wlOpaqueRegion, opaqueIt.rect().x(), opaqueIt.rect().y(), opaqueIt.rect().width(), opaqueIt.rect().height());
+            opaqueIt.next();
+        }
+        wl_surface_set_opaque_region(wlSurface(), wlOpaqueRegion);
+        wl_region_destroy(wlOpaqueRegion);
     }
-    wl_surface_set_opaque_region(wlSurface(), wlOpaqueRegion);
-    wl_region_destroy(wlOpaqueRegion);
+
+    // Invisible
+
+    if (wlInvisibleRegion())
+    {
+        wl_region *wlRegion = wl_compositor_create_region(app()->wayland().compositor);
+        SkRegion::Iterator invisibleIt(skInvisible);
+        while (!invisibleIt.done())
+        {
+            wl_region_add(wlRegion,
+              invisibleIt.rect().x(), invisibleIt.rect().y(),
+              invisibleIt.rect().width(), invisibleIt.rect().height());
+            invisibleIt.next();
+        }
+        invisible_region_set_region(wlInvisibleRegion(), wlRegion);
+        wl_region_destroy(wlRegion);
+    }
 
     const bool noDamage { skDamage.computeRegionComplexity() == 0 };
 

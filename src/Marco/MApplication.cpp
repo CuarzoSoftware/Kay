@@ -97,6 +97,10 @@ void MApplication::wl_registry_global(void *data, wl_registry *registry, UInt32 
     {
         wl.svgPathManager.set(wl_registry_bind(registry, name, &svg_path_manager_interface, version), name);
     }
+    else if (!wl.invisibleRegionManager && strcmp(interface, invisible_region_manager_interface.name) == 0)
+    {
+        wl.invisibleRegionManager.set(wl_registry_bind(registry, name, &invisible_region_manager_interface, version), name);
+    }
 }
 
 void MApplication::wl_registry_global_remove(void */*data*/, wl_registry */*registry*/, UInt32 name)

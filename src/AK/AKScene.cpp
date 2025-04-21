@@ -260,6 +260,7 @@ void AKScene::createOrAssignTargetDataForNode(AKNode *node) noexcept
     }
     else
     {
+        node->t->invisble.setEmpty();
         /*node->t->opaque.setEmpty();
         node->t->translucent.setEmpty();
         node->t->opaqueOverlay.setEmpty();*/
@@ -512,11 +513,6 @@ skipDamage:
 
     renderable->t->opaqueOverlay = t->m_opaque;
 
-    if (renderable->m_color.fA <= 0.f || renderable->m_colorFactor.fA <= 0.f)
-        renderable->invisbleRegion.setRect(node->m_rect);
-    else
-        renderable->invisbleRegion.translate(node->m_rect.x(), node->m_rect.y(), &renderable->t->invisble);
-
     switch (renderable->m_colorHint)
     {
     case AKRenderable::ColorHint::Opaque:
@@ -530,6 +526,11 @@ skipDamage:
         renderable->t->opaque.op(clip, SkRegion::kIntersect_Op);
         break;
     }
+
+    if (renderable->m_color.fA <= 0.f || renderable->m_colorFactor.fA <= 0.f)
+        renderable->t->invisble.setRect(node->m_rect);
+    else
+        renderable->invisibleRegion.translate(node->m_rect.x(), node->m_rect.y(), &renderable->t->invisble);
 
     renderable->t->opaque.op(renderable->t->invisble, SkRegion::kDifference_Op);
     t->m_opaque.op(renderable->t->opaque, SkRegion::kUnion_Op);

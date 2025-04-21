@@ -708,10 +708,10 @@ AKPainter::AKPainter() noexcept
     )";
 
     // Sigma 6
-    std::vector<float> kernelH {0.0665,	0.0655,	0.0629,	0.0587,	0.0532,	0.0470,	0.0404,	0.0337,	0.0274,	0.0216,	0.0166 };
+    std::vector<float> kernelH { 0.0665, 0.0655, 0.0629, 0.0587, 0.0532, 0.0470, 0.0404, 0.0337, 0.0274, 0.0216, 0.0166 };
 
     // Sigma 3
-    std::vector<float> kernelV { 0.1324,0.1253,	0.1063,	0.0807,	0.0549,	0.0334,	0.0183,	0.0089 };
+    std::vector<float> kernelV { 0.1324, 0.1253, 0.1063, 0.0807, 0.0549, 0.0334, 0.0183, 0.0089 };
 
     const std::string placeholderH { "<<HBLUR>>" };
     const std::string placeholderV { "<<VBLUR>>" };

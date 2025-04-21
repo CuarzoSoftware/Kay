@@ -1,7 +1,8 @@
 #ifndef MSURFACEPRIVATE_H
 #define MSURFACEPRIVATE_H
 
-#include "Marco/protocols/background-blur-client.h"
+#include <Marco/protocols/background-blur-client.h>
+#include <Marco/protocols/invisible-region-client.h>
 #include <Marco/roles/MSurface.h>
 
 class AK::MSurface::Imp
@@ -71,6 +72,7 @@ public:
     wl_surface *wlSurface { nullptr };
     wp_viewport *wlViewport { nullptr };
     background_blur *backgroundBlur { nullptr };
+    invisible_region *invisibleRegion { nullptr };
 
     wl_egl_window *eglWindow { nullptr };
     EGLSurface eglSurface { EGL_NO_SURFACE };

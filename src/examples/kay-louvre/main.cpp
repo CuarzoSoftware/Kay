@@ -306,6 +306,13 @@ protected:
 
         // Mark node as dirty
         event.damage.setRect(AK_IRECT_INF);
+
+        const SkIRect iRect { rect.roundIn() };
+        invisibleRegion.setRect(iRect);
+        invisibleRegion.op(SkIRect::MakeXYWH(iRect.x(), iRect.y(), m_borderRadius, m_borderRadius), SkRegion::kDifference_Op);
+        invisibleRegion.op(SkIRect::MakeXYWH(iRect.fRight - m_borderRadius, 0, m_borderRadius, m_borderRadius), SkRegion::kDifference_Op);
+        invisibleRegion.op(SkIRect::MakeXYWH(iRect.fRight - m_borderRadius, iRect.fBottom - m_borderRadius, m_borderRadius, m_borderRadius), SkRegion::kDifference_Op);
+        invisibleRegion.op(SkIRect::MakeXYWH(iRect.x(), iRect.fBottom - m_borderRadius, m_borderRadius, m_borderRadius), SkRegion::kDifference_Op);
     }
 
     // Keep the default onRender() implementation
@@ -321,7 +328,7 @@ public:
     {
         userFlags |= MENU_ITEM;
         layout().setDisplay(YGDisplayFlex);
-        m_backgroundColor.setOpacity(0.f);
+        m_backgroundColor.setOpacity(0.0f);
         m_backgroundColor.layout().setPadding(YGEdgeAll, 6.f);
 
         /*
@@ -372,7 +379,10 @@ public:
 
         LCompositor::initialized();
 
-        LLauncher::launch(std::string("swaybg -m fill -i ") + "/home/eduardo/.config/Louvre/wallpaper.jpg");//std::string(defaultAssetsPath() / "wallpaper.png"));
+        if (std::filesystem::exists("/home/eduardo/.config/Louvre/wallpaper.jpg"))
+            LLauncher::launch(std::string("swaybg -m fill -i ") + "/home/eduardo/.config/Louvre/wallpaper.jpg");
+        else
+            LLauncher::launch(std::string("swaybg -m fill -i ") + std::string(defaultAssetsPath() / "wallpaper.png"));
     }
 
     void uninitialized() override
@@ -465,6 +475,15 @@ public:
         Int32 n;
         const LBox *boxes = opaqueRegion().boxes(&n);
         node.opaqueRegion.setRects((const SkIRect*)boxes, n);
+    }
+
+    void invisibleRegionChanged() override
+    {
+        LSurface::invisibleRegionChanged();
+
+        Int32 n;
+        const LBox *boxes = invisibleRegion().boxes(&n);
+        node.invisibleRegion.setRects((const SkIRect*)boxes, n);
     }
 
     void damageChanged() override
@@ -949,7 +968,7 @@ public:
 
         AKSubScene topbar { &comp()->kay->overlay };
         AKBackgroundBlurEffect topbarBlur { &topbar };
-        AKSolidColor topbarBackground { 0x22FFFFFF, &topbar };
+        AKSolidColor topbarBackground { 0x00000000, &topbar };
         AKBackgroundBoxShadowEffect topbarShadow {
             16, {0, 0}, 0x45000000, false, /*&topbar*/};
         AKPath logo { &topbarBackground };

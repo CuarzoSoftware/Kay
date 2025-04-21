@@ -45,6 +45,12 @@ MSurface::~MSurface()
         imp()->wlCallback = nullptr;
     }
 
+    if (imp()->invisibleRegion)
+    {
+        invisible_region_destroy(imp()->invisibleRegion);
+        imp()->invisibleRegion = nullptr;
+    }
+
     if (wlSurface())
     {
         wl_surface_destroy(wlSurface());
@@ -151,6 +157,11 @@ wl_callback *MSurface::wlCallback() const noexcept
 wp_viewport *MSurface::wlViewport() const noexcept
 {
     return imp()->wlViewport;
+}
+
+invisible_region *MSurface::wlInvisibleRegion() const noexcept
+{
+    return imp()->invisibleRegion;
 }
 
 wl_egl_window *MSurface::eglWindow() const noexcept

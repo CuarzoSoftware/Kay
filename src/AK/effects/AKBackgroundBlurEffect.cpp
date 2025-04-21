@@ -25,8 +25,8 @@ AKBackgroundBlurEffect::AKBackgroundBlurEffect(AKNode *target) noexcept :
 
 void AKBackgroundBlurEffect::onSceneCalculatedRect()
 {
-    if (!currentTarget()->image())
-        return;
+    //if (!currentTarget()->image())
+    //    return;
 
     onTargetLayoutUpdated.notify();
 
@@ -58,7 +58,7 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
     }
     else
     {
-        // Make all anyway
+        // TODO: Make all anyway
         effectRect = m_path.getBounds().roundOut();
         bdt.reactiveRect = SkIRect::MakeSize(effectRect.size()).makeOutset(20, 20);
         bdt.repaintAnyway.setRect(bdt.reactiveRect);
