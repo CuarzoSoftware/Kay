@@ -25,50 +25,110 @@ AKBackgroundBlurEffect::AKBackgroundBlurEffect(AKNode *target) noexcept :
 
 void AKBackgroundBlurEffect::onSceneCalculatedRect()
 {
-    //if (!currentTarget()->image())
-    //    return;
-
     onTargetLayoutUpdated.notify();
 
+    if (!changes().testAnyOf(CHArea, CHClip))
+        return;
+
     if (areaType() == FullSize)
+        m_finalRegion.setRect(SkIRect::MakeSize(targetNode()->globalRect().size()));
+    else // Region
+        m_finalRegion = m_userRegion;
+
+    if (clipType() == NoClip)
     {
-        effectRect = SkIRect::MakeSize(targetNode()->globalRect().size());
-        bdt.reactiveRect = SkIRect::MakeSize(effectRect.size()).makeOutset(5, 5);
-        bdt.repaintAnyway.setRect(bdt.reactiveRect);
-        bdt.repaintAnyway.op(bdt.reactiveRect.makeInset(5, 5), SkRegion::Op::kDifference_Op);
+        effectRect = m_finalRegion.getBounds();
+        bdt.reactiveRect = SkIRect::MakeSize(effectRect.size());
+
+        SkRegion inverse;
+        m_finalRegion.translate(-effectRect.x(), -effectRect.y(), &inverse);
+        inverse.op(SkIRect::MakeSize(effectRect.size()), SkRegion::kReverseDifference_Op);
+        bdt.repaintAnyway.setEmpty();
+
+        SkRegion::Iterator it(inverse);
+
+        while (!it.done())
+        {
+            bdt.repaintAnyway.op(it.rect().makeOutset(5, 5), SkRegion::Op::kUnion_Op);
+            it.next();
+        }
     }
-    else if (areaType() == RoundRect)
+    else if (clipType() == RoundRect)
     {
-        effectRect = roundRect();
-        bdt.reactiveRect = SkIRect::MakeSize(effectRect.size()).makeOutset(5, 5);
-        bdt.repaintAnyway.setRect(bdt.reactiveRect);
-        bdt.repaintAnyway.op(bdt.reactiveRect.makeInset(5, 5), SkRegion::Op::kDifference_Op);
+        m_finalRegion.op(roundRectClip(), SkRegion::kIntersect_Op);
+        effectRect = m_finalRegion.getBounds();
+        bdt.reactiveRect = SkIRect::MakeSize(effectRect.size());
 
-        if (roundRect().fRadTL > 0)
-            bdt.repaintAnyway.op(SkIRect::MakeWH(roundRect().fRadTL, roundRect().fRadTL), SkRegion::Op::kUnion_Op);
+        SkRegion inverse { m_finalRegion };
+        inverse.op(effectRect, SkRegion::kReverseDifference_Op);
 
-        if (roundRect().fRadTR > 0)
-            bdt.repaintAnyway.op(SkIRect::MakeXYWH(effectRect.width() - roundRect().fRadTR, 0, roundRect().fRadTR, roundRect().fRadTR), SkRegion::Op::kUnion_Op);
+        SkRegion corners;
+        if (roundRectClip().fRadTL > 0)
+            corners.op(SkIRect::MakeXYWH(
+                roundRectClip().x(),
+                roundRectClip().y(),
+                roundRectClip().fRadTL,
+                roundRectClip().fRadTL),
+                SkRegion::Op::kUnion_Op);
 
-        if (roundRect().fRadBR > 0)
-            bdt.repaintAnyway.op(SkIRect::MakeXYWH(effectRect.width() - roundRect().fRadBR, effectRect.height() - roundRect().fRadBR, roundRect().fRadBR, roundRect().fRadBR), SkRegion::Op::kUnion_Op);
+        if (roundRectClip().fRadTR > 0)
+            corners.op(SkIRect::MakeXYWH(
+                roundRectClip().fRight - roundRectClip().fRadTR,
+                roundRectClip().y(),
+                roundRectClip().fRadTR,
+                roundRectClip().fRadTR),
+                SkRegion::Op::kUnion_Op);
 
-        if (roundRect().fRadBR > 0)
-            bdt.repaintAnyway.op(SkIRect::MakeXYWH(0, effectRect.height() - roundRect().fRadBL, roundRect().fRadBL, roundRect().fRadBL), SkRegion::Op::kUnion_Op);
+        if (roundRectClip().fRadBR > 0)
+            corners.op(SkIRect::MakeXYWH(
+                roundRectClip().fRight - roundRectClip().fRadBR,
+                roundRectClip().fBottom - roundRectClip().fRadBR,
+                roundRectClip().fRadBR,
+                roundRectClip().fRadBR),
+                SkRegion::Op::kUnion_Op);
+
+        if (roundRectClip().fRadBL > 0)
+            corners.op(SkIRect::MakeXYWH(
+                roundRectClip().x(),
+                roundRectClip().fBottom - roundRectClip().fRadBL,
+                roundRectClip().fRadBL,
+                roundRectClip().fRadBL),
+                SkRegion::Op::kUnion_Op);
+
+        corners.op(m_finalRegion, SkRegion::kIntersect_Op);
+        inverse.op(corners, SkRegion::kUnion_Op);
+        inverse.translate(-effectRect.x(), -effectRect.y());
+
+        bdt.repaintAnyway.setEmpty();
+        SkRegion::Iterator it(inverse);
+        while (!it.done())
+        {
+            bdt.repaintAnyway.op(it.rect().makeOutset(5, 5), SkRegion::Op::kUnion_Op);
+            it.next();
+        }
     }
-    else
-    {
-        // TODO: Make all anyway
-        effectRect = m_path.getBounds().roundOut();
-        bdt.reactiveRect = SkIRect::MakeSize(effectRect.size()).makeOutset(20, 20);
-        bdt.repaintAnyway.setRect(bdt.reactiveRect);
-        bdt.repaintAnyway.op(bdt.reactiveRect.makeInset(30, 30), SkRegion::Op::kDifference_Op);
+    else // Path
+    {       
+        m_finalRegion.op(pathClip().getBounds().round(), SkRegion::kIntersect_Op);
+        effectRect = m_finalRegion.getBounds();
+        bdt.reactiveRect = SkIRect::MakeSize(effectRect.size());
+
+        // TODO: Calculate a more compact region
+
+        SkRegion inverse;
+        m_finalRegion.translate(-effectRect.x(), -effectRect.y(), &inverse);
+        bdt.repaintAnyway.setEmpty();
+
+        SkRegion::Iterator it(inverse);
+
+        while (!it.done())
+        {
+            bdt.repaintAnyway.op(it.rect().makeOutset(5, 5), SkRegion::Op::kUnion_Op);
+            it.next();
+        }
     }
 
-    const auto &chgs { changes() };
-
-    if (chgs.test(CHArea))
-        addDamage(AK_IRECT_INF);
+    addDamage(AK_IRECT_INF);
 }
 
 void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
@@ -106,7 +166,6 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
     else
         m_blur2 = AKSurface::Make(copySize, scale * 0.5, false);
 
-    copyAll = reblur = true;
     if (reblur)
     {
         p.painter.bindTarget(m_blur.get());
@@ -160,57 +219,11 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         p.painter.blendMode = AKPainter::Normal;
     }
 
-    if (areaType() == Path)
-    {
-        constexpr int mod { 2 };
-        SkIRect pathLocalRect;
-        pathLocalRect = m_path.getBounds().round();
-        pathLocalRect.setXYWH(
-            pathLocalRect.x(),
-            pathLocalRect.y(),
-            pathLocalRect.width() + mod - (pathLocalRect.width() % mod),
-            pathLocalRect.height() + mod - (pathLocalRect.height() % mod));
-
-        p.target.surface()->recordingContext()->asDirectContext()->resetContext();
-        auto &c { *p.target.surface()->getCanvas() };
-        c.save();
-
-        SkRegion damage = p.damage;
-        damage.op(p.rect, SkRegion::Op::kIntersect_Op);
-
-        SkPath damagePath;
-        damage.getBoundaryPath(&damagePath);
-        damagePath.setIsVolatile(true);
-        c.resetMatrix();
-        c.scale(p.target.xyScale().x(), p.target.xyScale().y());
-        c.translate(
-            p.rect.x() - p.target.viewport().x() - pathLocalRect.x(),
-            p.rect.y() - p.target.viewport().y() -pathLocalRect.y());
-        c.clipPath(m_path);
-        c.translate(
-            pathLocalRect.x() - p.rect.x(),
-            pathLocalRect.y() -p.rect.y());
-        c.clipPath(damagePath);
-
-        SkPaint paint;
-        paint.setBlendMode(SkBlendMode::kSrc);
-        paint.setAntiAlias(false);
-        c.drawImageRect(m_blur2->image(),
-            SkRect::Make(m_blur2->imageSrcRect()),
-            SkRect::Make(p.rect),
-            SkFilterMode::kLinear,
-            &paint,
-            SkCanvas::kFast_SrcRectConstraint);
-
-        p.target.surface()->recordingContext()->asDirectContext()->flush();
-        c.restore();
-        p.painter.bindProgram();
-        p.painter.bindTarget(&p.target);
-    }
-    else if (areaType() == Region)
+    if (clipType() == NoClip)
     {
         SkRegion damage;
-        damage.op(m_region, p.damage, SkRegion::Op::kIntersect_Op);
+        m_finalRegion.translate(p.rect.x() - effectRect.x(), p.rect.y() - effectRect.y(), &damage);
+        damage.op(p.damage, SkRegion::Op::kIntersect_Op);
         p.painter.bindProgram();
         p.painter.bindTarget(&p.target);
         p.painter.setParamsFromRenderable(this);
@@ -223,11 +236,14 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             .srcTransform = AKTransform::Normal,
             .srcScale = 1.f,
         });
-        p.painter.drawRegion(p.damage);
+        p.painter.drawRegion(damage);
     }
-    else if (areaType() == RoundRect)
+    else if (clipType() == RoundRect)
     {
-        SkRegion damage { p.damage };
+        SkRegion damage;
+        m_finalRegion.translate(p.rect.x() - effectRect.x(), p.rect.y() - effectRect.y(), &damage);
+        damage.op(p.damage, SkRegion::Op::kIntersect_Op);
+
         SkRegion cornerDamage;
         constexpr AKTransform maskTransforms[4] {
             AKTransform::Normal,
@@ -236,10 +252,10 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             AKTransform::Rotated270
         };
         const SkIRect cornerRects[4] {
-            SkIRect::MakeXYWH(p.rect.x(), p.rect.y(), m_rRect.fRadTL, m_rRect.fRadTL),
-            SkIRect::MakeXYWH(p.rect.fRight - m_rRect.fRadTR, p.rect.y(), m_rRect.fRadTR, m_rRect.fRadTR),
-            SkIRect::MakeXYWH(p.rect.fRight - m_rRect.fRadBR, p.rect.fBottom - m_rRect.fRadBR, m_rRect.fRadBR, m_rRect.fRadBR),
-            SkIRect::MakeXYWH(p.rect.x(), p.rect.fBottom - m_rRect.fRadBL, m_rRect.fRadBL, m_rRect.fRadBL)
+            SkIRect::MakeXYWH(p.rect.x(), p.rect.y(), m_rRectClip.fRadTL, m_rRectClip.fRadTL),
+            SkIRect::MakeXYWH(p.rect.fRight - m_rRectClip.fRadTR, p.rect.y(), m_rRectClip.fRadTR, m_rRectClip.fRadTR),
+            SkIRect::MakeXYWH(p.rect.fRight - m_rRectClip.fRadBR, p.rect.fBottom - m_rRectClip.fRadBR, m_rRectClip.fRadBR, m_rRectClip.fRadBR),
+            SkIRect::MakeXYWH(p.rect.x(), p.rect.fBottom - m_rRectClip.fRadBL, m_rRectClip.fRadBL, m_rRectClip.fRadBL)
         };
 
         for (size_t i = 0; i < 4; i++)
@@ -311,7 +327,6 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             });
             glEnable(GL_BLEND);
             p.painter.drawRegion(cornerDamage);
-
             damage.op(cornerRect, SkRegion::kDifference_Op);
         }
 
@@ -330,22 +345,52 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         });
         p.painter.drawRegion(damage);
     }
-
-    // Using the full node size
-    else
+    else if (clipType() == Path)
     {
+        constexpr int mod { 2 };
+        SkIRect pathLocalRect;
+        pathLocalRect = m_pathClip.getBounds().round();
+        pathLocalRect.setXYWH(
+            pathLocalRect.x(),
+            pathLocalRect.y(),
+            pathLocalRect.width() + mod - (pathLocalRect.width() % mod),
+            pathLocalRect.height() + mod - (pathLocalRect.height() % mod));
+
+        p.target.surface()->recordingContext()->asDirectContext()->resetContext();
+        auto &c { *p.target.surface()->getCanvas() };
+        c.save();
+
+        SkRegion damage;
+        m_finalRegion.translate(p.rect.x() - effectRect.x(), p.rect.y() - effectRect.y(), &damage);
+        damage.op(p.damage, SkRegion::Op::kIntersect_Op);
+
+        SkPath damagePath;
+        damage.getBoundaryPath(&damagePath);
+        damagePath.setIsVolatile(true);
+        c.resetMatrix();
+        c.scale(p.target.xyScale().x(), p.target.xyScale().y());
+        c.translate(
+            p.rect.x() - p.target.viewport().x() - pathLocalRect.x(),
+            p.rect.y() - p.target.viewport().y() -pathLocalRect.y());
+        c.clipPath(m_pathClip);
+        c.translate(
+            pathLocalRect.x() - p.rect.x(),
+            pathLocalRect.y() -p.rect.y());
+        c.clipPath(damagePath);
+
+        SkPaint paint;
+        paint.setBlendMode(SkBlendMode::kSrc);
+        paint.setAntiAlias(true);
+        c.drawImageRect(m_blur2->image(),
+                        SkRect::Make(m_blur2->imageSrcRect()),
+                        SkRect::Make(p.rect),
+                        SkFilterMode::kLinear,
+                        &paint,
+                        SkCanvas::kFast_SrcRectConstraint);
+
+        p.target.surface()->recordingContext()->asDirectContext()->flush();
+        c.restore();
         p.painter.bindProgram();
         p.painter.bindTarget(&p.target);
-        p.painter.setParamsFromRenderable(this);
-        glDisable(GL_BLEND);
-        p.painter.bindTextureMode({
-            .texture = m_blur2->image(),
-            .pos = p.rect.topLeft(),
-            .srcRect = SkRect::Make(m_blur2->imageSrcRect()),
-            .dstSize = p.rect.size(),
-            .srcTransform = AKTransform::Normal,
-            .srcScale = 1.f,
-        });
-        p.painter.drawRegion(p.damage);
     }
 }

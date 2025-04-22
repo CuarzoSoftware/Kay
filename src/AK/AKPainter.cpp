@@ -486,7 +486,6 @@ void AKPainter::bindProgram() noexcept
     glDisable(GL_SAMPLE_SHADING);
     glDisable(GL_SAMPLE_MASK);
     glDisable(GL_MULTISAMPLE);
-
     glDisable(GL_PROGRAM_POINT_SIZE);
     glDisable(GL_POINT_SMOOTH);
     glDisable(GL_LINE_SMOOTH);

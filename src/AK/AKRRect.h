@@ -11,6 +11,38 @@ public:
         SkIRect(rect), fRadTL(radTL), fRadTR(radTR), fRadBR(radBR), fRadBL(radBL)
     {}
 
+    bool isValid() const noexcept
+    {
+        return
+            width() >= 0 &&
+            height() >= 0 &&
+            fRadTL >= 0 &&
+            fRadTR >= 0 &&
+            fRadBR >= 0 &&
+            fRadBL >= 0 &&
+            fRadTL + fRadTR <= width() &&
+            fRadBL + fRadBR <= width() &&
+            fRadTL + fRadBL <= height() &&
+            fRadTR + fRadBR <= height();
+    }
+
+    constexpr bool operator==(const AKRRect& other) const
+    {
+        return fLeft == other.fLeft  &&
+               fRight == other.fRight  &&
+               fBottom == other.fBottom  &&
+               fTop == other.fTop  &&
+               fRadTL == other.fRadTL &&
+               fRadTR == other.fRadTR &&
+               fRadBR == other.fRadBR &&
+               fRadBL == other.fRadBL;
+    }
+
+    constexpr bool operator!=(const AKRRect& other) const
+    {
+        return !(operator==(other));
+    }
+
     Int32 fRadTL { 0 };
     Int32 fRadTR { 0 };
     Int32 fRadBR { 0 };

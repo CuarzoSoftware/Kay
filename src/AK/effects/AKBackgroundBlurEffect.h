@@ -25,6 +25,7 @@ public:
     enum Changes
     {
         CHArea,
+        CHClip,
         CHLast
     };
 
@@ -35,6 +36,11 @@ public:
     {
         FullSize,
         Region,
+    };
+
+    enum ClipType
+    {
+        NoClip,
         RoundRect,
         Path
     };
@@ -52,36 +58,54 @@ public:
         addChange(CHArea);
     }
 
-    void setRoundRect(const AKRRect &rRect) noexcept
-    {
-        m_areaType = RoundRect;
-        m_rRect = rRect;
-        addChange(CHArea);
-    }
-
-    const AKRRect &roundRect() const noexcept { return m_rRect; };
-
     void setRegion(const SkRegion &region) noexcept
     {
         m_areaType = Region;
-        m_region = region;
+        m_userRegion = region;
         addChange(CHArea);
     }
 
-    const SkRegion &region() const noexcept { return m_region; };
-
-    void setPath(const SkPath &path) noexcept
+    void clearClip() noexcept
     {
-        m_areaType = Path;
-        m_path = path;
-        addChange(CHArea);
+        if (m_clipType == NoClip)
+            return;
+
+        m_clipType = NoClip;
+        addChange(CHClip);
     }
 
-    const SkPath &path() const noexcept { return m_path; };
+    const SkRegion &region() const noexcept { return m_userRegion; };
+
+    void setRoundRectClip(const AKRRect &rRect) noexcept
+    {
+        if (m_clipType == RoundRect && rRect == m_rRectClip)
+            return;
+
+        m_clipType = RoundRect;
+        m_rRectClip = rRect;
+        addChange(CHClip);
+    }
+
+    const AKRRect &roundRectClip() const noexcept { return m_rRectClip; };
+
+
+    void setPathClip(const SkPath &path) noexcept
+    {
+        m_clipType = Path;
+        m_pathClip = path;
+        addChange(CHClip);
+    }
+
+    const SkPath &pathClip() const noexcept { return m_pathClip; };
 
     AreaType areaType() const noexcept
     {
         return m_areaType;
+    }
+
+    ClipType clipType() const noexcept
+    {
+        return m_clipType;
     }
 
     AKSignal<> onTargetLayoutUpdated;
@@ -93,10 +117,11 @@ protected:
     void onTargetNodeChanged() override { /* Nothing to free here */ }
 private:
     using AKBackgroundEffect::setStackPosition;
-    AKRRect m_rRect;
-    SkRegion m_region;
-    SkPath m_path;
+    SkRegion m_userRegion, m_finalRegion;
+    AKRRect m_rRectClip;
+    SkPath m_pathClip;
     AreaType m_areaType { FullSize };
+    ClipType m_clipType { NoClip };
     std::shared_ptr<AKSurface> m_blur;
     std::shared_ptr<AKSurface> m_blur2;
     std::shared_ptr<AKSurface> m_roundCorners[4]; // TL, TR, BR, BL

@@ -661,52 +661,25 @@ void MToplevel::render() noexcept
             layout().calculatedWidth(),
             layout().calculatedHeight());
 
-        if (MSurface::imp()->backgroundBlur && app()->wayland().svgPathManager && opacity() == 0.f)
+        if (MSurface::imp()->backgroundBlur && app()->wayland().svgPathManager)
         {
-            int r = MTheme::CSDBorderRadius;
-            //int r2 = r * 2;
-            int x = imp()->shadowMargins.fLeft;
-            int y = imp()->shadowMargins.fTop;
-            int w = layout().calculatedWidth();
-            int h = layout().calculatedHeight();
-
-            /*
-            SkPath path;
-            path.moveTo(x + r, y);
-            path.rLineTo(w - r2, 0);
-            path.rQuadTo(r, 0, r,r);
-            path.rLineTo(0, h - r2);
-            path.rQuadTo(0, r, -r, r);
-            path.rLineTo(r2-w, 0);
-            path.rQuadTo(-r, 0, -r, -r);
-            path.rLineTo(0, r2-h);
-            path.rQuadTo(0, -r, r, -r);
-            path.close();
-
-            auto str = std::string(SkParsePath::ToSVGString(path).c_str());
-            svg_path *svg { svg_path_manager_get_svg_path(app()->wayland().svgPathManager) };
-
-            size_t sent { 0 };
-            size_t toWrite;
-            char *start;
-            char c;
-            while (sent < str.size())
+            if (opacity() == 0.f)
             {
-                start = (char*)&str.c_str()[sent];
-                toWrite = std::min(str.size() - sent, 1024UL);
-                c = start[toWrite];
-                start[toWrite] = '\0';
-                svg_path_concat_commands(svg, start);
-                start[toWrite] = c;
-                sent += toWrite;
+                int r = MTheme::CSDBorderRadius;
+                int x = imp()->shadowMargins.fLeft;
+                int y = imp()->shadowMargins.fTop;
+                int w = layout().calculatedWidth();
+                int h = layout().calculatedHeight();
+
+                background_blur_set_region(MSurface::imp()->backgroundBlur, nullptr);
+                background_blur_set_round_rect_clip(MSurface::imp()->backgroundBlur, x, y, w, h, r, r, r, r);
             }
-
-            svg_path_done(svg);
-            background_blur_set_path(MSurface::imp()->backgroundBlur, svg);
-            svg_path_destroy(svg);
-            */
-
-            background_blur_set_round_rect(MSurface::imp()->backgroundBlur, x, y, w, h, r, r, r, r);
+            else
+            {
+                wl_region *empty = wl_compositor_create_region(app()->wayland().compositor);
+                background_blur_set_region(MSurface::imp()->backgroundBlur, empty);
+                wl_region_destroy(empty);
+            }
         }
     }
 

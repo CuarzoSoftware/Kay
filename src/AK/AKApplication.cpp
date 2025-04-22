@@ -38,7 +38,7 @@ AKApplication::AKApplication() noexcept
     m_skContextOptions.fAvoidStencilBuffers = true;
     m_skContextOptions.fPreferExternalImagesOverES3 = true;
     m_skContextOptions.fDisableGpuYUVConversion = true;
-    m_skContextOptions.fReducedShaderVariations = true;
+    m_skContextOptions.fReducedShaderVariations = false;
     m_skContextOptions.fSuppressPrints = true;
     m_skContextOptions.fSuppressMipmapSupport = true;
     m_skContextOptions.fSkipGLErrorChecks = GrContextOptions::Enable::kYes;
@@ -50,7 +50,7 @@ AKApplication::AKApplication() noexcept
     m_skContextOptions.fReduceOpsTaskSplitting = GrContextOptions::Enable::kYes;
     m_skContextOptions.fDisableDriverCorrectnessWorkarounds = true;
     m_skContextOptions.fRuntimeProgramCacheSize = 1024;
-    m_skContextOptions.fInternalMultisampleCount = 0;
+    m_skContextOptions.fInternalMultisampleCount = 4;
     m_skContextOptions.fDisableTessellationPathRenderer = false;
     m_skContextOptions.fAllowMSAAOnNewIntel = true;
     m_skContextOptions.fAlwaysUseTexStorageWhenAvailable = true;

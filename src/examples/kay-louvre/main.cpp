@@ -152,13 +152,32 @@ public:
             if (!blurNeedsUpdate)
                 return;
 
-            blur.setRoundRect(AKRRect(
+            /*
+            SkPath p;
+            p.addCircle(100, 100, 50);
+            blur.setPathClip(p);
+
+            SkRegion reg;
+            reg.setRect(SkIRect::MakeXYWH(30, 30, 50, 50));
+            reg.op(SkIRect::MakeXYWH(100, 100, 40, 40), SkRegion::kUnion_Op);
+            blur.setRegion(reg);*/
+
+            blur.setRoundRectClip(AKRRect(
                 SkIRect::MakeXYWH(
                     itemsContainer.layout().calculatedLeft(),
                     itemsContainer.layout().calculatedTop(),
                     itemsContainer.layout().calculatedWidth(),
                     itemsContainer.layout().calculatedHeight()),
                 m_borderRadius, m_borderRadius, m_borderRadius, m_borderRadius));
+
+            /*
+            blur.setFullSize();
+            SkRegion reg;
+            reg.setRect(SkIRect::MakeXYWH(30, 30, 50, 50));
+            reg.op(SkIRect::MakeXYWH(100, 100, 40, 40), SkRegion::kUnion_Op);
+            blur.setRegion(reg);
+
+            */
         });
 
         enableChildrenClipping(true);
@@ -310,7 +329,7 @@ protected:
         const SkIRect iRect { rect.roundIn() };
         invisibleRegion.setRect(iRect);
         invisibleRegion.op(SkIRect::MakeXYWH(iRect.x(), iRect.y(), m_borderRadius, m_borderRadius), SkRegion::kDifference_Op);
-        invisibleRegion.op(SkIRect::MakeXYWH(iRect.fRight - m_borderRadius, 0, m_borderRadius, m_borderRadius), SkRegion::kDifference_Op);
+        invisibleRegion.op(SkIRect::MakeXYWH(iRect.fRight - m_borderRadius, iRect.y(), m_borderRadius, m_borderRadius), SkRegion::kDifference_Op);
         invisibleRegion.op(SkIRect::MakeXYWH(iRect.fRight - m_borderRadius, iRect.fBottom - m_borderRadius, m_borderRadius, m_borderRadius), SkRegion::kDifference_Op);
         invisibleRegion.op(SkIRect::MakeXYWH(iRect.x(), iRect.fBottom - m_borderRadius, m_borderRadius, m_borderRadius), SkRegion::kDifference_Op);
     }
@@ -1141,35 +1160,33 @@ public:
     {
         auto *surf { static_cast<Surface*>(surface()) };
 
-        if (ch.check(AreaChanged))
+        if (ch.check(RegionChanged))
         {
+            SkRegion skRegion;
+            louvreRegion2Skia(region(), &skRegion);
+            surf->blur.setRegion(skRegion);
+        }
 
-            switch (areaType())
+        if (ch.check(ClipChanged))
+        {
+            if (clipType() == NoClip)
+                surf->blur.clearClip();
+            else if (clipType() == RoundRect)
+                surf->blur.setRoundRectClip(
+                    AKRRect(SkIRect::MakeXYWH(
+                        roundRectClip().x(),
+                        roundRectClip().y(),
+                        roundRectClip().w(),
+                        roundRectClip().h()),
+                    roundRectClip().fRadTL,
+                    roundRectClip().fRadTR,
+                    roundRectClip().fRadBR,
+                    roundRectClip().fRadBL));
+            else if (clipType() == SVGPath)
             {
-            case Region: {
-                SkRegion region;
-                louvreRegion2Skia(area().region, &region);
-                surf->blur.setRegion(region);
-                break;
-            }
-            case RoundRect:
-                surf->blur.setRoundRect(AKRRect(SkIRect::MakeXYWH(
-                    area().roundRect.x(),
-                    area().roundRect.y(),
-                    area().roundRect.w(),
-                    area().roundRect.h()),
-                    area().roundRect.fRadTL,
-                    area().roundRect.fRadTR,
-                    area().roundRect.fRadBR,
-                    area().roundRect.fRadBL));
-                break;
-            case SVGPath: {
-                // TODO: Check bounds
                 SkPath path;
-                assert(SkParsePath::FromSVGString(area().svgPath.c_str(), &path));
-                surf->blur.setPath(path);
-                break;
-            }
+                assert(SkParsePath::FromSVGString(svgPathClip().c_str(), &path));
+                surf->blur.setPathClip(path);
             }
         }
 

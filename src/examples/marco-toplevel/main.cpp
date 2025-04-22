@@ -132,9 +132,9 @@ public:
     AKTextField textField2 { &body };
     AKTextField textField3 { &body };
 
-    AKSolidColor topbar { 0xFFFAFAFA, this };
+    AKSolidColor topbar { 0x00000000 /*0xFFFAFAFA*/, this };
     AKText helloWorld { "🚀 Hello World!", &topbar };
-    AKEdgeShadow shadow { &topbar };
+    AKEdgeShadow shadow { /*&topbar*/ };
 };
 
 int main()
