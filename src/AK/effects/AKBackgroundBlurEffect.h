@@ -110,6 +110,8 @@ public:
 
     AKSignal<> onTargetLayoutUpdated;
 
+    UInt32 shader { 1 };
+
 protected:
     using AKBackgroundEffect::effectRect;
     void onSceneCalculatedRect() override;

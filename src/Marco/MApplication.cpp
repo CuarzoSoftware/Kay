@@ -258,7 +258,12 @@ void MApplication::wl_pointer_motion(void */*data*/, wl_pointer */*pointer*/, UI
     akApp()->postEvent(p.m_eventHistory.move, p.focus()->scene());
 
     if (p.focus()->scene().pointerFocus())
-        p.setCursor(p.findNonDefaultCursor(p.focus()->scene().pointerFocus()));
+    {
+        if (p.focus()->scene().pointerFocus()->pointerGrabEnabled())
+            p.setCursor(p.focus()->scene().pointerFocus()->cursor());
+        else
+            p.setCursor(p.findNonDefaultCursor(p.focus()->scene().pointerFocus()));
+    }
 }
 
 void MApplication::wl_pointer_button(void */*data*/, wl_pointer */*pointer*/, UInt32 serial, UInt32 time, UInt32 button, UInt32 state)

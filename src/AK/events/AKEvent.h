@@ -56,6 +56,7 @@ public:
         Render,
         Bake,
 
+        SceneChanged,
         Layout,
 
         Vibrancy,

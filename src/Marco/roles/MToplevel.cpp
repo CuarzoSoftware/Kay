@@ -20,17 +20,6 @@
 
 using namespace AK;
 
-static void findVibrancyViews(AKNode *root, std::vector<MVibrancyView*> *out) noexcept
-{
-    MVibrancyView *vibrancyView { dynamic_cast<MVibrancyView*>(root) };
-
-    if (vibrancyView)
-        out->emplace_back(vibrancyView);
-
-    for (AKNode *node : root->children())
-        findVibrancyViews(node, out);
-}
-
 MToplevel::MToplevel() noexcept : MSurface(Role::Toplevel)
 {
     m_imp = std::make_unique<Imp>(*this);
@@ -541,7 +530,7 @@ void MToplevel::onUpdate() noexcept
     if (tmpFlags.check(STF::ScaleChanged))
         flags.add(SF::ForceUpdate);
 
-    if (states().check(AKMaximized | AKFullscreen) || decorationMode() == ServerSide || !builtinDecorationsEnabled())
+    if (states().check(AKFullscreen) || decorationMode() == ServerSide || !builtinDecorationsEnabled())
     {
         if (decorationMode() == ServerSide || builtinDecorationsEnabled())
             imp()->setShadowMargins({ 0, 0, 0, 0 });
@@ -719,11 +708,11 @@ void MToplevel::render() noexcept
     /* Vibrancy */
     if (MSurface::imp()->backgroundBlur && app()->wayland().svgPathManager)
     {
-        if (opacity() < 1.f)
+        if (vibrancyState() == AKVibrancyState::Enabled && opacity() < 1.f)
         {
             std::vector<MVibrancyView*> vibrancyViews;
             vibrancyViews.reserve(10);
-            findVibrancyViews(this, &vibrancyViews);
+            FindNodesWithType(this, &vibrancyViews);
 
             wl_region *region = wl_compositor_create_region(app()->wayland().compositor);
 
@@ -733,7 +722,7 @@ void MToplevel::render() noexcept
             background_blur_set_region(MSurface::imp()->backgroundBlur, region);
             wl_region_destroy(region);
 
-            int r = MTheme::CSDBorderRadius;
+            int r = !builtinDecorationsEnabled() || states().check(AKFullscreen) ? 0 : MTheme::CSDBorderRadius;
             int x = imp()->shadowMargins.fLeft;
             int y = imp()->shadowMargins.fTop;
             int w = layout().calculatedWidth();

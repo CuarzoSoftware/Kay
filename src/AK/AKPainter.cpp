@@ -632,7 +632,7 @@ AKPainter::AKPainter() noexcept
 
         void main()
         {
-            // Vibrancy
+            // Vibrancy 1
             if (mode == 5)
             {
                 <<HBLUR>>
@@ -660,6 +660,35 @@ AKPainter::AKPainter() noexcept
                 gl_FragColor.x *= 12.0;
                 gl_FragColor.xyz = gl_FragColor.xyz * yuvToRgbMatrix;
                 gl_FragColor.xyz = ((0.1/6.0) * min(gl_FragColor.xyz, vec3(7.0))) + 0.78;
+                gl_FragColor.w = 1.0;
+            }
+            else if (mode == 7)
+            {
+                <<HBLUR>>
+                gl_FragColor.w = 1.0;
+            }
+            else if (mode == 8)
+            {
+                <<VBLUR>>
+
+                const mat3 rgbToYuvMatrix = mat3(
+                    0.299,   0.587,   0.114,   // Y: Higher weight on green
+                   -0.14713, -0.28886, 0.436,  // U: Blue chroma adjusted
+                    0.615,  -0.51498, -0.10001 // V: Red-green chroma adjusted
+                );
+
+                const mat3 yuvToRgbMatrix = mat3(
+                    1.0,   0.0,      1.13983,  // R: Red channel
+                    1.0,  -0.39465, -0.58060,  // G: Green channel balance improved
+                    1.0,   2.03211,  0.0       // B: Blue channel balance
+                );
+
+                gl_FragColor.xyz = gl_FragColor.xyz  * rgbToYuvMatrix;
+                gl_FragColor.y *= 24.0;
+                gl_FragColor.z *= 24.0;
+                gl_FragColor.x *= 12.0;
+                gl_FragColor.xyz = gl_FragColor.xyz * yuvToRgbMatrix;
+                gl_FragColor.xyz = ((0.4/6.0) * min(gl_FragColor.xyz, vec3(7.0))) + 0.6;
                 gl_FragColor.w = 1.0;
             }
             // Texture
@@ -714,6 +743,8 @@ AKPainter::AKPainter() noexcept
 
     const std::string placeholderH { "<<HBLUR>>" };
     const std::string placeholderV { "<<VBLUR>>" };
+    fShaderStr.replace(fShaderStr.find(placeholderH), placeholderH.length(), genHBlur(kernelH));
+    fShaderStr.replace(fShaderStr.find(placeholderV), placeholderV.length(), genVBlur(kernelV));
     fShaderStr.replace(fShaderStr.find(placeholderH), placeholderH.length(), genHBlur(kernelH));
     fShaderStr.replace(fShaderStr.find(placeholderV), placeholderV.length(), genVBlur(kernelV));
 
@@ -879,15 +910,27 @@ void AKPainter::switchTarget(GLenum target) noexcept
 
 void AKPainter::setViewport(Int32 x, Int32 y, Int32 w, Int32 h) noexcept
 {
-    if (blendMode == Vibrancy1)
+    if (blendMode == Vibrancy1A)
     {
         glUniform1i(currentUniforms->mode, 5);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
     }
-    else if (blendMode == Vibrancy2)
+    else if (blendMode == Vibrancy1B)
     {
         glUniform1i(currentUniforms->mode, 6);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    }
+    else if (blendMode == Vibrancy2A)
+    {
+        glUniform1i(currentUniforms->mode, 7);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    }
+    else if (blendMode == Vibrancy2B)
+    {
+        glUniform1i(currentUniforms->mode, 8);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
     }

@@ -16,6 +16,7 @@ namespace AK
 
     class MTheme;
     class MCSDShadow;
+    class MRootSurfaceNode;
     class MVibrancyView;
 
     /* Input */

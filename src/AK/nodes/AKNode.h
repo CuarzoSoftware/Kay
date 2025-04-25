@@ -407,6 +407,20 @@ public:
     AKCursor cursor() const noexcept { return m_cursor; }
     void setCursor(AKCursor cursor) { m_cursor = cursor; }
 
+    template<class T>
+    static void FindNodesWithType(AKNode *root, std::vector<T*> *out) noexcept
+    {
+        {
+            T *found { dynamic_cast<T*>(root) };
+
+            if (found)
+                out->emplace_back(found);
+        }
+
+        for (AKNode *node : root->children())
+            FindNodesWithType(node, out);
+    }
+
     AKSignal<const AKLayoutEvent &> onLayoutChanged;
 
 protected:
@@ -421,6 +435,7 @@ protected:
     virtual void keyboardEnterEvent(const AKKeyboardEnterEvent &event);
     virtual void keyboardKeyEvent(const AKKeyboardKeyEvent &event);
     virtual void keyboardLeaveEvent(const AKKeyboardLeaveEvent &event);
+    virtual void sceneChangedEvent(const AKSceneChangedEvent &event);
 private:
     friend class AKBackgroundEffect;
     friend class AKRenderable;

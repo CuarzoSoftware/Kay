@@ -3,13 +3,13 @@
 
 namespace AK
 {
-    enum class VibrancyStyle
+    enum class AKVibrancyStyle
     {
         Dark,
         Light
     };
 
-    enum class VibrancyState
+    enum class AKVibrancyState
     {
         Disabled,
         Enabled

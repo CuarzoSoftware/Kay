@@ -301,8 +301,6 @@ void AKScene::calculateNewDamage(AKNode *node)
     AKBackgroundEffect *backgroundEffect { dynamic_cast<AKBackgroundEffect*>(node) };
     bool hasBDT { false };
 
-    node->m_overlayBdts = t->m_bdts;
-
     if (bakeable)
         static_cast<AKBakeable*>(node)->m_onBakeGeneratedDamage = false;
 
@@ -332,6 +330,25 @@ void AKScene::calculateNewDamage(AKNode *node)
         node->t->visible = node->visible() && parentIsVisible;
     }
 
+    node->m_intersectedTargets.clear();
+    for (AKSceneTarget *target : targets())
+        if (SkIRect::Intersects(node->globalRect(), target->m_globalIViewport))
+            node->m_intersectedTargets.insert(target);
+
+    if (node->t->visible)
+        clip.setRect(node->m_rect);
+
+    clipper = node->closestClipperParent();
+
+    if (clipper == root())
+        clip.op(t->viewport().roundOut(), SkRegion::Op::kIntersect_Op);
+    else
+        clip.op(clipper->t->prevLocalClip, SkRegion::Op::kIntersect_Op);
+
+    clip.op(t->m_opaque, SkRegion::Op::kDifference_Op);
+    node->t->prevLocalClip.op(t->m_opaque, SkRegion::Op::kDifference_Op);
+    node->m_flags.setFlag(AKNode::InsideLastTarget, SkIRect::Intersects(node->m_rect, t->viewport().roundOut()));
+
     node->bdt.damage.setEmpty();
 
     if (node->t->visible && node->bdt.enabled)
@@ -356,30 +373,14 @@ void AKScene::calculateNewDamage(AKNode *node)
         hasBDT = true;
         node->bdt.node = node;
         node->bdt.reactiveRectTranslated = node->bdt.reactiveRect.makeOffset(node->m_rect.x(), node->m_rect.y());
+        SkRegion additionalAnyway { node->bdt.reactiveRectTranslated };
+        additionalAnyway.op(clip, SkRegion::Op::kDifference_Op);
         node->bdt.repaintAnyway.translate(node->m_rect.x(), node->m_rect.y(), &node->bdt.repaintAnywayTranslated);
+        node->bdt.repaintAnywayTranslated.op(additionalAnyway, SkRegion::Op::kUnion_Op);
         // reactive.op(clip, SkRegion::Op::kIntersect_Op); // remove?
         t->m_bdts.push_back(&node->bdt);
         t->m_opaque.op(node->bdt.reactiveRectTranslated, SkRegion::Op::kDifference_Op);
     }
-
-    node->m_intersectedTargets.clear();
-    for (AKSceneTarget *target : targets())
-        if (SkIRect::Intersects(node->globalRect(), target->m_globalIViewport))
-            node->m_intersectedTargets.insert(target);
-
-    if (node->t->visible)
-        clip.setRect(node->m_rect);
-
-    clipper = node->closestClipperParent();
-
-    if (clipper == root())
-        clip.op(t->viewport().roundOut(), SkRegion::Op::kIntersect_Op);
-    else
-        clip.op(clipper->t->prevLocalClip, SkRegion::Op::kIntersect_Op);
-
-    clip.op(t->m_opaque, SkRegion::Op::kDifference_Op);
-    node->t->prevLocalClip.op(t->m_opaque, SkRegion::Op::kDifference_Op);
-    node->m_flags.setFlag(AKNode::InsideLastTarget, SkIRect::Intersects(node->m_rect, t->viewport().roundOut()));
 
     if (bakeable && !clip.isEmpty() &&
         (node->t->changes.any()
@@ -499,6 +500,8 @@ skipDamage:
             calculateNewDamage(node->children()[i]);
             i -= 1 - skip;
         }
+
+    node->m_overlayBdts = t->m_bdts;
 
     if (hasBDT)
         t->m_bdts.insert(bdtIt, &node->bdt);
@@ -1007,6 +1010,7 @@ void AKScene::renderNodes(AKNode *node)
 
             if (it.node()->pointerGrabEnabled())
             {
+                m_win->pointerFocus.reset(it.node());
                 akApp()->sendEvent(*m_win->e, *it.node());
             }
             else
@@ -1120,7 +1124,6 @@ void AKScene::renderNodes(AKNode *node)
 
         if (keyboardFocus())
             akApp()->sendEvent(*m_win->e, *keyboardFocus());
-
     }
 
     void AKScene::handleWindowStateEvent()

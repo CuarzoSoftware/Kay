@@ -1,6 +1,10 @@
 #include <AK/events/AKPointerButtonEvent.h>
+#include <AK/events/AKWindowCloseEvent.h>
 #include <AK/nodes/AKWindowButton.h>
+#include <AK/AKApplication.h>
 #include <AK/AKTheme.h>
+
+#include <Marco/roles/MToplevel.h>
 
 using namespace AK;
 
@@ -40,11 +44,36 @@ bool AKWindowButton::setState(State state) noexcept
 
 void AKWindowButton::pointerButtonEvent(const AKPointerButtonEvent &e)
 {
-    if (e.button() != AKPointerButtonEvent::Left)
+    if (state() == State::Disabled || e.button() != AKPointerButtonEvent::Left)
         return;
 
     if (e.state() == AKPointerButtonEvent::Pressed)
         setState(Pressed);
     else
+    {
+        if (MToplevel *tl = dynamic_cast<MToplevel*>(window()))
+        {
+            switch (type())
+            {
+            case Type::Close:
+                if (akApp()->sendEvent(AKWindowCloseEvent(), *tl))
+                    tl->setMapped(false);
+                break;
+            case Type::Fullscreen:
+                tl->setFullscreen(true);
+                break;
+            case Type::UnsetFullscreen:
+                tl->setFullscreen(false);
+                break;
+            case Type::Maximize:
+                tl->setMaximized(!tl->maximized());
+                break;
+            case Type::Minimize:
+                tl->setMinimized();
+                break;
+            }
+        }
+
         onClick.notify();
+    }
 }

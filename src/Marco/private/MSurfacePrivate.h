@@ -4,6 +4,7 @@
 #include <Marco/protocols/background-blur-client.h>
 #include <Marco/protocols/invisible-region-client.h>
 #include <Marco/roles/MSurface.h>
+#include <Marco/nodes/MRootSurfaceNode.h>
 
 class AK::MSurface::Imp
 {
@@ -52,7 +53,7 @@ public:
     // Kay
     AKScene scene;
     AKWeak<AKSceneTarget> target;
-    AKContainer root;
+    MRootSurfaceNode root;
 
     // Current wl_surface scale factor
     Int32 scale { 1 };
@@ -66,6 +67,12 @@ public:
     SkISize size { 0, 0 };
     SkISize bufferSize { 0, 0 };
     SkISize viewportSize { -1, -1 };
+
+    // Vibrancy
+    AKVibrancyState currentVibrancyState { AKVibrancyState::Disabled };
+    AKVibrancyState pendingVibrancyState { AKVibrancyState::Disabled };
+    AKVibrancyStyle currentVibrancyStyle { AKVibrancyStyle::Light };
+    AKVibrancyStyle pendingVibrancyStyle { AKVibrancyStyle::Light };
 
     UInt32 callbackSendMs { 0 };
     wl_callback *wlCallback { nullptr };

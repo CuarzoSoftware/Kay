@@ -18,7 +18,7 @@ public:
         ShadowClampY = 1 << 1
     };
 
-    static inline Int32 CSDMoveOutset { 32 };
+    static inline Int32 CSDMoveOutset { 54 };
     static inline Int32 CSDResizeOutset { 6 };
     static inline Int32 CSDBorderRadius { 10 };
     constexpr static Int32 CSDShadowActiveRadius { 48 };

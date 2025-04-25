@@ -14,8 +14,10 @@ public:
     enum BlendMode
     {
         Normal,
-        Vibrancy1,
-        Vibrancy2,
+        Vibrancy1A,
+        Vibrancy1B,
+        Vibrancy2A,
+        Vibrancy2B,
     };
 
     BlendMode blendMode = Normal;

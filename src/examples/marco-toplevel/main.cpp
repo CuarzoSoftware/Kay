@@ -11,6 +11,8 @@
 #include <AK/nodes/AKTextField.h>
 #include <AK/nodes/AKWindowButtonGroup.h>
 #include <AK/effects/AKEdgeShadow.h>
+#include <AK/effects/AKBackgroundBlurEffect.h>
+#include <AK/events/AKVibrancyEvent.h>
 #include <AK/AKTheme.h>
 #include <AK/AKLog.h>
 #include <iostream>
@@ -84,10 +86,10 @@ public:
         layout().setFlex(1.f);
         enableChildrenClipping(false);
 
+        inAppBlur.shader = 3;
         leftShadow.setCursor(AKCursor::ColResize);
         leftShadow.enableDiminishOpacityOnInactive(true);
         shadow.enableDiminishOpacityOnInactive(true);
-        topbar.enableDiminishOpacityOnInactive(true);
         topbar.enableChildrenClipping(false);
         topbar.layout().setPositionType(YGPositionTypeAbsolute);
         topbar.layout().setPosition(YGEdgeTop, 0);
@@ -95,7 +97,6 @@ public:
         topbar.layout().setJustifyContent(YGJustifyCenter);
         topbar.layout().setHeight(52);
         topbar.layout().setWidthPercent(100);
-        topbarSpace.layout().setHeight(topbar.layout().height().value);
         auto textStyle = helloWorld.textStyle();
         textStyle.setFontStyle(
             SkFontStyle(SkFontStyle::kExtraBold_Weight, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant));
@@ -107,12 +108,11 @@ public:
         body.layout().setAlignItems(YGAlignCenter);
         body.layout().setJustifyContent(YGJustifyCenter);
         body.layout().setPadding(YGEdgeAll, 48.f);
-        body.layout().setPadding(YGEdgeTop, 24.f);
-        body.layout().setGap(YGGutterAll, 8.f);
+        body.layout().setPadding(YGEdgeTop, 0.f);
+        body.layout().setGap(YGGutterAll, 12.f);
         cat.layout().setMargin(YGEdgeAll, 12.f);
-        cat.layout().setMinWidth(140);
-        cat.layout().setMinHeight(140);
-        cat.layout().setWidthPercent(100);
+        cat.layout().setMinWidth(40);
+        cat.layout().setMinHeight(40);
         cat.layout().setFlex(1.f);
         cat.setSizeMode(AKImageFrame::SizeMode::Contain);
         newWindowButton.setBackgroundColor(AKTheme::SystemBlue);
@@ -120,11 +120,13 @@ public:
         disabledButton.setEnabled(false);
 
         for (AKNode *child : body.children())
-            child->layout().setWidthPercent(100);
+            child->layout().setWidth(200);
+
+        cat.layout().setWidthPercent(100);
     }
 
-    AKContainer topbarSpace { YGFlexDirectionColumn, false, this };
     AKContainer body { YGFlexDirectionColumn, true, this };
+
     AKEdgeShadow leftShadow { AKEdgeLeft, this };
     AKImageFrame cat { AKImageLoader::loadFile("/usr/local/share/Kay/assets/logo.png"), &body };
     AKButton cursorButton { "🖱️ Cursor: Default", &body };
@@ -141,7 +143,8 @@ public:
     AKTextField textField2 { &body };
     AKTextField textField3 { &body };
 
-    AKSolidColor topbar { 0xFFf5f3f8, this };
+    AKSolidColor topbar { 0xAAFFFFFF, this };
+    AKBackgroundBlurEffect inAppBlur { /*&topbar*/ };
     AKText helloWorld { "🚀 Hello World!", &topbar };
     AKEdgeShadow shadow { AKEdgeBottom, &topbar };
 };
@@ -214,7 +217,23 @@ public:
         });
     }
 
-    bool eventFilter(const AKEvent &event, AKObject &target)
+    void windowStateEvent(const AKWindowStateEvent &e) override
+    {
+        MToplevel::windowStateEvent(e);
+
+        if (activated())
+        {
+            rightContainer.topbar.addBackgroundEffect(&rightContainer.inAppBlur);
+            rightContainer.topbar.setColorWithAlpha(0x00000000);
+        }
+        else
+        {
+            rightContainer.topbar.removeBackgroundEffect(&rightContainer.inAppBlur);
+            rightContainer.topbar.setColorWithAlpha(0xFFe6e7e7);
+        }
+    }
+
+    bool eventFilter(const AKEvent &event, AKObject &target) override
     {
         if (&target == &rightContainer.leftShadow)
         {

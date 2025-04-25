@@ -4,6 +4,7 @@
 #include <Marco/private/MLayerSurfacePrivate.h>
 #include <Marco/MApplication.h>
 
+#include <AK/events/AKVibrancyEvent.h>
 #include <AK/AKGLContext.h>
 
 #include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
@@ -23,7 +24,7 @@ static wl_surface_listener wlSurfaceListener;
 static wl_callback_listener wlCallbackListener;
 static background_blur_listener backgroundBlurListener;
 
-MSurface::Imp::Imp(MSurface &obj) noexcept : obj(obj)
+MSurface::Imp::Imp(MSurface &obj) noexcept : obj(obj), root(obj)
 {
     wlSurfaceListener.enter = wl_surface_enter;
     wlSurfaceListener.leave = wl_surface_leave;
@@ -100,22 +101,34 @@ void MSurface::Imp::wl_callback_done(void *data, wl_callback *callback, UInt32 m
         surface.update();
 }
 
-void MSurface::Imp::background_blur_state(void *data, background_blur *backgroundBlur, UInt32 state)
+void MSurface::Imp::background_blur_state(void *data, background_blur *, UInt32 state)
 {
     MSurface &surface { *static_cast<MSurface*>(data) };
-
+    surface.imp()->pendingVibrancyState = (AKVibrancyState)state;
 }
 
-void MSurface::Imp::background_blur_style(void *data, background_blur *backgroundBlur, UInt32 style)
+void MSurface::Imp::background_blur_style(void *data, background_blur *, UInt32 style)
 {
-
+    MSurface &surface { *static_cast<MSurface*>(data) };
+    surface.imp()->pendingVibrancyStyle = (AKVibrancyStyle)style;
 }
 
 void MSurface::Imp::background_blur_configure(void *data, background_blur *backgroundBlur, UInt32 serial)
 {
     MSurface &surface { *static_cast<MSurface*>(data) };
     background_blur_ack_configure(backgroundBlur, serial);
-    surface.update(true);
+
+    if (surface.imp()->pendingVibrancyState != surface.imp()->currentVibrancyState ||
+        surface.imp()->pendingVibrancyStyle != surface.imp()->currentVibrancyStyle)
+    {
+        surface.update(true);
+        surface.imp()->currentVibrancyState = surface.imp()->pendingVibrancyState;
+        surface.imp()->currentVibrancyStyle = surface.imp()->pendingVibrancyStyle;
+        app()->sendEvent(AKVibrancyEvent(
+            surface.imp()->currentVibrancyState,
+            surface.imp()->currentVibrancyStyle),
+            surface);
+    }
 }
 
 void MSurface::Imp::createSurface() noexcept

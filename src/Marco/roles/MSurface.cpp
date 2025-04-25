@@ -1,9 +1,11 @@
 #include <AK/AKGLContext.h>
-#include <AK/AKLog.h>
-#include <Marco/private/MSurfacePrivate.h>
 #include <AK/AKColors.h>
+#include <AK/AKLog.h>
+
+#include <Marco/private/MSurfacePrivate.h>
 #include <Marco/MApplication.h>
 #include <Marco/roles/MSubsurface.h>
+#include <Marco/nodes/MVibrancyView.h>
 
 using namespace AK;
 
@@ -179,6 +181,33 @@ EGLSurface MSurface::eglSurface() const noexcept
     return imp()->eglSurface;
 }
 
+AKVibrancyState MSurface::vibrancyState() const noexcept
+{
+    return imp()->currentVibrancyState;
+}
+
+AKVibrancyStyle MSurface::vibrancyStyle() const noexcept
+{
+    return imp()->currentVibrancyStyle;
+}
+
+void MSurface::vibrancyEvent(const AKVibrancyEvent &event)
+{
+    AKSafeEventQueue queue;
+    AKNode::Iterator it { bottommostLeftChild() };
+
+    while (!it.done())
+    {
+        if (it.node() != this)
+            queue.addEvent((const AKEvent&)event, (AKObject&)(*it.node()));
+
+        it.next();
+    }
+
+    queue.dispatch();
+    onVibrancyChanged.notify(event);
+}
+
 void MSurface::onUpdate() noexcept
 {
     if (imp()->tmpFlags.check(Imp::PreferredScaleChanged))
@@ -200,6 +229,17 @@ void MSurface::onUpdate() noexcept
             imp()->tmpFlags.add(Imp::ScaleChanged);
         }
     }
+}
+
+bool MSurface::event(const AKEvent &event)
+{
+    if (event.type() == AKEvent::Vibrancy)
+    {
+        vibrancyEvent((const AKVibrancyEvent&)event);
+        return true;
+    }
+
+    return AKSolidColor::event(event);
 }
 
 MSurface::Imp *MSurface::imp() const noexcept

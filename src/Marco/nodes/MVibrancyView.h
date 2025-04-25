@@ -16,6 +16,7 @@ public:
     SkColor disabledColor() const noexcept { return m_disabledColor; };
 
 private:
+    bool event(const AKEvent &event) override;
     bool m_vibrancyEnabled { true };
     SkColor m_disabledColor { 0xFFe6e7e7 };
 };

@@ -137,6 +137,7 @@ namespace AK
     class AKRenderEvent;
     class AKBakeEvent;
 
+    class AKSceneChangedEvent;
     class AKLayoutEvent;
 
     class AKVibrancyEvent;

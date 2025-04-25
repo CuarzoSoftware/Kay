@@ -4,6 +4,7 @@
 #include <Marco/protocols/invisible-region-client.h>
 #include <Marco/protocols/viewporter-client.h>
 
+#include <AK/AKVibrancy.h>
 #include <AK/AKSignal.h>
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKSolidColor.h>
@@ -87,6 +88,11 @@ public:
     sk_sp<SkSurface> skSurface() const noexcept;
     EGLSurface eglSurface() const noexcept;
 
+    AKVibrancyState vibrancyState() const noexcept;
+    AKVibrancyStyle vibrancyStyle() const noexcept;
+    virtual void vibrancyEvent(const AKVibrancyEvent &event);
+
+    AKSignal<const AKVibrancyEvent &> onVibrancyChanged;
     AKSignal<> onMappedChanged;
     AKSignal<MScreen&> onEnteredScreen;
     AKSignal<MScreen&> onLeftScreen;
@@ -98,6 +104,7 @@ protected:
     friend class MCSDShadow;
     MSurface(Role role) noexcept;
     virtual void onUpdate() noexcept;
+    bool event(const AKEvent &event) override;
 private:
     std::unique_ptr<Imp> m_imp;
     using AKNode::setParent;

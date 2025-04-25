@@ -27,13 +27,18 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
 {
     onTargetLayoutUpdated.notify();
 
-    if (!changes().testAnyOf(CHArea, CHClip, CHSize))
-        return;
+    bool changedSize { false };
 
     if (areaType() == FullSize)
+    {
+        changedSize = m_finalRegion.getBounds().size() != targetNode()->globalRect().size();
         m_finalRegion.setRect(SkIRect::MakeSize(targetNode()->globalRect().size()));
+    }
     else // Region
         m_finalRegion = m_userRegion;
+
+    if (!changes().testAnyOf(CHArea, CHClip) && !changedSize)
+        return;
 
     if (clipType() == NoClip)
     {
@@ -185,7 +190,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             .srcScale = bdt.currentSurface->scale()
         });
 
-        p.painter.blendMode = AKPainter::Vibrancy1;
+        p.painter.blendMode = (AKPainter::BlendMode)shader;
 
         if (copyAll)
             p.painter.drawRect(SkIRect::MakeSize(p.rect.size()));
@@ -209,7 +214,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             .srcScale = 1.f
         });
 
-        p.painter.blendMode = AKPainter::Vibrancy2;
+        p.painter.blendMode = (AKPainter::BlendMode)(shader + 1);
 
         if (copyAll)
             p.painter.drawRect(rect);

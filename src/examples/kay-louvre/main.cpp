@@ -612,12 +612,27 @@ public:
             oversamplingTexture() : bufferTexture(currentBuffer()), this));
 
         // We need to manually update each surface node
+        bool fullscreenToplevel { false };
         for (Surface *s : (const std::list<Surface*>&)(compositor()->surfaces()))
         {
             s->node.setVisible(!s->cursorRole() && !s->minimized() && s->mapped());
 
             if (!s->node.visible())
                 continue;
+
+            if (s->toplevel())
+            {
+                if (s->backgroundBlur()->supported())
+                {
+                    if (s->toplevel()->pendingConfiguration().state.check(LToplevelRole::Activated))
+                        s->backgroundBlur()->configureState(LBackgroundBlur::Enabled);
+                    else
+                        s->backgroundBlur()->configureState(LBackgroundBlur::Disabled);
+                }
+
+                if (s->toplevel()->fullscreen() && s->toplevel()->exclusiveOutput() == this)
+                    fullscreenToplevel = true;
+            }
 
             const LPoint &pos { s->rolePos() };
             s->node.layout().setPosition(YGEdgeLeft, pos.x());
@@ -628,6 +643,8 @@ public:
             if (s->hasDamage())
                 s->node.setImage(louvreTex2SkiaImage(s->texture(), this));
         }
+
+        kay->topbar.setVisible(!fullscreenToplevel);
 
         // We can ask the scene which region was repainted
         if (hasBufferDamageSupport() || usingFractionalScale())
@@ -806,7 +823,7 @@ public:
 
             topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
                 topbar.layout().setWidth(zone->rect().w());
-                topbar.layout().setHeight(zone->rect().h() - 1);
+                topbar.layout().setHeight(zone->rect().h());
             });
 
             resizeGL();
@@ -1012,6 +1029,14 @@ public:
         return findNode(&static_cast<Compositor*>(compositor())->kay->root, globalPos, filter);
     }
 
+    void focusChanged() override
+    {
+        LPointer::focusChanged();
+
+        if (LPointer::focus())
+            seat()->keyboard()->setFocus(LPointer::focus());
+    }
+
     void pointerMoveEvent(const LPointerMoveEvent &event) override
     {
         LPointer::pointerMoveEvent(event);
@@ -1064,7 +1089,8 @@ public:
 
         if (event.button() == BTN_RIGHT && event.state() == LPointerButtonEvent::Pressed)
         {
-            static_cast<Compositor*>(compositor())->kay->menu.showAt(cursor()->pos().x(), cursor()->pos().y());
+            if (!LPointer::focus() || LPointer::focus()->layerRole())
+                static_cast<Compositor*>(compositor())->kay->menu.showAt(cursor()->pos().x(), cursor()->pos().y());
             return;
         }
 

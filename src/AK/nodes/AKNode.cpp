@@ -4,6 +4,7 @@
 #include <AK/events/AKKeyboardEnterEvent.h>
 #include <AK/events/AKKeyboardLeaveEvent.h>
 #include <AK/events/AKPointerEnterEvent.h>
+#include <AK/events/AKSceneChangedEvent.h>
 #include <AK/AKSafeEventQueue.h>
 #include <AK/AKApplication.h>
 #include <AK/AKSceneTarget.h>
@@ -13,7 +14,7 @@
 #include <AK/AKSurface.h>
 #include <AK/effects/AKBackgroundEffect.h>
 
-#include <Marco/roles/MSurface.h>
+#include <Marco/nodes/MRootSurfaceNode.h>
 
 #include <GL/gl.h>
 #include <GLES2/gl2.h>
@@ -142,10 +143,14 @@ void AKNode::setScene(AKScene *scene) noexcept
     if (m_scene)
         m_scene->m_treeChanged = true;
 
+    AKSceneChangedEvent event { m_scene, scene };
+
     m_scene.reset(scene);
 
     if (scene)
         scene->m_treeChanged = true;
+
+    akApp()->postEvent(event, *this);
 
     for (AKNode *child : m_children)
         child->propagateScene(scene);
@@ -153,6 +158,7 @@ void AKNode::setScene(AKScene *scene) noexcept
 
 void AKNode::propagateScene(AKScene *scene) noexcept
 {
+    akApp()->postEvent(AKSceneChangedEvent(m_scene, scene), *this);
     m_scene.reset(scene);
 
     for (AKNode *child : m_children)
@@ -531,7 +537,9 @@ bool AKNode::activated() const noexcept
 
 MSurface *AKNode::window() const noexcept
 {
-    return dynamic_cast<MSurface*>(root());
+    if (MRootSurfaceNode *node = dynamic_cast<MRootSurfaceNode*>(root()))
+        return &node->surface();
+    return nullptr;
 }
 
 bool AKNode::event(const AKEvent &event)
@@ -585,6 +593,11 @@ bool AKNode::event(const AKEvent &event)
         break;
     case AKEvent::KeyboardLeave:
         keyboardLeaveEvent((const AKKeyboardLeaveEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
+    case AKEvent::SceneChanged:
+        sceneChangedEvent((const AKSceneChangedEvent&)event);
         if (!event.isAccepted())
             return false;
         break;
@@ -642,6 +655,11 @@ void AKNode::keyboardKeyEvent(const AKKeyboardKeyEvent &event)
 }
 
 void AKNode::keyboardLeaveEvent(const AKKeyboardLeaveEvent &event)
+{
+    ((const AKEvent&)event).ignore();
+}
+
+void AKNode::sceneChangedEvent(const AKSceneChangedEvent &event)
 {
     ((const AKEvent&)event).ignore();
 }

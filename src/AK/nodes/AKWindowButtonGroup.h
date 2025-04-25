@@ -10,8 +10,10 @@ public:
     AKWindowButtonGroup(AKNode *parent) noexcept;
     AKWindowButton closeButton { AKWindowButton::Type::Close, this };
     AKWindowButton minimizeButton { AKWindowButton::Type::Minimize, this };
-    AKWindowButton maximizeButton { AKWindowButton::Type::Maximize, this };
+    AKWindowButton maximizeButton { AKWindowButton::Type::Fullscreen, this };
 protected:
+    bool eventFilter(const AKEvent &e, AKObject &o) override;
+    void sceneChangedEvent(const AKSceneChangedEvent &e) override;
     void pointerEnterEvent(const AKPointerEnterEvent &e) override;
     void pointerLeaveEvent(const AKPointerLeaveEvent &e) override;
     void pointerButtonEvent(const AKPointerButtonEvent &e) override;
