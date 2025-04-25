@@ -58,6 +58,8 @@ public:
 
         Layout,
 
+        Vibrancy,
+
         User = 1000
     };
 

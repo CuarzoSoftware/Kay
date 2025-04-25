@@ -99,7 +99,7 @@ sk_sp<SkImage> AKImageLoader::loadFile(const std::filesystem::path &path, const 
     }
 
 skia:
-    auto img = SkImages::DeferredFromEncodedData(SkData::MakeFromFileName(path.c_str()));
+    auto img = SkImages::DeferredFromEncodedData(SkData::MakeFromFileName(path.c_str()), SkAlphaType::kPremul_SkAlphaType);
 
     if (!img)
     {

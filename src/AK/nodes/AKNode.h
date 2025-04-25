@@ -18,6 +18,11 @@
 #include <memory>
 #include <vector>
 
+namespace AK
+{
+    class MSurface;
+};
+
 /**
  * @defgroup AKNodes Components
  * @brief List of all components.
@@ -190,7 +195,7 @@ public:
         Render              = 1 << 0,
         Bake                = 1 << 1,
         Scene               = 1 << 2,
-        BackgroundEffect    = 1 << 3
+        BackgroundEffect    = 1 << 3,
     };
     AKNode() noexcept { theme(); }
     AKCLASS_NO_COPY(AKNode)
@@ -395,6 +400,9 @@ public:
     AKNode *root() const noexcept;
 
     bool activated() const noexcept;
+
+    // TODO: Add if macro for when Marco is disabled
+    MSurface *window() const noexcept;
 
     AKCursor cursor() const noexcept { return m_cursor; }
     void setCursor(AKCursor cursor) { m_cursor = cursor; }

@@ -271,6 +271,25 @@ public:
         checkIsDirty();
     }
 
+    void setMinWidthYGValue(YGValue value) noexcept
+    {
+        switch (value.unit)
+        {
+        case YGUnitUndefined:
+            setMinWidth(value.value);
+            setMinWidthPercent(value.value);
+            break;
+        case YGUnitPoint:
+            setMinWidth(value.value);
+            break;
+        case YGUnitPercent:
+            setMinWidthPercent(value.value);
+            break;
+        default:
+            break;
+        }
+    }
+
     YGValue minWidth() const noexcept
     {
         return YGNodeStyleGetMinWidth(m_node);
@@ -303,6 +322,25 @@ public:
     {
         YGNodeStyleSetMaxWidthPercent(m_node, maxWidth);
         checkIsDirty();
+    }
+
+    void setMaxWidthYGValue(YGValue value) noexcept
+    {
+        switch (value.unit)
+        {
+        case YGUnitUndefined:
+            setMaxWidth(value.value);
+            setMaxWidthPercent(value.value);
+            break;
+        case YGUnitPoint:
+            setMaxWidth(value.value);
+            break;
+        case YGUnitPercent:
+            setMaxWidthPercent(value.value);
+            break;
+        default:
+            break;
+        }
     }
 
     YGValue maxWidth() const noexcept

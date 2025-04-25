@@ -19,5 +19,4 @@ public:
         AKWindowEvent(WindowClose, serial, ms, us) {}
 };
 
-
 #endif // AKWINDOWCLOSEEVENT_H

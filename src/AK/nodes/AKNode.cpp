@@ -1,7 +1,6 @@
 #include <include/core/SkColorSpace.h>
 #include <include/gpu/ganesh/SkImageGanesh.h>
 #include <include/gpu/ganesh/SkSurfaceGanesh.h>
-
 #include <AK/events/AKKeyboardEnterEvent.h>
 #include <AK/events/AKKeyboardLeaveEvent.h>
 #include <AK/events/AKPointerEnterEvent.h>
@@ -13,6 +12,9 @@
 #include <AK/nodes/AKSubScene.h>
 #include <AK/AKSurface.h>
 #include <AK/effects/AKBackgroundEffect.h>
+
+#include <Marco/roles/MSurface.h>
+
 #include <GL/gl.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -525,6 +527,11 @@ AKNode *AKNode::root() const noexcept
 bool AKNode::activated() const noexcept
 {
     return scene() && scene()->windowState().check(AKActivated);
+}
+
+MSurface *AKNode::window() const noexcept
+{
+    return dynamic_cast<MSurface*>(root());
 }
 
 bool AKNode::event(const AKEvent &event)

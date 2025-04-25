@@ -1,6 +1,7 @@
 #include <Marco/MApplication.h>
 #include <Marco/MScreen.h>
 #include <Marco/roles/MToplevel.h>
+#include <Marco/nodes/MVibrancyView.h>
 #include <AK/utils/AKImageLoader.h>
 #include <AK/nodes/AKContainer.h>
 #include <AK/nodes/AKText.h>
@@ -8,6 +9,7 @@
 #include <AK/nodes/AKSolidColor.h>
 #include <AK/nodes/AKImageFrame.h>
 #include <AK/nodes/AKTextField.h>
+#include <AK/nodes/AKWindowButtonGroup.h>
 #include <AK/effects/AKEdgeShadow.h>
 #include <AK/AKTheme.h>
 #include <AK/AKLog.h>
@@ -15,13 +17,75 @@
 
 using namespace AK;
 
-class Window : public MToplevel
+class SideMenu : public MVibrancyView
 {
 public:
-    Window() noexcept : MToplevel() {
+    SideMenu(AKNode *parent = nullptr) :
+        MVibrancyView(parent)
+    {
+        layout().setMinWidth(200);
+        layout().setMaxWidth(600);
+        layout().setHeightPercent(100);
+        layout().setWidth(250);
 
-        setColorWithAlpha(app()->wayland().backgroundBlurManager ? 0x00FFFFFF : 0xffF0F0F0);
-        setTitle("Hello world!");
+        windowButtons.layout().setPositionType(YGPositionTypeAbsolute);
+        windowButtons.layout().setPosition(YGEdgeTop, 20.f);
+        windowButtons.layout().setPosition(YGEdgeLeft, 20.f);
+    }
+
+    void startResize() noexcept
+    {
+        prevParentMaxWidth = parent()->layout().maxWidth();
+        parent()->layout().setMaxWidth(parent()->layout().calculatedWidth());
+        prevMaxWidth = layout().maxWidth();
+        float prevFlex = layout().flex();
+        layout().setFlex(100000.f);
+        layout().calculate();
+        layout().setMaxWidth(layout().calculatedWidth());
+        layout().setFlex(prevFlex);
+
+        resizeStartWidth = globalRect().width();
+        resizeStartPointerX = app()->pointer().pos().x();
+        resizing = true;
+        app()->pointer().setCursor(AKCursor::ColResize);
+    }
+
+    void updateResize() noexcept
+    {
+        if (!resizing) return;
+        layout().setWidth(
+            std::max(0.f,std::min(resizeStartWidth + app()->pointer().pos().x() - resizeStartPointerX, layout().maxWidth().value)));
+    }
+
+    void stopResize() noexcept
+    {
+        if (!resizing) return;
+        resizing = false;
+        parent()->layout().setMaxWidthYGValue(prevParentMaxWidth);
+        layout().setMaxWidthYGValue(prevMaxWidth);
+        app()->pointer().setCursor(AKCursor::Default);
+    }
+
+    AKWindowButtonGroup windowButtons { this };
+
+    YGValue prevMaxWidth, prevParentMaxWidth;
+    Int32 resizeStartWidth;
+    Int32 resizeStartPointerX;
+    bool resizing { false };
+};
+
+class RightContainer : public AKSolidColor
+{
+public:
+    RightContainer(AKNode *parent = nullptr) :
+        AKSolidColor(0xFFFFFFFF, parent)
+    {
+        layout().setMinWidth(250);
+        layout().setFlex(1.f);
+        enableChildrenClipping(false);
+
+        leftShadow.setCursor(AKCursor::ColResize);
+        leftShadow.enableDiminishOpacityOnInactive(true);
         shadow.enableDiminishOpacityOnInactive(true);
         topbar.enableDiminishOpacityOnInactive(true);
         topbar.enableChildrenClipping(false);
@@ -29,9 +93,9 @@ public:
         topbar.layout().setPosition(YGEdgeTop, 0);
         topbar.layout().setAlignItems(YGAlignCenter);
         topbar.layout().setJustifyContent(YGJustifyCenter);
-        topbar.layout().setHeight(32);
+        topbar.layout().setHeight(52);
         topbar.layout().setWidthPercent(100);
-        topbarSpace.layout().setHeight(32);
+        topbarSpace.layout().setHeight(topbar.layout().height().value);
         auto textStyle = helloWorld.textStyle();
         textStyle.setFontStyle(
             SkFontStyle(SkFontStyle::kExtraBold_Weight, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant));
@@ -53,71 +117,16 @@ public:
         cat.setSizeMode(AKImageFrame::SizeMode::Contain);
         newWindowButton.setBackgroundColor(AKTheme::SystemBlue);
         exitButton.setBackgroundColor(AKTheme::SystemRed);
-
         disabledButton.setEnabled(false);
 
-        cursorButton.on.clicked.subscribe(this, [this](){
-            if (cursor == 34)
-                cursor = 0;
-            else
-                cursor++;
-
-            cursorButton.setText(std::string("🖱️ Cursor: ") + cursorToString((AKCursor)cursor));
-            pointer().setCursor((AKCursor)cursor);
-        });
-
-        newWindowButton.on.clicked.subscribe(this, [this](){
-            Window *newWin = new Window();
-            newWin->setMapped(true);
-            AKWeak<MToplevel> ref(this);
-            newWin->onMappedChanged.subscribe(newWin, [ref, newWin](){
-                if (ref && newWin->mapped())
-                    newWin->setParentToplevel(ref);
-            });
-        });
-
-        builtinDecorationsButton.on.clicked.subscribe(this, [this](){
-            enableBuiltinDecorations(!builtinDecorationsEnabled());
-        });
-
-        decorationsButton.on.clicked.subscribe(this, [this]() {
-            setDecorationMode(decorationMode() == ClientSide ? ServerSide : ClientSide);
-        });
-
-        maximizeButton.on.clicked.subscribe(this, [this](){
-           setMaximized(!maximized());
-        });
-
-        fullscreenButton.on.clicked.subscribe(this, [this](){
-            setFullscreen(!fullscreen());
-        });
-
-        minimizeButton.on.clicked.subscribe(this, [this](){
-            setMinimized();
-        });
-
-        exitButton.on.clicked.subscribe(&exitButton, [](){
-            exit(0);
-        });
-
-        mapButton.on.clicked.subscribe(this, [this]{
-            setMapped(false);
-            AKTimer::OneShoot(1000, [this](AKTimer*){
-                setMapped(true);
-            });
-        });
-
-        onDecorationModeChanged.subscribe(this, [this](){
-            topbar.setVisible(decorationMode() == ClientSide);
-        });
-
-        setMinSize(minContentSize());
+        for (AKNode *child : body.children())
+            child->layout().setWidthPercent(100);
     }
 
     AKContainer topbarSpace { YGFlexDirectionColumn, false, this };
     AKContainer body { YGFlexDirectionColumn, true, this };
+    AKEdgeShadow leftShadow { AKEdgeLeft, this };
     AKImageFrame cat { AKImageLoader::loadFile("/usr/local/share/Kay/assets/logo.png"), &body };
-    UInt32 cursor { 1 };
     AKButton cursorButton { "🖱️ Cursor: Default", &body };
     AKButton builtinDecorationsButton { "Toggle built-in decorations", &body };
     AKButton decorationsButton { "Toggle decoration mode", &body };
@@ -132,9 +141,114 @@ public:
     AKTextField textField2 { &body };
     AKTextField textField3 { &body };
 
-    AKSolidColor topbar { 0x00000000 /*0xFFFAFAFA*/, this };
+    AKSolidColor topbar { 0xFFf5f3f8, this };
     AKText helloWorld { "🚀 Hello World!", &topbar };
-    AKEdgeShadow shadow { /*&topbar*/ };
+    AKEdgeShadow shadow { AKEdgeBottom, &topbar };
+};
+
+class Window : public MToplevel
+{
+public:
+    Window() noexcept : MToplevel()
+    {
+        rightContainer.leftShadow.installEventFilter(this);
+        layout().setFlexDirection(YGFlexDirectionRow);
+        layout().setOverflow(YGOverflowVisible);
+        setColorWithAlpha(app()->wayland().backgroundBlurManager ? 0x00FFFFFF : 0xffF0F0F0);
+        setTitle("Hello world!");
+        setMinSize(minContentSize());
+
+        rightContainer.cursorButton.on.clicked.subscribe(this, [this](){
+            if (cursor == 34)
+                cursor = 0;
+            else
+                cursor++;
+
+            rightContainer.cursorButton.setText(std::string("🖱️ Cursor: ") + cursorToString((AKCursor)cursor));
+            pointer().setCursor((AKCursor)cursor);
+        });
+
+        rightContainer.newWindowButton.on.clicked.subscribe(this, [this](){
+            Window *newWin = new Window();
+            newWin->setMapped(true);
+            AKWeak<MToplevel> ref(this);
+            newWin->onMappedChanged.subscribe(newWin, [ref, newWin](){
+                if (ref && newWin->mapped())
+                    newWin->setParentToplevel(ref);
+            });
+        });
+
+        rightContainer.builtinDecorationsButton.on.clicked.subscribe(this, [this](){
+            enableBuiltinDecorations(!builtinDecorationsEnabled());
+        });
+
+        rightContainer.decorationsButton.on.clicked.subscribe(this, [this]() {
+            setDecorationMode(decorationMode() == ClientSide ? ServerSide : ClientSide);
+        });
+
+        rightContainer.maximizeButton.on.clicked.subscribe(this, [this](){
+            setMaximized(!maximized());
+        });
+
+        rightContainer.fullscreenButton.on.clicked.subscribe(this, [this](){
+            setFullscreen(!fullscreen());
+        });
+
+        rightContainer.minimizeButton.on.clicked.subscribe(this, [this](){
+            setMinimized();
+        });
+
+        rightContainer.exitButton.on.clicked.subscribe(&rightContainer.exitButton, [](){
+            exit(0);
+        });
+
+        rightContainer.mapButton.on.clicked.subscribe(this, [this]{
+            setMapped(false);
+            AKTimer::OneShoot(1000, [this](AKTimer*){
+                setMapped(true);
+            });
+        });
+
+        onDecorationModeChanged.subscribe(this, [this](){
+            rightContainer.topbar.setVisible(decorationMode() == ClientSide);
+        });
+    }
+
+    bool eventFilter(const AKEvent &event, AKObject &target)
+    {
+        if (&target == &rightContainer.leftShadow)
+        {
+            if (event.type() == AKEvent::PointerButton)
+            {
+                const auto &e { static_cast<const AKPointerButtonEvent&>(event) };
+                if (e.state() == AKPointerButtonEvent::Pressed)
+                {
+                    rightContainer.leftShadow.enablePointerGrab(true);
+                    leftMenu.startResize();
+                }
+                else
+                {
+                    rightContainer.leftShadow.enablePointerGrab(false);
+                    leftMenu.stopResize();
+                }
+            }
+            else if (event.type() == AKEvent::PointerMove)
+            {
+                leftMenu.updateResize();
+            }
+            else if (event.type() == AKEvent::PointerLeave)
+            {
+                rightContainer.leftShadow.enablePointerGrab(false);
+                leftMenu.stopResize();
+            }
+        }
+
+        return MToplevel::eventFilter(event, target);
+    }
+
+    SideMenu leftMenu { this };
+    RightContainer rightContainer { this };
+    UInt32 cursor { 1 };
 };
 
 int main()

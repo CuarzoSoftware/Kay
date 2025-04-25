@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <include/core/SkFontMgr.h>
 
+#define AK_ASSETS_DIR "/usr/local/share/Kay/assets"
 #define AK_GET_CLASS(identifier) typename std::remove_const<std::remove_pointer<decltype(identifier)>::type>::type
 #define AK_MAX_BUFFER_AGE 3
 #define AK_UNUSED(object){(void)object;}
@@ -73,6 +74,8 @@ namespace AK
     class AKRoundContainer;
     class AKButton;
     class AKTextField;
+    class AKWindowButton;
+    class AKWindowButtonGroup;
 
     /************ EFFECTS ************/
 
@@ -135,6 +138,8 @@ namespace AK
     class AKBakeEvent;
 
     class AKLayoutEvent;
+
+    class AKVibrancyEvent;
 
     class AKSafeEventQueue;
 

@@ -27,7 +27,7 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
 {
     onTargetLayoutUpdated.notify();
 
-    if (!changes().testAnyOf(CHArea, CHClip))
+    if (!changes().testAnyOf(CHArea, CHClip, CHSize))
         return;
 
     if (areaType() == FullSize)
@@ -252,10 +252,26 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             AKTransform::Rotated270
         };
         const SkIRect cornerRects[4] {
-            SkIRect::MakeXYWH(p.rect.x(), p.rect.y(), m_rRectClip.fRadTL, m_rRectClip.fRadTL),
-            SkIRect::MakeXYWH(p.rect.fRight - m_rRectClip.fRadTR, p.rect.y(), m_rRectClip.fRadTR, m_rRectClip.fRadTR),
-            SkIRect::MakeXYWH(p.rect.fRight - m_rRectClip.fRadBR, p.rect.fBottom - m_rRectClip.fRadBR, m_rRectClip.fRadBR, m_rRectClip.fRadBR),
-            SkIRect::MakeXYWH(p.rect.x(), p.rect.fBottom - m_rRectClip.fRadBL, m_rRectClip.fRadBL, m_rRectClip.fRadBL)
+            SkIRect::MakeXYWH(
+                roundRectClip().x() + targetNode()->sceneRect().x(),
+               roundRectClip().y() + targetNode()->sceneRect().y(),
+               roundRectClip().fRadTL,
+               roundRectClip().fRadTL),
+           SkIRect::MakeXYWH(
+               roundRectClip().fRight - roundRectClip().fRadTR + targetNode()->sceneRect().x(),
+               roundRectClip().y() + targetNode()->sceneRect().y(),
+               roundRectClip().fRadTR,
+               roundRectClip().fRadTR),
+            SkIRect::MakeXYWH(
+               roundRectClip().fRight - roundRectClip().fRadBR + targetNode()->sceneRect().x(),
+               roundRectClip().fBottom - roundRectClip().fRadBR + targetNode()->sceneRect().y(),
+               roundRectClip().fRadBR,
+               roundRectClip().fRadBR),
+            SkIRect::MakeXYWH(
+               roundRectClip().x() + targetNode()->sceneRect().x(),
+               roundRectClip().fBottom - roundRectClip().fRadBL + targetNode()->sceneRect().y(),
+               roundRectClip().fRadBL,
+               roundRectClip().fRadBL)
         };
 
         for (size_t i = 0; i < 4; i++)

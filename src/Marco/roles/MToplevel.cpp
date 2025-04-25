@@ -1,5 +1,6 @@
 #include <Marco/private/MToplevelPrivate.h>
 #include <Marco/private/MSurfacePrivate.h>
+#include <Marco/nodes/MVibrancyView.h>
 #include <Marco/roles/MPopup.h>
 #include <Marco/MApplication.h>
 #include <Marco/MTheme.h>
@@ -18,6 +19,17 @@
 #include <GLES2/gl2ext.h>
 
 using namespace AK;
+
+static void findVibrancyViews(AKNode *root, std::vector<MVibrancyView*> *out) noexcept
+{
+    MVibrancyView *vibrancyView { dynamic_cast<MVibrancyView*>(root) };
+
+    if (vibrancyView)
+        out->emplace_back(vibrancyView);
+
+    for (AKNode *node : root->children())
+        findVibrancyViews(node, out);
+}
 
 MToplevel::MToplevel() noexcept : MSurface(Role::Toplevel)
 {
@@ -660,27 +672,6 @@ void MToplevel::render() noexcept
             imp()->shadowMargins.fTop,
             layout().calculatedWidth(),
             layout().calculatedHeight());
-
-        if (MSurface::imp()->backgroundBlur && app()->wayland().svgPathManager)
-        {
-            if (opacity() == 0.f)
-            {
-                int r = MTheme::CSDBorderRadius;
-                int x = imp()->shadowMargins.fLeft;
-                int y = imp()->shadowMargins.fTop;
-                int w = layout().calculatedWidth();
-                int h = layout().calculatedHeight();
-
-                background_blur_set_region(MSurface::imp()->backgroundBlur, nullptr);
-                background_blur_set_round_rect_clip(MSurface::imp()->backgroundBlur, x, y, w, h, r, r, r, r);
-            }
-            else
-            {
-                wl_region *empty = wl_compositor_create_region(app()->wayland().compositor);
-                background_blur_set_region(MSurface::imp()->backgroundBlur, empty);
-                wl_region_destroy(empty);
-            }
-        }
     }
 
     repaint |= target()->isDirty() || target()->bakedComponentsScale() != scale();
@@ -718,17 +709,46 @@ void MToplevel::render() noexcept
         for (int i = 0; i < 4; i++)
             imp()->borderRadius[i].setImage(app()->theme()->csdBorderRadiusMask(scale()));
 
-    /*
-    glScissor(0, 0, 1000000, 100000);
-    glViewport(0, 0, 1000000, 100000);
-    glClear(GL_COLOR_BUFFER_BIT);*/
-
     if (wlInvisibleRegion())
         target()->outInvisibleRegion = &skInvisible;
     else
         target()->outInvisibleRegion = nullptr;
 
     scene().render(target());
+
+    /* Vibrancy */
+    if (MSurface::imp()->backgroundBlur && app()->wayland().svgPathManager)
+    {
+        if (opacity() < 1.f)
+        {
+            std::vector<MVibrancyView*> vibrancyViews;
+            vibrancyViews.reserve(10);
+            findVibrancyViews(this, &vibrancyViews);
+
+            wl_region *region = wl_compositor_create_region(app()->wayland().compositor);
+
+            for (MVibrancyView *view : vibrancyViews)
+                wl_region_add(region, view->globalRect().x(), view->globalRect().y(), view->globalRect().width(), view->globalRect().height());
+
+            background_blur_set_region(MSurface::imp()->backgroundBlur, region);
+            wl_region_destroy(region);
+
+            int r = MTheme::CSDBorderRadius;
+            int x = imp()->shadowMargins.fLeft;
+            int y = imp()->shadowMargins.fTop;
+            int w = layout().calculatedWidth();
+            int h = layout().calculatedHeight();
+            background_blur_set_round_rect_clip(MSurface::imp()->backgroundBlur,
+                                                x, y, w, h,
+                                                r, r, r, r);
+        }
+        else
+        {
+            wl_region *empty = wl_compositor_create_region(app()->wayland().compositor);
+            background_blur_set_region(MSurface::imp()->backgroundBlur, empty);
+            wl_region_destroy(empty);
+        }
+    }
 
     if (true || opacity() == 1.f)
         if (decorationMode() == ClientSide && builtinDecorationsEnabled())

@@ -99,7 +99,7 @@ kay_dep = declare_dependency(
     link_with : kay)
 
 install_data(
-    ['./assets/logo.png'],
+    run_command('find', './assets', '-type', 'f', '-name', '*[.png,.jpg]', check : false).stdout().strip().split('\n'),
     install_dir: '/usr/local/share/Kay/assets'
 )
 

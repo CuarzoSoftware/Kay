@@ -1,13 +1,14 @@
 #ifndef AKTHEME_H
 #define AKTHEME_H
 
-#include "modules/skparagraph/include/FontCollection.h"
-#include <AK/AK.h>
-#include <AK/AKBrush.h>
+#include <modules/skparagraph/include/FontCollection.h>
 #include <modules/skparagraph/include/TextStyle.h>
 #include <include/core/SkImage.h>
 #include <include/core/SkRegion.h>
 #include <include/core/SkFont.h>
+#include <AK/nodes/AKWindowButton.h>
+#include <AK/AKBrush.h>
+#include <AK/AK.h>
 #include <unordered_map>
 
 class AK::AKTheme
@@ -74,18 +75,24 @@ public:
     virtual sk_sp<SkImage>  textCaretVThreePatchImage               (Int32 scale) noexcept;
 
     /* AKEdgeShadow */
+
     static inline Int32     EdgeShadowRadius                        { 2 };
     static inline SkColor   EdgeShadowColor                         { 0x80000000 };
     virtual sk_sp<SkImage>  edgeShadowImage                         (Int32 scale) noexcept;
 
-
     /* Blur */
+
     static inline SkScalar  BlurVibrancySigma                       { 3.8f };
     static inline SkColor4f BlurVibrancyLightColor                  { 0.86f, 0.86f, 0.86f, 0.68f };
     static inline SkColor4f BlurVibrancyDarkColor                   { 0.05f, 0.05f, 0.05f, 0.92f };
 
+    /* Window Button */
 
-    /* Generators */
+    static inline SkISize   WindowButtonSize                        { 12, 12 };
+    static inline Int32     WindowButtonGap                         { 8 };
+    virtual sk_sp<SkImage>  windowButtonImage                       (Int32 scale, AKWindowButton::Type type, AKWindowButton::State state);
+
+    /* Masks */
     virtual sk_sp<SkImage>  topLeftRoundCornerMask                  (Int32 radius, Int32 scale) noexcept;
 protected:
 
@@ -101,7 +108,15 @@ protected:
     std::unordered_map<Int32,sk_sp<SkImage>> m_edgeShadowImage;
 
     /* Round Corner Masks [scale][size] */
-    std::unordered_map<Int32,std::unordered_map<Int32,sk_sp<SkImage>>> m_topLeftRoundCornerMasks;
+    std::unordered_map<Int32,
+        std::unordered_map<Int32,
+            sk_sp<SkImage>>> m_topLeftRoundCornerMasks;
+
+    /* AKWindowButton [scale][type][state] */
+    std::unordered_map<Int32,
+        std::unordered_map<AKWindowButton::Type,
+            std::unordered_map<AKWindowButton::State,
+                sk_sp<SkImage>>>> m_windowButtons;
 };
 
 #endif // AKTHEME_H

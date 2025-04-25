@@ -806,7 +806,7 @@ public:
 
             topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
                 topbar.layout().setWidth(zone->rect().w());
-                topbar.layout().setHeight(zone->rect().h());
+                topbar.layout().setHeight(zone->rect().h() - 1);
             });
 
             resizeGL();

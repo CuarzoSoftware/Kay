@@ -2,6 +2,7 @@
 #include <AK/AKTheme.h>
 #include <AK/AKSceneTarget.h>
 #include <AK/AKSurface.h>
+#include <AK/utils/AKImageLoader.h>
 #include <AK/AKLog.h>
 
 #include <include/gpu/ganesh/GrRecordingContext.h>
@@ -266,6 +267,95 @@ sk_sp<SkImage> AK::AKTheme::edgeShadowImage(Int32 scale) noexcept
     sk_sp<SkImage> result { surface->releaseImage() };
     m_edgeShadowImage[scale] = result;
     return result;
+}
+
+sk_sp<SkImage> AK::AKTheme::windowButtonImage(Int32 scale, AKWindowButton::Type type, AKWindowButton::State state)
+{
+    AK_UNUSED(scale)
+
+    // Being lazy and always using scale 2
+
+    auto &typeMap { m_windowButtons[scale] };
+    auto &stateMap { typeMap[type] };
+    auto it { stateMap.find(state) };
+
+    if (it != stateMap.end())
+        return it->second;
+
+    sk_sp<SkImage> image;
+
+    switch (state)
+    {
+    case AKWindowButton::State::Disabled:
+        image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_disabled.png");
+        break;
+    case AKWindowButton::State::Normal:
+        switch (type)
+        {
+            case AK::AKWindowButton::Type::Close:
+                image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_close_normal.png");
+                break;
+            case AK::AKWindowButton::Type::Minimize:
+                image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_minimize_normal.png");
+                break;
+            case AK::AKWindowButton::Type::Maximize:
+            case AK::AKWindowButton::Type::Fullscreen:
+            case AK::AKWindowButton::Type::UnsetFullscreen:
+                image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_maximize_normal.png");
+                break;
+        }
+        break;
+    case AKWindowButton::State::Hover:
+        switch (type)
+        {
+        case AK::AKWindowButton::Type::Close:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_close_hover.png");
+            break;
+        case AK::AKWindowButton::Type::Minimize:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_minimize_hover.png");
+            break;
+        case AK::AKWindowButton::Type::Maximize:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_maximize_hover.png");
+            break;
+        case AK::AKWindowButton::Type::Fullscreen:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_fullscreen_hover.png");
+            break;
+        case AK::AKWindowButton::Type::UnsetFullscreen:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_unset_fullscreen_hover.png");
+            break;
+        }
+        break;
+    case AKWindowButton::State::Pressed:
+        switch (type)
+        {
+        case AK::AKWindowButton::Type::Close:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_close_pressed.png");
+            break;
+        case AK::AKWindowButton::Type::Minimize:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_minimize_pressed.png");
+            break;
+        case AK::AKWindowButton::Type::Maximize:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_maximize_pressed.png");
+            break;
+        case AK::AKWindowButton::Type::Fullscreen:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_fullscreen_pressed.png");
+            break;
+        case AK::AKWindowButton::Type::UnsetFullscreen:
+            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_unset_fullscreen_pressed.png");
+            break;
+        }
+        break;
+    default:
+        image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_disabled.png");
+        break;
+    }
+
+    if (image)
+    {
+        stateMap[state] = image;
+    }
+
+    return image;
 }
 
 sk_sp<SkImage> AK::AKTheme::topLeftRoundCornerMask(Int32 radius, Int32 scale) noexcept
