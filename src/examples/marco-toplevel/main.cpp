@@ -10,6 +10,7 @@
 #include <AK/nodes/AKImageFrame.h>
 #include <AK/nodes/AKTextField.h>
 #include <AK/nodes/AKWindowButtonGroup.h>
+#include <AK/nodes/AKScroll.h>
 #include <AK/effects/AKEdgeShadow.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
 #include <AK/events/AKVibrancyEvent.h>
@@ -25,6 +26,7 @@ public:
     SideMenu(AKNode *parent = nullptr) :
         MVibrancyView(parent)
     {
+        userCaps.add(UCWindowMove);
         layout().setMinWidth(200);
         layout().setMaxWidth(600);
         layout().setHeightPercent(100);
@@ -97,6 +99,7 @@ public:
         topbar.layout().setJustifyContent(YGJustifyCenter);
         topbar.layout().setHeight(52);
         topbar.layout().setWidthPercent(100);
+        topbar.userCaps.add(UCWindowMove);
         auto textStyle = helloWorld.textStyle();
         textStyle.setFontStyle(
             SkFontStyle(SkFontStyle::kExtraBold_Weight, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant));
@@ -104,12 +107,14 @@ public:
         textStyle.setColor(0xb3000000);
         helloWorld.setTextStyle(textStyle);
         helloWorld.enableDiminishOpacityOnInactive(true);
-        body.layout().setFlex(1.f);
-        body.layout().setAlignItems(YGAlignCenter);
-        body.layout().setJustifyContent(YGJustifyCenter);
-        body.layout().setPadding(YGEdgeAll, 48.f);
-        body.layout().setPadding(YGEdgeTop, 0.f);
-        body.layout().setGap(YGGutterAll, 12.f);
+        body.slot()->layout().setGap(YGGutterAll, 16.f);
+        body.slot()->layout().setPadding(YGEdgeAll, 48.f);
+        body.slot()->layout().setPadding(YGEdgeTop, 52.f + 48.f);
+        /*
+        body.slot()->layout().setFlex(1.f);
+        body.slot()->layout().setAlignItems(YGAlignCenter);
+        body.slot()->layout().setJustifyContent(YGJustifyCenter);
+        */
         cat.layout().setMargin(YGEdgeAll, 12.f);
         cat.layout().setMinWidth(40);
         cat.layout().setMinHeight(40);
@@ -118,14 +123,20 @@ public:
         newWindowButton.setBackgroundColor(AKTheme::SystemBlue);
         exitButton.setBackgroundColor(AKTheme::SystemRed);
         disabledButton.setEnabled(false);
-
-        for (AKNode *child : body.children())
-            child->layout().setWidth(200);
-
+        hiddenButton.layout().setPositionType(YGPositionTypeAbsolute);
+        hiddenButton.layout().setPosition(YGEdgeLeft, 1500.f);
         cat.layout().setWidthPercent(100);
+
+        for (size_t i = 0; i < 0; i++)
+        {
+            auto *btn = new AKImageFrame(cat.image(), &body);
+            btn->layout().setWidth(100 + rand() % 400);
+            btn->layout().setHeight(300);
+            btn->renderableImage().setColorFactor(0xFF000000 + (rand() % 0x00FFFFFF));
+        }
     }
 
-    AKContainer body { YGFlexDirectionColumn, true, this };
+    AKScroll body { this };
 
     AKEdgeShadow leftShadow { AKEdgeLeft, this };
     AKImageFrame cat { AKImageLoader::loadFile("/usr/local/share/Kay/assets/logo.png"), &body };
@@ -139,6 +150,8 @@ public:
     AKButton minimizeButton { "🖥️ Minimize", &body };
     AKButton disabledButton { "🚫 Disabled Button", &body };
     AKButton exitButton { "╰┈➤🚪 Exit", &body };
+
+    AKButton hiddenButton { "Hidden", &body };
     AKTextField textField { &body };
     AKTextField textField2 { &body };
     AKTextField textField3 { &body };
@@ -156,10 +169,10 @@ public:
     {
         rightContainer.leftShadow.installEventFilter(this);
         layout().setFlexDirection(YGFlexDirectionRow);
-        layout().setOverflow(YGOverflowVisible);
+        layout().setWidth(800);
+        layout().setHeight(600);
         setColorWithAlpha(app()->wayland().backgroundBlurManager ? 0x00FFFFFF : 0xffF0F0F0);
         setTitle("Hello world!");
-        setMinSize(minContentSize());
 
         rightContainer.cursorButton.on.clicked.subscribe(this, [this](){
             if (cursor == 34)

@@ -96,19 +96,19 @@ bool AKScene::render(AKSceneTarget *target)
             t->outInvisibleRegion->setEmpty();
     }
 
-    for (auto it = root()->children().rbegin(); it != root()->children().rend(); it++)
+    for (auto it = root()->children(true).rbegin(); it != root()->children(true).rend(); it++)
         notifyBegin(*it);
 
-    for (Int64 i = root()->children().size() - 1; i >= 0;)
+    for (Int64 i = root()->children(true).size() - 1; i >= 0;)
     {
-        if (root()->children()[i]->m_flags.check(AKNode::Skip))
+        if (root()->children(true)[i]->m_flags.check(AKNode::Skip))
         {
             i--;
             continue;
         }
 
-        const int skip = root()->children()[i]->backgroundEffects().size();
-        calculateNewDamage(root()->children()[i]);
+        const int skip = root()->children(true)[i]->backgroundEffects().size();
+        calculateNewDamage(root()->children(true)[i]);
         i -= 1 - skip;
     }
 
@@ -122,19 +122,19 @@ bool AKScene::render(AKSceneTarget *target)
     updateDamageRing();
     renderBackground();
 
-    for (size_t i = 0; i < root()->children().size();)
+    for (size_t i = 0; i < root()->children(true).size();)
     {
-        if (root()->children()[i]->m_flags.check(AKNode::Skip))
+        if (root()->children(true)[i]->m_flags.check(AKNode::Skip))
         {
             i++;
             continue;
         }
 
-        renderNodes(root()->children()[i]);
-        root()->children()[i]->t->changes.reset();
+        renderNodes(root()->children(true)[i]);
+        root()->children(true)[i]->t->changes.reset();
 
-        if (root()->children()[i]->caps() & AKNode::BackgroundEffect)
-            root()->children()[i]->setParent(nullptr);
+        if (root()->children(true)[i]->caps() & AKNode::BackgroundEffect)
+            root()->children(true)[i]->setParent(nullptr);
         else
             i++;
     }
@@ -282,7 +282,7 @@ void AKScene::notifyBegin(AKNode *node)
     node->m_flags.remove(AKNode::Skip);
 
     if (!(node->caps() & AKNode::Scene))
-        for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
+        for (auto it = node->children(true).rbegin(); it != node->children(true).rend(); it++)
             notifyBegin(*it);
 
     if (visible)
@@ -476,7 +476,7 @@ skipDamage:
         if (backgroundEffect->stackPosition() == AKBackgroundEffect::Behind)
             backgroundEffect->insertBefore(node);
         else
-            backgroundEffect->insertBefore(node->parent()->children().front());
+            backgroundEffect->insertBefore(node->parent()->children(true).front());
     }
 
     auto bdtIt = std::find(t->m_bdts.begin(), t->m_bdts.end(), &node->bdt);
@@ -488,16 +488,16 @@ skipDamage:
     }
 
     if (!(node->caps() & AKNode::Scene))
-        for (Int64 i = node->children().size() - 1; i >= 0;)
+        for (Int64 i = node->children(true).size() - 1; i >= 0;)
         {
-            if (node->children()[i]->m_flags.check(AKNode::Skip))
+            if (node->children(true)[i]->m_flags.check(AKNode::Skip))
             {
                 i--;
                 continue;
             }
 
-            const int skip = node->children()[i]->backgroundEffects().size();
-            calculateNewDamage(node->children()[i]);
+            const int skip = node->children(true)[i]->backgroundEffects().size();
+            calculateNewDamage(node->children(true)[i]);
             i -= 1 - skip;
         }
 
@@ -748,20 +748,20 @@ void AKScene::renderNodes(AKNode *node)
     renderChildren:
 
     if (!(node->caps() & AKNode::Scene))
-        for (size_t i = 0; i < node->children().size();)
+        for (size_t i = 0; i < node->children(true).size();)
         {
-            if (node->children()[i]->m_flags.check(AKNode::Skip))
+            if (node->children(true)[i]->m_flags.check(AKNode::Skip))
             {
                 i++;
                 continue;
             }
 
-            renderNodes(node->children()[i]);
-            node->children()[i]->t->changes.reset();
+            renderNodes(node->children(true)[i]);
+            node->children(true)[i]->t->changes.reset();
             YGNodeSetHasNewLayout(node->m_layout.m_node, false);
 
-            if (node->children()[i]->caps() & AKNode::BackgroundEffect)
-                node->children()[i]->setParent(nullptr);
+            if (node->children(true)[i]->caps() & AKNode::BackgroundEffect)
+                node->children(true)[i]->setParent(nullptr);
             else
                 i++;
         }
@@ -880,7 +880,7 @@ void AKScene::renderNodes(AKNode *node)
             return nullptr;
 
         AKNode *found;
-        for (AKNode *child : node->children())
+        for (AKNode *child : node->children(true))
         {
             if (child->isKeyboardFocusable())
                 return child;
@@ -955,6 +955,9 @@ void AKScene::renderNodes(AKNode *node)
             break;
         case AKEvent::PointerButton:
             handlePointerButtonEvent();
+            break;
+        case AKEvent::PointerScroll:
+            handlePointerScrollEvent();
             break;
         case AKEvent::KeyboardKey:
             handleKeyboardKeyEvent();
@@ -1079,6 +1082,35 @@ void AKScene::renderNodes(AKNode *node)
     }
 
     void AKScene::handlePointerButtonEvent()
+    {
+        m_root->removeFlagsAndPropagate(AKNode::Notified);
+        AKNode::RIterator it { nullptr };
+
+    retry:
+        it.reset(m_root->bottommostRightChild());
+        m_treeChanged = false;
+
+        while (!it.done())
+        {
+            if (it.node()->m_flags.check(AKNode::Notified))
+            {
+                it.next();
+                continue;
+            }
+
+            it.node()->m_flags.add(AKNode::Notified);
+
+            if (it.node()->m_flags.check(AKNode::HasPointerFocus | AKNode::PointerGrab))
+                akApp()->sendEvent(*m_win->e, *it.node());
+
+            if (m_treeChanged)
+                goto retry;
+
+            it.next();
+        }
+    }
+
+    void AKScene::handlePointerScrollEvent()
     {
         m_root->removeFlagsAndPropagate(AKNode::Notified);
         AKNode::RIterator it { nullptr };

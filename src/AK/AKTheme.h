@@ -74,6 +74,11 @@ public:
     static inline SkRect    TextCaretVThreePatchSideSrcRect         { SkRect::MakeWH(2.f, 2.f) };
     virtual sk_sp<SkImage>  textCaretVThreePatchImage               (Int32 scale) noexcept;
 
+    /* AKScroll */
+    static inline SkScalar  ScrollKineticFiction                    { 0.1f };
+    static inline SkScalar  ScrollKineticFictionTime                { 50.f };
+    static inline SkScalar  ScrollBounceOffsetLimit                 { 96.f };
+
     /* AKEdgeShadow */
 
     static inline Int32     EdgeShadowRadius                        { 2 };

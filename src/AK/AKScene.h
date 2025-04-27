@@ -88,6 +88,7 @@ private:
     void handlePointerMoveEvent();
     void handlePointerLeaveEvent();
     void handlePointerButtonEvent();
+    void handlePointerScrollEvent();
     void handleKeyboardKeyEvent();
     void handleWindowStateEvent();
 };

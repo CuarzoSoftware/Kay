@@ -688,7 +688,7 @@ AKPainter::AKPainter() noexcept
                 gl_FragColor.z *= 24.0;
                 gl_FragColor.x *= 12.0;
                 gl_FragColor.xyz = gl_FragColor.xyz * yuvToRgbMatrix;
-                gl_FragColor.xyz = ((0.4/6.0) * min(gl_FragColor.xyz, vec3(7.0))) + 0.6;
+                gl_FragColor.xyz = ((0.1/6.0) * min(gl_FragColor.xyz, vec3(7.0))) + 0.86;
                 gl_FragColor.w = 1.0;
             }
             // Texture

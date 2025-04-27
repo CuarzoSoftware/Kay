@@ -279,44 +279,72 @@ void MApplication::wl_pointer_button(void */*data*/, wl_pointer */*pointer*/, UI
     p.m_eventHistory.button.setMs(time);
     p.m_eventHistory.button.setSerial(serial);
     p.m_eventHistory.button.setButton((AK::AKPointerButtonEvent::Button)button);
-    p.m_eventHistory.button.setState((AK::AKPointerButtonEvent::State)state);    
+    p.m_eventHistory.button.setState((AK::AKPointerButtonEvent::State)state);
+    p.m_eventHistory.button.ignore();
     akApp()->postEvent(p.m_eventHistory.button, p.focus()->scene());
 }
 
-void MApplication::wl_pointer_axis(void *data, wl_pointer *pointer, UInt32 time, UInt32 axis, wl_fixed_t value)
+void MApplication::wl_pointer_axis(void */*data*/, wl_pointer */*pointer*/, UInt32 time, UInt32 axis, wl_fixed_t value)
 {
+    auto &p { app()->pointer() };
+    p.m_hasPendingAxisEvent = true;
+    p.m_eventHistory.scroll.setMs(time);
 
+    if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+        p.m_eventHistory.scroll.setX(wl_fixed_to_double(value));
+    else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+        p.m_eventHistory.scroll.setY(wl_fixed_to_double(value));
 }
 
-void MApplication::wl_pointer_frame(void *data, wl_pointer *pointer)
+void MApplication::wl_pointer_frame(void */*data*/, wl_pointer */*pointer*/)
 {
+    auto &p { app()->pointer() };
 
+    if (!p.m_hasPendingAxisEvent)
+        return;
+
+    p.m_hasPendingAxisEvent = false;
+
+    if (!p.focus()) return;
+
+    p.m_eventHistory.scroll.setSerial(AKTime::nextSerial());
+    akApp()->postEvent(p.m_eventHistory.scroll, p.focus()->scene());
 }
 
-void MApplication::wl_pointer_axis_source(void *data, wl_pointer *pointer, UInt32 axis_source)
+void MApplication::wl_pointer_axis_source(void */*data*/, wl_pointer */*pointer*/, UInt32 axis_source)
 {
-
+    auto &p { app()->pointer() };
+    p.m_hasPendingAxisEvent = true;
+    p.m_eventHistory.scroll.setSource((AKPointerScrollEvent::Source)axis_source);
 }
 
-void MApplication::wl_pointer_axis_stop(void *data, wl_pointer *pointer, UInt32 time, UInt32 axis)
+void MApplication::wl_pointer_axis_stop(void */*data*/, wl_pointer */*pointer*/, UInt32 time, UInt32 axis)
 {
+    auto &p { app()->pointer() };
+    p.m_hasPendingAxisEvent = true;
+    p.m_eventHistory.scroll.setMs(time);
 
+    if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+        p.m_eventHistory.scroll.setX(0.f);
+    else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+        p.m_eventHistory.scroll.setY(0.f);
 }
 
-void MApplication::wl_pointer_axis_discrete(void *data, wl_pointer *pointer, UInt32 axis, Int32 discrete)
-{
+// Deprecated
+void MApplication::wl_pointer_axis_discrete(void */*data*/, wl_pointer */*pointer*/, UInt32 /*axis*/, Int32 /*discrete*/) {}
 
+void MApplication::wl_pointer_axis_value120(void */*data*/, wl_pointer */*pointer*/, UInt32 axis, Int32 value120)
+{
+    auto &p { app()->pointer() };
+    p.m_hasPendingAxisEvent = true;
+
+    if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+        p.m_eventHistory.scroll.set120X(value120);
+    else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+        p.m_eventHistory.scroll.set120Y(value120);
 }
 
-void MApplication::wl_pointer_axis_value120(void *data, wl_pointer *pointer, UInt32 axis, Int32 value120)
-{
-
-}
-
-void MApplication::wl_pointer_axis_relative_direction(void *data, wl_pointer *pointer, UInt32 axis, UInt32 direction)
-{
-
-}
+void MApplication::wl_pointer_axis_relative_direction(void */*data*/, wl_pointer */*pointer*/, UInt32 /*axis*/, UInt32 /*direction*/) {}
 
 void MApplication::wl_keyboard_keymap(void */*data*/, wl_keyboard */*keyboard*/, UInt32 format, Int32 fd, UInt32 size)
 {

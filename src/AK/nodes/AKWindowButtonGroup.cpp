@@ -85,6 +85,8 @@ void AKWindowButtonGroup::pointerButtonEvent(const AKPointerButtonEvent &e)
 
     if (e.state() == AKPointerButtonEvent::Released)
     {
+        e.accept();
+
         const auto state { AKWindowButton::State::Hover };
         closeButton.setState(state);
         maximizeButton.setState(state);

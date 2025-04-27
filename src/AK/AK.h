@@ -76,6 +76,7 @@ namespace AK
     class AKTextField;
     class AKWindowButton;
     class AKWindowButtonGroup;
+    class AKScroll;
 
     /************ EFFECTS ************/
 

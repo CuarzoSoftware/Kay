@@ -1112,7 +1112,7 @@ public:
 private:
     static AKNode *findNode(AKNode *node, const SkIPoint &globalPos, UInt64 filter) noexcept
     {
-        for (auto it = node->children().rbegin(); it != node->children().rend(); it++)
+        for (auto it = node->children(true).rbegin(); it != node->children(true).rend(); it++)
             if (AKNode *child = findNode(*it, globalPos, filter))
                 return child;
 

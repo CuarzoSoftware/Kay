@@ -25,6 +25,7 @@ public:
         AKPointerMoveEvent move;
         AKPointerLeaveEvent leave;
         AKPointerButtonEvent button;
+        AKPointerScrollEvent scroll;
     };
 
     AKCursor cursor() const noexcept { return m_cursor; };
@@ -48,6 +49,7 @@ private:
     std::unordered_map<AKCursor, wl_cursor*> m_cursors;
     AKCursor m_cursor { AKCursor::Default };
     bool m_forceCursorUpdate { true };
+    bool m_hasPendingAxisEvent { false };
 };
 
 #endif // MPOINTER_H

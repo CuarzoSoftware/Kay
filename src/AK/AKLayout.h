@@ -563,6 +563,8 @@ public:
         YGNodeCalculateLayout(m_node, availableWidth, availableHeight, ownerDirection);
     }
 
+    YGNodeRef ygNode() const noexcept { return m_node; };
+
 private:
     friend class AKNode;
     friend class AKScene;

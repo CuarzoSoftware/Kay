@@ -6,7 +6,6 @@
 #include <AK/AKTheme.h>
 #include <AK/AKLog.h>
 #include <AK/AKApplication.h>
-// #include <iostream>
 #include <locale>
 #include <codecvt>
 
@@ -25,6 +24,8 @@ AKText::AKText(const std::string &text, AKNode *parent) noexcept : AKBakeable(pa
     m_paragraphStyle.setTextDirection(skia::textlayout::TextDirection::kLtr);
     setTextStyle(theme()->DefaultTextStyle);
     setText(text);
+    SkRegion empty;
+    setInputRegion(&empty);
 }
 
 bool AKText::setText(const std::string &text) noexcept

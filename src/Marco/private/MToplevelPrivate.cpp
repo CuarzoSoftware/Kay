@@ -214,10 +214,13 @@ void MToplevel::Imp::handleRootPointerButtonEvent(const AKPointerButtonEvent &ev
 
     if (resizeEdges)
         xdg_toplevel_resize(xdgToplevel, app()->wayland().seat, event.serial(), resizeEdges);
-    else if (obj.globalRect().x() <= pointerPos.x() &&
-             obj.globalRect().right() >= pointerPos.x() &&
-             obj.globalRect().y() <= pointerPos.y() &&
-             obj.globalRect().y() + moveTopMargin >= pointerPos.y())
+    else if (
+        obj.scene().pointerFocus() &&
+        obj.scene().pointerFocus()->userCaps.check(UCWindowMove) &&
+        obj.globalRect().x() <= pointerPos.x() &&
+        obj.globalRect().right() >= pointerPos.x() &&
+        obj.globalRect().y() <= pointerPos.y() &&
+        obj.globalRect().y() + moveTopMargin >= pointerPos.y())
     {
         xdg_toplevel_move(xdgToplevel, app()->wayland().seat, event.serial());
     }

@@ -47,6 +47,8 @@ void AKWindowButton::pointerButtonEvent(const AKPointerButtonEvent &e)
     if (state() == State::Disabled || e.button() != AKPointerButtonEvent::Left)
         return;
 
+    e.accept();
+
     if (e.state() == AKPointerButtonEvent::Pressed)
         setState(Pressed);
     else

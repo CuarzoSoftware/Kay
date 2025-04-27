@@ -61,7 +61,7 @@ void AKLayout::apply(bool calculate) noexcept
 
         YGNodeSetHasNewLayout(m_node, false);
 
-        for (AKNode *child : m_akNode.children())
+        for (AKNode *child : m_akNode.children(true))
             applyTree(child);
     }
 }
@@ -173,7 +173,7 @@ void AKLayout::applyTree(AKNode *node)
     if (changes.get() != 0)
         akApp()->sendEvent(AKLayoutEvent(changes), *node);
 
-    for (AKNode *child : node->children())
+    for (AKNode *child : node->children(true))
         applyTree(child);
 
     node->m_flags.remove(AKNode::ChildrenNeedPosUpdate | AKNode::ChildrenNeedPosUpdate);

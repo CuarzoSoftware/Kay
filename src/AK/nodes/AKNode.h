@@ -214,6 +214,14 @@ public:
         CHLast
     };
     void addChange(Change change) noexcept;
+    const AKChanges &changes() const noexcept;
+
+    enum UserCaps
+    {
+        UCWindowMove = 1 << 0,
+    };
+
+    AKBitset<UserCaps> userCaps;
 
     /**
      * @brief Marks all intersected targets as dirty.
@@ -225,8 +233,6 @@ public:
      * @note The addChange() function automatically calls this function internally.
      */
     void repaint() noexcept;
-
-    const AKChanges &changes() const noexcept;
 
     void setVisible(bool visible) noexcept
     {
@@ -255,8 +261,22 @@ public:
         return m_flags.check(PointerGrab);
     }
 
+    const AKNode *slot() const noexcept
+    {
+        if (m_slot)
+            return m_slot;
+        return this;
+    }
+
+    AKNode *slot() noexcept
+    {
+        if (m_slot)
+            return m_slot;
+        return this;
+    }
+
     /* Insert at the end, nullptr unsets */
-    void setParent(AKNode *parent) noexcept;
+    void setParent(AKNode *parent, bool ignoreSlot = false) noexcept;
     AKNode *parent() const noexcept { return m_parent; }
     AKNode *topmostParent() const noexcept;
     AKNode *bottommostRightChild() const noexcept;
@@ -278,9 +298,12 @@ public:
         if (!node || !parent()) return false;
         return parent() == node || parent()->isSubchildOf(node);
     }
-    const std::vector<AKNode*> &children() const noexcept
+    const std::vector<AKNode*> &children(bool ignoreSlot = false) const noexcept
     {
-        return m_children;
+        if (ignoreSlot)
+            return m_children;
+
+        return slot()->children(true);
     }
 
     UInt32 caps() const noexcept
@@ -417,13 +440,14 @@ public:
                 out->emplace_back(found);
         }
 
-        for (AKNode *node : root->children())
+        for (AKNode *node : root->children(true))
             FindNodesWithType(node, out);
     }
 
     AKSignal<const AKLayoutEvent &> onLayoutChanged;
 
 protected:
+    void setSlot(AKNode *slot) noexcept;
     bool event(const AKEvent &event) override;
     virtual void layoutEvent(const AKLayoutEvent &event);
     virtual void windowStateEvent(const AKWindowStateEvent &event);
@@ -482,7 +506,7 @@ private:
     void setScene(AKScene *scene) noexcept;
     void propagateScene(AKScene *scene) noexcept;
     void updateSubScene() noexcept;
-    void setParentPrivate(AKNode *parent, bool handleChanges) noexcept;
+    void setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlot) noexcept;
     void addFlagsAndPropagate(UInt32 flags) noexcept;
     void removeFlagsAndPropagate(UInt32 flags) noexcept;
     void setFlagsAndPropagateToParents(UInt32 flags, bool set) noexcept;
@@ -490,6 +514,7 @@ private:
     void damageTargetsAndPropagate() noexcept;
     AKNode *topmostInvisibleParent() const noexcept;
 
+    AKWeak<AKNode> m_slot;
     AKBitset<Flags> m_flags { 0 };
     SkIRect m_globalRect { 0, 0, 0, 0 };
     SkIRect m_rect;

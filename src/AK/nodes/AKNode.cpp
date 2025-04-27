@@ -181,11 +181,14 @@ void AKNode::updateSubScene() noexcept
         child->updateSubScene();
 }
 
-void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
+void AKNode::setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlot) noexcept
 {
+    if (parent && !ignoreSlot)
+        parent = parent->slot();
+
     assert(!parent || (parent != this && !parent->isSubchildOf(this)));
 
-    if (m_parent && m_parent == parent && m_parent->children().back() == this)
+    if (m_parent && m_parent == parent && m_parent->children(true).back() == this)
         return;
 
     const bool isBackgroundEffect { (m_caps & Caps::BackgroundEffect) != 0 };
@@ -207,7 +210,7 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges) noexcept
 
     if (parent)
     {
-        m_parentLinkIndex = parent->children().size();
+        m_parentLinkIndex = parent->children(true).size();
         parent->m_children.push_back(this);
 
         if (isBackgroundEffect)
@@ -272,9 +275,9 @@ void AKNode::setFlagsAndPropagateToParents(UInt32 flags, bool set) noexcept
     }
 }
 
-void AKNode::setParent(AKNode *parent) noexcept
+void AKNode::setParent(AKNode *parent, bool ignoreSlot) noexcept
 {
-    setParentPrivate(parent, true);
+    setParentPrivate(parent, true, ignoreSlot);
 }
 
 AKNode *AKNode::topmostParent() const noexcept
@@ -291,8 +294,8 @@ AKNode *AKNode::bottommostRightChild() const noexcept
 {
     const AKNode *child { this };
 
-    while (child && !child->children().empty())
-        child = child->children().back();
+    while (child && !child->children(true).empty())
+        child = child->children(true).back();
 
     return child == this ? nullptr : (AKNode*)child;
 }
@@ -301,8 +304,8 @@ AKNode *AKNode::bottommostLeftChild() const noexcept
 {
     const AKNode *child { this };
 
-    while (child && !child->children().empty())
-        child = child->children().front();
+    while (child && !child->children(true).empty())
+        child = child->children(true).front();
 
     return child == this ? nullptr : (AKNode*)child;
 }
@@ -345,7 +348,7 @@ void AKNode::insertBefore(AKNode *other) noexcept
                 other->parent()->addChange(CHLayout);
             }
 
-            setParentPrivate(nullptr, false);
+            setParentPrivate(nullptr, false, true);
             m_parent = other->parent();
             m_parentLinkIndex = other->m_parentLinkIndex;
 
@@ -401,13 +404,13 @@ void AKNode::insertAfter(AKNode *other) noexcept
                     parent()->addChange(CHLayout);
             }
 
-            if (other->parent()->children().back() == other)
+            if (other->parent()->children(true).back() == other)
             {
                 setParent(other->parent());
                 return;
             }
 
-            setParentPrivate(nullptr, false);
+            setParentPrivate(nullptr, false, true);
 
             if (isBackgroundEffect)
             {
@@ -441,7 +444,7 @@ void AKNode::insertAfter(AKNode *other) noexcept
     }
     else if (parent())
     {
-        insertBefore(parent()->children().front());
+        insertBefore(parent()->children(true).front());
     }
 }
 
@@ -540,6 +543,14 @@ MSurface *AKNode::window() const noexcept
     if (MRootSurfaceNode *node = dynamic_cast<MRootSurfaceNode*>(root()))
         return &node->surface();
     return nullptr;
+}
+
+void AKNode::setSlot(AKNode *slot) noexcept
+{
+    if (slot == this)
+        m_slot.reset();
+    else
+        m_slot.reset(slot);
 }
 
 bool AKNode::event(const AKEvent &event)
