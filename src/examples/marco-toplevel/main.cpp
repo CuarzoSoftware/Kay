@@ -16,9 +16,11 @@
 #include <AK/events/AKVibrancyEvent.h>
 #include <AK/AKTheme.h>
 #include <AK/AKLog.h>
+#include <XDGKit/XDGKit.h>
 #include <iostream>
 
 using namespace AK;
+using namespace XDG;
 
 class SideMenu : public MVibrancyView
 {
@@ -81,9 +83,12 @@ public:
 class RightContainer : public AKSolidColor
 {
 public:
+    std::shared_ptr<XDGKit> xdg;
+
     RightContainer(AKNode *parent = nullptr) :
         AKSolidColor(0xFFFFFFFF, parent)
     {
+        xdg = XDGKit::Make();
         layout().setMinWidth(250);
         layout().setFlex(1.f);
         enableChildrenClipping(false);
@@ -108,16 +113,17 @@ public:
         helloWorld.setTextStyle(textStyle);
         helloWorld.enableDiminishOpacityOnInactive(true);
         body.slot()->layout().setGap(YGGutterAll, 16.f);
-        body.slot()->layout().setPadding(YGEdgeAll, 48.f);
-        body.slot()->layout().setPadding(YGEdgeTop, 52.f + 48.f);
+        body.slot()->layout().setPadding(YGEdgeAll, 32.f);
+        body.slot()->layout().setPadding(YGEdgeTop, 52.f + 32.f);
+        body.verticalBar().layout().setPadding(YGEdgeTop, 54.f);
         /*
         body.slot()->layout().setFlex(1.f);
         body.slot()->layout().setAlignItems(YGAlignCenter);
         body.slot()->layout().setJustifyContent(YGJustifyCenter);
         */
         cat.layout().setMargin(YGEdgeAll, 12.f);
-        cat.layout().setMinWidth(40);
-        cat.layout().setMinHeight(40);
+        cat.layout().setMinWidth(120);
+        cat.layout().setMinHeight(120);
         cat.layout().setFlex(1.f);
         cat.setSizeMode(AKImageFrame::SizeMode::Contain);
         newWindowButton.setBackgroundColor(AKTheme::SystemBlue);
@@ -127,12 +133,28 @@ public:
         hiddenButton.layout().setPosition(YGEdgeLeft, 1500.f);
         cat.layout().setWidthPercent(100);
 
-        for (size_t i = 0; i < 0; i++)
+        const std::vector<std::string> iconNames {
+            "firefox",
+            "vscode",
+            "spotify",
+            "chrome",
+            "foot",
+            "qtcreator",
+            "discord",
+            "gimp",
+            "gedit"
+        };
+
+        for (auto &iconName : iconNames)
         {
-            auto *btn = new AKImageFrame(cat.image(), &body);
-            btn->layout().setWidth(100 + rand() % 400);
-            btn->layout().setHeight(300);
-            btn->renderableImage().setColorFactor(0xFF000000 + (rand() % 0x00FFFFFF));
+            const auto *xdgIcon { xdg->iconThemeManager().findIcon(iconName, 512, 1, XDGIcon::SVG, { "WhiteSur", "" }) };
+
+            if (!xdgIcon)
+                continue;
+
+            auto *icon = new AKImageFrame(AKImageLoader::loadFile(xdgIcon->getPath(XDGIcon::SVG), {512, 512}), &body);
+            icon->layout().setWidthPercent(100);
+            icon->layout().setHeight(512);
         }
     }
 
@@ -165,6 +187,7 @@ public:
 class Window : public MToplevel
 {
 public:
+
     Window() noexcept : MToplevel()
     {
         rightContainer.leftShadow.installEventFilter(this);

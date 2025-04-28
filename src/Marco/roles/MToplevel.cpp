@@ -599,9 +599,9 @@ std::vector<std::string> splitString(const std::string& input, size_t chunkSize)
 
 void MToplevel::render() noexcept
 {
-    //const SkISize minSize { minContentSize() };
-    //layout().setMinWidth(std::max(minSize.width(), 128));
-    //layout().setMinHeight(std::max(minSize.height(), 128));
+    const SkISize minSize { minContentSize() };
+    layout().setMinWidth(std::max(minSize.width(), 128));
+    layout().setMinHeight(std::max(minSize.height(), 128));
     scene().root()->layout().calculate();
 
     if (wlCallback() && !MSurface::imp()->flags.check(MSurface::Imp::ForceUpdate))

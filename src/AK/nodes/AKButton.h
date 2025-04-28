@@ -46,7 +46,7 @@ protected:
     void applyLayoutConstraints() noexcept;
     void updateOpaqueRegion() noexcept;
     void updateStyle() noexcept;
-    AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
+    AKThreeImagePatch m_hThreePatch { AKHorizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
     AKText m_text;
     SkColor m_backgroundColor { SK_ColorWHITE };

@@ -243,6 +243,58 @@ sk_sp<SkImage> AK::AKTheme::textCaretVThreePatchImage(Int32 scale) noexcept
     return result;
 }
 
+sk_sp<SkImage> AK::AKTheme::roundLineThreePatchImage(AKOrientation orientation, Int32 diam, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept
+{
+    if (diam <= 0 || scale <= 0 || outSideSrc == nullptr || outCenterSrc == nullptr)
+        return nullptr;
+
+    const SkScalar rad { SkScalar(diam) * 0.5f };
+
+    if (orientation == AKVertical)
+    {
+        outSideSrc->setWH(diam, rad);
+        outCenterSrc->setXYWH(0, rad, diam, 1);
+    }
+    else
+    {
+        outSideSrc->setWH(rad, diam);
+        outCenterSrc->setXYWH(rad, 0, 1, diam);
+    }
+
+    auto &orientationMap { m_roundLineThreePatchImage[orientation] };
+    auto &scaleMap { orientationMap[scale] };
+
+    auto it { scaleMap.find(diam) };
+
+    if (it != scaleMap.end())
+        return it->second;
+
+    auto surface = AKSurface::Make(
+        SkISize(
+            orientation == AKVertical ? diam : rad + 1,
+            orientation == AKVertical ? rad + 1 : diam),
+        scale, true);
+
+    surface->surface()->recordingContext()->asDirectContext()->resetContext();
+    SkCanvas &c { *surface->surface()->getCanvas() };
+    c.scale(surface->scale(), surface->scale());
+    c.clear(SK_ColorTRANSPARENT);
+
+    SkPaint paint;
+    paint.setAntiAlias(true);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    paint.setStroke(false);
+    paint.setColor(SK_ColorWHITE);
+
+    c.drawCircle(SkPoint(rad, rad), rad, paint);
+    c.drawRect(*outCenterSrc, paint);
+    surface->surface()->recordingContext()->asDirectContext()->flush();
+
+    sk_sp<SkImage> result { surface->releaseImage() };
+    scaleMap[diam] = result;
+    return result;
+}
+
 sk_sp<SkImage> AK::AKTheme::edgeShadowImage(Int32 scale) noexcept
 {
     const auto it { m_edgeShadowImage.find(scale) };
@@ -380,7 +432,7 @@ sk_sp<SkImage> AK::AKTheme::topLeftRoundCornerMask(Int32 radius, Int32 scale) no
     paint.setAntiAlias(true);
     paint.setColor(SK_ColorWHITE);
     paint.setBlendMode(SkBlendMode::kSrc);
-    c.drawCircle(SkPoint::Make(radius, radius), radius, paint);
+    c.drawCircle(SkPoint::Make(radius, radius), radius - 0.5f, paint);
     surface->surface()->recordingContext()->asDirectContext()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };

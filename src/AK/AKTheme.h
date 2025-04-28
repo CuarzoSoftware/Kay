@@ -9,6 +9,7 @@
 #include <AK/nodes/AKWindowButton.h>
 #include <AK/AKBrush.h>
 #include <AK/AK.h>
+#include <AK/AKOrientation.h>
 #include <unordered_map>
 
 class AK::AKTheme
@@ -76,8 +77,11 @@ public:
 
     /* AKScroll */
     static inline SkScalar  ScrollKineticFiction                    { 0.1f };
-    static inline SkScalar  ScrollKineticFictionTime                { 50.f };
+    static inline SkScalar  ScrollKineticFictionTime                { 25.f };
     static inline SkScalar  ScrollBounceOffsetLimit                 { 96.f };
+    static inline SkScalar  ScrollBarHandleWidth                    { 7.f };
+    static inline SkScalar  ScrollBarHandleWidthHover               { 11.f };
+    virtual sk_sp<SkImage>  roundLineThreePatchImage                (AKOrientation orientation, Int32 diam, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
 
     /* AKEdgeShadow */
 
@@ -122,6 +126,12 @@ protected:
         std::unordered_map<AKWindowButton::Type,
             std::unordered_map<AKWindowButton::State,
                 sk_sp<SkImage>>>> m_windowButtons;
+
+    /* Round Line Patch [orientation][scale][diam] */
+    std::unordered_map<AKOrientation,
+        std::unordered_map<Int32,
+            std::unordered_map<Int32,
+                sk_sp<SkImage>>>> m_roundLineThreePatchImage;
 };
 
 #endif // AKTHEME_H

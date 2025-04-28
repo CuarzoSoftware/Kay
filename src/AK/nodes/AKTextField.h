@@ -34,7 +34,7 @@ protected:
     void removeUTF8() noexcept;
     void moveCaretRight() noexcept;
     void moveCaretLeft() noexcept;
-    AKThreeImagePatch m_hThreePatch { AKThreeImagePatch::Horizontal, this };
+    AKThreeImagePatch m_hThreePatch { AKHorizontal, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
     AKText m_text { "", &m_content };
     AKTextCaret m_caret { &m_text };

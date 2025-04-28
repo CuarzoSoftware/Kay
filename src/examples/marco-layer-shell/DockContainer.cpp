@@ -4,7 +4,7 @@
 #include <Marco/MApplication.h>
 
 DockContainer::DockContainer(AKNode *parent) noexcept :
-    AKThreeImagePatch(Horizontal, parent)
+    AKThreeImagePatch(AKHorizontal, parent)
 {
     //layout().setFlex(1.f);
     layout().setFlexDirection(YGFlexDirectionRow);

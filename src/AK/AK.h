@@ -77,6 +77,7 @@ namespace AK
     class AKWindowButton;
     class AKWindowButtonGroup;
     class AKScroll;
+    class AKScrollBar;
 
     /************ EFFECTS ************/
 

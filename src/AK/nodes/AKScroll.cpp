@@ -26,13 +26,13 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
     m_kineticYAnim.setOnUpdateCallback([this](AKAnimation *a){
         if (!m_fingersDownY)
         {
-            if (-m_slot.layout().position(YGEdgeTop).value < m_contentBounds.fTop)
+            if (-m_slot.layout().position(YGEdgeTop).value - m_vel.fY < m_contentBounds.fTop)
             {
                 m_vel.fY *= std::exp(-5.f * a->value());
                 m_slot.layout().setPosition(YGEdgeTop,
                     m_slot.layout().position(YGEdgeTop).value * (1.f - a->value()) + m_contentBounds.fTop * a->value());
             }
-            if (-m_slot.layout().position(YGEdgeTop).value + layout().calculatedHeight() > m_contentBounds.fBottom)
+            if (-m_slot.layout().position(YGEdgeTop).value - m_vel.fY + layout().calculatedHeight() > m_contentBounds.fBottom)
             {
                 m_vel.fY *= std::exp(-5.f * a->value());
                 m_slot.layout().setPosition(YGEdgeTop,
@@ -139,6 +139,52 @@ void AKScroll::updateViewport() noexcept
 {
     m_slot.layout().setPosition(YGEdgeLeft, m_slot.layout().position(YGEdgeLeft).value + m_vel.x());
     m_slot.layout().setPosition(YGEdgeTop, m_slot.layout().position(YGEdgeTop).value + m_vel.y());
+    updateBars();
+}
+
+void AKScroll::updateBars() noexcept
+{
+    if (layout().calculatedWidth() >= m_contentBounds.width())
+        m_hBar.setSizePercent(1.f);
+    else
+        m_hBar.setSizePercent(layout().calculatedWidth() / m_contentBounds.width());
+
+    if (layout().calculatedHeight() >= m_contentBounds.height())
+        m_vBar.setSizePercent(1.f);
+    else
+        m_vBar.setSizePercent(layout().calculatedHeight() / m_contentBounds.height());
+
+    SkScalar x { -(m_slot.layout().position(YGEdgeLeft).value - m_contentBounds.fLeft) };
+    SkScalar realWidth { m_contentBounds.width() - layout().calculatedWidth() };
+
+    if (realWidth <= 0.f)
+        m_hBar.setPosPercent(0.f);
+    else
+    {
+        x = x/realWidth;
+        m_hBar.setPosPercent(x);
+
+        if (x < 0.f)
+            m_hBar.setSizePercent(m_hBar.sizePercent() + x * (1.f - m_vBar.sizePercent()));
+        else if (x > 1.f)
+            m_hBar.setSizePercent(m_hBar.sizePercent() + (1.f - x) * (1.f - m_vBar.sizePercent()));
+    }
+
+    SkScalar y { -(m_slot.layout().position(YGEdgeTop).value - m_contentBounds.fTop) };
+    SkScalar realHeight { m_contentBounds.height() - layout().calculatedHeight() };
+
+    if (realHeight <= 0.f)
+        m_vBar.setPosPercent(0.f);
+    else
+    {
+        y = y/realHeight;
+        m_vBar.setPosPercent(y);
+
+        if (y < 0.f)
+            m_vBar.setSizePercent(m_vBar.sizePercent() + y * (1.f - m_vBar.sizePercent()));
+        else if (y > 1.f)
+            m_vBar.setSizePercent(m_vBar.sizePercent() + (1.f - y) * (1.f - m_vBar.sizePercent()));
+    }
 }
 
 void AKScroll::applyConstraints() noexcept
@@ -158,6 +204,7 @@ void AKScroll::applyConstraints() noexcept
 
     m_slot.layout().setPosition(YGEdgeTop, y);
     m_slot.layout().setPosition(YGEdgeLeft, x);
+    updateBars();
 }
 
 void AKScroll::pointerScrollEvent(const AKPointerScrollEvent &e)
@@ -226,7 +273,7 @@ void AKScroll::pointerScrollEvent(const AKPointerScrollEvent &e)
 
     if (!m_fingersDownY)
     {
-        m_kineticYAnim.setDuration(std::max(AKTheme::ScrollKineticFictionTime * SkScalarAbs(m_vel.fY), 1000.f));
+        m_kineticYAnim.setDuration(std::min(std::max(AKTheme::ScrollKineticFictionTime * SkScalarAbs(m_vel.fY), 1000.f), 3000.f));
         m_kineticYAnim.start();
     }
     else
@@ -234,7 +281,7 @@ void AKScroll::pointerScrollEvent(const AKPointerScrollEvent &e)
 
     if (!m_fingersDownX)
     {
-        m_kineticXAnim.setDuration(std::max(AKTheme::ScrollKineticFictionTime * SkScalarAbs(m_vel.fX), 1000.f));
+        m_kineticXAnim.setDuration(std::min(std::max(AKTheme::ScrollKineticFictionTime * SkScalarAbs(m_vel.fX), 1000.f), 3000.f));
         m_kineticXAnim.start();
     }
     else
@@ -276,6 +323,8 @@ bool AKScroll::eventFilter(const AKEvent &ev, AKObject &t)
         m_slot.layout().setPosition(YGEdgeTop, m_slot.layout().position(YGEdgeTop).value - 10);
     else if (e.keyCode() == KEY_UP)
         m_slot.layout().setPosition(YGEdgeTop, m_slot.layout().position(YGEdgeTop).value + 10);
+
+    updateBars();
 
     return AKContainer::eventFilter(e, t);
 }

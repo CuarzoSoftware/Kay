@@ -16,7 +16,7 @@ void AKThreeImagePatch::renderEvent(const AKRenderEvent &params)
     SkIRect dsts[3];
     SkRegion region;
 
-    if (orientation() == Horizontal)
+    if (orientation() == AKHorizontal)
     {
         const SkRect srcs[] { m_sideSrcRect, m_centerSrcRect, m_sideSrcRect };
         constexpr static AKTransform transforms[] { AKTransform::Normal, AKTransform::Normal, AKTransform::Flipped };
@@ -58,7 +58,7 @@ void AKThreeImagePatch::renderEvent(const AKRenderEvent &params)
     }
     else
     {
-        SkRect srcs[] { m_sideSrcRect, m_centerSrcRect, m_sideSrcRect };
+        SkRect srcs[] { m_sideSrcRect, m_centerSrcRect, m_sideSrcRect.makeOffset(0.f, -0.25f) };
         srcs[2].offset(0, m_centerSrcRect.height());
         constexpr static AKTransform transforms[] { AKTransform::Normal, AKTransform::Normal, AKTransform::Flipped180 };
 

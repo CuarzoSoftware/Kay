@@ -2,6 +2,7 @@
 #define AKTHREEIMAGEPATCH_H
 
 #include <AK/nodes/AKRenderable.h>
+#include <AK/AKOrientation.h>
 
 /**
  * @brief Displays a horizontal three-patch image.
@@ -33,24 +34,18 @@ public:
         CHLast
     };
 
-    enum Orientation
-    {
-        Horizontal,
-        Vertical
-    };
-
     /**
      * @brief Constructs an AKHThreePatch node.
      *
      * @param parent The parent AKNode. Defaults to `nullptr` if no parent is provided.
      */
-    AKThreeImagePatch(Orientation orientation, AKNode *parent = nullptr) noexcept :
+    AKThreeImagePatch(AKOrientation orientation, AKNode *parent = nullptr) noexcept :
         AKRenderable(RenderableHint::Texture, parent),
         m_orientation(orientation) {};
 
     AKCLASS_NO_COPY(AKThreeImagePatch)
 
-    void setOrientation(Orientation orientation) noexcept
+    void setOrientation(AKOrientation orientation) noexcept
     {
         if (m_orientation == orientation)
             return;
@@ -60,7 +55,7 @@ public:
         addDamage(AK_IRECT_INF);
     }
 
-    Orientation orientation() const noexcept
+    AKOrientation orientation() const noexcept
     {
         return m_orientation;
     }
@@ -194,7 +189,7 @@ protected:
     SkRect m_sideSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkRect m_centerSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkScalar m_imageScale { 1.f };
-    Orientation m_orientation;
+    AKOrientation m_orientation;
     sk_sp<SkImage> m_image;
     bool m_keepSidesAspectRatio { true };
 };

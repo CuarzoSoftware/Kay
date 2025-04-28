@@ -6,7 +6,7 @@
 
 using namespace AK;
 
-AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(Vertical, parent)
+AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(AKVertical, parent)
 {
     SkRegion empty;
     setInputRegion(&empty);
