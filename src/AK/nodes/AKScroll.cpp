@@ -165,9 +165,9 @@ void AKScroll::updateBars() noexcept
         m_hBar.setPosPercent(x);
 
         if (x < 0.f)
-            m_hBar.setSizePercent(m_hBar.sizePercent() + x * (1.f - m_vBar.sizePercent()));
+            m_hBar.setSizePercent(m_hBar.sizePercent() + x * (1.f - m_hBar.sizePercent()));
         else if (x > 1.f)
-            m_hBar.setSizePercent(m_hBar.sizePercent() + (1.f - x) * (1.f - m_vBar.sizePercent()));
+            m_hBar.setSizePercent(m_hBar.sizePercent() + (1.f - x) * (1.f - m_hBar.sizePercent()));
     }
 
     SkScalar y { -(m_slot.layout().position(YGEdgeTop).value - m_contentBounds.fTop) };
