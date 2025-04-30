@@ -92,6 +92,49 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
     });
 }
 
+Int32 AKScroll::offsetX() const noexcept
+{
+    return m_slot.layout().position(YGEdgeLeft).value;
+}
+
+Int32 AKScroll::offsetY() const noexcept
+{
+    return m_slot.layout().position(YGEdgeTop).value;
+}
+
+void AKScroll::setOffset(Int32 x, Int32 y) noexcept
+{
+    m_slot.layout().setPosition(YGEdgeTop, y);
+    m_slot.layout().setPosition(YGEdgeLeft, x);
+    applyConstraints();
+}
+
+void AKScroll::setOffsetX(Int32 x) noexcept
+{
+    m_slot.layout().setPosition(YGEdgeLeft, x);
+    applyConstraints();
+}
+
+void AKScroll::setOffsetY(Int32 y) noexcept
+{
+    m_slot.layout().setPosition(YGEdgeTop, y);
+    applyConstraints();
+}
+
+void AKScroll::setOffsetXPercent(SkScalar x) noexcept
+{
+    if (x < 0.f) x = 0.f;
+    else if (x > 100.f) x = 100.f;
+    setOffsetX(-m_contentBounds.width() * x + m_contentBounds.fLeft);
+}
+
+void AKScroll::setOffsetYPercent(SkScalar y) noexcept
+{
+    if (y < 0.f) y = 0.f;
+    else if (y > 100.f) y = 100.f;
+    setOffsetY(-m_contentBounds.height() * y + m_contentBounds.fTop);
+}
+
 static void contentBounds(AKNode *root, SkIRect *bounds) noexcept
 {
     if (!root->visible())

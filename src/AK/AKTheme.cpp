@@ -252,13 +252,13 @@ sk_sp<SkImage> AK::AKTheme::roundLineThreePatchImage(AKOrientation orientation, 
 
     if (orientation == AKVertical)
     {
-        outSideSrc->setWH(diam, rad);
-        outCenterSrc->setXYWH(0, rad, diam, 1);
+        outSideSrc->setXYWH(0, 1.f, diam, rad);
+        outCenterSrc->setXYWH(0, rad + 1.f, diam, 1.f);
     }
     else
     {
-        outSideSrc->setWH(rad, diam);
-        outCenterSrc->setXYWH(rad, 0, 1, diam);
+        outSideSrc->setXYWH(1.f, 0.f, rad, diam);
+        outCenterSrc->setXYWH(rad + 1.f, 0.f, 1.f, diam);
     }
 
     auto &orientationMap { m_roundLineThreePatchImage[orientation] };
@@ -271,8 +271,8 @@ sk_sp<SkImage> AK::AKTheme::roundLineThreePatchImage(AKOrientation orientation, 
 
     auto surface = AKSurface::Make(
         SkISize(
-            orientation == AKVertical ? diam : rad + 1,
-            orientation == AKVertical ? rad + 1 : diam),
+            orientation == AKVertical ? diam : rad + 2.f,
+            orientation == AKVertical ? rad + 2.f : diam),
         scale, true);
 
     surface->surface()->recordingContext()->asDirectContext()->resetContext();
@@ -286,12 +286,68 @@ sk_sp<SkImage> AK::AKTheme::roundLineThreePatchImage(AKOrientation orientation, 
     paint.setStroke(false);
     paint.setColor(SK_ColorWHITE);
 
-    c.drawCircle(SkPoint(rad, rad), rad, paint);
+    if (orientation == AKVertical)
+        c.drawCircle(SkPoint(rad, rad + 1.f), rad, paint);
+    else
+        c.drawCircle(SkPoint(rad + 1.f, rad), rad, paint);
+
     c.drawRect(*outCenterSrc, paint);
     surface->surface()->recordingContext()->asDirectContext()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };
     scaleMap[diam] = result;
+    return result;
+}
+
+sk_sp<SkImage> AK::AKTheme::scrollRailThreePatchImage(AKOrientation orientation, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept
+{
+    if (scale <= 0 || outSideSrc == nullptr || outCenterSrc == nullptr)
+        return nullptr;
+
+    if (orientation == AKVertical)
+    {
+        outSideSrc->setXYWH(0.f, 0.f, 1.f, 2.f);
+        outCenterSrc->setXYWH(0, 2.f, 1.f, 1.f);
+    }
+    else
+    {
+        outSideSrc->setXYWH(0.f, 0.f, 2.f, 1.f);
+        outCenterSrc->setXYWH(2.f, 0.f, 1.f, 1.f);
+    }
+
+    auto &orientationMap { m_scrollRailThreePatchImage[orientation] };
+    auto it { orientationMap.find(scale) };
+
+    if (it != orientationMap.end())
+        return it->second;
+
+    auto surface = AKSurface::Make(
+        SkISize(
+            orientation == AKVertical ? 1.f : 3.f,
+            orientation == AKVertical ? 3.f : 1.f),
+        scale, true);
+
+    surface->surface()->recordingContext()->asDirectContext()->resetContext();
+    SkCanvas &c { *surface->surface()->getCanvas() };
+    c.scale(surface->scale(), surface->scale());
+    c.clear(SkColorSetARGB(255, 251, 251, 251));
+
+    SkPaint paint;
+    paint.setAntiAlias(true);
+    paint.setBlendMode(SkBlendMode::kSrcOver);
+    paint.setStroke(true);
+    paint.setStrokeWidth(1.f);
+    paint.setColor(SkColorSetARGB(25, 0, 0, 0));
+
+    if (orientation == AKVertical)
+        c.drawLine(-5.f, 0.f, 5.f, 0.f, paint);
+    else
+        c.drawLine(0.f, -5.f, 0.f, 5.f, paint);
+
+    surface->surface()->recordingContext()->asDirectContext()->flush();
+
+    sk_sp<SkImage> result { surface->releaseImage() };
+    orientationMap[scale] = result;
     return result;
 }
 
@@ -432,7 +488,7 @@ sk_sp<SkImage> AK::AKTheme::topLeftRoundCornerMask(Int32 radius, Int32 scale) no
     paint.setAntiAlias(true);
     paint.setColor(SK_ColorWHITE);
     paint.setBlendMode(SkBlendMode::kSrc);
-    c.drawCircle(SkPoint::Make(radius, radius), radius - 0.5f, paint);
+    c.drawCircle(SkPoint::Make(radius, radius), radius, paint);
     surface->surface()->recordingContext()->asDirectContext()->flush();
 
     sk_sp<SkImage> result { surface->releaseImage() };

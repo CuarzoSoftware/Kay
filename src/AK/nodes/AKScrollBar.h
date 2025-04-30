@@ -18,7 +18,7 @@ public:
         CHLast
     };
 
-    AKScrollBar(AKEdge edge, AKNode *parent = nullptr) noexcept;
+    AKScrollBar(AKScroll *scroll, AKEdge edge, AKNode *parent = nullptr) noexcept;
 
     bool setEdge(AKEdge edge) noexcept;
     AKEdge edge() const noexcept
@@ -26,11 +26,11 @@ public:
         return m_edge;
     }
 
-    // [0,1]
+    // [0,1] This does not affect AKScrol
     bool setPosPercent(SkScalar pos) noexcept;
     SkScalar posPercent() const noexcept { return m_posPercent; }
 
-    // [0,1]
+    // [0,1] This does not affect AKScrol
     bool setSizePercent(SkScalar size) noexcept;
     SkScalar sizePercent() const noexcept { return m_sizePercent; }
 
@@ -38,6 +38,11 @@ protected:
     using AKThreeImagePatch::setOrientation;
     using AKThreeImagePatch::setImage;
     using AKThreeImagePatch::setImageScale;
+    void updatePosByPointer(SkScalar pointerPos) noexcept;
+    void pointerButtonEvent(const AKPointerButtonEvent &e) override;
+    void pointerMoveEvent(const AKPointerMoveEvent &e) override;
+    void pointerEnterEvent(const AKPointerEnterEvent &e) override;
+    void pointerLeaveEvent(const AKPointerLeaveEvent &e) override;
     void layoutEvent(const AKLayoutEvent &e) override;
     void updateImages() noexcept;
     void updateGeometry() noexcept;
@@ -48,6 +53,10 @@ protected:
     AKEdge m_edge { AKEdgeNone };
     AKTimer m_fadeOutTimer;
     AKAnimation m_fadeOutAnim;
+    AKAnimation m_hoverAnim;
+    AKWeak<AKScroll> m_scroll;
+    bool m_dragging { false };
+    bool m_preventHide { false };
 };
 
 #endif // AKSCROLLBAR_H

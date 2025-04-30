@@ -1033,8 +1033,8 @@ public:
     {
         LPointer::focusChanged();
 
-        if (LPointer::focus())
-            seat()->keyboard()->setFocus(LPointer::focus());
+        //if (LPointer::focus())
+        //    seat()->keyboard()->setFocus(LPointer::focus());
     }
 
     void pointerMoveEvent(const LPointerMoveEvent &event) override

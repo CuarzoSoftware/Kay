@@ -82,6 +82,7 @@ public:
     static inline SkScalar  ScrollBarHandleWidth                    { 7.f };
     static inline SkScalar  ScrollBarHandleWidthHover               { 11.f };
     virtual sk_sp<SkImage>  roundLineThreePatchImage                (AKOrientation orientation, Int32 diam, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
+    virtual sk_sp<SkImage>  scrollRailThreePatchImage               (AKOrientation orientation, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
 
     /* AKEdgeShadow */
 
@@ -132,6 +133,11 @@ protected:
         std::unordered_map<Int32,
             std::unordered_map<Int32,
                 sk_sp<SkImage>>>> m_roundLineThreePatchImage;
+
+    /* Round Line Patch [orientation][scale] */
+    std::unordered_map<AKOrientation,
+        std::unordered_map<Int32,
+            sk_sp<SkImage>>> m_scrollRailThreePatchImage;
 };
 
 #endif // AKTHEME_H

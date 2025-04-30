@@ -1,34 +1,78 @@
+#include <Marco/MApplication.h>
+#include <AK/events/AKPointerButtonEvent.h>
 #include <AK/events/AKLayoutEvent.h>
 #include <AK/nodes/AKScrollBar.h>
+#include <AK/nodes/AKScroll.h>
 #include <AK/AKTheme.h>
 
 using namespace AK;
 
-AKScrollBar::AKScrollBar(AKEdge edge, AKNode *parent) noexcept :
-    AKThreeImagePatch(edge == AKEdgeLeft || edge == AKEdgeRight ? AKVertical : AKHorizontal, parent)
+AKScrollBar::AKScrollBar(AKScroll *scroll, AKEdge edge, AKNode *parent) noexcept :
+    AKThreeImagePatch(edge == AKEdgeLeft || edge == AKEdgeRight ? AKVertical : AKHorizontal, parent),
+    m_scroll(scroll)
 {
+    opaqueRegion.setRect(AK_IRECT_INF);
+    setOpacity(0.f);
+    setVisible(false);
     m_handle.enableCustomTextureColor(true);
     m_handle.setColorWithAlpha(SkColorSetARGB(128, 0, 0, 0));
+    setKeepSidesAspectRatio(false);
+    m_handle.setKeepSidesAspectRatio(false);
     layout().setPositionType(YGPositionTypeAbsolute);
-    layout().setPadding(YGEdgeAll, 2.f);
     setEdge(edge);
 
     m_fadeOutAnim.setDuration(300);
     m_fadeOutAnim.setOnUpdateCallback([this](AKAnimation *a){
-        setOpacity(1.0 - a->value());
+
+        if (opacity() > 0.f)
+            setOpacity(1.0 - a->value());
         m_handle.setOpacity(0.5 * (1.0 - a->value()));
     });
 
     m_fadeOutAnim.setOnFinishCallback([this](AKAnimation *){
+
+        if (m_preventHide)
+            return;
+
         setOpacity(0.f);
         m_handle.setOpacity(0.f);
+
+        if (m_handle.orientation() == AKHorizontal)
+        {
+            m_handle.layout().setMinHeight(AKTheme::ScrollBarHandleWidth);
+            m_handle.layout().setMinWidth(AKTheme::ScrollBarHandleWidth * 2.f);
+        }
+        else
+        {
+            m_handle.layout().setMinWidth(AKTheme::ScrollBarHandleWidth);
+            m_handle.layout().setMinHeight(AKTheme::ScrollBarHandleWidth * 2.f);
+        }
+
+        setVisible(false);
     });
 
     m_fadeOutTimer.setCallback([this](AKTimer *){
-        m_fadeOutAnim.start();
+        if (!isPointerOver() && !m_dragging)
+            m_fadeOutAnim.start();
     });
 
-    m_fadeOutTimer.start(1000);
+    m_hoverAnim.setDuration(100);
+    m_hoverAnim.setOnUpdateCallback([this](AKAnimation *a){
+        setOpacity(a->value());
+
+        if (m_handle.orientation() == AKHorizontal)
+            m_handle.layout().setMinHeight(AKTheme::ScrollBarHandleWidth +
+                (AKTheme::ScrollBarHandleWidthHover - AKTheme::ScrollBarHandleWidth) * a->value());
+        else
+            m_handle.layout().setMinWidth(AKTheme::ScrollBarHandleWidth +
+                (AKTheme::ScrollBarHandleWidthHover - AKTheme::ScrollBarHandleWidth) * a->value());
+    });
+
+    m_hoverAnim.setOnFinishCallback([this](AKAnimation *){
+        setOpacity(1.f);
+    });
+
+    m_fadeOutTimer.start(1);
 }
 
 bool AKScrollBar::setEdge(AKEdge edge) noexcept
@@ -44,23 +88,27 @@ bool AKScrollBar::setEdge(AKEdge edge) noexcept
 
     if (edge == AKEdgeLeft || edge == AKEdgeRight)
     {
+        layout().setPadding(YGEdgeAll, 2.f);
+        layout().setPadding(YGEdgeLeft, 3.f);
         layout().setFlexDirection(YGFlexDirectionColumn);
-        setOrientation(AKVertical);
+        setOrientation(AKHorizontal);
         layout().setWidthAuto();
         layout().setHeightPercent(100.f);
         m_handle.setOrientation(AKVertical);
         m_handle.layout().setMinWidth(AKTheme::ScrollBarHandleWidth);
-        m_handle.layout().setMinHeight(AKTheme::ScrollBarHandleWidth * 4.f);
+        m_handle.layout().setMinHeight(AKTheme::ScrollBarHandleWidth * 2.f);
     }
     else
     {
+        layout().setPadding(YGEdgeAll, 2.f);
+        layout().setPadding(YGEdgeTop, 3.f);
         layout().setFlexDirection(YGFlexDirectionRow);
-        setOrientation(AKHorizontal);
+        setOrientation(AKVertical);
         layout().setHeightAuto();
         layout().setWidthPercent(100.f);
         m_handle.setOrientation(AKHorizontal);
         m_handle.layout().setMinHeight(AKTheme::ScrollBarHandleWidth);
-        m_handle.layout().setMinWidth(AKTheme::ScrollBarHandleWidth * 4.f);
+        m_handle.layout().setMinWidth(AKTheme::ScrollBarHandleWidth * 2.f);
     }
 
     layout().setPosition(YGEdgeAll, YGUndefined);
@@ -102,14 +150,19 @@ bool AKScrollBar::setPosPercent(SkScalar pos) noexcept
     addChange(CHPosPercent);
     updateGeometry();
 
+    m_preventHide = true;
+    m_fadeOutAnim.stop();
+    m_preventHide = false;
+
     if (sizePercent() != 1.f)
     {
+        setVisible(true);
         m_fadeOutTimer.start(1000);
-        setOpacity(1.f);
         m_handle.setOpacity(0.5f);
     }
     else if (opacity() != 0.f)
     {
+        setVisible(true);
         m_fadeOutTimer.stop();
         m_fadeOutAnim.start();
     }
@@ -131,19 +184,110 @@ bool AKScrollBar::setSizePercent(SkScalar size) noexcept
     addChange(CHSizePercent);
     updateGeometry();
 
+    m_preventHide = true;
+    m_fadeOutAnim.stop();
+    m_preventHide = false;
+
     if (size != 1.f)
     {
+        setVisible(true);
         m_fadeOutTimer.start(1000);
-        setOpacity(1.f);
         m_handle.setOpacity(0.5f);
     }
     else if (opacity() != 0.f)
     {
+        setVisible(true);
         m_fadeOutTimer.stop();
         m_fadeOutAnim.start();
     }
 
     return true;
+}
+
+void AKScrollBar::updatePosByPointer(SkScalar pointerPos) noexcept
+{
+    if (!m_scroll)
+        return;
+
+    SkIRect realRect { globalRect() };
+
+    if (m_handle.orientation() == AKHorizontal)
+    {
+        realRect.fLeft += layout().calculatedPadding(YGEdgeLeft);
+        realRect.fRight -= layout().calculatedPadding(YGEdgeRight);
+
+        if (pointerPos <= realRect.fLeft || realRect.width() == 0)
+            m_scroll->setOffsetXPercent(0.f);
+        else if (pointerPos >= realRect.fRight)
+            m_scroll->setOffsetXPercent(100.f);
+        else
+            m_scroll->setOffsetXPercent((pointerPos - realRect.fLeft - m_handle.layout().calculatedWidth() * 0.5f)/(realRect.width()));
+    }
+    else
+    {
+        realRect.fTop += layout().calculatedPadding(YGEdgeTop);
+        realRect.fBottom -= layout().calculatedPadding(YGEdgeBottom);
+
+        if (pointerPos <= realRect.fTop || realRect.height() == 0)
+            m_scroll->setOffsetYPercent(0.f);
+        else if (pointerPos >= realRect.fBottom)
+            m_scroll->setOffsetYPercent(100.f);
+        else
+            m_scroll->setOffsetYPercent((pointerPos - realRect.fTop - m_handle.layout().calculatedHeight() * 0.5f)/realRect.height());
+    }
+}
+
+void AKScrollBar::pointerButtonEvent(const AKPointerButtonEvent &e)
+{
+    AKThreeImagePatch::pointerButtonEvent(e);
+
+    if (e.button() != BTN_LEFT)
+        return;
+
+    if (e.state() == AKPointerButtonEvent::Pressed)
+    {
+        m_dragging = true;
+        enablePointerGrab(true);
+
+        if (m_handle.orientation() == AKHorizontal)
+            updatePosByPointer(app()->pointer().pos().x());
+        else
+            updatePosByPointer(app()->pointer().pos().y());
+    }
+    else
+    {
+        m_dragging = false;
+        enablePointerGrab(false);
+    }
+}
+
+void AKScrollBar::pointerMoveEvent(const AKPointerMoveEvent &e)
+{
+    AKThreeImagePatch::pointerMoveEvent(e);
+
+    if (!m_dragging)
+        return;
+
+    if (m_handle.orientation() == AKHorizontal)
+        updatePosByPointer(e.pos().x());
+    else
+        updatePosByPointer(e.pos().y());
+}
+
+void AKScrollBar::pointerEnterEvent(const AKPointerEnterEvent &)
+{
+    if (opacity() == 0.f && m_handle.opacity() != 0.f)
+        m_hoverAnim.start();
+
+    m_preventHide = true;
+}
+
+void AKScrollBar::pointerLeaveEvent(const AKPointerLeaveEvent &)
+{
+    m_preventHide = false;
+    m_dragging = false;
+    enablePointerGrab(false);
+    m_fadeOutTimer.start(1000);
 }
 
 void AKScrollBar::layoutEvent(const AKLayoutEvent &e)
@@ -159,18 +303,31 @@ void AKScrollBar::updateImages() noexcept
     SkRect side, center;
     m_handle.setImage(theme()->roundLineThreePatchImage(
         m_handle.orientation(),
-        AKTheme::ScrollBarHandleWidth,
+        m_handle.orientation() == AKHorizontal
+            ?
+            m_handle.layout().calculatedHeight()
+            :
+            m_handle.layout().calculatedWidth(),
         scale(),
         &side, &center));
 
     m_handle.setSideSrcRect(side);
     m_handle.setCenterSrcRect(center);
     m_handle.setImageScale(scale());
+
+    setImage(theme()->scrollRailThreePatchImage(
+        orientation(),
+        scale(),
+        &side, &center));
+
+    setSideSrcRect(side);
+    setCenterSrcRect(center);
+    setImageScale(scale());
 }
 
 void AKScrollBar::updateGeometry() noexcept
 {
-    if (orientation() == AKVertical)
+    if (m_handle.orientation() == AKVertical)
     {
         m_space.layout().setWidth(0.f);
         m_space.layout().setHeightPercent(posPercent() * (100.f * (1.f - sizePercent())));

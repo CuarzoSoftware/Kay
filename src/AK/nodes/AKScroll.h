@@ -10,6 +10,16 @@ class AK::AKScroll : public AKContainer
 public:
     AKScroll(AKNode *parent = nullptr) noexcept;
 
+    Int32 offsetX() const noexcept;
+    Int32 offsetY() const noexcept;
+
+    void setOffset(Int32 x, Int32 y) noexcept;
+    void setOffsetX(Int32 x) noexcept;
+    void setOffsetY(Int32 y) noexcept;
+
+    void setOffsetXPercent(SkScalar x) noexcept;
+    void setOffsetYPercent(SkScalar y) noexcept;
+
     AKScrollBar &horizontalBar() noexcept
     {
         return m_hBar;
@@ -36,8 +46,8 @@ protected:
     SkIRect m_contentBounds { 0, 0, 0, 0};
     bool m_fingersDownX { false };
     bool m_fingersDownY { false };
-    AKScrollBar m_hBar { AKEdgeBottom, this };
-    AKScrollBar m_vBar { AKEdgeRight, this };
+    AKScrollBar m_hBar { this, AKEdgeBottom, this };
+    AKScrollBar m_vBar { this, AKEdgeRight, this };
 };
 
 #endif // AKSCROLL_H

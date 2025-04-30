@@ -202,14 +202,14 @@ void MToplevel::Imp::handleRootPointerButtonEvent(const AKPointerButtonEvent &ev
     const Int32 moveTopMargin { MTheme::CSDMoveOutset };
     UInt32 resizeEdges { 0 };
 
-    if (obj.globalRect().x() - resizeMargins <= pointerPos.x() && obj.globalRect().x() + resizeMargins >= pointerPos.x())
+    if (obj.globalRect().x() - resizeMargins <= pointerPos.x() && obj.globalRect().x() + 1 >= pointerPos.x())
         resizeEdges |= XDG_TOPLEVEL_RESIZE_EDGE_LEFT;
-    else if (obj.globalRect().right() - resizeMargins <= pointerPos.x() && obj.globalRect().right() + resizeMargins >= pointerPos.x())
+    else if (obj.globalRect().right() - 1 <= pointerPos.x() && obj.globalRect().right() + resizeMargins >= pointerPos.x())
         resizeEdges |= XDG_TOPLEVEL_RESIZE_EDGE_RIGHT;
 
-    if (obj.globalRect().y() - resizeMargins <= pointerPos.y() && obj.globalRect().y() + resizeMargins >= pointerPos.y())
+    if (obj.globalRect().y() - resizeMargins <= pointerPos.y() && obj.globalRect().y() + 1 >= pointerPos.y())
         resizeEdges |= XDG_TOPLEVEL_RESIZE_EDGE_TOP;
-    else if (obj.globalRect().bottom() - resizeMargins <= pointerPos.y() && obj.globalRect().bottom() + resizeMargins >= pointerPos.y())
+    else if (obj.globalRect().bottom() - 1 <= pointerPos.y() && obj.globalRect().bottom() + resizeMargins >= pointerPos.y())
         resizeEdges |= XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM;
 
     if (resizeEdges)
@@ -238,14 +238,14 @@ void MToplevel::Imp::handleRootPointerMoveEvent(const AKPointerMoveEvent &event)
     const Int32 resizeMargins { MTheme::CSDResizeOutset };
     UInt32 resizeEdges { 0 };
 
-    if (obj.globalRect().x() - resizeMargins <= pointerPos.x() && obj.globalRect().x() + resizeMargins >= pointerPos.x())
+    if (obj.globalRect().x() - resizeMargins <= pointerPos.x() && obj.globalRect().x() + 1 >= pointerPos.x())
         resizeEdges |= XDG_TOPLEVEL_RESIZE_EDGE_LEFT;
-    else if (obj.globalRect().right() - resizeMargins <= pointerPos.x() && obj.globalRect().right() + resizeMargins >= pointerPos.x())
+    else if (obj.globalRect().right() - 1 <= pointerPos.x() && obj.globalRect().right() + resizeMargins >= pointerPos.x())
         resizeEdges |= XDG_TOPLEVEL_RESIZE_EDGE_RIGHT;
 
-    if (obj.globalRect().y() - resizeMargins <= pointerPos.y() && obj.globalRect().y() + resizeMargins >= pointerPos.y())
+    if (obj.globalRect().y() - resizeMargins <= pointerPos.y() && obj.globalRect().y() + 1 >= pointerPos.y())
         resizeEdges |= XDG_TOPLEVEL_RESIZE_EDGE_TOP;
-    else if (obj.globalRect().bottom() - resizeMargins <= pointerPos.y() && obj.globalRect().bottom() + resizeMargins >= pointerPos.y())
+    else if (obj.globalRect().bottom() - 1 <= pointerPos.y() && obj.globalRect().bottom() + resizeMargins >= pointerPos.y())
         resizeEdges |= XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM;
 
     if (resizeEdges == XDG_TOPLEVEL_RESIZE_EDGE_LEFT || resizeEdges == XDG_TOPLEVEL_RESIZE_EDGE_RIGHT)

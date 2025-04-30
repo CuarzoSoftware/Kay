@@ -22,6 +22,8 @@
 using namespace AK;
 using namespace XDG;
 
+static std::shared_ptr<XDGKit> xdg;
+
 class SideMenu : public MVibrancyView
 {
 public:
@@ -70,6 +72,10 @@ public:
         parent()->layout().setMaxWidthYGValue(prevParentMaxWidth);
         layout().setMaxWidthYGValue(prevMaxWidth);
         app()->pointer().setCursor(AKCursor::Default);
+
+        MToplevel *win { dynamic_cast<MToplevel*>(window()) };
+        if (win)
+            win->setMinSize(win->minContentSize());
     }
 
     AKWindowButtonGroup windowButtons { this };
@@ -83,12 +89,10 @@ public:
 class RightContainer : public AKSolidColor
 {
 public:
-    std::shared_ptr<XDGKit> xdg;
 
     RightContainer(AKNode *parent = nullptr) :
         AKSolidColor(0xFFFFFFFF, parent)
     {
-        xdg = XDGKit::Make();
         layout().setMinWidth(250);
         layout().setFlex(1.f);
         enableChildrenClipping(false);
@@ -147,14 +151,14 @@ public:
 
         for (auto &iconName : iconNames)
         {
-            const auto *xdgIcon { xdg->iconThemeManager().findIcon(iconName, 512, 1, XDGIcon::SVG, { "WhiteSur", "" }) };
+            const auto *xdgIcon { xdg->iconThemeManager().findIcon(iconName, 256, 1, XDGIcon::SVG, { "WhiteSur", "" }) };
 
             if (!xdgIcon)
                 continue;
 
-            auto *icon = new AKImageFrame(AKImageLoader::loadFile(xdgIcon->getPath(XDGIcon::SVG), {512, 512}), &body);
+            auto *icon = new AKImageFrame(AKImageLoader::loadFile(xdgIcon->getPath(XDGIcon::SVG), {256, 256}), &body);
             icon->layout().setWidthPercent(100);
-            icon->layout().setHeight(512);
+            icon->layout().setHeight(256);
         }
     }
 
@@ -196,6 +200,7 @@ public:
         layout().setHeight(600);
         setColorWithAlpha(app()->wayland().backgroundBlurManager ? 0x00FFFFFF : 0xffF0F0F0);
         setTitle("Hello world!");
+        setMinSize(minContentSize());
 
         rightContainer.cursorButton.on.clicked.subscribe(this, [this](){
             if (cursor == 34)
@@ -309,6 +314,7 @@ public:
 int main()
 {
     setenv("KAY_DEBUG", "4", 1);
+    xdg = XDGKit::Make();
     MApplication app;
     app.setAppId("org.Cuarzo.marco-basic");
 
