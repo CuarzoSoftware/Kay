@@ -601,6 +601,25 @@ void MToplevel::render() noexcept
 {
     scene().root()->layout().calculate();
 
+    bool overflow { false };
+    SkRect bounds;
+    innerBounds(&bounds);
+
+    if (bounds.width() > layout().calculatedWidth())
+    {
+        overflow = true;
+        layout().setWidth(bounds.width());
+    }
+
+    if (bounds.height() > layout().calculatedHeight())
+    {
+        overflow = true;
+        layout().setHeight(bounds.height());
+    }
+
+    if (overflow)
+        scene().root()->layout().calculate();
+
     if (wlCallback() && !MSurface::imp()->flags.check(MSurface::Imp::ForceUpdate))
         return;
 
