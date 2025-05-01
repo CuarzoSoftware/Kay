@@ -57,7 +57,7 @@ void AKObject::notifyDestruction() noexcept
         return;
 
     m_destroyed = true;
-    on.destroyed.notify(this);
+    onDestroyed.notify(this);
 
     while (!m_listeners.empty())
         delete m_listeners.back();

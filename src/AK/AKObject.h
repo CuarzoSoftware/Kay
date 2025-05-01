@@ -50,10 +50,8 @@ public:
         return m_userData;
     }
 
-    struct
-    {
-        AKSignal<AKObject*> destroyed;
-    } on;
+
+    AKSignal<AKObject*> onDestroyed;
 
     void installEventFilter(AKObject *monitor) const noexcept;
     void removeEventFilter(AKObject *monitor) const noexcept;

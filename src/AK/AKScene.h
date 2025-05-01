@@ -14,7 +14,7 @@ class AK::AKScene : public AKObject
 public:
     AKScene() noexcept;
     AKCLASS_NO_COPY(AKScene)
-    ~AKScene() = default;
+    ~AKScene() { notifyDestruction(); }
     AKSceneTarget *createTarget() noexcept;
     bool destroyTarget(AKSceneTarget *target);
     bool render(AKSceneTarget *target);

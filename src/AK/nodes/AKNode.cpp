@@ -35,6 +35,8 @@ AKNode::~AKNode()
         removeBackgroundEffect(*m_backgroundEffects.begin());
 
     setParent(nullptr);
+
+    notifyDestruction();
 }
 
 
@@ -543,6 +545,48 @@ MSurface *AKNode::window() const noexcept
     if (MRootSurfaceNode *node = dynamic_cast<MRootSurfaceNode*>(root()))
         return &node->surface();
     return nullptr;
+}
+
+void AKNode::innerBounds(SkRect *out) noexcept
+{
+    out->fLeft = std::numeric_limits<float>::max();
+    out->fTop = std::numeric_limits<float>::max();
+    out->fRight = std::numeric_limits<float>::min();
+    out->fBottom = std::numeric_limits<float>::min();
+
+    SkScalar r, b;
+    for (AKNode *child : children(true))
+    {
+        if (!child->visible() || child->layout().positionType() == YGPositionTypeAbsolute)
+            continue;
+
+        if (child->layout().calculatedLeft() < out->fLeft)
+            out->fLeft = child->layout().calculatedLeft();
+
+        if (child->layout().calculatedTop() < out->fTop)
+            out->fTop = child->layout().calculatedTop();
+
+        r = child->layout().calculatedLeft() + child->layout().calculatedWidth();
+
+        if (r > out->fRight)
+            out->fRight = r;
+
+        b = child->layout().calculatedTop() + child->layout().calculatedHeight();
+
+        if (b > out->fBottom)
+            out->fBottom = b;
+    }
+
+    if (out->fLeft > out->fRight)
+        out->fLeft = out->fRight = 0.f;
+
+    if (out->fTop > out->fBottom)
+        out->fTop = out->fBottom = 0.f;
+
+    out->fLeft -= layout().calculatedPadding(YGEdgeLeft);
+    out->fTop -= layout().calculatedPadding(YGEdgeTop);
+    out->fRight += layout().calculatedPadding(YGEdgeRight);
+    out->fBottom += layout().calculatedPadding(YGEdgeBottom);
 }
 
 void AKNode::setSlot(AKNode *slot) noexcept

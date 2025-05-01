@@ -73,9 +73,9 @@ public:
         layout().setMaxWidthYGValue(prevMaxWidth);
         app()->pointer().setCursor(AKCursor::Default);
 
-        MToplevel *win { dynamic_cast<MToplevel*>(window()) };
+        /*MToplevel *win { dynamic_cast<MToplevel*>(window()) };
         if (win)
-            win->setMinSize(win->minContentSize());
+            win->setMinSize(win->minContentSize());*/
     }
 
     AKWindowButtonGroup windowButtons { this };
@@ -94,6 +94,7 @@ public:
         AKSolidColor(0xFFFFFFFF, parent)
     {
         layout().setMinWidth(250);
+        layout().setMinHeight(250);
         layout().setFlex(1.f);
         enableChildrenClipping(false);
 
@@ -194,13 +195,20 @@ public:
 
     Window() noexcept : MToplevel()
     {
+        /*
+        auto *t = new AKSolidColor(SK_ColorBLUE, this);
+        t->layout().setWidth(200);
+        t->layout().setHeight(200);
+        t->layout().setPositionType(YGPositionTypeStatic);
+        t->layout().setPosition(YGEdgeLeft, -500);*/
+
         rightContainer.leftShadow.installEventFilter(this);
         layout().setFlexDirection(YGFlexDirectionRow);
         layout().setWidth(800);
         layout().setHeight(600);
         setColorWithAlpha(app()->wayland().backgroundBlurManager ? 0x00FFFFFF : 0xffF0F0F0);
         setTitle("Hello world!");
-        setMinSize(minContentSize());
+        //setMinSize(minContentSize());
 
         rightContainer.cursorButton.on.clicked.subscribe(this, [this](){
             if (cursor == 34)

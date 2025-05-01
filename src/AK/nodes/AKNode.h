@@ -430,6 +430,9 @@ public:
     AKCursor cursor() const noexcept { return m_cursor; }
     void setCursor(AKCursor cursor) { m_cursor = cursor; }
 
+    // Padding + non absolute nodes dimensions
+    void innerBounds(SkRect *out) noexcept;
+
     template<class T>
     static void FindNodesWithType(AKNode *root, std::vector<T*> *out) noexcept
     {

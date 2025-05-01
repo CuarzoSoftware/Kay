@@ -599,15 +599,6 @@ std::vector<std::string> splitString(const std::string& input, size_t chunkSize)
 
 void MToplevel::render() noexcept
 {
-    const auto ygMinW { layout().minWidth() };
-    const auto ygMinH { layout().minHeight() };
-
-    if (ygMinW.unit != YGUnitPoint || ygMinW.value < 128.f)
-        layout().setMinWidth(128.f);
-
-    if (ygMinH.unit != YGUnitPoint || ygMinH.value < 128.f)
-        layout().setMinHeight(128.f);
-
     scene().root()->layout().calculate();
 
     if (wlCallback() && !MSurface::imp()->flags.check(MSurface::Imp::ForceUpdate))

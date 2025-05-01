@@ -60,4 +60,5 @@ AKSceneTarget::~AKSceneTarget()
     m_scene->m_targets[m_sceneLink] = m_scene->m_targets.back();
     m_scene->m_targets.back()->m_sceneLink = m_sceneLink;
     m_scene->m_targets.pop_back();
+    notifyDestruction();
 }

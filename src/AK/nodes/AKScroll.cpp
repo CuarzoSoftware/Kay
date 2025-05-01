@@ -13,6 +13,7 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
     AKContainer(YGFlexDirectionColumn, true, parent),
     m_slot(YGFlexDirectionColumn, false, this)
 {
+
     setSlot(&m_slot);
     layout().setFlexGrow(1.f);
     layout().setOverflow(YGOverflowScroll);

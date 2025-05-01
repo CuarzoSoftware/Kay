@@ -250,7 +250,7 @@ void AKScene::createOrAssignTargetDataForNode(AKNode *node) noexcept
     if (!node->t->target)
     {
         node->t->target = t;
-        t->AKObject::on.destroyed.subscribe(node, [node](AKObject *object){
+        t->AKObject::onDestroyed.subscribe(node, [node](AKObject *object){
             AKSceneTarget *target { static_cast<AKSceneTarget*>(object) };
             node->m_targets.erase(target);
             node->bdt.surfaces.erase(target);

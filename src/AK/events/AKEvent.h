@@ -67,7 +67,7 @@ public:
     /**
      * @brief Destructor.
      */
-    ~AKEvent() noexcept = default;
+    virtual ~AKEvent() noexcept = default;
 
     /**
      * @brief Retrieves the type of the event.

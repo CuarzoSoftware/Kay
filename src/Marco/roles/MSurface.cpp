@@ -11,6 +11,7 @@ using namespace AK;
 
 MSurface::MSurface(Role role) noexcept : AK::AKSolidColor(SK_ColorWHITE)
 {
+    userCaps.add(UCWindowMove);
     m_imp = std::make_unique<Imp>(*this);
     imp()->role = role;
     imp()->createSurface();
@@ -58,6 +59,8 @@ MSurface::~MSurface()
         wl_surface_destroy(wlSurface());
         imp()->wlSurface = nullptr;
     }
+
+    notifyDestruction();
 }
 
 MSurface::Role MSurface::role() noexcept
