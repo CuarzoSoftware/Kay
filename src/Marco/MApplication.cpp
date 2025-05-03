@@ -240,6 +240,8 @@ void MApplication::wl_pointer_leave(void */*data*/, wl_pointer */*pointer*/, UIn
     auto &p { app()->pointer() };
     p.m_focus.reset();
 
+    AKSafeEventQueue queue;
+
     // Fake pointer button release events
     p.m_eventHistory.button.setSerial(serial);
     p.m_eventHistory.button.setState(AKPointerButtonEvent::Released);
@@ -247,13 +249,15 @@ void MApplication::wl_pointer_leave(void */*data*/, wl_pointer */*pointer*/, UIn
 
     while (!p.m_pressedButtons.empty())
     {
-
+        p.m_eventHistory.button.setButton((AKPointerButtonEvent::Button)*p.m_pressedButtons.begin());
+        queue.addEvent(p.m_eventHistory.button, surf->scene());
         p.m_pressedButtons.erase(p.m_pressedButtons.begin());
     }
 
-
     p.m_eventHistory.leave.setSerial(serial);
-    akApp()->postEvent(p.m_eventHistory.leave, surf->scene());
+    p.m_eventHistory.leave.assignCurrentTime();
+    queue.addEvent(p.m_eventHistory.leave, surf->scene());
+    queue.dispatch();
 }
 
 void MApplication::wl_pointer_motion(void */*data*/, wl_pointer */*pointer*/, UInt32 time, wl_fixed_t x, wl_fixed_t y)

@@ -69,7 +69,7 @@ public:
      * @brief Dispatches events in the queue.
      *
      * This method processes each event in the queue, discarding events
-     * associated with destroyed objects and triggering AKApplication::postEvent()
+     * associated with destroyed objects and triggering AKApplication::sendEvent()
      * for remaining events.
      */
     void dispatch();
