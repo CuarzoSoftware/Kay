@@ -2,6 +2,7 @@
 #define AKEVENT_H
 
 #include <AK/AK.h>
+#include <AK/AKTime.h>
 
 #define AKEVENT_DECLARE_COPY AKEvent *copy() const noexcept override { return new AK_GET_CLASS(this)(*this); }
 
@@ -137,6 +138,15 @@ public:
     UInt64 us() const noexcept
     {
         return m_us;
+    }
+
+    /**
+     * @brief Sets ms() and us() using the values provided by AKTime.
+     */
+    void assignCurrentTime() noexcept
+    {
+        m_us = AKTime::us();
+        m_ms = AKTime::ms();
     }
 
     /**

@@ -41,7 +41,9 @@ public:
 private:
     friend class MApplication;
     AKCursor findNonDefaultCursor(AKNode *node) const noexcept;
-    EventHistory m_eventHistory;
+    EventHistory
+        m_eventHistory,
+        m_pendingEvents; // Used for framed events
     std::unordered_set<UInt32> m_pressedButtons;
     AKWeak<MSurface> m_focus;
     wl_surface *m_cursorSurface { nullptr };
