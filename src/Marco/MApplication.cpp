@@ -74,7 +74,7 @@ void MApplication::wl_registry_global(void *data, wl_registry *registry, UInt32 
     }
     else if (!wl.seat && strcmp(interface, wl_seat_interface.name) == 0)
     {
-        wl.seat.set(wl_registry_bind(registry, name, &wl_seat_interface, version), name);
+        wl.seat.set(wl_registry_bind(registry, name, &wl_seat_interface, std::min(version, 9u)), name);
         wl_seat_add_listener(wl.seat, &wlSeatListener, NULL);
     }
     else if (!wl.xdgDecorationManager && strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0)
@@ -228,8 +228,9 @@ void MApplication::wl_pointer_enter(void */*data*/, wl_pointer */*pointer*/, UIn
     p.m_eventHistory.enter.setX(wl_fixed_to_double(x));
     p.m_eventHistory.enter.setY(wl_fixed_to_double(y));
     p.m_eventHistory.enter.setSerial(serial);
+    p.m_eventHistory.enter.assignCurrentTime();
     p.m_forceCursorUpdate = true;
-    akApp()->postEvent(p.m_eventHistory.enter, surf->scene());
+    akApp()->sendEvent(p.m_eventHistory.enter, surf->scene());
 }
 
 void MApplication::wl_pointer_leave(void */*data*/, wl_pointer */*pointer*/, UInt32 serial, wl_surface *surface)
@@ -269,7 +270,7 @@ void MApplication::wl_pointer_motion(void */*data*/, wl_pointer */*pointer*/, UI
     p.m_eventHistory.move.setX(wl_fixed_to_double(x));
     p.m_eventHistory.move.setY(wl_fixed_to_double(y));
 
-    akApp()->postEvent(p.m_eventHistory.move, p.focus()->scene());
+    akApp()->sendEvent(p.m_eventHistory.move, p.focus()->scene());
 
     if (p.focus()->scene().pointerFocus())
     {
@@ -291,23 +292,51 @@ void MApplication::wl_pointer_button(void */*data*/, wl_pointer */*pointer*/, UI
         p.m_pressedButtons.erase(button);
 
     p.m_eventHistory.button.setMs(time);
+    p.m_eventHistory.button.setUs(AKTime::us());
     p.m_eventHistory.button.setSerial(serial);
     p.m_eventHistory.button.setButton((AK::AKPointerButtonEvent::Button)button);
     p.m_eventHistory.button.setState((AK::AKPointerButtonEvent::State)state);
     p.m_eventHistory.button.ignore();
-    akApp()->postEvent(p.m_eventHistory.button, p.focus()->scene());
+    akApp()->sendEvent(p.m_eventHistory.button, p.focus()->scene());
 }
 
-void MApplication::wl_pointer_axis(void */*data*/, wl_pointer */*pointer*/, UInt32 time, UInt32 axis, wl_fixed_t value)
+void MApplication::wl_pointer_axis(void */*data*/, wl_pointer *pointer, UInt32 time, UInt32 axis, wl_fixed_t value)
 {
     auto &p { app()->pointer() };
-    p.m_hasPendingAxisEvent = true;
-    p.m_eventHistory.scroll.setMs(time);
 
-    if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
-        p.m_eventHistory.scroll.setX(wl_fixed_to_double(value));
-    else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
-        p.m_eventHistory.scroll.setY(wl_fixed_to_double(value));
+    if (wl_pointer_get_version(pointer) >= 5)
+    {
+        p.m_hasPendingAxisEvent = true;
+        p.m_framedScrollEvent.setMs(time);
+        p.m_framedScrollEvent.setUs(AKTime::us());
+
+        if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+            p.m_framedScrollEvent.setX(wl_fixed_to_double(value));
+        else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+            p.m_framedScrollEvent.setY(wl_fixed_to_double(value));
+    }
+    else if (p.focus())
+    {
+        p.m_eventHistory.scroll.setKinetic(false);
+        p.m_eventHistory.scroll.setMs(time);
+        p.m_eventHistory.scroll.setUs(AKTime::us());
+        p.m_eventHistory.scroll.set120X(0.f);
+        p.m_eventHistory.scroll.set120Y(0.f);
+        p.m_eventHistory.scroll.setSource(AKPointerScrollEvent::Source::Continuous);
+
+        if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+        {
+            p.m_eventHistory.scroll.setY(0.f);
+            p.m_eventHistory.scroll.setX(wl_fixed_to_double(value));
+        }
+        else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+        {
+            p.m_eventHistory.scroll.setX(0.f);
+            p.m_eventHistory.scroll.setY(wl_fixed_to_double(value));
+        }
+
+        akApp()->sendEvent(p.m_eventHistory.scroll, p.focus()->scene());
+    }
 }
 
 void MApplication::wl_pointer_frame(void */*data*/, wl_pointer */*pointer*/)
@@ -318,30 +347,41 @@ void MApplication::wl_pointer_frame(void */*data*/, wl_pointer */*pointer*/)
         return;
 
     p.m_hasPendingAxisEvent = false;
+    p.m_framedScrollEvent.setKinetic(
+        p.m_stopSupported &&
+        (p.m_framedScrollEvent.source() == AKPointerScrollEvent::Finger ||
+         p.m_framedScrollEvent.source() == AKPointerScrollEvent::Continuous));
+    p.m_eventHistory.scroll = p.m_framedScrollEvent;
+    p.m_eventHistory.scroll.setSerial(AKTime::nextSerial());
+    p.m_framedScrollEvent = AKPointerScrollEvent();
 
     if (!p.focus()) return;
 
-    p.m_eventHistory.scroll.setSerial(AKTime::nextSerial());
-    akApp()->postEvent(p.m_eventHistory.scroll, p.focus()->scene());
+    akApp()->sendEvent(p.m_eventHistory.scroll, p.focus()->scene());
 }
 
 void MApplication::wl_pointer_axis_source(void */*data*/, wl_pointer */*pointer*/, UInt32 axis_source)
 {
     auto &p { app()->pointer() };
     p.m_hasPendingAxisEvent = true;
-    p.m_eventHistory.scroll.setSource((AKPointerScrollEvent::Source)axis_source);
+    p.m_framedScrollEvent.setSource((AKPointerScrollEvent::Source)axis_source);
 }
 
 void MApplication::wl_pointer_axis_stop(void */*data*/, wl_pointer */*pointer*/, UInt32 time, UInt32 axis)
 {
     auto &p { app()->pointer() };
+    p.m_stopSupported = true;
     p.m_hasPendingAxisEvent = true;
-    p.m_eventHistory.scroll.setMs(time);
+    p.m_framedScrollEvent.setMs(time);
 
     if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
-        p.m_eventHistory.scroll.setX(0.f);
+    {
+        p.m_framedScrollEvent.setX(0.f);
+    }
     else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
-        p.m_eventHistory.scroll.setY(0.f);
+    {
+        p.m_framedScrollEvent.setY(0.f);
+    }
 }
 
 // Deprecated
@@ -353,9 +393,9 @@ void MApplication::wl_pointer_axis_value120(void */*data*/, wl_pointer */*pointe
     p.m_hasPendingAxisEvent = true;
 
     if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
-        p.m_eventHistory.scroll.set120X(value120);
+        p.m_framedScrollEvent.set120X(value120);
     else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
-        p.m_eventHistory.scroll.set120Y(value120);
+        p.m_framedScrollEvent.set120Y(value120);
 }
 
 void MApplication::wl_pointer_axis_relative_direction(void */*data*/, wl_pointer */*pointer*/, UInt32 /*axis*/, UInt32 /*direction*/) {}
@@ -381,35 +421,33 @@ void MApplication::wl_keyboard_keymap(void */*data*/, wl_keyboard */*keyboard*/,
 void MApplication::wl_keyboard_enter(void */*data*/, wl_keyboard */*keyboard*/, UInt32 serial, wl_surface *surface, wl_array *keys)
 {
     MSurface *surf { static_cast<MSurface*>(wl_surface_get_user_data(surface)) };
-    auto &event { AK::keyboard().m_eventHistory.enter };
+    auto &event { app()->keyboard().m_eventHistory.enter };
     event.setSerial(serial);
-    event.setUs(AK::AKTime::us());
-    event.setMs(AK::AKTime::ms());
+    event.assignCurrentTime();
+
+    app()->keyboard().m_focus.reset(surf);
 
     UInt32 *keyCodes { static_cast<UInt32*>(keys->data) };
     for (size_t i = 0; i < keys->size/sizeof(UInt32); i++)
-        akKeyboard().updateKeyState(keyCodes[i], XKB_KEY_DOWN);
-
-    AK::keyboard().m_focus.reset(surf);
+        app()->keyboard().updateKeyState(keyCodes[i], XKB_KEY_DOWN);
 }
 
 void MApplication::wl_keyboard_leave(void */*data*/, wl_keyboard */*keyboard*/, UInt32 serial, wl_surface */*surface*/)
 {
-    auto &event { AK::keyboard().m_eventHistory.leave };
+    auto &event { app()->keyboard().m_eventHistory.leave };
     event.setSerial(serial);
-    event.setUs(AK::AKTime::us());
-    event.setMs(AK::AKTime::ms());
+    event.assignCurrentTime();
 
-    while (!akKeyboard().pressedKeyCodes().empty())
-        akKeyboard().updateKeyState(akKeyboard().pressedKeyCodes().back(), XKB_KEY_UP);
+    while (!app()->keyboard().pressedKeyCodes().empty())
+        app()->keyboard().updateKeyState(akKeyboard().pressedKeyCodes().back(), XKB_KEY_UP);
 
-    if (AK::keyboard().focus())
-        AK::keyboard().m_focus.reset();
+    if (app()->keyboard().focus())
+        app()->keyboard().m_focus.reset();
 }
 
 void MApplication::wl_keyboard_key(void */*data*/, wl_keyboard */*keyboard*/, UInt32 serial, UInt32 time, UInt32 key, UInt32 state)
 {
-    auto &event { AK::keyboard().m_eventHistory.key };
+    auto &event { app()->keyboard().m_eventHistory.key };
     event.setSerial(serial);
     event.setUs(AK::AKTime::us());
     event.setMs(time);
@@ -417,15 +455,14 @@ void MApplication::wl_keyboard_key(void */*data*/, wl_keyboard */*keyboard*/, UI
     event.setState((AK::AKKeyboardKeyEvent::State)state);
     akKeyboard().updateKeyState(key, state);
 
-    if (AK::keyboard().focus())
-        akApp()->postEvent(event, AK::keyboard().focus()->scene());
+    if (app()->keyboard().focus())
+        app()->sendEvent(event, app()->keyboard().focus()->scene());
 }
 
 void MApplication::wl_keyboard_modifiers(void */*data*/, wl_keyboard */*keyboard*/, UInt32 serial, UInt32 depressed, UInt32 latched, UInt32 locked, UInt32 group)
 {
-    auto &event { AK::keyboard().m_eventHistory.modifiers };
-    event.setMs(AK::AKTime::ms());
-    event.setUs(AK::AKTime::us());
+    auto &event { app()->keyboard().m_eventHistory.modifiers };
+    event.assignCurrentTime();
     event.setSerial(serial);
     event.setModifiers({
         .depressed = depressed,

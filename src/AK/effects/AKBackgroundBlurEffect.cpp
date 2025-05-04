@@ -133,7 +133,7 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
         }
     }
 
-    addDamage(AK_IRECT_INF);
+    //addDamage(AK_IRECT_INF);
 }
 
 void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)

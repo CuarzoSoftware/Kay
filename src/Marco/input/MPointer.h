@@ -41,9 +41,8 @@ public:
 private:
     friend class MApplication;
     AKCursor findNonDefaultCursor(AKNode *node) const noexcept;
-    EventHistory
-        m_eventHistory,
-        m_pendingEvents; // Used for framed events
+    EventHistory m_eventHistory;
+    AKPointerScrollEvent m_framedScrollEvent;
     std::unordered_set<UInt32> m_pressedButtons;
     AKWeak<MSurface> m_focus;
     wl_surface *m_cursorSurface { nullptr };
@@ -52,6 +51,7 @@ private:
     AKCursor m_cursor { AKCursor::Default };
     bool m_forceCursorUpdate { true };
     bool m_hasPendingAxisEvent { false };
+    bool m_stopSupported { false };
 };
 
 #endif // MPOINTER_H

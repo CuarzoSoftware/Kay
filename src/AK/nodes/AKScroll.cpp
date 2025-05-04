@@ -255,9 +255,7 @@ void AKScroll::pointerScrollEvent(const AKPointerScrollEvent &e)
 {
     calculateContentBounds();
 
-    const bool isKinetic { e.source() == AKPointerScrollEvent::Continuous || e.source() == AKPointerScrollEvent::Finger };
-
-    if (!isKinetic)
+    if (!e.isKinetic())
     {
         m_vel = e.axes() * 3.f;
         updateViewport();

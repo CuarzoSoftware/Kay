@@ -35,6 +35,10 @@
 #include <LBackgroundBlur.h>
 #include <LLayerRole.h>
 
+#include <protocols/BackgroundBlur/GBackgroundBlurManager.h>
+#include <protocols/InvisibleRegion/GInvisibleRegionManager.h>
+#include <protocols/SvgPath/GSvgPathManager.h>
+
 #include <AK/nodes/AKSubScene.h>
 #include <AK/nodes/AKImageFrame.h>
 #include <AK/nodes/AKContainer.h>
@@ -413,6 +417,13 @@ public:
     }
 
     LFactoryObject *createObjectRequest(LFactoryObject::Type objectType, const void *params) override;
+    bool createGlobalsRequest() override
+    {
+        createGlobal<Protocols::BackgroundBlur::GBackgroundBlurManager>();
+        createGlobal<Protocols::SvgPath::GSvgPathManager>();
+        createGlobal<Protocols::InvisibleRegion::GInvisibleRegionManager>();
+        return LCompositor::createGlobalsRequest();
+    }
 
     struct Kay {
         Kay() noexcept
@@ -462,6 +473,7 @@ public:
 
     void layerChanged() override
     {
+        /*
         // Check if the surface has a toplevel role
         if (LToplevelRole *tl = toplevel())
         {
@@ -471,7 +483,7 @@ public:
             // Now tl->pendingConfiguration().state contains Activated and the configuration
             // will be sent later to the client.
             // To know when the surface becomes active check LToplevelRole::atomsChanged()
-        }
+        }*/
 
         LSurface::layerChanged();
         if (layer() == LLayerBackground)
@@ -555,8 +567,6 @@ public:
     //AKBackgroundImageShadowEffect shadow { 6, {0,0}, 0x66000000, this };
 };
 
-static std::mutex m;
-
 #include <modules/svg/include/SkSVGDOM.h>
 #include <include/core/SkStream.h>
 
@@ -568,15 +578,11 @@ public:
 
     void initializeGL() override
     {
-        m.lock();
         kay = std::make_unique<Kay>(this);
-        m.unlock();
     }
-
 
     void paintGL() override
     {
-        m.lock();
         inPaintGL = true;
         Int32 n;
         const LBox *boxes;
@@ -720,8 +726,6 @@ public:
 
         for (auto *shReq : screenshotRequests())
             shReq->accept(true);
-
-        m.unlock();
     }
 
     void resizeGL() override
@@ -1029,13 +1033,14 @@ public:
         return findNode(&static_cast<Compositor*>(compositor())->kay->root, globalPos, filter);
     }
 
+    /*
     void focusChanged() override
     {
         LPointer::focusChanged();
 
-        //if (LPointer::focus())
-        //    seat()->keyboard()->setFocus(LPointer::focus());
-    }
+        if (LPointer::focus())
+            seat()->keyboard()->setFocus(LPointer::focus());
+    }*/
 
     void pointerMoveEvent(const LPointerMoveEvent &event) override
     {
@@ -1079,6 +1084,8 @@ public:
     void pointerButtonEvent(const LPointerButtonEvent &event) override
     {
         LPointer::pointerButtonEvent(event);
+
+        return;
 
         buttonEvent.setButton((AKPointerButtonEvent::Button)event.button());
         buttonEvent.setState((AKPointerButtonEvent::State)event.state());
@@ -1181,6 +1188,12 @@ class BackgroundBlur final : public LBackgroundBlur
 {
 public:
     using LBackgroundBlur::LBackgroundBlur;
+
+    void configureRequest() override
+    {
+        configureStyle(Light);
+        configureState(Enabled);
+    }
 
     void propsChanged(LBitset<PropChanges> ch, const Props &) override
     {

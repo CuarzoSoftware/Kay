@@ -46,11 +46,12 @@ public:
      * @param device The input device that originated the event.
      */
     AKPointerScrollEvent(const SkPoint &axes = SkPoint(0.f, 0.f), const SkPoint &axes120 = SkPoint(0.f, 0.f), Source source = Continuous,
-                               UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
+                            bool isKinetic = false, UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
         AKPointerEvent(PointerScroll, serial, ms, us, device),
         m_axes(axes),
         m_axes120(axes120),
-        m_source(source)
+        m_source(source),
+        m_isKinetic(isKinetic)
     {}
 
     /**
@@ -140,6 +141,16 @@ public:
         return m_axes120;
     }
 
+    bool isKinetic() const noexcept
+    {
+        return m_isKinetic;
+    }
+
+    void setKinetic(bool kinetic) noexcept
+    {
+        m_isKinetic = kinetic;
+    }
+
     /**
      * @brief Sets the source of the scroll event.
      */
@@ -160,6 +171,7 @@ protected:
     SkPoint m_axes;
     SkPoint m_axes120;
     Source m_source;
+    bool m_isKinetic;
 };
 
 #endif // AKPOINTERAXISEVENT_H
