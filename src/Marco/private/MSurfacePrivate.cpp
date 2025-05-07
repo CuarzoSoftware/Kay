@@ -22,7 +22,7 @@ using namespace AK;
 
 static wl_surface_listener wlSurfaceListener;
 static wl_callback_listener wlCallbackListener;
-static background_blur_listener backgroundBlurListener;
+static lvr_background_blur_listener backgroundBlurListener;
 
 MSurface::Imp::Imp(MSurface &obj) noexcept : obj(obj), root(obj)
 {
@@ -32,7 +32,7 @@ MSurface::Imp::Imp(MSurface &obj) noexcept : obj(obj), root(obj)
     wlSurfaceListener.preferred_buffer_transform = wl_surface_preferred_buffer_transform;
     wlCallbackListener.done = wl_callback_done;
     backgroundBlurListener.state = background_blur_state;
-    backgroundBlurListener.style = background_blur_style;
+    backgroundBlurListener.color_hint = background_blur_color_hint;
     backgroundBlurListener.configure = background_blur_configure;
 }
 
@@ -101,22 +101,22 @@ void MSurface::Imp::wl_callback_done(void *data, wl_callback *callback, UInt32 m
         surface.update();
 }
 
-void MSurface::Imp::background_blur_state(void *data, background_blur *, UInt32 state)
+void MSurface::Imp::background_blur_state(void *data, lvr_background_blur *, UInt32 state)
 {
     MSurface &surface { *static_cast<MSurface*>(data) };
     surface.imp()->pendingVibrancyState = (AKVibrancyState)state;
 }
 
-void MSurface::Imp::background_blur_style(void *data, background_blur *, UInt32 style)
+void MSurface::Imp::background_blur_color_hint(void *data, lvr_background_blur *, UInt32 style)
 {
     MSurface &surface { *static_cast<MSurface*>(data) };
     surface.imp()->pendingVibrancyStyle = (AKVibrancyStyle)style;
 }
 
-void MSurface::Imp::background_blur_configure(void *data, background_blur *backgroundBlur, UInt32 serial)
+void MSurface::Imp::background_blur_configure(void *data, lvr_background_blur *backgroundBlur, UInt32 serial)
 {
     MSurface &surface { *static_cast<MSurface*>(data) };
-    background_blur_ack_configure(backgroundBlur, serial);
+    lvr_background_blur_ack_configure(backgroundBlur, serial);
 
     if (surface.imp()->pendingVibrancyState != surface.imp()->currentVibrancyState ||
         surface.imp()->pendingVibrancyStyle != surface.imp()->currentVibrancyStyle)
@@ -159,13 +159,13 @@ void MSurface::Imp::createSurface() noexcept
 
     if (backgroundBlur)
     {
-        background_blur_destroy(backgroundBlur);
+        lvr_background_blur_destroy(backgroundBlur);
         backgroundBlur = nullptr;
     }
 
     if (invisibleRegion)
     {
-        invisible_region_destroy(invisibleRegion);
+        lvr_invisible_region_destroy(invisibleRegion);
         invisibleRegion = nullptr;
     }
 
@@ -180,12 +180,12 @@ void MSurface::Imp::createSurface() noexcept
     wlViewport = wp_viewporter_get_viewport(app()->wayland().viewporter, wlSurface);
 
     if (app()->wayland().invisibleRegionManager)
-        invisibleRegion = invisible_region_manager_get_invisible_region(app()->wayland().invisibleRegionManager, wlSurface);
+        invisibleRegion = lvr_invisible_region_manager_get_invisible_region(app()->wayland().invisibleRegionManager, wlSurface);
 
     if (app()->wayland().backgroundBlurManager)
     {
-        backgroundBlur = background_blur_manager_get_background_blur(app()->wayland().backgroundBlurManager, wlSurface);
-        background_blur_add_listener(backgroundBlur, &backgroundBlurListener, &obj);
+        backgroundBlur = lvr_background_blur_manager_get_background_blur(app()->wayland().backgroundBlurManager, wlSurface);
+        lvr_background_blur_add_listener(backgroundBlur, &backgroundBlurListener, &obj);
     }
 }
 

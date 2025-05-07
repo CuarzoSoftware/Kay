@@ -1,8 +1,8 @@
 #ifndef MSURFACEPRIVATE_H
 #define MSURFACEPRIVATE_H
 
-#include <Marco/protocols/background-blur-client.h>
-#include <Marco/protocols/invisible-region-client.h>
+#include <Marco/protocols/lvr-background-blur-client.h>
+#include <Marco/protocols/lvr-invisible-region-client.h>
 #include <Marco/roles/MSurface.h>
 #include <Marco/nodes/MRootSurfaceNode.h>
 
@@ -78,8 +78,8 @@ public:
     wl_callback *wlCallback { nullptr };
     wl_surface *wlSurface { nullptr };
     wp_viewport *wlViewport { nullptr };
-    background_blur *backgroundBlur { nullptr };
-    invisible_region *invisibleRegion { nullptr };
+    lvr_background_blur *backgroundBlur { nullptr };
+    lvr_invisible_region *invisibleRegion { nullptr };
 
     wl_egl_window *eglWindow { nullptr };
     EGLSurface eglSurface { EGL_NO_SURFACE };
@@ -109,9 +109,9 @@ public:
     static void wl_surface_preferred_buffer_transform(void *data, wl_surface *surface, UInt32 transform);
     static void wl_callback_done(void *data, wl_callback *callback, UInt32 ms);
 
-    static void background_blur_state(void *data, background_blur *backgroundBlur, UInt32 state);
-    static void background_blur_style(void *data, background_blur *backgroundBlur, UInt32 style);
-    static void background_blur_configure(void *data, background_blur *backgroundBlur, UInt32 serial);
+    static void background_blur_state(void *data, lvr_background_blur *backgroundBlur, UInt32 state);
+    static void background_blur_color_hint(void *data, lvr_background_blur *backgroundBlur, UInt32 style);
+    static void background_blur_configure(void *data, lvr_background_blur *backgroundBlur, UInt32 serial);
 };
 
 #endif // MSURFACEPRIVATE_H

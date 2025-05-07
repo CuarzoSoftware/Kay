@@ -1191,7 +1191,7 @@ public:
 
     void configureRequest() override
     {
-        configureStyle(Light);
+        configureColorHint(Light);
         configureState(Enabled);
     }
 
@@ -1206,25 +1206,25 @@ public:
             surf->blur.setRegion(skRegion);
         }
 
-        if (ch.check(ClipChanged))
+        if (ch.check(MaskChanged))
         {
-            if (clipType() == NoClip)
+            if (maskType() == NoMask)
                 surf->blur.clearClip();
-            else if (clipType() == RoundRect)
+            else if (maskType() == RoundRect)
                 surf->blur.setRoundRectClip(
                     AKRRect(SkIRect::MakeXYWH(
-                        roundRectClip().x(),
-                        roundRectClip().y(),
-                        roundRectClip().w(),
-                        roundRectClip().h()),
-                    roundRectClip().fRadTL,
-                    roundRectClip().fRadTR,
-                    roundRectClip().fRadBR,
-                    roundRectClip().fRadBL));
-            else if (clipType() == SVGPath)
+                        roundRectMask().x(),
+                        roundRectMask().y(),
+                        roundRectMask().w(),
+                        roundRectMask().h()),
+                    roundRectMask().fRadTL,
+                    roundRectMask().fRadTR,
+                    roundRectMask().fRadBR,
+                    roundRectMask().fRadBL));
+            else if (maskType() == SVGPath)
             {
                 SkPath path;
-                assert(SkParsePath::FromSVGString(svgPathClip().c_str(), &path));
+                assert(SkParsePath::FromSVGString(svgPathMask().c_str(), &path));
                 surf->blur.setPathClip(path);
             }
         }
@@ -1274,6 +1274,8 @@ int main(void)
 
     // Enable screencasting through xdg-desktop-portal-wlr
     LLauncher::launch("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=wlroots | systemctl --user restart xdg-desktop-portal");
+
+    LBackgroundBlur::maskingCapabilities.add(LBackgroundBlur::RoundRectMaskCap | LBackgroundBlur::SVGPathMaskCap);
 
     Compositor compositor;
     assert("Compositor failed to start" && compositor.start());

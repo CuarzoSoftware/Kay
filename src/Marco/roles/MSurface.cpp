@@ -50,7 +50,7 @@ MSurface::~MSurface()
 
     if (imp()->invisibleRegion)
     {
-        invisible_region_destroy(imp()->invisibleRegion);
+        lvr_invisible_region_destroy(imp()->invisibleRegion);
         imp()->invisibleRegion = nullptr;
     }
 
@@ -164,7 +164,7 @@ wp_viewport *MSurface::wlViewport() const noexcept
     return imp()->wlViewport;
 }
 
-invisible_region *MSurface::wlInvisibleRegion() const noexcept
+lvr_invisible_region *MSurface::wlInvisibleRegion() const noexcept
 {
     return imp()->invisibleRegion;
 }

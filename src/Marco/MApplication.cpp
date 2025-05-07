@@ -27,6 +27,7 @@ static wl_seat_listener wlSeatListener;
 static wl_pointer_listener wlPointerListener;
 static wl_keyboard_listener wlKeyboardListener;
 static xdg_wm_base_listener xdgWmBaseListener;
+static lvr_background_blur_manager_listener lvrBackgroundBlurManagerListener;
 
 MApplication::MApplication() noexcept
 {
@@ -89,17 +90,18 @@ void MApplication::wl_registry_global(void *data, wl_registry *registry, UInt32 
     {
         wl.layerShell.set(wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, version), name);
     }
-    else if (!wl.backgroundBlurManager && strcmp(interface, background_blur_manager_interface.name) == 0)
+    else if (!wl.backgroundBlurManager && strcmp(interface, lvr_background_blur_manager_interface.name) == 0)
     {
-        wl.backgroundBlurManager.set(wl_registry_bind(registry, name, &background_blur_manager_interface, version), name);
+        wl.backgroundBlurManager.set(wl_registry_bind(registry, name, &lvr_background_blur_manager_interface, version), name);
+        lvr_background_blur_manager_add_listener(wl.backgroundBlurManager, &lvrBackgroundBlurManagerListener, NULL);
     }
-    else if (!wl.svgPathManager && strcmp(interface, svg_path_manager_interface.name) == 0)
+    else if (!wl.svgPathManager && strcmp(interface, lvr_svg_path_manager_interface.name) == 0)
     {
-        wl.svgPathManager.set(wl_registry_bind(registry, name, &svg_path_manager_interface, version), name);
+        wl.svgPathManager.set(wl_registry_bind(registry, name, &lvr_svg_path_manager_interface, version), name);
     }
-    else if (!wl.invisibleRegionManager && strcmp(interface, invisible_region_manager_interface.name) == 0)
+    else if (!wl.invisibleRegionManager && strcmp(interface, lvr_invisible_region_manager_interface.name) == 0)
     {
-        wl.invisibleRegionManager.set(wl_registry_bind(registry, name, &invisible_region_manager_interface, version), name);
+        wl.invisibleRegionManager.set(wl_registry_bind(registry, name, &lvr_invisible_region_manager_interface, version), name);
     }
 }
 
@@ -482,6 +484,11 @@ void MApplication::xdg_wm_base_ping(void */*data*/, xdg_wm_base *xdgWmBase, UInt
     xdg_wm_base_pong(xdgWmBase, serial);
 }
 
+void MApplication::lvr_background_blur_manager_masking_capabilities(void *, lvr_background_blur_manager *, UInt32 caps)
+{
+    app()->m_maskingcaps.set(caps);
+}
+
 void MApplication::initWayland() noexcept
 {
     wlRegistryListener.global = wl_registry_global;
@@ -517,6 +524,8 @@ void MApplication::initWayland() noexcept
     wlKeyboardListener.repeat_info = wl_keyboard_repeat_info;
 
     xdgWmBaseListener.ping = xdg_wm_base_ping;
+
+    lvrBackgroundBlurManagerListener.masking_capabilities = lvr_background_blur_manager_masking_capabilities;
 
     wl.display = wl_display_connect(NULL);
     assert(wl.display && "wl_display_connect failed");

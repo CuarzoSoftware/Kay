@@ -1,7 +1,7 @@
 #ifndef MWINDOWROLE_H
 #define MWINDOWROLE_H
 
-#include <Marco/protocols/invisible-region-client.h>
+#include <Marco/protocols/lvr-invisible-region-client.h>
 #include <Marco/protocols/viewporter-client.h>
 
 #include <AK/AKVibrancy.h>
@@ -83,7 +83,7 @@ public:
     wl_surface *wlSurface() const noexcept;
     wl_callback *wlCallback() const noexcept;
     wp_viewport *wlViewport() const noexcept;
-    invisible_region *wlInvisibleRegion() const noexcept;
+    lvr_invisible_region *wlInvisibleRegion() const noexcept;
     wl_egl_window *eglWindow() const noexcept;
     sk_sp<SkSurface> skSurface() const noexcept;
     EGLSurface eglSurface() const noexcept;

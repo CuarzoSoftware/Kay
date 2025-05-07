@@ -738,7 +738,7 @@ void MToplevel::render() noexcept
             for (MVibrancyView *view : vibrancyViews)
                 wl_region_add(region, view->globalRect().x(), view->globalRect().y(), view->globalRect().width(), view->globalRect().height());
 
-            background_blur_set_region(MSurface::imp()->backgroundBlur, region);
+            lvr_background_blur_set_region(MSurface::imp()->backgroundBlur, region);
             wl_region_destroy(region);
 
             int r = !builtinDecorationsEnabled() || states().check(AKFullscreen) ? 0 : MTheme::CSDBorderRadius;
@@ -746,14 +746,14 @@ void MToplevel::render() noexcept
             int y = imp()->shadowMargins.fTop;
             int w = layout().calculatedWidth();
             int h = layout().calculatedHeight();
-            background_blur_set_round_rect_clip(MSurface::imp()->backgroundBlur,
+            lvr_background_blur_set_round_rect_mask(MSurface::imp()->backgroundBlur,
                                                 x, y, w, h,
                                                 r, r, r, r);
         }
         else
         {
             wl_region *empty = wl_compositor_create_region(app()->wayland().compositor);
-            background_blur_set_region(MSurface::imp()->backgroundBlur, empty);
+            lvr_background_blur_set_region(MSurface::imp()->backgroundBlur, empty);
             wl_region_destroy(empty);
         }
     }
@@ -812,7 +812,7 @@ void MToplevel::render() noexcept
               invisibleIt.rect().width(), invisibleIt.rect().height());
             invisibleIt.next();
         }
-        invisible_region_set_region(wlInvisibleRegion(), wlRegion);
+        lvr_invisible_region_set_region(wlInvisibleRegion(), wlRegion);
         wl_region_destroy(wlRegion);
     }
 

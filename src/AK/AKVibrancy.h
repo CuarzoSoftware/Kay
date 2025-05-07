@@ -5,6 +5,7 @@ namespace AK
 {
     enum class AKVibrancyStyle
     {
+        None,
         Dark,
         Light
     };

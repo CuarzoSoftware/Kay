@@ -9,9 +9,9 @@
 #include <Marco/protocols/xdg-decoration-unstable-v1-client.h>
 #include <Marco/protocols/wlr-layer-shell-unstable-v1-client.h>
 #include <Marco/protocols/viewporter-client.h>
-#include <Marco/protocols/background-blur-client.h>
-#include <Marco/protocols/svg-path-client.h>
-#include <Marco/protocols/invisible-region-client.h>
+#include <Marco/protocols/lvr-background-blur-client.h>
+#include <Marco/protocols/lvr-svg-path-client.h>
+#include <Marco/protocols/lvr-invisible-region-client.h>
 #include <AK/AKApplication.h>
 #include <AK/AKWeak.h>
 #include <AK/events/AKPointerEnterEvent.h>
@@ -42,9 +42,9 @@ public:
         MProxy<wl_keyboard> keyboard;
         MProxy<wp_viewporter> viewporter;
         MProxy<zwlr_layer_shell_v1> layerShell;
-        MProxy<background_blur_manager> backgroundBlurManager;
-        MProxy<svg_path_manager> svgPathManager;
-        MProxy<invisible_region_manager> invisibleRegionManager;
+        MProxy<lvr_background_blur_manager> backgroundBlurManager;
+        MProxy<lvr_svg_path_manager> svgPathManager;
+        MProxy<lvr_invisible_region_manager> invisibleRegionManager;
     };
 
     struct Graphics
@@ -53,6 +53,13 @@ public:
         EGLConfig eglConfig;
         EGLContext eglContext;
         PFNEGLSWAPBUFFERSWITHDAMAGEKHRPROC eglSwapBuffersWithDamageKHR;
+    };
+
+    enum MaskingCapabilities : UInt32
+    {
+        NoMaskCap       = 0U,
+        RoundRectCap    = 1U,
+        SVGPathCap      = 2U
     };
 
     MApplication() noexcept;
@@ -101,6 +108,8 @@ public:
     MPointer &pointer() noexcept { return (MPointer&)AKApplication::pointer(); }
     MKeyboard &keyboard() noexcept { return(MKeyboard&)AKApplication::keyboard(); }
 
+    AKBitset<MaskingCapabilities> maskingCapabilities() const noexcept { return m_maskingcaps; }
+
     AKSignal<MScreen&> onScreenPlugged;
     AKSignal<MScreen&> onScreenUnplugged;
     AKSignal<> onAppIdChanged;
@@ -135,6 +144,7 @@ private:
     static void wl_keyboard_modifiers(void *data, wl_keyboard *keyboard, UInt32 serial, UInt32 depressed, UInt32 latched, UInt32 locked, UInt32 group);
     static void wl_keyboard_repeat_info(void *data, wl_keyboard *keyboard, Int32 rate, Int32 delay);
     static void xdg_wm_base_ping(void *data, xdg_wm_base *xdgWmBase, UInt32 serial);
+    static void lvr_background_blur_manager_masking_capabilities(void *data, lvr_background_blur_manager *blurManager, UInt32 caps);
     void initWayland() noexcept;
     void initGraphics() noexcept;
     void updateSurfaces();
@@ -149,6 +159,7 @@ private:
     std::vector<MScreen*> m_screens, m_pendingScreens;
     std::shared_ptr<AKBooleanEventSource> m_marcoSource;
     AKEventSource *m_waylandEventSource { nullptr };
+    AKBitset<MaskingCapabilities> m_maskingcaps;
 };
 
 #endif // MAPPLICATION_H
