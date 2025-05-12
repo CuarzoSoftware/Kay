@@ -334,7 +334,7 @@ public:
     AKSceneTarget *currentTarget() const noexcept;
     /* Layout */
 
-    /* Relative to the closest subscene */
+    /* Relative to the closest subscene or the root node of the parent scene */
     const SkIRect sceneRect() const noexcept { return m_rect;}
 
     /* Relative to the root node */
@@ -383,14 +383,11 @@ public:
     virtual void onSceneBegin() {}
 
     /**
-     * @brief Reactive Region.
+     * @brief Background damage tracker
      *
-     * This is a special region that causes damage to the scene
-     * only when overlay or background damage from other nodes intersects with it.
-     *
-     * Relative to the node.
+     * @see AKBackgroundDamageTracker
      */
-    AKBackgroundDamageTracker bdt;
+    AKBackgroundDamageTracker bdt { *this };
 
     UInt64 userFlags { 0 };
     void *userData { nullptr };
@@ -520,7 +517,7 @@ private:
     AKWeak<AKNode> m_slot;
     AKBitset<Flags> m_flags { 0 };
     SkIRect m_globalRect { 0, 0, 0, 0 };
-    SkIRect m_rect;
+    SkIRect m_rect; // Relative to the parent AKSubScene or the root node of the parent AKScene
     UInt32 m_caps { 0 };
     AKLayout m_layout { *this };
     AKWeak<TargetData> t;

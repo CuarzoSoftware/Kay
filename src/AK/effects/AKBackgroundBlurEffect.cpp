@@ -17,10 +17,9 @@ AKBackgroundBlurEffect::AKBackgroundBlurEffect(AKNode *target) noexcept :
     if (target)
         target->addBackgroundEffect(this);
 
-    bdt.enabled = true;
-    bdt.divisibleBy = 1;
-    bdt.q = 0.25f;
-    bdt.r = 24;
+    bdt.setEnabled(true);
+    bdt.setScale(0.5f);
+    bdt.setDamageOutset(24);
 }
 
 void AKBackgroundBlurEffect::onSceneCalculatedRect()
@@ -43,26 +42,28 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
     if (clipType() == NoClip)
     {
         effectRect = m_finalRegion.getBounds();
-        bdt.reactiveRect = SkIRect::MakeSize(effectRect.size());
+        bdt.setCaptureRect(SkIRect::MakeSize(effectRect.size()));
 
         SkRegion inverse;
         m_finalRegion.translate(-effectRect.x(), -effectRect.y(), &inverse);
         inverse.op(SkIRect::MakeSize(effectRect.size()), SkRegion::kReverseDifference_Op);
-        bdt.repaintAnyway.setEmpty();
 
+        SkRegion paintAnyway;
         SkRegion::Iterator it(inverse);
 
         while (!it.done())
         {
-            bdt.repaintAnyway.op(it.rect().makeOutset(5, 5), SkRegion::Op::kUnion_Op);
+            paintAnyway.op(it.rect().makeOutset(5, 5), SkRegion::Op::kUnion_Op);
             it.next();
         }
+
+        bdt.setPaintAnyway(paintAnyway);
     }
     else if (clipType() == RoundRect)
     {
         m_finalRegion.op(roundRectClip(), SkRegion::kIntersect_Op);
         effectRect = m_finalRegion.getBounds();
-        bdt.reactiveRect = SkIRect::MakeSize(effectRect.size());
+        bdt.setCaptureRect(SkIRect::MakeSize(effectRect.size()));
 
         SkRegion inverse { m_finalRegion };
         inverse.op(effectRect, SkRegion::kReverseDifference_Op);
@@ -104,33 +105,37 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
         inverse.op(corners, SkRegion::kUnion_Op);
         inverse.translate(-effectRect.x(), -effectRect.y());
 
-        bdt.repaintAnyway.setEmpty();
+        SkRegion paintAnyway;
         SkRegion::Iterator it(inverse);
+
         while (!it.done())
         {
-            bdt.repaintAnyway.op(it.rect().makeOutset(5, 5), SkRegion::Op::kUnion_Op);
+            paintAnyway.op(it.rect().makeOutset(5, 5), SkRegion::Op::kUnion_Op);
             it.next();
         }
+        bdt.setPaintAnyway(paintAnyway);
     }
     else // Path
     {       
         m_finalRegion.op(pathClip().getBounds().round(), SkRegion::kIntersect_Op);
         effectRect = m_finalRegion.getBounds();
-        bdt.reactiveRect = SkIRect::MakeSize(effectRect.size());
+        bdt.setCaptureRect(SkIRect::MakeSize(effectRect.size()));
 
         // TODO: Calculate a more compact region
 
         SkRegion inverse;
         m_finalRegion.translate(-effectRect.x(), -effectRect.y(), &inverse);
-        bdt.repaintAnyway.setEmpty();
 
+        SkRegion paintAnyway;
         SkRegion::Iterator it(inverse);
 
         while (!it.done())
         {
-            bdt.repaintAnyway.op(it.rect().makeOutset(5, 5), SkRegion::Op::kUnion_Op);
+            paintAnyway.op(it.rect().makeOutset(5, 5), SkRegion::Op::kUnion_Op);
             it.next();
         }
+
+        bdt.setPaintAnyway(paintAnyway);
     }
 
     //addDamage(AK_IRECT_INF);
@@ -138,13 +143,13 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
 
 void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
 {
-    if (!bdt.currentSurface || p.damage.isEmpty() || p.rect.isEmpty())
+    if (!bdt.currentSurface() || p.damage.isEmpty() || p.rect.isEmpty())
         return;
 
     glDisable(GL_BLEND);
-    bool reblur { !bdt.damage.isEmpty() };
+    bool reblur { !bdt.capturedDamage.isEmpty() };
     bool copyAll { false };
-    SkScalar scale { bdt.currentSurface->scale() * 0.5f};
+    SkScalar scale { bdt.currentSurface()->scale() * 0.5f};
     SkISize copySize = p.rect.size();
     const int m { SkScalarRoundToInt(1.f / (scale * 0.5f)) };
     const int modW { copySize.fWidth % m };
@@ -178,7 +183,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         p.painter.setAlpha(1.f);
         p.painter.setColorFactor(1.f, 1.f, 1.f, 1.f);
         p.painter.bindTextureMode({
-            .texture = bdt.currentSurface->image(),
+            .texture = bdt.currentSurface()->image(),
             .pos = {0, 0},
             .srcRect = SkRect::MakeXYWH(
                 p.rect.x() - p.target.viewport().x(),
@@ -187,7 +192,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
                 p.rect.height()),
             .dstSize =  m_blur->size(),
             .srcTransform = AKTransform::Normal,
-            .srcScale = bdt.currentSurface->scale()
+            .srcScale = bdt.currentSurface()->scale()
         });
 
         p.painter.blendMode = (AKPainter::BlendMode)shader;
@@ -196,9 +201,9 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             p.painter.drawRect(SkIRect::MakeSize(p.rect.size()));
         else
         {
-            bdt.damage.translate(-p.rect.x(), -p.rect.y());
-            bdt.damage.op(SkIRect::MakeSize(m_blur->size()), SkRegion::Op::kIntersect_Op);
-            p.painter.drawRegion(bdt.damage);
+            bdt.capturedDamage.translate(-p.rect.x(), -p.rect.y());
+            bdt.capturedDamage.op(SkIRect::MakeSize(m_blur->size()), SkRegion::Op::kIntersect_Op);
+            p.painter.drawRegion(bdt.capturedDamage);
         }
 
         const SkIRect rect { SkIRect::MakeWH(m_blur2->size().width(), m_blur2->size().height()) };
@@ -219,7 +224,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         if (copyAll)
             p.painter.drawRect(rect);
         else
-            p.painter.drawRegion(bdt.damage);
+            p.painter.drawRegion(bdt.capturedDamage);
 
         p.painter.blendMode = AKPainter::Normal;
     }

@@ -253,7 +253,7 @@ void AKScene::createOrAssignTargetDataForNode(AKNode *node) noexcept
         t->AKObject::onDestroyed.subscribe(node, [node](AKObject *object){
             AKSceneTarget *target { static_cast<AKSceneTarget*>(object) };
             node->m_targets.erase(target);
-            node->bdt.surfaces.erase(target);
+            node->bdt.m_surfaces.erase(target);
         });
         node->t->clientDamage.setRect(AK_IRECT_INF);
         node->m_intersectedTargets.insert(t);
@@ -349,37 +349,37 @@ void AKScene::calculateNewDamage(AKNode *node)
     node->t->prevLocalClip.op(t->m_opaque, SkRegion::Op::kDifference_Op);
     node->m_flags.setFlag(AKNode::InsideLastTarget, SkIRect::Intersects(node->m_rect, t->viewport().roundOut()));
 
-    node->bdt.damage.setEmpty();
+    node->bdt.capturedDamage.setEmpty();
+    node->bdt.m_currentSurface.reset();
 
-    if (node->t->visible && node->bdt.enabled)
+    if (node->t->visible && node->bdt.enabled())
     {
-        const SkScalar scale { SkScalar(t->bakedComponentsScale()) * node->bdt.q };
+        const SkScalar scale { node->bdt.scale() };
         SkISize size { t->viewport().round().size() };
-        const int modW { size.fWidth % node->bdt.divisibleBy };
-        const int modH { size.fHeight % node->bdt.divisibleBy };
+        const int modW { size.fWidth % node->bdt.divisibleBy() };
+        const int modH { size.fHeight % node->bdt.divisibleBy() };
 
         if (modW != 0)
-            size.fWidth += node->bdt.divisibleBy - modW;
+            size.fWidth += node->bdt.divisibleBy() - modW;
         if (modH != 0)
-            size.fHeight += node->bdt.divisibleBy - modH;
+            size.fHeight += node->bdt.divisibleBy() - modH;
 
-        if (node->bdt.surfaces.contains(t))
-            node->bdt.surfaces[t]->resize(size, scale, false);
+        if (node->bdt.m_surfaces.contains(t))
+            node->bdt.m_surfaces[t]->resize(size, scale, false);
         else
-            node->bdt.surfaces[t] = AKSurface::Make(size, scale, false);
+            node->bdt.m_surfaces[t] = AKSurface::Make(size, scale, false);
 
-        node->bdt.currentSurface = node->bdt.surfaces[t];
-        node->bdt.currentSurface->setViewportPos(t->viewport().x(), t->viewport().y());
+        node->bdt.m_currentSurface = node->bdt.m_surfaces[t];
+        node->bdt.m_currentSurface->setViewportPos(t->viewport().x(), t->viewport().y());
         hasBDT = true;
-        node->bdt.node = node;
-        node->bdt.reactiveRectTranslated = node->bdt.reactiveRect.makeOffset(node->m_rect.x(), node->m_rect.y());
-        SkRegion additionalAnyway { node->bdt.reactiveRectTranslated };
+        node->bdt.m_captureRectTranslated = node->bdt.captureRect().makeOffset(node->m_rect.x(), node->m_rect.y());
+        SkRegion additionalAnyway { node->bdt.captureRectTranslated() };
         additionalAnyway.op(clip, SkRegion::Op::kDifference_Op);
-        node->bdt.repaintAnyway.translate(node->m_rect.x(), node->m_rect.y(), &node->bdt.repaintAnywayTranslated);
-        node->bdt.repaintAnywayTranslated.op(additionalAnyway, SkRegion::Op::kUnion_Op);
+        node->bdt.paintAnyway().translate(node->m_rect.x(), node->m_rect.y(), &node->bdt.m_paintAnywayTranslated);
+        node->bdt.m_paintAnywayTranslated.op(additionalAnyway, SkRegion::Op::kUnion_Op);
         // reactive.op(clip, SkRegion::Op::kIntersect_Op); // remove?
         t->m_bdts.push_back(&node->bdt);
-        t->m_opaque.op(node->bdt.reactiveRectTranslated, SkRegion::Op::kDifference_Op);
+        t->m_opaque.op(node->bdt.captureRectTranslated(), SkRegion::Op::kDifference_Op);
     }
 
     if (bakeable && !clip.isEmpty() &&
@@ -596,29 +596,29 @@ void AKScene::updateDamageTrackers() noexcept
 {
     for (auto &bdt : t->m_bdts)
     {
-        if (bdt->damage.isEmpty())
+        if (bdt->capturedDamage.isEmpty())
             continue;
 
-        bdt->damage.op(bdt->node->sceneRect(), SkRegion::Op::kIntersect_Op);
-        bdt->damage.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
+        bdt->capturedDamage.op(bdt->node().sceneRect(), SkRegion::Op::kIntersect_Op);
+        bdt->capturedDamage.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
 
-        if (bdt->r != 0)
+        if (bdt->damageOutset() != 0)
         {
             SkRegion outset;
-            SkRegion::Iterator it (bdt->damage);
+            SkRegion::Iterator it (bdt->capturedDamage);
 
             while (!it.done())
             {
-                outset.op(it.rect().makeOutset(bdt->r, bdt->r), SkRegion::Op::kUnion_Op);
+                outset.op(it.rect().makeOutset(bdt->damageOutset(), bdt->damageOutset()), SkRegion::Op::kUnion_Op);
                 it.next();
             }
 
-            bdt->damage = outset;
+            bdt->capturedDamage = outset;
         }
 
-        bdt->damage.op(bdt->node->sceneRect(), SkRegion::Op::kIntersect_Op);
-        bdt->damage.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
-        t->m_damage.op(bdt->damage, SkRegion::Op::kUnion_Op);
+        bdt->capturedDamage.op(bdt->node().sceneRect(), SkRegion::Op::kIntersect_Op);
+        bdt->capturedDamage.op(t->m_prevViewport, SkRegion::Op::kIntersect_Op);
+        t->m_damage.op(bdt->capturedDamage, SkRegion::Op::kUnion_Op);
     }
 
     // Prev bdts that are now hidden
@@ -645,7 +645,7 @@ void AKScene::updateDamageTrackers() noexcept
     // Store the current ones
     t->m_bdtsPrev = t->m_bdts;
     for (auto &bdt : t->m_bdtsPrev)
-        t->m_bdtPrevRectsTranslated.emplace_back(bdt->reactiveRectTranslated);
+        t->m_bdtPrevRectsTranslated.emplace_back(bdt->captureRectTranslated());
 }
 
 void AKScene::renderBackground() noexcept
@@ -656,14 +656,14 @@ void AKScene::renderBackground() noexcept
 
     for (auto bdt = t->m_bdts.rbegin(); bdt != t->m_bdts.rend(); bdt++)
     {
-        (*bdt)->damage.setEmpty();
+        (*bdt)->capturedDamage.setEmpty();
 
-        if (!aux.op((*bdt)->reactiveRectTranslated, background, SkRegion::kIntersect_Op))
+        if (!aux.op((*bdt)->captureRectTranslated(), background, SkRegion::kIntersect_Op))
             continue;
 
-        (*bdt)->damage.op(aux, SkRegion::Op::kUnion_Op);
-        anyway.op((*bdt)->repaintAnywayTranslated, background, SkRegion::kIntersect_Op);
-        renderBackgroundOnTarget(*(*bdt)->surfaces[t].get(), aux);
+        (*bdt)->capturedDamage.op(aux, SkRegion::Op::kUnion_Op);
+        anyway.op((*bdt)->m_paintAnywayTranslated, background, SkRegion::kIntersect_Op);
+        renderBackgroundOnTarget(*(*bdt)->m_surfaces[t].get(), aux);
         background.op(aux, SkRegion::kDifference_Op);
         background.op(anyway, SkRegion::kUnion_Op);
     }
@@ -709,12 +709,12 @@ void AKScene::renderNodes(AKNode *node)
 
     for (auto bdt = rend->m_overlayBdts.rbegin(); bdt != rend->m_overlayBdts.rend(); bdt++)
     {
-        if (!aux.op((*bdt)->reactiveRectTranslated, node->t->translucent, SkRegion::kIntersect_Op))
+        if (!aux.op((*bdt)->captureRectTranslated(), node->t->translucent, SkRegion::kIntersect_Op))
             continue;
 
-        (*bdt)->damage.op(aux, SkRegion::Op::kUnion_Op);
-        anyway.op((*bdt)->repaintAnywayTranslated, node->t->translucent, SkRegion::kIntersect_Op);
-        renderNodeTranslucentOnTarget(rend, *(*bdt)->surfaces[t].get(), aux);
+        (*bdt)->capturedDamage.op(aux, SkRegion::Op::kUnion_Op);
+        anyway.op((*bdt)->m_paintAnywayTranslated, node->t->translucent, SkRegion::kIntersect_Op);
+        renderNodeTranslucentOnTarget(rend, *(*bdt)->m_surfaces[t].get(), aux);
         node->t->translucent.op(aux, SkRegion::kDifference_Op);
         node->t->translucent.op(anyway, SkRegion::kUnion_Op);
     }
@@ -733,12 +733,12 @@ void AKScene::renderNodes(AKNode *node)
 
     for (auto bdt = rend->m_overlayBdts.rbegin(); bdt != rend->m_overlayBdts.rend(); bdt++)
     {
-        if (!aux.op((*bdt)->reactiveRectTranslated, node->t->opaque, SkRegion::kIntersect_Op))
+        if (!aux.op((*bdt)->captureRectTranslated(), node->t->opaque, SkRegion::kIntersect_Op))
             continue;
 
-        (*bdt)->damage.op(aux, SkRegion::Op::kUnion_Op);
-        anyway.op((*bdt)->repaintAnywayTranslated, node->t->opaque, SkRegion::kIntersect_Op);
-        renderNodeOpaqueOnTarget(rend, *(*bdt)->surfaces[t].get(), aux);
+        (*bdt)->capturedDamage.op(aux, SkRegion::Op::kUnion_Op);
+        anyway.op((*bdt)->m_paintAnywayTranslated, node->t->opaque, SkRegion::kIntersect_Op);
+        renderNodeOpaqueOnTarget(rend, *(*bdt)->m_surfaces[t].get(), aux);
         node->t->opaque.op(aux, SkRegion::kDifference_Op);
         node->t->opaque.op(anyway, SkRegion::kUnion_Op);
     }
@@ -978,8 +978,8 @@ void AKScene::renderNodes(AKNode *node)
         t->m_damage.op(damage, SkRegion::Op::kUnion_Op);
 
         for (auto &bdt : t->m_bdts)
-            if (SkIRect::Intersects(bdt->reactiveRectTranslated, damage.getBounds()))
-                bdt->damage.op(damage, SkRegion::Op::kUnion_Op);
+            if (SkIRect::Intersects(bdt->captureRectTranslated(), damage.getBounds()))
+                bdt->capturedDamage.op(damage, SkRegion::Op::kUnion_Op);
     }
 
     void AKScene::handlePointerMoveEvent()
