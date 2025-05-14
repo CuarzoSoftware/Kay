@@ -51,7 +51,6 @@ private:
     AKCursor m_cursor { AKCursor::Default };
     bool m_forceCursorUpdate { true };
     bool m_hasPendingAxisEvent { false };
-    bool m_stopSupported { false };
 };
 
 #endif // MPOINTER_H

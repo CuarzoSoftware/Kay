@@ -313,25 +313,33 @@ void MApplication::wl_pointer_axis(void */*data*/, wl_pointer *pointer, UInt32 t
         p.m_framedScrollEvent.setUs(AKTime::us());
 
         if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+        {
+            p.m_framedScrollEvent.setHasX(true);
             p.m_framedScrollEvent.setX(wl_fixed_to_double(value));
+        }
         else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+        {
+            p.m_framedScrollEvent.setHasY(true);
             p.m_framedScrollEvent.setY(wl_fixed_to_double(value));
+        }
     }
+
+    // Version < 5: No frame and discrete events
     else if (p.focus())
     {
-        p.m_eventHistory.scroll.setKinetic(false);
         p.m_eventHistory.scroll.setMs(time);
         p.m_eventHistory.scroll.setUs(AKTime::us());
-        p.m_eventHistory.scroll.set120X(0.f);
-        p.m_eventHistory.scroll.set120Y(0.f);
-        p.m_eventHistory.scroll.setSource(AKPointerScrollEvent::Source::Continuous);
+        p.m_eventHistory.scroll.setDiscreteAxes(0, 0);
+        p.m_eventHistory.scroll.setSource(AKPointerScrollEvent::Continuous);
+        p.m_eventHistory.scroll.setHasX(axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL);
+        p.m_eventHistory.scroll.setHasY(axis == WL_POINTER_AXIS_VERTICAL_SCROLL);
 
-        if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+        if ( p.m_eventHistory.scroll.hasX())
         {
             p.m_eventHistory.scroll.setY(0.f);
             p.m_eventHistory.scroll.setX(wl_fixed_to_double(value));
         }
-        else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+        else
         {
             p.m_eventHistory.scroll.setX(0.f);
             p.m_eventHistory.scroll.setY(wl_fixed_to_double(value));
@@ -349,45 +357,61 @@ void MApplication::wl_pointer_frame(void */*data*/, wl_pointer */*pointer*/)
         return;
 
     p.m_hasPendingAxisEvent = false;
-    p.m_framedScrollEvent.setKinetic(
-        p.m_stopSupported &&
-        (p.m_framedScrollEvent.source() == AKPointerScrollEvent::Finger ||
-         p.m_framedScrollEvent.source() == AKPointerScrollEvent::Continuous));
     p.m_eventHistory.scroll = p.m_framedScrollEvent;
     p.m_eventHistory.scroll.setSerial(AKTime::nextSerial());
-    p.m_framedScrollEvent = AKPointerScrollEvent();
+    p.m_framedScrollEvent = AKPointerScrollEvent({0.f, 0.f}, {0, 0}, false, false, false, false, AKPointerScrollEvent::Continuous);
 
     if (!p.focus()) return;
 
     akApp()->sendEvent(p.m_eventHistory.scroll, p.focus()->scene());
 }
 
-void MApplication::wl_pointer_axis_source(void */*data*/, wl_pointer */*pointer*/, UInt32 axis_source)
+void MApplication::wl_pointer_axis_source(void */*data*/, wl_pointer *pointer, UInt32 axis_source)
 {
     auto &p { app()->pointer() };
     p.m_hasPendingAxisEvent = true;
-    p.m_framedScrollEvent.setSource((AKPointerScrollEvent::Source)axis_source);
+
+    if (wl_pointer_get_version(pointer) < 8 && axis_source == WL_POINTER_AXIS_SOURCE_WHEEL)
+        p.m_framedScrollEvent.setSource(AKPointerScrollEvent::WheelLegacy);
+    else
+        p.m_framedScrollEvent.setSource((AKPointerScrollEvent::Source)axis_source);
 }
 
 void MApplication::wl_pointer_axis_stop(void */*data*/, wl_pointer */*pointer*/, UInt32 time, UInt32 axis)
 {
     auto &p { app()->pointer() };
-    p.m_stopSupported = true;
     p.m_hasPendingAxisEvent = true;
     p.m_framedScrollEvent.setMs(time);
 
     if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
     {
+        p.m_framedScrollEvent.setHasX(true);
         p.m_framedScrollEvent.setX(0.f);
     }
     else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
     {
+        p.m_framedScrollEvent.setHasY(true);
         p.m_framedScrollEvent.setY(0.f);
     }
 }
 
-// Deprecated
-void MApplication::wl_pointer_axis_discrete(void */*data*/, wl_pointer */*pointer*/, UInt32 /*axis*/, Int32 /*discrete*/) {}
+void MApplication::wl_pointer_axis_discrete(void */*data*/, wl_pointer */*pointer*/, UInt32 axis, Int32 discrete)
+{
+    auto &p { app()->pointer() };
+
+    p.m_hasPendingAxisEvent = true;
+
+    if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+    {
+        p.m_framedScrollEvent.setHasX(true);
+        p.m_framedScrollEvent.setDiscreteX(discrete);
+    }
+    else
+    {
+        p.m_framedScrollEvent.setHasY(true);
+        p.m_framedScrollEvent.setDiscreteY(discrete);
+    }
+}
 
 void MApplication::wl_pointer_axis_value120(void */*data*/, wl_pointer */*pointer*/, UInt32 axis, Int32 value120)
 {
@@ -395,12 +419,31 @@ void MApplication::wl_pointer_axis_value120(void */*data*/, wl_pointer */*pointe
     p.m_hasPendingAxisEvent = true;
 
     if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
-        p.m_framedScrollEvent.set120X(value120);
+    {
+        p.m_framedScrollEvent.setHasX(true);
+        p.m_framedScrollEvent.setDiscreteX(value120);
+    }
     else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
-        p.m_framedScrollEvent.set120Y(value120);
+    {
+        p.m_framedScrollEvent.setHasY(true);
+        p.m_framedScrollEvent.setDiscreteY(value120);
+    }
 }
 
-void MApplication::wl_pointer_axis_relative_direction(void */*data*/, wl_pointer */*pointer*/, UInt32 /*axis*/, UInt32 /*direction*/) {}
+void MApplication::wl_pointer_axis_relative_direction(void */*data*/, wl_pointer */*pointer*/, UInt32 axis, UInt32 direction)
+{
+    auto &p { app()->pointer() };
+    p.m_hasPendingAxisEvent = true;
+
+    if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+    {
+        p.m_framedScrollEvent.setNaturalX(direction == WL_POINTER_AXIS_RELATIVE_DIRECTION_INVERTED);
+    }
+    else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+    {
+        p.m_framedScrollEvent.setNaturalY(direction == WL_POINTER_AXIS_RELATIVE_DIRECTION_INVERTED);
+    }
+}
 
 void MApplication::wl_keyboard_keymap(void */*data*/, wl_keyboard */*keyboard*/, UInt32 format, Int32 fd, UInt32 size)
 {

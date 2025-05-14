@@ -221,7 +221,13 @@ void AKScrollBar::updatePosByPointer(SkScalar pointerPos) noexcept
         else if (pointerPos >= realRect.fRight)
             m_scroll->setOffsetXPercent(100.f);
         else
-            m_scroll->setOffsetXPercent((pointerPos - realRect.fLeft - m_handle.layout().calculatedWidth() * 0.5f)/(realRect.width()));
+        {
+            // For some reason Yoga varies the handle size by aprox 1 while moving...
+            // this hack keeps a consistent size and avoids wiggling
+            Int32 handleSize = m_handle.layout().calculatedWidth();
+            handleSize += handleSize % 2;
+            m_scroll->setOffsetXPercent((pointerPos - SkScalar(realRect.fLeft) - SkScalar(handleSize) * 0.5f)/SkScalar(realRect.width()));
+        }
     }
     else
     {
@@ -233,7 +239,13 @@ void AKScrollBar::updatePosByPointer(SkScalar pointerPos) noexcept
         else if (pointerPos >= realRect.fBottom)
             m_scroll->setOffsetYPercent(100.f);
         else
-            m_scroll->setOffsetYPercent((pointerPos - realRect.fTop - m_handle.layout().calculatedHeight() * 0.5f)/realRect.height());
+        {
+            // For some reason Yoga varies the handle size by aprox 1 while moving...
+            // this hack keeps a consistent size and avoids wiggling
+            Int32 handleSize = m_handle.layout().calculatedHeight();
+            handleSize += handleSize % 2;
+            m_scroll->setOffsetYPercent((pointerPos - SkScalar(realRect.fTop) - SkScalar(handleSize) * 0.5f)/SkScalar(realRect.height()));
+        }
     }
 }
 

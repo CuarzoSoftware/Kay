@@ -21,7 +21,7 @@ public:
      */
     enum Source : UInt32
     {
-        /// Mouse wheel (discrete)
+        /// Mouse wheel (120 value)
         Wheel = 0,
 
         /// Trackpad swipe (continuous)
@@ -31,31 +31,104 @@ public:
         Continuous = 2,
 
         /// Side movement of a mouse wheel (since 6)
-        WheelTilt = 3
+        WheelTilt = 3,
+
+        /// Legacy mouse wheel (discrete)
+        WheelLegacy = 1000
     };
 
     /**
      * @brief Constructs an AKPointerScrollEvent object.
      *
-     * @param axes The scroll axes values.
-     * @param axes120 The scroll axes values for high-resolution scrolling.
+     * @param axes The scroll axes values (included in all sources).
+     * @param axesDiscrete The scroll axes values for high-resolution scrolling (@ref Wheel source) or th physical mouse wheel clicks (@ref WheelLegacy source).
+     * @param hasX Indicates whether the event includes a value for the X axis.
+     * @param hasY Indicates whether the event includes a value for the Y axis.
      * @param source The source of the scroll event.
      * @param serial The serial number of the event.
      * @param ms The millisecond timestamp of the event.
      * @param us The microsecond timestamp of the event.
      * @param device The input device that originated the event.
      */
-    AKPointerScrollEvent(const SkPoint &axes = SkPoint(0.f, 0.f), const SkPoint &axes120 = SkPoint(0.f, 0.f), Source source = Continuous,
-                            bool isKinetic = false, UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
-        AKPointerEvent(PointerScroll, serial, ms, us, device),
+    AKPointerScrollEvent(const SkPoint &axes = {0.f, 0.f}, const SkIPoint &axesDiscrete = {0, 0}, bool hasX = true, bool hasY = true,
+                         bool naturalX = false, bool naturalY = false, Source source = Continuous,
+                        UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
+        AKPointerEvent(AKEvent::PointerScroll, serial, ms, us, device),
         m_axes(axes),
-        m_axes120(axes120),
+        m_axesDiscrete(axesDiscrete),
         m_source(source),
-        m_isKinetic(isKinetic)
+        m_hasX(hasX),
+        m_hasY(hasY),
+        m_naturalX(naturalX),
+        m_naturalY(naturalY)
     {}
 
     /**
+     * @brief Indicates whether the event includes a value for the X axis.
+     *
+     * @note Applicable to all sources.
+     */
+    bool hasX() const noexcept
+    {
+        return m_hasX;
+    }
+
+    /**
+     * @brief Sets whether the event includes a value for the X axis.
+     *
+     * @note Applicable to all sources.
+     */
+    void setHasX(bool hasX) noexcept
+    {
+        m_hasX = hasX;
+    }
+
+    // TODO: add doc
+    bool naturalX() const noexcept
+    {
+        return m_naturalX;
+    }
+
+    void setNaturalX(bool natural) noexcept
+    {
+        m_naturalX = natural;
+    }
+
+    /**
+     * @brief Indicates whether the event includes a value for the Y axis.
+     *
+     * @note Applicable to all sources.
+     */
+    bool hasY() const noexcept
+    {
+        return m_hasY;
+    }
+
+    /**
+     * @brief Sets whether the event includes a value for the Y axis.
+     *
+     * @note Applicable to all sources.
+     */
+    void setHasY(bool hasY) noexcept
+    {
+        m_hasY = hasY;
+    }
+
+    // TODO: add doc
+    bool naturalY() const noexcept
+    {
+        return m_naturalY;
+    }
+
+    void setNaturalY(bool natural) noexcept
+    {
+        m_naturalY = natural;
+    }
+
+    /**
      * @brief Sets the scroll axes values.
+     *
+     * @note Applicable to all sources.
      */
     void setAxes(const SkPoint &axes) noexcept
     {
@@ -64,15 +137,18 @@ public:
 
     /**
      * @brief Sets the scroll axes values.
+     *
+     * @note Applicable to all sources.
      */
     void setAxes(Float32 x, Float32 y) noexcept
     {
-        m_axes.fX = x;
-        m_axes.fY = y;
+        m_axes.set(x, y);
     }
 
     /**
      * @brief Sets the scroll value along the x-axis.
+     *
+     * @note Applicable to all sources.
      */
     void setX(Float32 x) noexcept
     {
@@ -81,6 +157,8 @@ public:
 
     /**
      * @brief Sets the scroll value along the y-axis.
+     *
+     * @note Applicable to all sources.
      */
     void setY(Float32 y) noexcept
     {
@@ -89,6 +167,8 @@ public:
 
     /**
      * @brief Gets the scroll axes values.
+     *
+     * @note Applicable to all sources.
      */
     const SkPoint &axes() const noexcept
     {
@@ -96,59 +176,60 @@ public:
     }
 
     /**
-     * @brief Sets the high-resolution scroll axes values.
-     */
-    void setAxes120(const SkPoint &axes) noexcept
-    {
-        m_axes120 = axes;
-    }
-
-    /**
-     * @brief Sets the high-resolution scroll axes values.
-     */
-    void setAxes120(Float32 x, Float32 y) noexcept
-    {
-        m_axes120.fX = x;
-        m_axes120.fY = y;
-    }
-
-    /**
-     * @brief Sets the high-resolution scroll value along the x-axis.
-     */
-    void set120X(Float32 x) noexcept
-    {
-        m_axes120.fX = x;
-    }
-
-    /**
-     * @brief Sets the high-resolution scroll value along the y-axis.
-     */
-    void set120Y(Float32 y) noexcept
-    {
-        m_axes120.fY = y;
-    }
-
-    /**
-     * @brief Gets the high-resolution scroll axes values.
+     * @brief Sets the discrete scroll axes values.
      *
-     * A value that is a fraction of ±120 indicates a wheel movement less than one logical click, a caller should either scroll by
-     * the respective fraction of the normal scroll distance or accumulate that value until a multiple of 120 is reached.
-     *
-     * @note Only for events with a @ref Wheel source.
+     * @see discreteAxes()
      */
-    const SkPoint &axes120() const noexcept
+    void setDiscreteAxes(const SkIPoint &axes) noexcept
     {
-        return m_axes120;
+        m_axesDiscrete = axes;
     }
 
-    bool isKinetic() const noexcept
+    /**
+     * @brief Sets the discrete scroll axes values using individual x and y components.
+     *
+     * @see discreteAxes()
+     */
+    void setDiscreteAxes(Int32 x, Int32 y) noexcept
     {
-        return m_isKinetic;
+        m_axesDiscrete.set(x, y);
     }
 
-    void setKinetic(bool kinetic) noexcept
+    /**
+     * @brief Sets the discrete scroll value along the x-axis.
+     *
+     * @see discreteAxes()
+     */
+    void setDiscreteX(Int32 x) noexcept
     {
-        m_isKinetic = kinetic;
+        m_axesDiscrete.fX = x;
+    }
+
+    /**
+     * @brief Sets the discrete scroll value along the y-axis.
+     *
+     * @see discreteAxes()
+     */
+    void setDiscreteY(Int32 y) noexcept
+    {
+        m_axesDiscrete.fY = y;
+    }
+
+    /**
+     * @brief Retrieves the discrete scroll axes values.
+     *
+     * - If the source is @ref WheelLegacy, the values represent physical mouse wheel clicks.
+     *
+     * - If the source is @ref Wheel, the property contains high-resolution scroll axis values:
+     *   A value that is a fraction of ±120 indicates a wheel movement smaller than one logical click.
+     *   The caller should either scroll by the respective fraction of the normal scroll distance or
+     *   accumulate the value until it reaches a multiple of 120.
+     *
+     * Ignore this value for other source types.
+     */
+    const SkIPoint &discreteAxes() const noexcept
+    {
+        return m_axesDiscrete;
     }
 
     /**
@@ -169,9 +250,15 @@ public:
 
 protected:
     SkPoint m_axes;
-    SkPoint m_axes120;
+    SkIPoint m_axesDiscrete;
     Source m_source;
-    bool m_isKinetic;
+    bool m_hasX;
+    bool m_hasY;
+    bool m_naturalX;
+    bool m_naturalY;
+private:
+    friend class LInputBackend;
+    void notify();
 };
 
 #endif // AKPOINTERAXISEVENT_H

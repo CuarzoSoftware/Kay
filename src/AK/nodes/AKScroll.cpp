@@ -27,24 +27,24 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
     m_kineticYAnim.setOnUpdateCallback([this](AKAnimation *a){
         if (!m_fingersDownY)
         {
-            if (-m_slot.layout().position(YGEdgeTop).value - m_vel.fY < m_contentBounds.fTop)
+            if (-offsetY() - m_vel.fY < m_contentBounds.fTop)
             {
                 m_vel.fY *= std::exp(-5.f * a->value());
                 m_slot.layout().setPosition(YGEdgeTop,
-                    m_slot.layout().position(YGEdgeTop).value * (1.f - a->value()) + m_contentBounds.fTop * a->value());
+                    offsetY() * (1.f - a->value()) + m_contentBounds.fTop * a->value());
             }
-            if (-m_slot.layout().position(YGEdgeTop).value - m_vel.fY + layout().calculatedHeight() > m_contentBounds.fBottom)
+            if (-offsetY() - m_vel.fY + layout().calculatedHeight() > m_contentBounds.fBottom)
             {
                 m_vel.fY *= std::exp(-5.f * a->value());
                 m_slot.layout().setPosition(YGEdgeTop,
-                    m_slot.layout().position(YGEdgeTop).value * (1.f - a->value()) + (-m_contentBounds.fBottom + layout().calculatedHeight()) * a->value());
+                    offsetY() * (1.f - a->value()) + (-m_contentBounds.fBottom + layout().calculatedHeight()) * a->value());
             }
             else
             {
                 m_vel.fY *= std::exp(-AKTheme::ScrollKineticFiction * a->value());
             }
 
-            updateViewport();
+            moveYPrivate(m_vel.fY);
             repaint();
         }
         else {
@@ -54,31 +54,31 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
 
     m_kineticYAnim.setOnFinishCallback([this](AKAnimation *){
         m_vel.fY = 0.f;
-        updateViewport();
+        moveYPrivate(m_vel.fY);
         repaint();
     });
 
     m_kineticXAnim.setOnUpdateCallback([this](AKAnimation *a){
         if (!m_fingersDownX)
-        {
-            if (-m_slot.layout().position(YGEdgeLeft).value < m_contentBounds.fLeft)
+        {                         
+            if (-offsetX() < m_contentBounds.fLeft)
             {
                 m_vel.fX *= std::exp(-5.f * a->value());
                 m_slot.layout().setPosition(YGEdgeLeft,
-                                            m_slot.layout().position(YGEdgeLeft).value * (1.f - a->value()) + m_contentBounds.fLeft * a->value());
+                                            offsetX() * (1.f - a->value()) + m_contentBounds.fLeft * a->value());
             }
-            if (-m_slot.layout().position(YGEdgeLeft).value + layout().calculatedWidth() > m_contentBounds.fRight)
+            if (-offsetX() + layout().calculatedWidth() > m_contentBounds.fRight)
             {
                 m_vel.fX *= std::exp(-5.f * a->value());
                 m_slot.layout().setPosition(YGEdgeLeft,
-                                            m_slot.layout().position(YGEdgeLeft).value * (1.f - a->value()) + (-m_contentBounds.fRight + layout().calculatedWidth()) * a->value());
+                                            offsetX() * (1.f - a->value()) + (-m_contentBounds.fRight + layout().calculatedWidth()) * a->value());
             }
             else
             {
                 m_vel.fX *= std::exp(-AKTheme::ScrollKineticFiction * a->value());
             }
 
-            updateViewport();
+            moveXPrivate(m_vel.fX);
             repaint();
         }
         else {
@@ -88,22 +88,22 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
 
     m_kineticXAnim.setOnFinishCallback([this](AKAnimation *){
         m_vel.fX = 0.f;
-        updateViewport();
+        moveXPrivate(m_vel.fX);
         repaint();
     });
 }
 
-Int32 AKScroll::offsetX() const noexcept
+SkScalar AKScroll::offsetX() const noexcept
 {
     return m_slot.layout().position(YGEdgeLeft).value;
 }
 
-Int32 AKScroll::offsetY() const noexcept
+SkScalar AKScroll::offsetY() const noexcept
 {
     return m_slot.layout().position(YGEdgeTop).value;
 }
 
-void AKScroll::setOffset(Int32 x, Int32 y) noexcept
+void AKScroll::setOffset(SkScalar x, SkScalar y) noexcept
 {
     m_slot.layout().setPosition(YGEdgeTop, y);
     m_slot.layout().setPosition(YGEdgeLeft, x);
@@ -126,14 +126,14 @@ void AKScroll::setOffsetXPercent(SkScalar x) noexcept
 {
     if (x < 0.f) x = 0.f;
     else if (x > 100.f) x = 100.f;
-    setOffsetX(-m_contentBounds.width() * x + m_contentBounds.fLeft);
+    setOffsetX(-m_contentBounds.width() * x + SkScalar(m_contentBounds.fLeft));
 }
 
 void AKScroll::setOffsetYPercent(SkScalar y) noexcept
 {
     if (y < 0.f) y = 0.f;
     else if (y > 100.f) y = 100.f;
-    setOffsetY(-m_contentBounds.height() * y + m_contentBounds.fTop);
+    setOffsetY(-m_contentBounds.height() * y + SkScalar(m_contentBounds.fTop));
 }
 
 static void contentBounds(AKNode *root, SkIRect *bounds) noexcept
@@ -179,62 +179,10 @@ void AKScroll::calculateContentBounds() noexcept
         m_contentBounds.fTop = 0;
 }
 
-void AKScroll::updateViewport() noexcept
-{
-    m_slot.layout().setPosition(YGEdgeLeft, m_slot.layout().position(YGEdgeLeft).value + m_vel.x());
-    m_slot.layout().setPosition(YGEdgeTop, m_slot.layout().position(YGEdgeTop).value + m_vel.y());
-    updateBars();
-}
-
-void AKScroll::updateBars() noexcept
-{
-    if (layout().calculatedWidth() >= m_contentBounds.width())
-        m_hBar.setSizePercent(1.f);
-    else
-        m_hBar.setSizePercent(layout().calculatedWidth() / m_contentBounds.width());
-
-    if (layout().calculatedHeight() >= m_contentBounds.height())
-        m_vBar.setSizePercent(1.f);
-    else
-        m_vBar.setSizePercent(layout().calculatedHeight() / m_contentBounds.height());
-
-    SkScalar x { -(m_slot.layout().position(YGEdgeLeft).value - m_contentBounds.fLeft) };
-    SkScalar realWidth { m_contentBounds.width() - layout().calculatedWidth() };
-
-    if (realWidth <= 0.f)
-        m_hBar.setPosPercent(0.f);
-    else
-    {
-        x = x/realWidth;
-        m_hBar.setPosPercent(x);
-
-        if (x < 0.f)
-            m_hBar.setSizePercent(m_hBar.sizePercent() + x * (1.f - m_hBar.sizePercent()));
-        else if (x > 1.f)
-            m_hBar.setSizePercent(m_hBar.sizePercent() + (1.f - x) * (1.f - m_hBar.sizePercent()));
-    }
-
-    SkScalar y { -(m_slot.layout().position(YGEdgeTop).value - m_contentBounds.fTop) };
-    SkScalar realHeight { m_contentBounds.height() - layout().calculatedHeight() };
-
-    if (realHeight <= 0.f)
-        m_vBar.setPosPercent(0.f);
-    else
-    {
-        y = y/realHeight;
-        m_vBar.setPosPercent(y);
-
-        if (y < 0.f)
-            m_vBar.setSizePercent(m_vBar.sizePercent() + y * (1.f - m_vBar.sizePercent()));
-        else if (y > 1.f)
-            m_vBar.setSizePercent(m_vBar.sizePercent() + (1.f - y) * (1.f - m_vBar.sizePercent()));
-    }
-}
-
 void AKScroll::applyConstraints() noexcept
 {
-    SkScalar x { m_slot.layout().position(YGEdgeLeft).value };
-    SkScalar y { m_slot.layout().position(YGEdgeTop).value };
+    SkScalar x { offsetX() };
+    SkScalar y { offsetY() };
 
     if (-x < m_contentBounds.fLeft)
         x = m_contentBounds.fLeft;
@@ -248,88 +196,163 @@ void AKScroll::applyConstraints() noexcept
 
     m_slot.layout().setPosition(YGEdgeTop, y);
     m_slot.layout().setPosition(YGEdgeLeft, x);
-    updateBars();
+    updateBarXPrivate();
+    updateBarYPrivate();
 }
 
 void AKScroll::pointerScrollEvent(const AKPointerScrollEvent &e)
 {
     calculateContentBounds();
 
-    if (!e.isKinetic())
+    SkScalar dx { 0.f }, dy { 0.f };
+
+    // Invert axes if needed
+
+    if (e.hasX())
     {
-        m_vel = e.axes() * 3.f;
-        updateViewport();
+        if (e.naturalX())
+            dx = e.axes().x() * AKTheme::ScrollKineticSpeed;
+        else
+            dx = -e.axes().x() * AKTheme::ScrollKineticSpeed;
+    }
+
+    if (e.hasY())
+    {
+        if (e.naturalY())
+            dy = e.axes().y() * AKTheme::ScrollKineticSpeed;
+        else
+            dy = -e.axes().y() * AKTheme::ScrollKineticSpeed;
+    }
+
+    if (e.source() != AKPointerScrollEvent::Finger)
+    {
         m_vel.set(0.f, 0.f);
+
+        if (e.source() != AKPointerScrollEvent::Continuous)
+        {
+            dx *= 4.f;
+            dy *= 4.f;
+        }
+
+        // TODO: Handle each source type case ?
+
+        if (e.hasX())
+            moveXPrivate(dx);
+
+        if (e.hasY())
+            moveYPrivate(dy);
+
         applyConstraints();
         repaint();
         return;
     }
 
-    m_fingersDownX = e.axes().x() != 0.f;
-    m_fingersDownY = e.axes().y() != 0.f;
-
-    if (m_fingersDownX)
+    if (e.hasX())
     {
-        m_vel.fX = e.axes().x();
+        // If == 0.f it means kinetic stop (fingers released)
+        m_fingersDownX = e.axes().x() != 0.f;
 
-        SkScalar x { m_slot.layout().position(YGEdgeLeft).value + m_vel.x() };
-        if (-x < m_contentBounds.fLeft && m_vel.fX > 0.f)
+        if (m_fingersDownX)
         {
-            SkScalar diff { std::abs(m_contentBounds.fLeft + x) };
-            if (diff > AKTheme::ScrollBounceOffsetLimit)
-                diff = AKTheme::ScrollBounceOffsetLimit;
-            const SkScalar percent { std::pow(1.f - diff/AKTheme::ScrollBounceOffsetLimit, 4.f) };
-            m_vel.fX *= percent;
+            m_lastFingerTimeX = AKTime::ms();
+            m_kineticXAnim.stop();
+
+            m_vel.fX = dx;
+
+            const SkScalar futureX { offsetX() + m_vel.x() };
+
+            // The further the user tries to scroll beyond the edges the less delta (elastic)
+
+            if (-futureX < m_contentBounds.fLeft && m_vel.fX > 0.f)
+            {
+                SkScalar diff { std::abs(m_contentBounds.fLeft + futureX) };
+
+                if (diff > AKTheme::ScrollBounceOffsetLimit)
+                    diff = AKTheme::ScrollBounceOffsetLimit;
+
+                const SkScalar brake { std::pow(1.f - diff/AKTheme::ScrollBounceOffsetLimit, 4.f) };
+                m_vel.fX *= brake;
+            }
+            else if (-futureX + layout().calculatedWidth() > m_contentBounds.fRight && m_vel.fX < 0.f)
+            {
+                SkScalar diff { std::abs(m_contentBounds.fRight + futureX - layout().calculatedWidth()) };
+
+                if (diff > AKTheme::ScrollBounceOffsetLimit)
+                    diff = AKTheme::ScrollBounceOffsetLimit;
+
+                const SkScalar brake { std::pow(1.f - diff/AKTheme::ScrollBounceOffsetLimit, 4.f) };
+                m_vel.fX *= brake;
+            }
+
+            moveXPrivate(m_vel.fX);
         }
-        else if (-x + layout().calculatedWidth() > m_contentBounds.fRight && m_vel.fX < 0.f)
+
+        // Kinetic stop!
+        else
         {
-            SkScalar diff { std::abs(m_contentBounds.fRight + x - layout().calculatedWidth()) };
-            if (diff > AKTheme::ScrollBounceOffsetLimit)
-                diff = AKTheme::ScrollBounceOffsetLimit;
-            const SkScalar percent { std::pow(1.f - diff/AKTheme::ScrollBounceOffsetLimit, 4.f) };
-            m_vel.fX *= percent;
+            const bool fingersStillForTooLong { AKTime::ms() - m_lastFingerTimeX > 64 };
+            const bool outOfBounds { -offsetX() < m_contentBounds.fLeft || -offsetX() + layout().calculatedWidth() > m_contentBounds.fRight };
+
+            if (outOfBounds || !fingersStillForTooLong)
+            {
+                m_kineticXAnim.setDuration(std::min(std::max(AKTheme::ScrollKineticInertia * SkScalarAbs(m_vel.fX), 1000.f), 3000.f));
+                m_kineticXAnim.start();
+            }
+            else
+                m_kineticXAnim.stop();
         }
     }
 
-    if (m_fingersDownY)
+    if (e.hasY())
     {
-        m_vel.fY = e.axes().y();
-        SkScalar y { m_slot.layout().position(YGEdgeTop).value + m_vel.y() };
-        if (-y < m_contentBounds.fTop && m_vel.fY > 0.f)
+        m_fingersDownY = e.axes().y() != 0.f;
+
+        if (m_fingersDownY)
         {
-            SkScalar diff { std::abs(m_contentBounds.fTop + y) };
-            if (diff > AKTheme::ScrollBounceOffsetLimit)
-                diff = AKTheme::ScrollBounceOffsetLimit;
-            const SkScalar percent { std::pow(1.f - diff/AKTheme::ScrollBounceOffsetLimit, 4.f) };
-            m_vel.fY *= percent;
+            m_lastFingerTimeY = AKTime::ms();
+            m_kineticYAnim.stop();
+
+            m_vel.fY = dy;
+
+            const SkScalar futureY { offsetY() + m_vel.y() };
+
+            // The further the user tries to scroll beyond the edges the less delta (elastic)
+
+            if (-futureY < m_contentBounds.fTop && m_vel.fY > 0.f)
+            {
+                SkScalar diff { std::abs(m_contentBounds.fTop + futureY) };
+                if (diff > AKTheme::ScrollBounceOffsetLimit)
+                    diff = AKTheme::ScrollBounceOffsetLimit;
+                const SkScalar brake { std::pow(1.f - diff/AKTheme::ScrollBounceOffsetLimit, 4.f) };
+                m_vel.fY *= brake;
+            }
+            else if (-futureY + layout().calculatedHeight() > m_contentBounds.fBottom && m_vel.fY < 0.f)
+            {
+                SkScalar diff { std::abs(m_contentBounds.fBottom + futureY - layout().calculatedHeight()) };
+                if (diff > AKTheme::ScrollBounceOffsetLimit)
+                    diff = AKTheme::ScrollBounceOffsetLimit;
+                const SkScalar brake { std::pow(1.f - diff/AKTheme::ScrollBounceOffsetLimit, 4.f) };
+                m_vel.fY *= brake;
+            }
+
+            moveYPrivate(m_vel.fY);
         }
-        else if (-y + layout().calculatedHeight() > m_contentBounds.fBottom && m_vel.fY < 0.f)
+        // Kinetic stop!
+        else
         {
-            SkScalar diff { std::abs(m_contentBounds.fBottom + y - layout().calculatedHeight()) };
-            if (diff > AKTheme::ScrollBounceOffsetLimit)
-                diff = AKTheme::ScrollBounceOffsetLimit;
-            const SkScalar percent { std::pow(1.f - diff/AKTheme::ScrollBounceOffsetLimit, 4.f) };
-            m_vel.fY *= percent;
+            const bool fingersStillForTooLong { AKTime::ms() - m_lastFingerTimeY > 64 };
+            const bool outOfBounds { -offsetY() - m_vel.fY < m_contentBounds.fTop || -offsetY() - m_vel.fY + layout().calculatedHeight() > m_contentBounds.fBottom };
+
+            if (outOfBounds || !fingersStillForTooLong)
+            {
+                m_kineticYAnim.setDuration(std::min(std::max(AKTheme::ScrollKineticInertia * SkScalarAbs(m_vel.fY), 1000.f), 3000.f));
+                m_kineticYAnim.start();
+            }
+            else
+                m_kineticYAnim.stop();
         }
     }
 
-    if (!m_fingersDownY)
-    {
-        m_kineticYAnim.setDuration(std::min(std::max(AKTheme::ScrollKineticFictionTime * SkScalarAbs(m_vel.fY), 1000.f), 3000.f));
-        m_kineticYAnim.start();
-    }
-    else
-        m_kineticYAnim.stop();
-
-    if (!m_fingersDownX)
-    {
-        m_kineticXAnim.setDuration(std::min(std::max(AKTheme::ScrollKineticFictionTime * SkScalarAbs(m_vel.fX), 1000.f), 3000.f));
-        m_kineticXAnim.start();
-    }
-    else
-        m_kineticXAnim.stop();
-
-    updateViewport();
     repaint();
     AKContainer::pointerScrollEvent(e);
 }
@@ -361,12 +384,79 @@ bool AKScroll::eventFilter(const AKEvent &ev, AKObject &t)
 
     const auto &e { static_cast<const AKKeyboardKeyEvent&>(ev) };
 
-    if (e.keyCode() == KEY_DOWN)
-        m_slot.layout().setPosition(YGEdgeTop, m_slot.layout().position(YGEdgeTop).value - 10);
-    else if (e.keyCode() == KEY_UP)
-        m_slot.layout().setPosition(YGEdgeTop, m_slot.layout().position(YGEdgeTop).value + 10);
+    if (e.state() == AKKeyboardKeyEvent::Pressed)
+    {
+        constexpr SkScalar delta { 128.f };
 
-    updateBars();
+        if (e.keyCode() == KEY_DOWN)
+            setOffsetY(offsetY() - delta);
+        else if (e.keyCode() == KEY_UP)
+            setOffsetY(offsetY() + delta);
+        else if (e.keyCode() == KEY_RIGHT)
+            setOffsetX(offsetX() - delta);
+        else if (e.keyCode() == KEY_LEFT)
+            setOffsetX(offsetX() + delta);
+    }
 
     return AKContainer::eventFilter(e, t);
+}
+
+void AKScroll::updateBarXPrivate() noexcept
+{
+    if (layout().calculatedWidth() >= m_contentBounds.width())
+        m_hBar.setSizePercent(1.f);
+    else
+        m_hBar.setSizePercent(layout().calculatedWidth() / m_contentBounds.width());
+
+    SkScalar x { -(offsetX() - m_contentBounds.fLeft) };
+    SkScalar realWidth { m_contentBounds.width() - layout().calculatedWidth() };
+
+    if (realWidth <= 0.f)
+        m_hBar.setPosPercent(0.f);
+    else
+    {
+        x = x/realWidth;
+        m_hBar.setPosPercent(x);
+
+        if (x < 0.f)
+            m_hBar.setSizePercent(m_hBar.sizePercent() + x * (1.f - m_hBar.sizePercent()));
+        else if (x > 1.f)
+            m_hBar.setSizePercent(m_hBar.sizePercent() + (1.f - x) * (1.f - m_hBar.sizePercent()));
+    }
+}
+
+void AKScroll::updateBarYPrivate() noexcept
+{
+    if (layout().calculatedHeight() >= m_contentBounds.height())
+        m_vBar.setSizePercent(1.f);
+    else
+        m_vBar.setSizePercent(layout().calculatedHeight() / m_contentBounds.height());
+
+    SkScalar y { -(offsetY() - m_contentBounds.fTop) };
+    SkScalar realHeight { m_contentBounds.height() - layout().calculatedHeight() };
+
+    if (realHeight <= 0.f)
+        m_vBar.setPosPercent(0.f);
+    else
+    {
+        y = y/realHeight;
+        m_vBar.setPosPercent(y);
+
+        if (y < 0.f)
+            m_vBar.setSizePercent(m_vBar.sizePercent() + y * (1.f - m_vBar.sizePercent()));
+        else if (y > 1.f)
+            m_vBar.setSizePercent(m_vBar.sizePercent() + (1.f - y) * (1.f - m_vBar.sizePercent()));
+    }
+}
+
+void AKScroll::moveXPrivate(SkScalar dx) noexcept
+{
+    m_slot.layout().setPosition(YGEdgeLeft, offsetX() + dx);
+    updateBarXPrivate();
+}
+
+void AKScroll::moveYPrivate(SkScalar dy) noexcept
+{
+    m_slot.layout().setPosition(YGEdgeTop, offsetY() + dy);
+    updateBarYPrivate();
 }

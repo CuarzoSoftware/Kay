@@ -76,8 +76,9 @@ public:
     virtual sk_sp<SkImage>  textCaretVThreePatchImage               (Int32 scale) noexcept;
 
     /* AKScroll */
-    static inline SkScalar  ScrollKineticFiction                    { 0.1f };
-    static inline SkScalar  ScrollKineticFictionTime                { 25.f };
+    static inline SkScalar  ScrollKineticSpeed                      { 1.5f };
+    static inline SkScalar  ScrollKineticFiction                    { 0.15f };
+    static inline SkScalar  ScrollKineticInertia                    { 10.f };
     static inline SkScalar  ScrollBounceOffsetLimit                 { 96.f };
     static inline SkScalar  ScrollBarHandleWidth                    { 7.f };
     static inline SkScalar  ScrollBarHandleWidthHover               { 11.f };

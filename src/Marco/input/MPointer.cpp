@@ -49,7 +49,7 @@ void MPointer::setCursor(AKCursor cursor) noexcept
 
     if (!image)
     {
-        assert("No default cursor. Marco requires at least one cursor icon theme." && cursor != AKCursor::Default);
+        assert("Marco requires a default cursor theme. See https://wiki.archlinux.org/title/Cursor_themes#The_default_cursor_theme" && cursor != AKCursor::Default);
         setCursor(AKCursor::Default);
         return;
     }
