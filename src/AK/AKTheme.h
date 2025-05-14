@@ -77,7 +77,7 @@ public:
 
     /* AKScroll */
     static inline SkScalar  ScrollKineticSpeed                      { 1.5f };
-    static inline SkScalar  ScrollKineticFiction                    { 0.15f };
+    static inline SkScalar  ScrollKineticFriction                   { 0.15f };
     static inline SkScalar  ScrollKineticInertia                    { 10.f };
     static inline SkScalar  ScrollBounceOffsetLimit                 { 96.f };
     static inline SkScalar  ScrollBarHandleWidth                    { 7.f };

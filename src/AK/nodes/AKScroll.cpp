@@ -41,7 +41,7 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
             }
             else
             {
-                m_vel.fY *= std::exp(-AKTheme::ScrollKineticFiction * a->value());
+                m_vel.fY *= std::exp(-AKTheme::ScrollKineticFriction * a->value());
             }
 
             moveYPrivate(m_vel.fY);
@@ -75,7 +75,7 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
             }
             else
             {
-                m_vel.fX *= std::exp(-AKTheme::ScrollKineticFiction * a->value());
+                m_vel.fX *= std::exp(-AKTheme::ScrollKineticFriction * a->value());
             }
 
             moveXPrivate(m_vel.fX);
