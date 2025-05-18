@@ -79,6 +79,7 @@ public:
 
     // Reset after unmap
     void setGrab(const AKInputEvent *event) noexcept;
+    AKInputEvent *grab() const noexcept;
 
     const SkIRect &assignedRect() const noexcept;
 

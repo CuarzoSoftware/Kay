@@ -9,6 +9,6 @@ int main(void)
     setenv("KAY_DEBUG", "3", 0);
 
     Application app;
-    AKTimer::OneShoot(10000, [&app](AKTimer*){ app.finish(); });
+    AKTimer::OneShot(10000, [&app](AKTimer*){ app.finish(); });
     return app.exec();
 }

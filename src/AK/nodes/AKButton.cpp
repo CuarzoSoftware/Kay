@@ -83,7 +83,7 @@ void AKButton::pointerButtonEvent(const AKPointerButtonEvent &event)
         enablePointerGrab(event.state());
 
         if (triggerOnClicked)
-            on.clicked.notify();
+            onClick.notify(event);
 
         event.accept();
     }

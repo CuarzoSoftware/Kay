@@ -39,7 +39,7 @@ public:
      * @param timeoutMs The timeout in milliseconds.
      * @param callback The callback function to be called when the timer event is triggered.
      */
-    static void OneShoot(UInt64 timeoutMs, const Callback &callback);
+    static void OneShot(UInt64 timeoutMs, const Callback &callback);
 
     AKCLASS_NO_COPY(AKTimer)
 

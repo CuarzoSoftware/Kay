@@ -118,6 +118,8 @@ public:
      */
     const SkIPoint &pos() const noexcept;
 
+    bool isChildOfRole(Role role) const noexcept;
+
     class Imp;
     Imp *imp() const noexcept;
 private:

@@ -1,3 +1,4 @@
+#include "AK/AKLog.h"
 #include <AK/events/AKWindowCloseEvent.h>
 #include <Marco/private/MPopupPrivate.h>
 #include <Marco/private/MToplevelPrivate.h>

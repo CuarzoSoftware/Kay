@@ -34,7 +34,10 @@ bool MPopup::setParent(MSurface *parent) noexcept
     if (parent)
     {
         if (parent->role() != Role::Toplevel && parent->role() != Role::Popup && parent->role() != Role::LayerSurface)
+        {
+            AKLog::error("[MPopup::setParent] Popups can only be child of MToplevel, MPopup or MLayerSurface roles.");
             return false;
+        }
 
         // Check circular dependency
         if (parent->role() == Role::Popup)
@@ -162,6 +165,11 @@ void MPopup::setGrab(const AKInputEvent *event) noexcept
     update();
 }
 
+AKInputEvent *MPopup::grab() const noexcept
+{
+    return imp()->grab.get();
+}
+
 const SkIRect &MPopup::assignedRect() const noexcept
 {
     return imp()->currentAssignedRect;
@@ -211,12 +219,14 @@ void MPopup::onUpdate() noexcept
 
     if (imp()->paramsChanged)
     {
-        imp()->destroy();
         imp()->paramsChanged = false;
+        imp()->destroy();
     }
 
     if (!flags.check(SF::UserMapped) || !parent() || !parent()->mapped())
+    {
         return imp()->destroy();
+    }
 
     if (flags.check(SF::PendingNullCommit))
     {

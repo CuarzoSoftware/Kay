@@ -1,5 +1,7 @@
 #include <Marco/private/MSubsurfacePrivate.h>
 #include <Marco/private/MSurfacePrivate.h>
+#include <Marco/roles/MPopup.h>
+#include <Marco/roles/MToplevel.h>
 #include <Marco/MApplication.h>
 
 using namespace AK;
@@ -143,6 +145,33 @@ bool MSubsurface::placeBelow(MSubsurface *subSurface) noexcept
 const SkIPoint &MSubsurface::pos() const noexcept
 {
     return imp()->pos;
+}
+
+bool MSubsurface::isChildOfRole(Role role) const noexcept
+{
+    MSurface *p { parent() };
+
+    while (p)
+    {
+        if (p->role() == role)
+            return true;
+
+        switch (p->role()) {
+        case Role::LayerSurface:
+            return false;
+            break;
+        case Role::Popup:
+            p = static_cast<MPopup*>(p)->parent();
+            break;
+        case Role::Toplevel:
+            p = static_cast<MToplevel*>(p)->parentToplevel();
+            break;
+        default:
+            return false;
+        }
+    }
+
+    return false;
 }
 
 void MSubsurface::setPos(const SkIPoint &pos) noexcept

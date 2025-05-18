@@ -29,27 +29,27 @@ public:
         setPos({-size, -size});
         setMapped(true);
 
-        toggleMap.on.clicked.subscribe(this, [this](){
+        toggleMap.onClick.subscribe(this, [this](const auto &){
             setMapped(false);
-            AKTimer::OneShoot(1000, [this](AKTimer*){
+            AKTimer::OneShot(1000, [this](AKTimer*){
                 setMapped(true);
             });
         });
 
-        addButton.on.clicked.subscribe(this, [this](){
+        addButton.onClick.subscribe(this, [this](const auto &){
             SubWindow *w = new SubWindow(this, surfaceSize().width(), subSurfaces().size() + 1);
             w->addButton.setVisible(false);
             w->setPos(-(surfaceSize().width()/2.5) * w->n, -(surfaceSize().width()/2.5) * w->n + 20);
         });
 
-        upButton.on.clicked.subscribe(this, [this](){
+        upButton.onClick.subscribe(this, [this](const auto &){
 
             if (this->parent()->subSurfaces().back() == this)
                 return;
             placeAbove(*std::next(parentLink()));
         });
 
-        downButton.on.clicked.subscribe(this, [this](){
+        downButton.onClick.subscribe(this, [this](const auto &){
 
             if (this->parent()->subSurfaces().front() == this)
                 return;
@@ -73,11 +73,11 @@ public:
         layout().setPadding(YGEdgeAll, 32.f);
         layout().setGap(YGGutterAll, 32.f);
 
-        addButton.on.clicked.subscribe(this, [this](){
+        addButton.onClick.subscribe(this, [this](const auto &){
             new SubWindow(this, 120, subSurfaces().size());
         });
 
-        animateButton.on.clicked.subscribe(this, [this](){
+        animateButton.onClick.subscribe(this, [this](const auto &){
             animated = !animated;
 
             if (animated)
@@ -86,12 +86,12 @@ public:
                 spinAnimation.stop();
         });
 
-        destroyButton.on.clicked.subscribe(this, [this](){
+        destroyButton.onClick.subscribe(this, [this](const auto &){
             while (!subSurfaces().empty())
                 delete subSurfaces().back();
         });
 
-        exitButton.on.clicked.subscribe(this, [](){exit(0);});
+        exitButton.onClick.subscribe(this, [](const auto &){exit(0);});
 
         spinAnimation.setDuration(10000);
         spinAnimation.setOnUpdateCallback([this](AKAnimation *a){

@@ -838,22 +838,22 @@ public:
             customBackgroundButtonDisabled.setEnabled(false);
             exitButton.setBackgroundColor(AKTheme::SystemRed);
 
-            exitButton.on.clicked.subscribe(&exitButton, [](){
+            exitButton.onClick.subscribe(&exitButton, [](const auto &){
                 compositor()->finish();
             });
 
             scalex1.setBackgroundColor(AKTheme::SystemGreen);
-            scalex1.on.clicked.subscribe(&scalex1, [output](){
+            scalex1.onClick.subscribe(&scalex1, [output](const auto &){
                 output->setScale(1.f);
             });
 
             scalex15.setBackgroundColor(AKTheme::SystemOrange);
-            scalex15.on.clicked.subscribe(&scalex15, [output](){
+            scalex15.onClick.subscribe(&scalex15, [output](const auto &){
                 output->setScale(1.5f);
             });
 
             scalex2.setBackgroundColor(AKTheme::SystemYellow);
-            scalex2.on.clicked.subscribe(&scalex2, [output](){
+            scalex2.onClick.subscribe(&scalex2, [output](const auto &){
                 output->setScale(2.f);
             });
 
@@ -868,7 +868,7 @@ public:
             assetsView.layout().setHeight(64);
             assetsView.setSizeMode(AKImageFrame::SizeMode::Contain);
 
-            imgTransform.on.clicked.subscribe(&imgTransform, [this](){
+            imgTransform.onClick.subscribe(&imgTransform, [this](const auto &){
                 static const char* transformName[] {
                     "Normal",
                     "Rotated90",
@@ -888,7 +888,7 @@ public:
                 imgTransform.setText(transformName[Int32(assetsView.srcTransform())]);
             });
 
-            imgAlignment.on.clicked.subscribe(&imgAlignment, [this](){
+            imgAlignment.onClick.subscribe(&imgAlignment, [this](const auto &){
 
                 static Int32 current { 0 };
 
@@ -917,7 +917,7 @@ public:
                 imgAlignment.setText(alignmentName[current]);
             });
 
-            imgSizeMode.on.clicked.subscribe(&imgSizeMode, [this](){
+            imgSizeMode.onClick.subscribe(&imgSizeMode, [this](const auto &){
                 static const char* sizeModeName[] {
                     "Contain",
                     "Cover",
@@ -938,7 +938,7 @@ public:
             instructions.setTextStyle(textStyle);
 
             AKWeak buttonRef { &customBackgroundButton };
-            AKTimer::OneShoot(1000, [buttonRef](AKTimer *timer){
+            AKTimer::OneShot(1000, [buttonRef](AKTimer *timer){
                 if (buttonRef)
                 {
                     buttonRef->setBackgroundColor(0xFF000000 | rand());

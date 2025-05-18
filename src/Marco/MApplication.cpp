@@ -9,6 +9,7 @@
 #include <Marco/private/MPopupPrivate.h>
 #include <Marco/private/MToplevelPrivate.h>
 #include <Marco/private/MLayerSurfacePrivate.h>
+#include <Marco/roles/MSubsurface.h>
 #include <Marco/MTheme.h>
 
 #include <AK/input/AKKeyboard.h>
@@ -288,6 +289,14 @@ void MApplication::wl_pointer_button(void */*data*/, wl_pointer */*pointer*/, UI
     auto &p { app()->pointer() };
     if (!p.focus()) return;
 
+    /*
+    if (p.focus()->role() != MSurface::Role::Popup || (p.focus()->role() == MSurface::Role::SubSurface && !static_cast<MSubsurface*>(p.focus())->isChildOfRole(MSurface::Role::Popup)))
+    {
+        for (auto *surface : app()->surfaces())
+            if (surface->role() == MSurface::Role::Popup)
+                surface->setMapped(false);
+    }*/
+
     if (state == WL_POINTER_BUTTON_STATE_PRESSED)
         p.m_pressedButtons.insert(button);
     else
@@ -487,7 +496,12 @@ void MApplication::wl_keyboard_leave(void */*data*/, wl_keyboard */*keyboard*/, 
         app()->keyboard().updateKeyState(akKeyboard().pressedKeyCodes().back(), XKB_KEY_UP);
 
     if (app()->keyboard().focus())
+    {
+        for (MSurface *surf : app()->surfaces())
+            if (surf->role() == MSurface::Role::Popup && !static_cast<MPopup*>(surf)->grab())
+                surf->setMapped(false);
         app()->keyboard().m_focus.reset();
+    }
 }
 
 void MApplication::wl_keyboard_key(void */*data*/, wl_keyboard */*keyboard*/, UInt32 serial, UInt32 time, UInt32 key, UInt32 state)
@@ -643,11 +657,6 @@ void MApplication::updateSurfaces()
 
         updateSurface(surf);
     }
-
-    if (!keyboard().focus())
-        for (MSurface *surf : m_surfaces)
-            if (surf->role() == MSurface::Role::Popup)
-                surf->setMapped(false);
 
     wl_display_flush(wl.display);
 }

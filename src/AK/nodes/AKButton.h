@@ -35,9 +35,7 @@ public:
     void setPressed(bool pressed) noexcept;
     bool pressed() const noexcept { return m_pressed; };
 
-    struct {
-        AKSignal<> clicked;
-    } on;
+    AKSignal<const AKPointerButtonEvent&> onClick;
 
 protected:
     void pointerButtonEvent(const AKPointerButtonEvent &event) override;

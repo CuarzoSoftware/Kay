@@ -1,29 +1,15 @@
 #include <Marco/private/MLayerSurfacePrivate.h>
 #include <Marco/private/MSurfacePrivate.h>
 #include <Marco/MApplication.h>
+#include <AK/AKLog.h>
 
 using namespace AK;
 
-MLayerSurface::MLayerSurface(Layer layer, AKBitset<AKEdge> anchor, Int32 exclusiveZone, MScreen *screen, const std::string &scope) noexcept :
+MLayerSurface::MLayerSurface() noexcept :
     MSurface(Role::LayerSurface)
 {
     assert("zwlr_layer_shell not supported by the compositor" && app()->wayland().layerShell);
     m_imp = std::make_unique<Imp>(*this);
-    imp()->layer = layer;
-    imp()->screen = screen;
-    imp()->scope = scope;
-
-    imp()->layerSurface = zwlr_layer_shell_v1_get_layer_surface(
-        app()->wayland().layerShell,
-        wlSurface(),
-        screen ? screen->wlOutput() : nullptr,
-        layer,
-        scope.c_str());
-
-    zwlr_layer_surface_v1_add_listener(imp()->layerSurface, &Imp::layerSurfaceListener, this);
-
-    setAnchor(anchor);
-    setExclusiveZone(exclusiveZone);
 }
 
 MLayerSurface::~MLayerSurface() noexcept
@@ -35,114 +21,163 @@ MLayerSurface::~MLayerSurface() noexcept
     }
 }
 
+void MLayerSurface::requestAvailableWidth() noexcept
+{
+    if (imp()->requestAvailableWidth)
+        return;
+
+    imp()->requestAvailableWidth = true;
+    update(true);
+}
+
+void MLayerSurface::requestAvailableHeight() noexcept
+{
+    if (imp()->requestAvailableHeight)
+        return;
+
+    imp()->requestAvailableHeight = true;
+    update(true);
+}
+
 bool MLayerSurface::setScreen(MScreen *screen) noexcept
 {
-    return false;
+    if (screen == imp()->pendingScreen)
+        return false;
+
+    imp()->pendingScreen = screen;
+    update();
+    return true;
 }
 
 MScreen *MLayerSurface::screen() const noexcept
 {
-    return imp()->screen;
+    return imp()->pendingScreen;
 }
 
 bool MLayerSurface::setAnchor(AKBitset<AKEdge> edges) noexcept
 {
-    if (imp()->anchor.get() == edges.get())
+    if (imp()->pendingAnchor.get() == edges.get())
         return false;
 
-    imp()->anchor = edges;
-    update();
+    imp()->pendingAnchor = edges;
+    update(true);
     return true;
 }
 
 AKBitset<AKEdge> MLayerSurface::anchor() const noexcept
 {
-    return imp()->anchor;
+    return imp()->pendingAnchor;
 }
 
 bool MLayerSurface::setExclusiveZone(Int32 size) noexcept
 {
-    if (imp()->exclusiveZone == size)
+    if (size < -1)
+    {
+        AKLog::warning("[MLayerSurface::setExclusiveZone] Invalid value %d. Using -1 instead.", size);
+        size = -1;
+    }
+
+    if (imp()->pendingExclusiveZone == size)
         return false;
 
-    imp()->exclusiveZone = size;
-    update();
+    imp()->pendingExclusiveZone = size;
+    update(true);
     return true;
 }
 
 Int32 MLayerSurface::exclusiveZone() const noexcept
 {
-    return imp()->exclusiveZone;
+    return imp()->pendingExclusiveZone;
 }
 
 bool MLayerSurface::setMargin(const SkIRect &margin) noexcept
 {
-    if (imp()->margin == margin)
+    if (imp()->pendingMargin == margin)
         return false;
 
-    imp()->margin = margin;
-    update();
+    imp()->pendingMargin = margin;
+    update(true);
     return true;
 }
 
 const SkIRect &MLayerSurface::margin() const noexcept
 {
-    return imp()->margin;
+    return imp()->pendingMargin;
 }
 
 bool MLayerSurface::setKeyboardInteractivity(KeyboardInteractivity mode) noexcept
 {
-    if (imp()->keyboardInteractivity == mode || (app()->wayland().layerShell.version() < 4 && mode == OnDemand))
+    if (imp()->pendingKeyboardInteractivity == mode)
         return false;
 
-    imp()->keyboardInteractivity = mode;
-    update();
+    if ((app()->wayland().layerShell.version() < 4 && mode == OnDemand))
+    {
+        AKLog::warning("[MLayerSurface::setKeyboardInteractivity] OnDemand option not supported by the compositor. Keeping current value.");
+        return false;
+    }
+
+    imp()->pendingKeyboardInteractivity = mode;
+    update(true);
     return true;
 }
 
 MLayerSurface::KeyboardInteractivity MLayerSurface::keyboardInteractivity() const noexcept
 {
-    return imp()->keyboardInteractivity;
+    return imp()->pendingKeyboardInteractivity;
 }
 
 bool MLayerSurface::setLayer(Layer layer) noexcept
 {
-    if (app()->wayland().layerShell.version() < 2 || imp()->layer == layer)
+    if (imp()->pendingLayer == layer)
         return false;
 
-    imp()->layer = layer;
-    update();
+    if (app()->wayland().layerShell.version() < 2 && imp()->layerSurface)
+        imp()->reset();
+
+    imp()->pendingLayer = layer;
+    update(true);
     return true;
 }
 
 MLayerSurface::Layer MLayerSurface::layer() const noexcept
 {
-    return imp()->layer;
+    return imp()->pendingLayer;
 }
 
 bool MLayerSurface::setExclusiveEdge(AKEdge edge) noexcept
 {
-    if (app()->wayland().layerShell.version() < 5 || imp()->exclusiveEdge == edge)
+    if (imp()->pendingExclusiveEdge == edge)
         return false;
 
-    imp()->exclusiveEdge = edge;
-    update();
+    if (app()->wayland().layerShell.version() < 5)
+    {
+        AKLog::warning("[MLayerSurface::setExclusiveEdge] Request not supported by the compositor. Ignoring it.");
+        return false;
+    }
+
+    imp()->pendingExclusiveEdge = edge;
+    update(true);
     return true;
 }
 
 AKEdge MLayerSurface::exclusiveEdge() const noexcept
 {
-    return imp()->exclusiveEdge;
+    return imp()->pendingExclusiveEdge;
 }
 
 bool MLayerSurface::setScope(const std::string &scope) noexcept
 {
-    return false;
+    if (imp()->pendingScope == scope)
+        return false;
+
+    imp()->pendingScope = scope;
+    update();
+    return true;
 }
 
 const std::string &MLayerSurface::scope() const noexcept
 {
-    return imp()->scope;
+    return imp()->pendingScope;
 }
 
 const SkISize &MLayerSurface::suggestedSize() const noexcept
@@ -157,21 +192,10 @@ MLayerSurface::Imp *MLayerSurface::imp() const noexcept
 
 void MLayerSurface::suggestedSizeChanged()
 {
-    return;
-    if (suggestedSize().width() == 0)
-    {
-        if (globalRect().width() == 0)
-            layout().setWidthAuto();
-    }
-    else
+    if (suggestedSize().width() != 0)
         layout().setWidth(suggestedSize().width());
 
-    if (suggestedSize().height() == 0)
-    {
-        if (globalRect().height() == 0)
-            layout().setHeightAuto();
-    }
-    else
+    if (suggestedSize().height() != 0)
         layout().setHeight(suggestedSize().height());
 }
 
@@ -184,11 +208,72 @@ void MLayerSurface::render() noexcept
 
     MSurface::imp()->flags.remove(MSurface::Imp::ForceUpdate);
 
+    bool repaint { false };
+    bool anchorChanged = false;
+
+    /* MARGIN CHANGE */
+
+    if (imp()->pendingMargin != imp()->currentMargin)
+    {
+        imp()->currentMargin = imp()->pendingMargin;
+
+        zwlr_layer_surface_v1_set_margin(imp()->layerSurface,
+                                         margin().fTop, margin().fRight, margin().fBottom, margin().fLeft);
+    }
+
+    if (app()->wayland().layerShell.version() >= 2)
+    {
+        /* LAYER CHANGE */
+
+        if (imp()->pendingLayer != imp()->currentLayer)
+        {
+            imp()->currentLayer = imp()->pendingLayer;
+            zwlr_layer_surface_v1_set_layer(imp()->layerSurface, layer());
+        }
+
+        if (app()->wayland().layerShell.version() >= 5)
+        {
+            /* EXCLUSIVE EDGE CHANGE */
+
+            if (imp()->pendingExclusiveEdge != imp()->currentExclusiveEdge)
+            {
+                imp()->currentExclusiveEdge = imp()->pendingExclusiveEdge;
+                zwlr_layer_surface_v1_set_exclusive_edge(imp()->layerSurface,
+                    anchor().check(exclusiveEdge()) ? exclusiveEdge() : AKEdgeNone);
+            }
+        }
+    }
+
+    /* EXCLUSIVE ZONE CHANGE */
+
+    if (imp()->pendingExclusiveZone != imp()->currentExclusiveZone)
+    {
+        imp()->currentExclusiveZone = imp()->pendingExclusiveZone;
+        zwlr_layer_surface_v1_set_exclusive_zone(imp()->layerSurface, exclusiveZone());
+    }
+
+    /* KEYBOARD INT CHANGE */
+
+    if (imp()->pendingKeyboardInteractivity != imp()->currentKeyboardInteractivity)
+    {
+        imp()->currentKeyboardInteractivity = imp()->currentKeyboardInteractivity;
+        zwlr_layer_surface_v1_set_keyboard_interactivity(imp()->layerSurface, keyboardInteractivity());
+    }
+
+    /* ANCHOR CHANGE */
+
+    if (imp()->pendingAnchor.get() != imp()->currentAnchor.get())
+    {
+        imp()->currentAnchor = imp()->pendingAnchor;
+        zwlr_layer_surface_v1_set_anchor(imp()->layerSurface, anchor().get());
+        anchorChanged = true;
+    }
+
     EGLint bufferAge { -1 };
 
     SkISize newSize {
-        SkScalarFloorToInt(layout().calculatedWidth() + layout().calculatedMargin(YGEdgeLeft) + layout().calculatedMargin(YGEdgeRight)),
-        SkScalarFloorToInt(layout().calculatedHeight() + layout().calculatedMargin(YGEdgeTop) + layout().calculatedMargin(YGEdgeBottom))
+        SkScalarFloorToInt(layout().calculatedWidth()),
+        SkScalarFloorToInt(layout().calculatedHeight())
     };
 
     if (newSize.fWidth < 8) newSize.fWidth = 8;
@@ -201,11 +286,6 @@ void MLayerSurface::render() noexcept
         MSurface::imp()->viewportSize = newSize;
         bufferAge = 0;
         sizeChanged = true;
-
-        zwlr_layer_surface_v1_set_size(
-            imp()->layerSurface,
-            newSize.width(),
-            newSize.height());
     }
 
     SkISize eglWindowSize { newSize };
@@ -214,11 +294,33 @@ void MLayerSurface::render() noexcept
 
     if (sizeChanged)
     {
+        repaint = true;
         wp_viewport_set_source(wlViewport(),
                                wl_fixed_from_int(0),
                                wl_fixed_from_int(eglWindowSize.height() - newSize.height()),
                                wl_fixed_from_int(newSize.width()),
                                wl_fixed_from_int(newSize.height()));
+    }
+
+    if (sizeChanged || anchorChanged)
+    {
+        /* PREVENT 0 SIZE PROTOCOL ERROR */
+
+        const Int32 finalW = imp()->requestAvailableWidth && anchor().checkAll(AKEdgeLeft | AKEdgeRight) ? 0 : newSize.width();
+        const Int32 finalH = imp()->requestAvailableHeight && anchor().checkAll(AKEdgeTop | AKEdgeBottom) ? 0 : newSize.height();
+
+        imp()->requestAvailableWidth = false;
+        imp()->requestAvailableHeight = false;
+
+        zwlr_layer_surface_v1_set_size(imp()->layerSurface, finalW, finalH);
+    }
+
+    repaint |= target()->isDirty() || target()->bakedComponentsScale() != scale();
+
+    if (!repaint)
+    {
+        wl_surface_commit(wlSurface());
+        return;
     }
 
     eglMakeCurrent(app()->graphics().eglDisplay, eglSurface(), eglSurface(), app()->graphics().eglContext);
@@ -238,20 +340,6 @@ void MLayerSurface::render() noexcept
     target()->outOpaqueRegion = &skOpaque;
     scene().render(target());
     wl_surface_set_buffer_scale(wlSurface(), scale());
-    zwlr_layer_surface_v1_set_margin(imp()->layerSurface,
-        margin().fTop, margin().fRight, margin().fBottom, margin().fLeft);
-
-    if (app()->wayland().layerShell.version() >= 2)
-    {
-        zwlr_layer_surface_v1_set_layer(imp()->layerSurface, layer());
-
-        if (app()->wayland().layerShell.version() >= 5)
-            zwlr_layer_surface_v1_set_exclusive_edge(imp()->layerSurface, exclusiveEdge());
-    }
-
-    zwlr_layer_surface_v1_set_anchor(imp()->layerSurface, anchor().get());
-    zwlr_layer_surface_v1_set_exclusive_zone(imp()->layerSurface, exclusiveZone());
-    zwlr_layer_surface_v1_set_keyboard_interactivity(imp()->layerSurface, keyboardInteractivity());
 
     /* Input region */
     if (sizeChanged)
@@ -307,43 +395,62 @@ void MLayerSurface::render() noexcept
 
 void MLayerSurface::onUpdate() noexcept
 {
+    auto &flags = MSurface::imp()->flags;
+    using SF = MSurface::Imp::Flags;
+    auto &tmpFlags = MSurface::imp()->tmpFlags;
+    using STF = MSurface::Imp::TmpFlags;
+
     MSurface::onUpdate();
 
-    if (MSurface::imp()->flags.check(MSurface::Imp::PendingConfigureAck))
+    /* SCREEN CHANGE */
+
+    if (imp()->currentScreen != imp()->pendingScreen)
     {
-        MSurface::imp()->flags.remove(MSurface::Imp::PendingConfigureAck);
+        imp()->currentScreen = imp()->pendingScreen;
+        imp()->reset();
+    }
+
+    /* SCOPE CHANGE */
+
+    if (imp()->currentScope != imp()->pendingScope)
+    {
+        imp()->currentScope = imp()->pendingScope;
+        imp()->reset();
+    }
+
+    if (!flags.check(SF::UserMapped))
+    {
+        if (flags.check(SF::PendingNullCommit))
+            return;
+
+        imp()->reset();
+        return;
+    }
+
+    if (!imp()->layerSurface)
+        imp()->createRole();
+
+    if (flags.check(SF::PendingNullCommit))
+    {
+        flags.add(SF::PendingFirstConfigure);
+        flags.remove(SF::PendingNullCommit);
+        wl_surface_attach(wlSurface(), nullptr, 0, 0);
+        wl_surface_commit(wlSurface());
+        update();
+        return;
+    }
+
+    if (flags.check(SF::PendingConfigureAck))
+    {
+        flags.remove(SF::PendingConfigureAck);
         zwlr_layer_surface_v1_ack_configure(imp()->layerSurface, imp()->configureSerial);
     }
 
-    if (visible())
-    {
-        if (MSurface::imp()->flags.check(MSurface::Imp::PendingNullCommit))
-        {
-            MSurface::imp()->flags.add(MSurface::Imp::PendingFirstConfigure);
-            MSurface::imp()->flags.remove(MSurface::Imp::PendingNullCommit);
-            wl_surface_attach(wlSurface(), nullptr, 0, 0);
-            wl_surface_commit(wlSurface());
-            update();
-            return;
-        }
-    }
-    else
-    {
-        if (!MSurface::imp()->flags.check(MSurface::Imp::PendingNullCommit))
-        {
-            MSurface::imp()->flags.add(MSurface::Imp::PendingNullCommit);
-            wl_surface_attach(wlSurface(), nullptr, 0, 0);
-            wl_surface_commit(wlSurface());
-        }
-
-        return;
-    }
-
-    if (MSurface::imp()->flags.check(MSurface::Imp::PendingFirstConfigure | MSurface::Imp::PendingNullCommit))
+    if (flags.check(SF::PendingFirstConfigure | SF::PendingNullCommit))
         return;
 
-    if (MSurface::MSurface::imp()->tmpFlags.check(MSurface::Imp::ScaleChanged))
-        MSurface::imp()->flags.add(MSurface::Imp::ForceUpdate);
+    if (tmpFlags.check(STF::ScaleChanged))
+        flags.add(SF::ForceUpdate);
 
     render();
 }

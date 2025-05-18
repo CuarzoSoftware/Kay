@@ -45,14 +45,14 @@ public:
         if (useGrab)
             setGrab(&app()->pointer().eventHistory().button);
 
-        closeButton.on.clicked.subscribe(this, [this](){ setMapped(false); });
-        showButton.on.clicked.subscribe(this, [this](){
+        closeButton.onClick.subscribe(this, [this](const auto &){ setMapped(false); });
+        showButton.onClick.subscribe(this, [this](const auto &){
             if (!subMenu)
                 subMenu = std::make_unique<Menu>(this, this->useGrab);
             subMenu->setMapped(true);
         });
 
-        anchorButton.on.clicked.subscribe(this, [this](){
+        anchorButton.onClick.subscribe(this, [this](const auto &){
             UInt32 a = (UInt32)anchor();
             if (a == 8) a = 0;
             else a++;
@@ -60,7 +60,7 @@ public:
             anchorButton.setText("Anchor: " + anchorGravityNames[a]);
         });
 
-        gravityButton.on.clicked.subscribe(this, [this](){
+        gravityButton.onClick.subscribe(this, [this](const auto &){
             UInt32 g = (UInt32)gravity();
             if (g == 8) g = 0;
             else g++;
@@ -90,23 +90,23 @@ public:
         layout().setJustifyContent(YGJustifySpaceEvenly);
         setMinSize(SkISize(400, 400));
 
-        showButton.on.clicked.subscribe(this, [this](){
+        showButton.onClick.subscribe(this, [this](const auto &){
             menu.setMapped(true);
         });
 
-        multiButton.on.clicked.subscribe(this, [this](){
+        multiButton.onClick.subscribe(this, [this](const auto &e){
             Menu *menu = new Menu(this, false);
             menu->onMappedChanged.subscribe(menu, [menu](){
                 if (!menu->mapped())
                     menu->destroyLater();
             });
             menu->setMapped(true);
-            menu->showButton.on.clicked.notify();
-            menu->subMenu->showButton.on.clicked.notify();
-            menu->subMenu->subMenu->showButton.on.clicked.notify();
+            menu->showButton.onClick.notify(e);
+            menu->subMenu->showButton.onClick.notify(e);
+            menu->subMenu->subMenu->showButton.onClick.notify(e);
         });
 
-        longButton.on.clicked.subscribe(this, [this](){
+        longButton.onClick.subscribe(this, [this](const auto &){
             Menu *menu = new Menu(this, false);
             menu->onMappedChanged.subscribe(menu, [menu](){
                 if (!menu->mapped())
@@ -116,7 +116,7 @@ public:
             menu->setMapped(true);
         });
 
-        exitButton.on.clicked.subscribe(this, [](){ exit(0); });
+        exitButton.onClick.subscribe(this, [](const auto &){ exit(0); });
     }
 
     AKButton showButton { "Show popup", this};

@@ -10,7 +10,7 @@ AKTimer::AKTimer(const Callback &callback) noexcept :
     init();
 }
 
-void AKTimer::OneShoot(UInt64 timeoutMs, const Callback &callback)
+void AKTimer::OneShot(UInt64 timeoutMs, const Callback &callback)
 {
     if (!callback)
         return;

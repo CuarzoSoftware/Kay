@@ -157,9 +157,14 @@ public:
             if (!xdgIcon)
                 continue;
 
-            auto *icon = new AKImageFrame(AKImageLoader::loadFile(xdgIcon->getPath(XDGIcon::SVG), {256, 256}), &body);
-            icon->layout().setWidthPercent(100);
-            icon->layout().setHeight(256);
+            auto image { AKImageLoader::loadFile(xdgIcon->getPath(XDGIcon::SVG), {256, 256}) };
+
+            for (size_t i = 0; i < 10; i++)
+            {
+                auto *icon = new AKImageFrame(image, &body);
+                icon->layout().setWidthPercent(100);
+                icon->layout().setHeight(256);
+            }
         }
     }
 
@@ -210,7 +215,7 @@ public:
         setTitle("Hello world!");
         //setMinSize(minContentSize());
 
-        rightContainer.cursorButton.on.clicked.subscribe(this, [this](){
+        rightContainer.cursorButton.onClick.subscribe(this, [this](const auto &){
             if (cursor == 34)
                 cursor = 0;
             else
@@ -220,7 +225,7 @@ public:
             pointer().setCursor((AKCursor)cursor);
         });
 
-        rightContainer.newWindowButton.on.clicked.subscribe(this, [this](){
+        rightContainer.newWindowButton.onClick.subscribe(this, [this](const auto &){
             Window *newWin = new Window();
             newWin->setMapped(true);
             AKWeak<MToplevel> ref(this);
@@ -230,33 +235,33 @@ public:
             });
         });
 
-        rightContainer.builtinDecorationsButton.on.clicked.subscribe(this, [this](){
+        rightContainer.builtinDecorationsButton.onClick.subscribe(this, [this](const auto &){
             enableBuiltinDecorations(!builtinDecorationsEnabled());
         });
 
-        rightContainer.decorationsButton.on.clicked.subscribe(this, [this]() {
+        rightContainer.decorationsButton.onClick.subscribe(this, [this](const auto &) {
             setDecorationMode(decorationMode() == ClientSide ? ServerSide : ClientSide);
         });
 
-        rightContainer.maximizeButton.on.clicked.subscribe(this, [this](){
+        rightContainer.maximizeButton.onClick.subscribe(this, [this](const auto &){
             setMaximized(!maximized());
         });
 
-        rightContainer.fullscreenButton.on.clicked.subscribe(this, [this](){
+        rightContainer.fullscreenButton.onClick.subscribe(this, [this](const auto &){
             setFullscreen(!fullscreen());
         });
 
-        rightContainer.minimizeButton.on.clicked.subscribe(this, [this](){
+        rightContainer.minimizeButton.onClick.subscribe(this, [this](const auto &){
             setMinimized();
         });
 
-        rightContainer.exitButton.on.clicked.subscribe(&rightContainer.exitButton, [](){
+        rightContainer.exitButton.onClick.subscribe(&rightContainer.exitButton, [](const auto &){
             exit(0);
         });
 
-        rightContainer.mapButton.on.clicked.subscribe(this, [this]{
+        rightContainer.mapButton.onClick.subscribe(this, [this](const auto &){
             setMapped(false);
-            AKTimer::OneShoot(1000, [this](AKTimer*){
+            AKTimer::OneShot(1000, [this](AKTimer*){
                 setMapped(true);
             });
         });

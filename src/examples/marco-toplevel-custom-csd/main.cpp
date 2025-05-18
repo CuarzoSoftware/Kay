@@ -22,11 +22,11 @@ public:
             customDecorationNodes.back()->layout().setPositionType(YGPositionTypeAbsolute);
         }
 
-        exitBtn.on.clicked.subscribe(this, [](){
+        exitBtn.onClick.subscribe(this, [](const auto &){
             exit(0);
         });
 
-        toggleBuiltinDecorationsBtn.on.clicked.subscribe(this, [this](){
+        toggleBuiltinDecorationsBtn.onClick.subscribe(this, [this](const auto &){
             enableBuiltinDecorations(!builtinDecorationsEnabled());
             updateDecorations();
             enableChildrenClipping(builtinDecorationsEnabled());
