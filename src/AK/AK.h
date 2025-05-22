@@ -2,9 +2,9 @@
 #define AK_H
 
 #include <cstdint>
+#include <filesystem>
 #include <include/core/SkFontMgr.h>
 
-#define AK_ASSETS_DIR "/usr/local/share/Kay/assets"
 #define AK_GET_CLASS(identifier) typename std::remove_const<std::remove_pointer<decltype(identifier)>::type>::type
 #define AK_MAX_BUFFER_AGE 3
 #define AK_UNUSED(object){(void)object;}
@@ -214,6 +214,7 @@ namespace AK
     sk_sp<SkFontMgr> akFontManager() noexcept;
     AKPointer &akPointer() noexcept;
     AKKeyboard &akKeyboard() noexcept;
+    const std::filesystem::path &akAssetsDir() noexcept;
 };
 
 #define AK_IRECT_INF SkIRect::MakeLTRB(-2147483, -2147483, 2147483, 2147483)

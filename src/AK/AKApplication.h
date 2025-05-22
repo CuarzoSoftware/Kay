@@ -14,6 +14,23 @@
 #include <sys/epoll.h>
 #include <unordered_map>
 
+/**
+ * @brief Core application class
+ *
+ * AKApplication manages the application's event loop and allows integration with other event loops.
+ * It supports dynamic event sources and provides access to pointer, keyboard, and touch managers.
+ *
+ * @note A single instance can exist per process.
+ *
+ * @section OpenGL Contexts
+ *
+ * AKApplication does not create OpenGL contexts but requires a valid, bound OpenGL context before instantiation.
+ * Additional threads using AKApplication must share the OpenGL context.
+ *
+ * It automatically creates Skia contexts and OpenGL objects using the existing contexts.
+ * When used in a separate thread, call `freeGLContextData()` before thread destruction to prevent resource leaks.
+ * This step is unnecessary for the thread where the application was created.
+ */
 class AK::AKApplication : public AKObject
 {
 public:
@@ -22,7 +39,7 @@ public:
     sk_sp<SkFontMgr> fontManager() const noexcept;
     sk_sp<skia::textlayout::FontCollection> fontCollection() const noexcept;
     static AKGLContext *glContext() noexcept;
-    static void freeGLContext() noexcept;
+    static void freeGLContextData() noexcept;
     const GrContextOptions &skContextOptions() const noexcept { return m_skContextOptions; };
 
     /**

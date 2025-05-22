@@ -45,7 +45,7 @@ Screen::Screen(SRMConnector *connector) noexcept :
     layout().setPositionType(YGPositionTypeAbsolute);
     layout().setJustifyContent(YGJustifyCenter);
     layout().setAlignItems(YGAlignCenter);
-    logo.setImage(AKImageLoader::loadFile("/usr/local/share/Kay/assets/logo.png"));
+    logo.setImage(AKImageLoader::loadFile(akAssetsDir() / "assets/logo.png"));
     logo.layout().setWidth(128);
     logo.layout().setHeight(128);
     logo.setSizeMode(AKImageFrame::SizeMode::Contain);

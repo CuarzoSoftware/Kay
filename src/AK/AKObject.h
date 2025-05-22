@@ -35,17 +35,19 @@ public:
     }
 
     /**
-     * @brief Store an unsigned integer value/pointer.
+     * @brief Sets the user data.
      */
-    void setUserData(UIntPtr data) const noexcept
+    void setUserData(void *data) const noexcept
     {
         m_userData = data;
     }
 
     /**
-     * @brief Retrieves the stored unsigned integer value/pointer.
+     * @brief Retrieves the stored user data.
+     *
+     * `nullptr` by default.
      */
-    UIntPtr userData() const noexcept
+    void *userData() const noexcept
     {
         return m_userData;
     }
@@ -102,7 +104,7 @@ private:
     mutable std::unordered_map<AKObject*, std::list<AKObject*>::iterator> m_eventFilterSubscriptions;
     std::vector<AKListener*> m_listeners;
     mutable std::vector<void*> m_weakRefs;
-    mutable UIntPtr m_userData { 0 };
+    mutable void *m_userData { nullptr };
     bool m_destroyed { false };
 };
 

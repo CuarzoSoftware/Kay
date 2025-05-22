@@ -99,7 +99,7 @@ AKGLContext *AKApplication::glContext() noexcept
     return akContext;
 }
 
-void AKApplication::freeGLContext() noexcept
+void AKApplication::freeGLContextData() noexcept
 {
     auto it { _app->m_glContexts.find(eglGetCurrentContext()) };
     if (it == _app->m_glContexts.end())

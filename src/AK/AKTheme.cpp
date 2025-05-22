@@ -395,21 +395,21 @@ sk_sp<SkImage> AK::AKTheme::windowButtonImage(Int32 scale, AKWindowButton::Type 
     switch (state)
     {
     case AKWindowButton::State::Disabled:
-        image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_disabled.png");
+        image = AKImageLoader::loadFile(akAssetsDir() / "window_button_disabled.png");
         break;
     case AKWindowButton::State::Normal:
         switch (type)
         {
             case AK::AKWindowButton::Type::Close:
-                image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_close_normal.png");
+                image = AKImageLoader::loadFile(akAssetsDir() / "window_button_close_normal.png");
                 break;
             case AK::AKWindowButton::Type::Minimize:
-                image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_minimize_normal.png");
+                image = AKImageLoader::loadFile(akAssetsDir() / "window_button_minimize_normal.png");
                 break;
             case AK::AKWindowButton::Type::Maximize:
             case AK::AKWindowButton::Type::Fullscreen:
             case AK::AKWindowButton::Type::UnsetFullscreen:
-                image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_maximize_normal.png");
+                image = AKImageLoader::loadFile(akAssetsDir() / "window_button_maximize_normal.png");
                 break;
         }
         break;
@@ -417,19 +417,19 @@ sk_sp<SkImage> AK::AKTheme::windowButtonImage(Int32 scale, AKWindowButton::Type 
         switch (type)
         {
         case AK::AKWindowButton::Type::Close:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_close_hover.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_close_hover.png");
             break;
         case AK::AKWindowButton::Type::Minimize:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_minimize_hover.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_minimize_hover.png");
             break;
         case AK::AKWindowButton::Type::Maximize:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_maximize_hover.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_maximize_hover.png");
             break;
         case AK::AKWindowButton::Type::Fullscreen:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_fullscreen_hover.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_fullscreen_hover.png");
             break;
         case AK::AKWindowButton::Type::UnsetFullscreen:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_unset_fullscreen_hover.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_unset_fullscreen_hover.png");
             break;
         }
         break;
@@ -437,24 +437,24 @@ sk_sp<SkImage> AK::AKTheme::windowButtonImage(Int32 scale, AKWindowButton::Type 
         switch (type)
         {
         case AK::AKWindowButton::Type::Close:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_close_pressed.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_close_pressed.png");
             break;
         case AK::AKWindowButton::Type::Minimize:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_minimize_pressed.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_minimize_pressed.png");
             break;
         case AK::AKWindowButton::Type::Maximize:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_maximize_pressed.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_maximize_pressed.png");
             break;
         case AK::AKWindowButton::Type::Fullscreen:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_fullscreen_pressed.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_fullscreen_pressed.png");
             break;
         case AK::AKWindowButton::Type::UnsetFullscreen:
-            image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_unset_fullscreen_pressed.png");
+            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_unset_fullscreen_pressed.png");
             break;
         }
         break;
     default:
-        image = AKImageLoader::loadFile(std::filesystem::path(AK_ASSETS_DIR) / "window_button_disabled.png");
+        image = AKImageLoader::loadFile(akAssetsDir() / "window_button_disabled.png");
         break;
     }
 

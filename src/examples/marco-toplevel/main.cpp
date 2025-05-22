@@ -171,7 +171,7 @@ public:
     AKScroll body { this };
 
     AKEdgeShadow leftShadow { AKEdgeLeft, this };
-    AKImageFrame cat { AKImageLoader::loadFile("/usr/local/share/Kay/assets/logo.png"), &body };
+    AKImageFrame cat { AKImageLoader::loadFile(akAssetsDir() / "logo.png"), &body };
     AKButton cursorButton { "🖱️ Cursor: Default", &body };
     AKButton builtinDecorationsButton { "Toggle built-in decorations", &body };
     AKButton decorationsButton { "Toggle decoration mode", &body };
@@ -342,9 +342,9 @@ int main()
     Window window;
     window.setMapped(true);
 
-    window.::MSurface::onCallbackDone.subscribe(&window, [&window](UInt32 ms){
+    //window.::MSurface::onCallbackDone.subscribe(&window, [&window](UInt32 ms){
         //window.cat.renderableImage().setOpacity(1.f + 0.5f*SkScalarCos(ms * 0.005f));
         //std::cout << "Presented" << ms << std::endl;
-    });
+    //});
     return app.exec();
 }

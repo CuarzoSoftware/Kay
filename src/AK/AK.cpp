@@ -4,6 +4,7 @@
 using namespace AK;
 
 static AKTheme *m_theme { nullptr };
+static const std::filesystem::path m_assetsDir { KAY_DEFAULT_ASSETS_PATH };
 
 AKTheme *AK::theme() noexcept
 {
@@ -37,4 +38,9 @@ sk_sp<SkFontMgr> AK::akFontManager() noexcept
 AKPointer &AK::akPointer() noexcept
 {
     return akApp()->pointer();
+}
+
+const std::filesystem::path &AK::akAssetsDir() noexcept
+{
+    return m_assetsDir;
 }

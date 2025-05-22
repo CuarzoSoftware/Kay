@@ -14,6 +14,15 @@ VERSION_PATCH = meson.project_version().split('.')[2]
 VERSION_BUILD = run_command('cat', './BUILD', check : false).stdout()
 
 HEADERS_INSTALL_PATH = join_paths(get_option('prefix'), get_option('includedir'))
+ASSETS_INSTALL_PATH = join_paths(get_option('prefix'), get_option('datadir'), 'Kay/assets')
+
+add_project_arguments([
+    '-DKAY_VERSION_MAJOR=@0@'.format(VERSION_MAJOR.to_int()),
+    '-DKAY_VERSION_MINOR=@0@'.format(VERSION_MINOR.to_int()),
+    '-DKAY_VERSION_PATCH=@0@'.format(VERSION_PATCH.to_int()),
+    '-DKAY_VERSION_BUILD=@0@'.format(VERSION_BUILD.to_int()),
+    '-DKAY_DEFAULT_ASSETS_PATH="@0@"'.format(ASSETS_INSTALL_PATH)
+], language: 'cpp')
 
 # -------------- DEPENDENCIES --------------
 
@@ -100,7 +109,7 @@ kay_dep = declare_dependency(
 
 install_data(
     run_command('find', './assets', '-type', 'f', '-name', '*[.png,.jpg]', check : false).stdout().strip().split('\n'),
-    install_dir: '/usr/local/share/Kay/assets'
+    install_dir: ASSETS_INSTALL_PATH
 )
 
 pkg.generate(

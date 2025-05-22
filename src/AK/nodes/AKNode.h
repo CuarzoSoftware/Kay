@@ -331,6 +331,7 @@ public:
     SkRegion *inputRegion() const noexcept { return m_inputRegion.get(); }
     bool insideLastTarget() const noexcept { return m_flags.check(InsideLastTarget); }
     bool renderedOnLastTarget() const noexcept { return m_flags.check(RenderedOnLastTarget); }
+    void clearRenderedOnLastTarget() noexcept { m_flags.remove(RenderedOnLastTarget); }
     AKSceneTarget *currentTarget() const noexcept;
     /* Layout */
 

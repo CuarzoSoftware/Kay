@@ -743,7 +743,7 @@ public:
     void uninitializeGL() override
     {
         kay.reset();
-        akApp()->freeGLContext();
+        akApp()->freeGLContextData();
     }
 
     bool inPaintGL { false };
