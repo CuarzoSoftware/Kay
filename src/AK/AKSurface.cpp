@@ -26,7 +26,16 @@ sk_sp<SkSurface> AKSurface::surface() const noexcept
     const auto &fbo { ctx->getFBO(m_slot) };
 
     if (fbo.serial == m_serial && fbo.skSurface)
-        return fbo.skSurface;
+    {
+        glBindTexture(GL_TEXTURE_2D, m_textureInfo.fID);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo.id);
+
+        // Just in case something messes up the attachment
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureInfo.fID, 0);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+            return fbo.skSurface;
+    }
 
     ctx->destroyFBO(m_slot);
 

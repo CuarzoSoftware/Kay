@@ -5,5 +5,4 @@
 **.autosave
 **.vscode
 **.mkv
-subprojects/plutosvg/
-subprojects/plutovg/
+subprojects/*/
