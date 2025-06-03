@@ -368,7 +368,7 @@ void MApplication::wl_pointer_frame(void */*data*/, wl_pointer */*pointer*/)
     p.m_hasPendingAxisEvent = false;
     p.m_eventHistory.scroll = p.m_framedScrollEvent;
     p.m_eventHistory.scroll.setSerial(AKTime::nextSerial());
-    p.m_framedScrollEvent = AKPointerScrollEvent({0.f, 0.f}, {0, 0}, false, false, false, false, AKPointerScrollEvent::Continuous);
+    p.m_framedScrollEvent = AKPointerScrollEvent({0.f, 0.f}, {0, 0}, false, false, AKPointerScrollEvent::Identical, AKPointerScrollEvent::Identical, AKPointerScrollEvent::Continuous);
 
     if (!p.focus()) return;
 
@@ -445,13 +445,9 @@ void MApplication::wl_pointer_axis_relative_direction(void */*data*/, wl_pointer
     p.m_hasPendingAxisEvent = true;
 
     if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
-    {
-        p.m_framedScrollEvent.setNaturalX(direction == WL_POINTER_AXIS_RELATIVE_DIRECTION_INVERTED);
-    }
+        p.m_framedScrollEvent.setRelativeDirectionX((AKPointerScrollEvent::RelativeDirection)direction);
     else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
-    {
-        p.m_framedScrollEvent.setNaturalY(direction == WL_POINTER_AXIS_RELATIVE_DIRECTION_INVERTED);
-    }
+        p.m_framedScrollEvent.setRelativeDirectionY((AKPointerScrollEvent::RelativeDirection)direction);
 }
 
 void MApplication::wl_keyboard_keymap(void */*data*/, wl_keyboard */*keyboard*/, UInt32 format, Int32 fd, UInt32 size)

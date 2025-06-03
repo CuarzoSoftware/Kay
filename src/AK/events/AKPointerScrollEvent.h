@@ -38,6 +38,18 @@ public:
     };
 
     /**
+     * @brief Relative directional information of the entity causing the axis motion.
+     */
+    enum RelativeDirection : UInt8
+    {
+        /// The scroll direction matches the physical movement (e.g., fingers move down, scroll moves down).
+        Identical = static_cast<UInt8>(0),
+
+        /// The scroll direction is reversed due to natural scrolling (e.g., fingers move down, scroll moves up).
+        Inverted = static_cast<UInt8>(1)
+    };
+
+    /**
      * @brief Constructs an AKPointerScrollEvent object.
      *
      * @param axes The scroll axes values (included in all sources).
@@ -51,16 +63,16 @@ public:
      * @param device The input device that originated the event.
      */
     AKPointerScrollEvent(const SkPoint &axes = {0.f, 0.f}, const SkIPoint &axesDiscrete = {0, 0}, bool hasX = true, bool hasY = true,
-                         bool naturalX = false, bool naturalY = false, Source source = Continuous,
+                        RelativeDirection relativeDirectionX = Identical, RelativeDirection relativeDirectionY = Identical, Source source = Continuous,
                         UInt32 serial = AKTime::nextSerial(), UInt32 ms = AKTime::ms(), UInt64 us = AKTime::us(), AKInputDevice *device = nullptr) noexcept :
         AKPointerEvent(AKEvent::PointerScroll, serial, ms, us, device),
-        m_axes(axes),
-        m_axesDiscrete(axesDiscrete),
-        m_source(source),
         m_hasX(hasX),
         m_hasY(hasY),
-        m_naturalX(naturalX),
-        m_naturalY(naturalY)
+        m_relativeDirectionX(relativeDirectionX),
+        m_relativeDirectionY(relativeDirectionY),
+        m_axes(axes),
+        m_axesDiscrete(axesDiscrete),
+        m_source(source)
     {}
 
     /**
@@ -83,17 +95,6 @@ public:
         m_hasX = hasX;
     }
 
-    // TODO: add doc
-    bool naturalX() const noexcept
-    {
-        return m_naturalX;
-    }
-
-    void setNaturalX(bool natural) noexcept
-    {
-        m_naturalX = natural;
-    }
-
     /**
      * @brief Indicates whether the event includes a value for the Y axis.
      *
@@ -112,17 +113,6 @@ public:
     void setHasY(bool hasY) noexcept
     {
         m_hasY = hasY;
-    }
-
-    // TODO: add doc
-    bool naturalY() const noexcept
-    {
-        return m_naturalY;
-    }
-
-    void setNaturalY(bool natural) noexcept
-    {
-        m_naturalY = natural;
     }
 
     /**
@@ -233,6 +223,38 @@ public:
     }
 
     /**
+     * @brief Gets the relative scroll direction along the X axis.
+     */
+    RelativeDirection relativeDirectionX() const noexcept
+    {
+        return m_relativeDirectionX;
+    }
+
+    /**
+     * @brief Gets the relative scroll direction along the Y axis.
+     */
+    RelativeDirection relativeDirectionY() const noexcept
+    {
+        return m_relativeDirectionY;
+    }
+
+    /**
+     * @brief Sets the relative scroll direction along the X axis.
+     */
+    void setRelativeDirectionX(RelativeDirection direction) noexcept
+    {
+        m_relativeDirectionX = direction;
+    }
+
+    /**
+     * @brief Sets the relative scroll direction along the Y axis.
+     */
+    void setRelativeDirectionY(RelativeDirection direction) noexcept
+    {
+        m_relativeDirectionY = direction;
+    }
+
+    /**
      * @brief Sets the source of the scroll event.
      */
     void setSource(Source source) noexcept
@@ -249,13 +271,13 @@ public:
     }
 
 protected:
+    bool m_hasX;
+    bool m_hasY;
+    RelativeDirection m_relativeDirectionX;
+    RelativeDirection m_relativeDirectionY;
     SkPoint m_axes;
     SkIPoint m_axesDiscrete;
     Source m_source;
-    bool m_hasX;
-    bool m_hasY;
-    bool m_naturalX;
-    bool m_naturalY;
 private:
     friend class LInputBackend;
     void notify();

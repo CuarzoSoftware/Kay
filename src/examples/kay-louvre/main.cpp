@@ -1160,15 +1160,6 @@ public:
             compositor()->repaintAllOutputs();
         }
 
-        if (isKeyCodePressed(KEY_LEFTMETA) && isKeyCodePressed(KEY_N))
-        {
-            seat()->pointer()->enableNaturalScrollingX(!seat()->pointer()->naturalScrollingXEnabled());
-            seat()->pointer()->enableNaturalScrollingY(!seat()->pointer()->naturalScrollingYEnabled());
-            AKLog::log("Natural scrolling: X=%d, Y=%d",
-                seat()->pointer()->naturalScrollingXEnabled(),
-                seat()->pointer()->naturalScrollingYEnabled());
-        }
-
         if (isKeyCodePressed(KEY_O) && isKeyCodePressed(KEY_LEFTMETA))
             compositor()->removeOutput(cursor()->output());
 

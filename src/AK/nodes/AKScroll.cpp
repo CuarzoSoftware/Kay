@@ -209,20 +209,10 @@ void AKScroll::pointerScrollEvent(const AKPointerScrollEvent &e)
     // Invert axes if needed
 
     if (e.hasX())
-    {
-        if (e.naturalX())
-            dx = e.axes().x() * AKTheme::ScrollKineticSpeed;
-        else
-            dx = -e.axes().x() * AKTheme::ScrollKineticSpeed;
-    }
+        dx = - e.axes().x() * AKTheme::ScrollKineticSpeed;
 
     if (e.hasY())
-    {
-        if (e.naturalY())
-            dy = e.axes().y() * AKTheme::ScrollKineticSpeed;
-        else
-            dy = -e.axes().y() * AKTheme::ScrollKineticSpeed;
-    }
+        dy = - e.axes().y() * AKTheme::ScrollKineticSpeed;
 
     if (e.source() != AKPointerScrollEvent::Finger)
     {
