@@ -5,7 +5,7 @@
 #include <AK/AKSurface.h>
 #include <AK/AKSignal.h>
 #include <AK/AKRRect.h>
-#include <include/core/SkPath.h>
+#include <skia/core/SkPath.h>
 
 /**
  * @brief Background blur effect

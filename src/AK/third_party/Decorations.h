@@ -2,9 +2,9 @@
 #ifndef Decorations_DEFINED
 #define Decorations_DEFINED
 
-#include "include/core/SkPath.h"
-#include "modules/skparagraph/include/ParagraphPainter.h"
-#include "modules/skparagraph/include/TextStyle.h"
+#include "skia/core/SkPath.h"
+#include "skia/modules/skparagraph/include/ParagraphPainter.h"
+#include "skia/modules/skparagraph/include/TextStyle.h"
 #include <AK/third_party/TextLine.h>
 
 namespace skia {

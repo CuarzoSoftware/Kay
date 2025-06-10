@@ -2,10 +2,10 @@
 #include <AK/AKSceneTarget.h>
 #include <AK/AKSurface.h>
 
-#include <include/gpu/ganesh/GrDirectContext.h>
-#include <include/effects/SkGradientShader.h>
-#include <include/effects/SkImageFilters.h>
-#include <include/core/SkCanvas.h>
+#include <skia/gpu/ganesh/GrDirectContext.h>
+#include <skia/effects/SkGradientShader.h>
+#include <skia/effects/SkImageFilters.h>
+#include <skia/core/SkCanvas.h>
 
 using namespace AK;
 

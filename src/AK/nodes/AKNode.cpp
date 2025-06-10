@@ -1,6 +1,6 @@
-#include <include/core/SkColorSpace.h>
-#include <include/gpu/ganesh/SkImageGanesh.h>
-#include <include/gpu/ganesh/SkSurfaceGanesh.h>
+#include <skia/core/SkColorSpace.h>
+#include <skia/gpu/ganesh/SkImageGanesh.h>
+#include <skia/gpu/ganesh/SkSurfaceGanesh.h>
 #include <AK/events/AKKeyboardEnterEvent.h>
 #include <AK/events/AKKeyboardLeaveEvent.h>
 #include <AK/events/AKPointerEnterEvent.h>

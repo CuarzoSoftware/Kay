@@ -1,7 +1,7 @@
 // Copyright 2019 Google LLC.
 
-#include "modules/skparagraph/include/DartTypes.h"
-#include "modules/skparagraph/include/ParagraphStyle.h"
+#include "skia/modules/skparagraph/include/DartTypes.h"
+#include "skia/modules/skparagraph/include/ParagraphStyle.h"
 
 namespace skia {
 namespace textlayout {

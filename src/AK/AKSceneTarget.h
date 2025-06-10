@@ -5,9 +5,9 @@
 #include <AK/AKTarget.h>
 #include <AK/AKSignal.h>
 #include <AK/AKWeak.h>
-#include <include/core/SkSurface.h>
-#include <include/core/SkMatrix.h>
-#include <include/core/SkRegion.h>
+#include <skia/core/SkSurface.h>
+#include <skia/core/SkMatrix.h>
+#include <skia/core/SkRegion.h>
 #include <yoga/Yoga.h>
 
 /**

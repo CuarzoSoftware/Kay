@@ -1,6 +1,6 @@
 // Copyright 2019 Google LLC.
 
-#include "modules/skparagraph/include/FontArguments.h"
+#include "skia/modules/skparagraph/include/FontArguments.h"
 
 static bool operator==(const SkFontArguments::VariationPosition::Coordinate& a,
                        const SkFontArguments::VariationPosition::Coordinate& b) {

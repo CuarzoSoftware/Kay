@@ -2,12 +2,12 @@
 #define AKSURFACE_H
 
 #include <GL/gl.h>
-#include <include/core/SkColorSpace.h>
-#include <include/core/SkImage.h>
-#include <include/core/SkSurface.h>
-#include <include/core/SkRect.h>
-#include <include/gpu/ganesh/gl/GrGLTypes.h>
-#include <include/gpu/ganesh/GrBackendSurface.h>
+#include <skia/core/SkColorSpace.h>
+#include <skia/core/SkImage.h>
+#include <skia/core/SkSurface.h>
+#include <skia/core/SkRect.h>
+#include <skia/gpu/ganesh/gl/GrGLTypes.h>
+#include <skia/gpu/ganesh/GrBackendSurface.h>
 #include <AK/AKTarget.h>
 
 class AK::AKSurface : public AKTarget

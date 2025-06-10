@@ -1,8 +1,8 @@
 // Copyright 2019 Google LLC.
-#include "modules/skparagraph/include/FontCollection.h"
+#include "skia/modules/skparagraph/include/FontCollection.h"
 
-#include "include/core/SkTypeface.h"
-#include "modules/skshaper/include/SkShaper_harfbuzz.h"
+#include "skia/core/SkTypeface.h"
+#include "skia/modules/skshaper/include/SkShaper_harfbuzz.h"
 
 namespace {
 #if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)

@@ -1,7 +1,7 @@
 #ifndef AKPOINTERENTEREVENT_H
 #define AKPOINTERENTEREVENT_H
 
-#include <include/core/SkPoint.h>
+#include <skia/core/SkPoint.h>
 #include <AK/events/AKPointerEvent.h>
 #include <AK/AKTime.h>
 

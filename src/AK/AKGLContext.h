@@ -4,8 +4,8 @@
 #include <AK/AKPainter.h>
 #include <AK/AKObject.h>
 
-#include <include/core/SkSurface.h>
-#include <include/gpu/ganesh/GrDirectContext.h>
+#include <skia/core/SkSurface.h>
+#include <skia/gpu/ganesh/GrDirectContext.h>
 
 #include <unordered_map>
 #include <EGL/egl.h>

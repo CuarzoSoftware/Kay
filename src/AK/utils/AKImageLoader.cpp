@@ -1,15 +1,15 @@
-#include "include/core/SkCanvas.h"
-#include "include/effects/SkImageFilters.h"
-#include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include <include/core/SkBitmap.h>
+#include "skia/core/SkCanvas.h"
+#include "skia/effects/SkImageFilters.h"
+#include "skia/gpu/ganesh/gl/GrGLBackendSurface.h"
+#include <skia/core/SkBitmap.h>
 #include <AK/AKApplication.h>
 #include <AK/AKSurface.h>
 #include <AK/AKGLContext.h>
 #include <AK/utils/AKImageLoader.h>
 #include <AK/AKLog.h>
-#include <include/core/SkImage.h>
-#include <include/gpu/ganesh/SkImageGanesh.h>
-#include <include/core/SkStream.h>
+#include <skia/core/SkImage.h>
+#include <skia/gpu/ganesh/SkImageGanesh.h>
+#include <skia/core/SkStream.h>
 #include <plutosvg.h>
 
 using namespace AK;

@@ -1,4 +1,4 @@
-#include <include/core/SkCanvas.h>
+#include <skia/core/SkCanvas.h>
 #include <AK/third_party/utf8.h>
 #include <AK/nodes/AKText.h>
 #include <AK/events/AKBakeEvent.h>

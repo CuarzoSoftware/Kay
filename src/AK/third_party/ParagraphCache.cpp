@@ -1,10 +1,10 @@
 // Copyright 2019 Google LLC.
 #include <memory>
 
-#include "modules/skparagraph/include/FontArguments.h"
-#include "modules/skparagraph/include/ParagraphCache.h"
+#include "skia/modules/skparagraph/include/FontArguments.h"
+#include "skia/modules/skparagraph/include/ParagraphCache.h"
 #include <AK/third_party/ParagraphImpl.h>
-#include "src/base/SkFloatBits.h"
+#include "skia/src/base/SkFloatBits.h"
 
 using namespace skia_private;
 

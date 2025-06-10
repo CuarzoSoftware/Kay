@@ -4,8 +4,8 @@
 
 #include <functional>
 #include <deque>
-#include "include/core/SkSpan.h"
-#include "modules/skparagraph/include/TextStyle.h"
+#include "skia/core/SkSpan.h"
+#include "skia/modules/skparagraph/include/TextStyle.h"
 #include <AK/third_party/ParagraphImpl.h>
 #include <AK/third_party/Run.h>
 

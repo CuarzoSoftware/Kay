@@ -1,5 +1,5 @@
 #include <AK/effects/AKRoundCornersEffect.h>
-#include <include/core/SkCanvas.h>
+#include <skia/core/SkCanvas.h>
 
 using namespace AK;
 

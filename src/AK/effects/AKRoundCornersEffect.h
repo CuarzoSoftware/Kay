@@ -5,9 +5,9 @@
 #include <AK/AKBorderRadius.h>
 #include <AK/AKBrush.h>
 #include <AK/AKPen.h>
-#include <include/core/SkPath.h>
-#include <include/core/SkRegion.h>
-#include <include/core/SkBlendMode.h>
+#include <skia/core/SkPath.h>
+#include <skia/core/SkRegion.h>
+#include <skia/core/SkBlendMode.h>
 
 class SkCanvas;
 

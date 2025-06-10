@@ -1,8 +1,8 @@
 #ifndef AKBAKEEVENT_H
 #define AKBAKEEVENT_H
 
-#include <include/core/SkCanvas.h>
-#include <include/core/SkRegion.h>
+#include <skia/core/SkCanvas.h>
+#include <skia/core/SkRegion.h>
 #include <AK/events/AKEvent.h>
 #include <AK/AKSurface.h>
 #include <AK/AKChanges.h>

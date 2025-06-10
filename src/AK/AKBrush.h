@@ -2,7 +2,7 @@
 #define AKBRUSH_H
 
 #include <AK/AK.h>
-#include <include/core/SkPaint.h>
+#include <skia/core/SkPaint.h>
 
 class AK::AKBrush : public SkPaint
 {

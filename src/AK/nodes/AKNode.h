@@ -9,9 +9,9 @@
 #include <AK/AKLayout.h>
 #include <AK/AKChanges.h>
 
-#include <include/core/SkImage.h>
-#include <include/core/SkSurface.h>
-#include <include/core/SkRegion.h>
+#include <skia/core/SkImage.h>
+#include <skia/core/SkSurface.h>
+#include <skia/core/SkRegion.h>
 
 #include <unordered_set>
 #include <unordered_map>

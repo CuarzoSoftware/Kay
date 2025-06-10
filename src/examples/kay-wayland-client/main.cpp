@@ -23,11 +23,11 @@
 #include <AK/nodes/AKSolidColor.h>
 #include <AK/nodes/AKPath.h>
 
-#include <include/gpu/ganesh/GrBackendSurface.h>
-#include <include/gpu/ganesh/SkSurfaceGanesh.h>
-#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
-#include <include/core/SkColorSpace.h>
-#include <include/utils/SkParsePath.h>
+#include <skia/gpu/ganesh/GrBackendSurface.h>
+#include <skia/gpu/ganesh/SkSurfaceGanesh.h>
+#include <skia/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <skia/core/SkColorSpace.h>
+#include <skia/utils/SkParsePath.h>
 
 using namespace AK;
 

@@ -1,14 +1,14 @@
 // Copyright 2019 Google LLC.
-#include "include/core/SkFontMetrics.h"
-#include "include/core/SkTextBlob.h"
-#include "include/private/base/SkFloatingPoint.h"
-#include "include/private/base/SkMalloc.h"
-#include "include/private/base/SkTo.h"
-#include "modules/skparagraph/include/DartTypes.h"
-#include "modules/skparagraph/include/TextStyle.h"
+#include "skia/core/SkFontMetrics.h"
+#include "skia/core/SkTextBlob.h"
+#include "skia/private/base/SkFloatingPoint.h"
+#include "skia/private/base/SkMalloc.h"
+#include "skia/private/base/SkTo.h"
+#include "skia/modules/skparagraph/include/DartTypes.h"
+#include "skia/modules/skparagraph/include/TextStyle.h"
 #include <AK/third_party/ParagraphImpl.h>
 #include <AK/third_party/Run.h>
-#include "modules/skshaper/include/SkShaper.h"
+#include "skia/modules/skshaper/include/SkShaper.h"
 
 namespace skia {
 namespace textlayout {

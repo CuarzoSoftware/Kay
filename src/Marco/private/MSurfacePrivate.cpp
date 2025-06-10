@@ -7,13 +7,13 @@
 #include <AK/events/AKVibrancyEvent.h>
 #include <AK/AKGLContext.h>
 
-#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
-#include <include/gpu/ganesh/GrBackendSurface.h>
-#include <include/gpu/ganesh/GrRecordingContext.h>
-#include <include/gpu/ganesh/GrDirectContext.h>
-#include <include/gpu/ganesh/gl/GrGLTypes.h>
-#include <include/gpu/ganesh/SkSurfaceGanesh.h>
-#include <include/core/SkColorSpace.h>
+#include <skia/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <skia/gpu/ganesh/GrBackendSurface.h>
+#include <skia/gpu/ganesh/GrRecordingContext.h>
+#include <skia/gpu/ganesh/GrDirectContext.h>
+#include <skia/gpu/ganesh/gl/GrGLTypes.h>
+#include <skia/gpu/ganesh/SkSurfaceGanesh.h>
+#include <skia/core/SkColorSpace.h>
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>

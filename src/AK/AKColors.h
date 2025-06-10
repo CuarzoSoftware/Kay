@@ -1,7 +1,7 @@
 #ifndef AKCOLORS_H
 #define AKCOLORS_H
 
-#include <include/core/SkColor.h>
+#include <skia/core/SkColor.h>
 
 namespace AK
 {

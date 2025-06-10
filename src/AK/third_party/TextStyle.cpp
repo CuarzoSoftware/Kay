@@ -1,6 +1,6 @@
 // Copyright 2019 Google LLC.
-#include "include/core/SkFontStyle.h"
-#include "modules/skparagraph/include/TextStyle.h"
+#include "skia/core/SkFontStyle.h"
+#include "skia/modules/skparagraph/include/TextStyle.h"
 
 namespace skia {
 namespace textlayout {

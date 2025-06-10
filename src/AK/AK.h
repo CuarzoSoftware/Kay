@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include <filesystem>
-#include <include/core/SkFontMgr.h>
+#include <skia/core/SkFontMgr.h>
 
 #define AK_GET_CLASS(identifier) typename std::remove_const<std::remove_pointer<decltype(identifier)>::type>::type
 #define AK_MAX_BUFFER_AGE 3

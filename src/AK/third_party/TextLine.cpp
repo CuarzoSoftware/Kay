@@ -2,27 +2,27 @@
 
 #include <AK/third_party/TextLine.h>
 
-#include "include/core/SkFont.h"
-#include "include/core/SkFontMetrics.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkSpan.h"
-#include "include/core/SkString.h"
-#include "include/core/SkTextBlob.h"
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkTemplates.h"
-#include "include/private/base/SkTo.h"
-#include "modules/skparagraph/include/DartTypes.h"
-#include "modules/skparagraph/include/Metrics.h"
-#include "modules/skparagraph/include/ParagraphPainter.h"
-#include "modules/skparagraph/include/ParagraphStyle.h"
-#include "modules/skparagraph/include/TextShadow.h"
-#include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/src/Decorations.h"
+#include "skia/core/SkFont.h"
+#include "skia/core/SkFontMetrics.h"
+#include "skia/core/SkPaint.h"
+#include "skia/core/SkSpan.h"
+#include "skia/core/SkString.h"
+#include "skia/core/SkTextBlob.h"
+#include "skia/core/SkTypes.h"
+#include "skia/private/base/SkTemplates.h"
+#include "skia/private/base/SkTo.h"
+#include "skia/modules/skparagraph/include/DartTypes.h"
+#include "skia/modules/skparagraph/include/Metrics.h"
+#include "skia/modules/skparagraph/include/ParagraphPainter.h"
+#include "skia/modules/skparagraph/include/ParagraphStyle.h"
+#include "skia/modules/skparagraph/include/TextShadow.h"
+#include "skia/modules/skparagraph/include/TextStyle.h"
+#include "skia/modules/skparagraph/src/Decorations.h"
 #include <AK/third_party/ParagraphImpl.h>
 #include <AK/third_party/ParagraphPainterImpl.h>
-#include "modules/skshaper/include/SkShaper.h"
-#include "modules/skshaper/include/SkShaper_harfbuzz.h"
-#include "modules/skshaper/include/SkShaper_skunicode.h"
+#include "skia/modules/skshaper/include/SkShaper.h"
+#include "skia/modules/skshaper/include/SkShaper_harfbuzz.h"
+#include "skia/modules/skshaper/include/SkShaper_skunicode.h"
 
 #include <algorithm>
 #include <limits>

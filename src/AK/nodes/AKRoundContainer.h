@@ -3,7 +3,7 @@
 
 #include <AK/nodes/AKSubScene.h>
 #include <AK/effects/AKRoundCornersEffect.h>
-#include <include/core/SkPath.h>
+#include <skia/core/SkPath.h>
 
 class AK::AKRoundContainer : public AKSubScene
 {

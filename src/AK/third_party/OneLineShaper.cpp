@@ -1,9 +1,9 @@
 // Copyright 2019 Google LLC.
 #include <AK/third_party/OneLineShaper.h>
 
-#include "modules/skparagraph/src/Iterators.h"
-#include "modules/skshaper/include/SkShaper_harfbuzz.h"
-#include "src/base/SkUTF.h"
+#include "skia/modules/skparagraph/src/Iterators.h"
+#include "skia/modules/skshaper/include/SkShaper_harfbuzz.h"
+#include "skia/src/base/SkUTF.h"
 
 #include <algorithm>
 #include <cstdint>

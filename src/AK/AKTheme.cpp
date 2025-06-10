@@ -5,13 +5,13 @@
 #include <AK/utils/AKImageLoader.h>
 #include <AK/AKLog.h>
 
-#include <include/gpu/ganesh/GrRecordingContext.h>
-#include <include/gpu/ganesh/GrDirectContext.h>
-#include <include/effects/SkGradientShader.h>
-#include <include/effects/SkImageFilters.h>
-#include <include/core/SkMaskFilter.h>
-#include <include/core/SkBlurTypes.h>
-#include <include/core/SkCanvas.h>
+#include <skia/gpu/ganesh/GrRecordingContext.h>
+#include <skia/gpu/ganesh/GrDirectContext.h>
+#include <skia/effects/SkGradientShader.h>
+#include <skia/effects/SkImageFilters.h>
+#include <skia/core/SkMaskFilter.h>
+#include <skia/core/SkBlurTypes.h>
+#include <skia/core/SkCanvas.h>
 
 AK::AKTheme::AKTheme() noexcept
 {

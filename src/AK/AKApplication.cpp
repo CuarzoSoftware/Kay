@@ -6,9 +6,9 @@
 #include <AK/AKLog.h>
 #include <EGL/egl.h>
 
-#include <include/gpu/ganesh/gl/GrGLAssembleInterface.h>
-#include <include/gpu/ganesh/gl/GrGLDirectContext.h>
-#include <include/ports/SkFontMgr_fontconfig.h>
+#include <skia/gpu/ganesh/gl/GrGLAssembleInterface.h>
+#include <skia/gpu/ganesh/gl/GrGLDirectContext.h>
+#include <skia/ports/SkFontMgr_fontconfig.h>
 
 using namespace AK;
 

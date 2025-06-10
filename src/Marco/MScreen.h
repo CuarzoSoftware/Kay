@@ -8,8 +8,8 @@
 #include <Marco/Marco.h>
 #include <Marco/MProxy.h>
 #include <Marco/MApplication.h>
-#include <include/core/SkSize.h>
-#include <include/core/SkSurface.h>
+#include <skia/core/SkSize.h>
+#include <skia/core/SkSurface.h>
 
 class AK::MScreen : public AKObject
 {

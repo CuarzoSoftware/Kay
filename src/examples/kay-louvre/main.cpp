@@ -1,19 +1,19 @@
-#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
-#include <include/core/SkMaskFilter.h>
-#include <include/effects/SkBlurMaskFilter.h>
-#include <include/gpu/ganesh/SkSurfaceGanesh.h>
-#include <include/gpu/ganesh/SkImageGanesh.h>
-#include <include/core/SkImage.h>
-#include <include/core/SkSurface.h>
-#include <include/core/SkCanvas.h>
-#include <include/core/SkColorSpace.h>
-#include <include/effects/SkImageFilters.h>
-#include <include/effects/SkGradientShader.h>
-#include <include/utils/SkParsePath.h>
-#include <include/effects/SkBlurMaskFilter.h>
-#include <include/core/SkRRect.h>
-#include <include/utils/SkParsePath.h>
-#include <include/gpu/ganesh/GrDirectContext.h>
+#include <skia//gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <skia/core/SkMaskFilter.h>
+#include <skia/effects/SkBlurMaskFilter.h>
+#include <skia/gpu/ganesh/SkSurfaceGanesh.h>
+#include <skia/gpu/ganesh/SkImageGanesh.h>
+#include <skia/core/SkImage.h>
+#include <skia/core/SkSurface.h>
+#include <skia/core/SkCanvas.h>
+#include <skia/core/SkColorSpace.h>
+#include <skia/effects/SkImageFilters.h>
+#include <skia/effects/SkGradientShader.h>
+#include <skia/utils/SkParsePath.h>
+#include <skia/effects/SkBlurMaskFilter.h>
+#include <skia/core/SkRRect.h>
+#include <skia/utils/SkParsePath.h>
+#include <skia/gpu/ganesh/GrDirectContext.h>
 
 #include <LPainter.h>
 #include <LLauncher.h>
@@ -25,7 +25,7 @@
 #include <LPointer.h>
 #include <LLog.h>
 #include <LSeat.h>
-#include <include/core/SkPoint.h>
+#include <skia/core/SkPoint.h>
 #include <LKeyboard.h>
 #include <LAnimation.h>
 #include <LOpenGL.h>
@@ -567,8 +567,8 @@ public:
     //AKBackgroundImageShadowEffect shadow { 6, {0,0}, 0x66000000, this };
 };
 
-#include <modules/svg/include/SkSVGDOM.h>
-#include <include/core/SkStream.h>
+#include <skia/modules/svg/include/SkSVGDOM.h>
+#include <skia/core/SkStream.h>
 
 class Output final : public LOutput
 {

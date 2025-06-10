@@ -1,9 +1,9 @@
 #include <AK/AKLog.h>
 #include <AK/AKBooleanEventSource.h>
-#include <include/gpu/ganesh/GrDirectContext.h>
-#include <include/gpu/ganesh/gl/GrGLBackendSurface.h>
-#include <include/gpu/ganesh/gl/GrGLDirectContext.h>
-#include <include/gpu/ganesh/gl/GrGLAssembleInterface.h>
+#include <skia/gpu/ganesh/GrDirectContext.h>
+#include <skia/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <skia/gpu/ganesh/gl/GrGLDirectContext.h>
+#include <skia/gpu/ganesh/gl/GrGLAssembleInterface.h>
 #include <Marco/MApplication.h>
 #include <Marco/private/MSurfacePrivate.h>
 #include <Marco/private/MPopupPrivate.h>

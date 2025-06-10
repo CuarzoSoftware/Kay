@@ -1,31 +1,31 @@
 // Copyright 2019 Google LLC.
-#include "modules/skparagraph/src/ParagraphBuilderImpl.h"
+#include "skia/modules/skparagraph/src/ParagraphBuilderImpl.h"
 
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkTypes.h"
-#include "modules/skparagraph/include/FontCollection.h"
-#include "modules/skparagraph/include/Paragraph.h"
-#include "modules/skparagraph/include/ParagraphBuilder.h"
-#include "modules/skparagraph/include/ParagraphStyle.h"
-#include "modules/skparagraph/include/TextStyle.h"
+#include "skia/core/SkRefCnt.h"
+#include "skia/core/SkTypes.h"
+#include "skia/modules/skparagraph/include/FontCollection.h"
+#include "skia/modules/skparagraph/include/Paragraph.h"
+#include "skia/modules/skparagraph/include/ParagraphBuilder.h"
+#include "skia/modules/skparagraph/include/ParagraphStyle.h"
+#include "skia/modules/skparagraph/include/TextStyle.h"
 #include <AK/third_party/ParagraphImpl.h>
-#include "modules/skunicode/include/SkUnicode.h"
+#include "skia/modules/skunicode/include/SkUnicode.h"
 
 #if !defined(SK_DISABLE_LEGACY_PARAGRAPH_UNICODE)
 #if defined(SK_UNICODE_ICU_IMPLEMENTATION)
-#include "modules/skunicode/include/SkUnicode_icu.h"
+#include "skia/modules/skunicode/include/SkUnicode_icu.h"
 #endif
 
 #if defined(SK_UNICODE_LIBGRAPHEME_IMPLEMENTATION)
-#include "modules/skunicode/include/SkUnicode_libgrapheme.h"
+#include "skia/modules/skunicode/include/SkUnicode_libgrapheme.h"
 #endif
 
 #if defined(SK_UNICODE_ICU4X_IMPLEMENTATION)
-#include "modules/skunicode/include/SkUnicode_icu4x.h"
+#include "skia/modules/skunicode/include/SkUnicode_icu4x.h"
 #endif
 
 #if defined(SK_UNICODE_CLIENT_IMPLEMENTATION)
-#include "modules/skunicode/include/SkUnicode_client.h"
+#include "skia/modules/skunicode/include/SkUnicode_client.h"
 #endif
 
 #endif  // !defined(SK_DISABLE_LEGACY_PARAGRAPH_UNICODE)

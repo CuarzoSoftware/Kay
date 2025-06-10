@@ -1,9 +1,9 @@
 // Copyright 2019 Google LLC.
 
-#include "include/core/SkBlurTypes.h"
-#include "include/core/SkMaskFilter.h"
-#include "include/effects/SkDashPathEffect.h"
-#include "include/effects/SkDiscretePathEffect.h"
+#include "skia/core/SkBlurTypes.h"
+#include "skia/core/SkMaskFilter.h"
+#include "skia/effects/SkDashPathEffect.h"
+#include "skia/effects/SkDiscretePathEffect.h"
 #include <AK/third_party/ParagraphPainterImpl.h>
 
 #include <array>

@@ -2,17 +2,17 @@
 #ifndef Run_DEFINED
 #define Run_DEFINED
 
-#include "include/core/SkFont.h"
-#include "include/core/SkFontMetrics.h"
-#include "include/core/SkPoint.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkScalar.h"
-#include "include/core/SkSpan.h"
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkTArray.h"
-#include "modules/skparagraph/include/DartTypes.h"
-#include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skshaper/include/SkShaper.h"
+#include "skia/core/SkFont.h"
+#include "skia/core/SkFontMetrics.h"
+#include "skia/core/SkPoint.h"
+#include "skia/core/SkRect.h"
+#include "skia/core/SkScalar.h"
+#include "skia/core/SkSpan.h"
+#include "skia/core/SkTypes.h"
+#include "skia/private/base/SkTArray.h"
+#include "skia/modules/skparagraph/include/DartTypes.h"
+#include "skia/modules/skparagraph/include/TextStyle.h"
+#include "skia/modules/skshaper/include/SkShaper.h"
 
 #include <math.h>
 #include <algorithm>

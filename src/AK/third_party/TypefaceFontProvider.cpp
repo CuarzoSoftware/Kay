@@ -1,8 +1,8 @@
 // Copyright 2019 Google LLC.
-#include "modules/skparagraph/include/TypefaceFontProvider.h"
-#include "include/core/SkFontMgr.h"
-#include "include/core/SkString.h"
-#include "include/core/SkTypeface.h"
+#include "skia/modules/skparagraph/include/TypefaceFontProvider.h"
+#include "skia/core/SkFontMgr.h"
+#include "skia/core/SkString.h"
+#include "skia/core/SkTypeface.h"
 
 namespace skia {
 namespace textlayout {

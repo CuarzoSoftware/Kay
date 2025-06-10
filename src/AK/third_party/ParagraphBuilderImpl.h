@@ -4,13 +4,13 @@
 
 #include <memory>
 #include <string>
-#include "include/private/base/SkOnce.h"
-#include "include/private/base/SkTArray.h"
-#include "modules/skparagraph/include/FontCollection.h"
-#include "modules/skparagraph/include/Paragraph.h"
-#include "modules/skparagraph/include/ParagraphBuilder.h"
-#include "modules/skparagraph/include/ParagraphStyle.h"
-#include "modules/skparagraph/include/TextStyle.h"
+#include "skia/private/base/SkOnce.h"
+#include "skia/private/base/SkTArray.h"
+#include "skia/modules/skparagraph/include/FontCollection.h"
+#include "skia/modules/skparagraph/include/Paragraph.h"
+#include "skia/modules/skparagraph/include/ParagraphBuilder.h"
+#include "skia/modules/skparagraph/include/ParagraphStyle.h"
+#include "skia/modules/skparagraph/include/TextStyle.h"
 
 namespace skia {
 namespace textlayout {

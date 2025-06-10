@@ -2,16 +2,16 @@
 #ifndef TextLine_DEFINED
 #define TextLine_DEFINED
 
-#include "include/core/SkPoint.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkScalar.h"
-#include "include/private/base/SkTArray.h"
-#include "modules/skparagraph/include/DartTypes.h"
-#include "modules/skparagraph/include/Metrics.h"
-#include "modules/skparagraph/include/ParagraphPainter.h"
-#include "modules/skparagraph/include/TextStyle.h"
+#include "skia/core/SkPoint.h"
+#include "skia/core/SkRect.h"
+#include "skia/core/SkScalar.h"
+#include "skia/private/base/SkTArray.h"
+#include "skia/modules/skparagraph/include/DartTypes.h"
+#include "skia/modules/skparagraph/include/Metrics.h"
+#include "skia/modules/skparagraph/include/ParagraphPainter.h"
+#include "skia/modules/skparagraph/include/TextStyle.h"
 #include <AK/third_party/Run.h>
-#include "src/base/SkBitmaskEnum.h"
+#include "skia/src/base/SkBitmaskEnum.h"
 
 #include <stddef.h>
 #include <functional>

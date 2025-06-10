@@ -2,7 +2,7 @@
 #define AKPEN_H
 
 #include <AK/AK.h>
-#include <include/core/SkPaint.h>
+#include <skia/core/SkPaint.h>
 
 class AK::AKPen : public SkPaint
 {

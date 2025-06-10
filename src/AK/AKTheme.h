@@ -1,11 +1,11 @@
 #ifndef AKTHEME_H
 #define AKTHEME_H
 
-#include <modules/skparagraph/include/FontCollection.h>
-#include <modules/skparagraph/include/TextStyle.h>
-#include <include/core/SkImage.h>
-#include <include/core/SkRegion.h>
-#include <include/core/SkFont.h>
+#include <skia/modules/skparagraph/include/FontCollection.h>
+#include <skia/modules/skparagraph/include/TextStyle.h>
+#include <skia/core/SkImage.h>
+#include <skia/core/SkRegion.h>
+#include <skia/core/SkFont.h>
 #include <AK/nodes/AKWindowButton.h>
 #include <AK/AKBrush.h>
 #include <AK/AK.h>

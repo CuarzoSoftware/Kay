@@ -4,7 +4,7 @@
 #include <AK/events/AKEvent.h>
 #include <AK/AKTime.h>
 
-#include <include/core/SkRegion.h>
+#include <skia/core/SkRegion.h>
 
 /**
  * @brief Render event.
