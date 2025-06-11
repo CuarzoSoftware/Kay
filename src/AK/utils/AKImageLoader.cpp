@@ -1,6 +1,5 @@
-#include "skia/core/SkCanvas.h"
-#include "skia/effects/SkImageFilters.h"
-#include "skia/gpu/ganesh/gl/GrGLBackendSurface.h"
+#include <skia/core/SkCanvas.h>
+#include <skia/effects/SkImageFilters.h>
 #include <skia/core/SkBitmap.h>
 #include <AK/AKApplication.h>
 #include <AK/AKSurface.h>
@@ -10,104 +9,60 @@
 #include <skia/core/SkImage.h>
 #include <skia/gpu/ganesh/SkImageGanesh.h>
 #include <skia/core/SkStream.h>
-#include <plutosvg.h>
+
+#include <skia/modules/svg/include/SkSVGDOM.h>
+#include <skia/svg/SkSVGCanvas.h>
 
 using namespace AK;
 
+sk_sp<SkImage> loadSVG(const std::filesystem::path &path, const SkISize &size)
+{
+    auto stream { SkMemoryStream::MakeFromFile(path.c_str()) };
+    auto dom { SkSVGDOM::MakeFromStream(*stream.get()) };
+
+    if (!dom)
+        return nullptr;
+
+    const SkSize finalSize
+    {
+        size.fWidth <= 0 ? dom->containerSize().width() : SkScalar(size.width()),
+        size.fHeight <= 0 ? dom->containerSize().height() : SkScalar(size.height()),
+    };
+
+    if (finalSize.fWidth <= 0 || finalSize.fHeight <= 0 || dom->containerSize().width() <= 0 || dom->containerSize().height() <= 0)
+        return nullptr;
+
+    auto surf { AKSurface::Make(finalSize.toCeil(), 1, true) };
+    surf->surface()->recordingContext()->asDirectContext()->resetContext();
+    auto &c { *surf->surface()->getCanvas() };
+
+    c.save();
+    c.scale(finalSize.fWidth/dom->containerSize().width(), size.fHeight/dom->containerSize().height());
+    dom->render(&c);
+    c.restore();
+
+    surf->surface()->recordingContext()->asDirectContext()->flush();
+    return sk_sp<SkImage>(surf->releaseImage());
+}
+
 sk_sp<SkImage> AKImageLoader::loadFile(const std::filesystem::path &path, const SkISize &size) noexcept
 {
-    SkISize customSize;
-    plutovg_surface_t *svgSurf;
-    plutosvg_document_t *svgDoc = plutosvg_document_load_from_file(path.c_str(), -1, -1);
-    if (svgDoc == NULL)
-        goto skia;
+    auto img { loadSVG(path, size) };
 
-    if (size.width() <= 0)
-        customSize.fWidth = plutosvg_document_get_width(svgDoc);
-    else
-        customSize.fWidth = size.width();
+    if (img)
+        return img;
 
-    if (size.height() <= 0)
-        customSize.fHeight = plutosvg_document_get_height(svgDoc);
-    else
-        customSize.fHeight = size.height();
-
-    svgSurf = plutosvg_document_render_to_surface(svgDoc, NULL, customSize.width(), customSize.height(), NULL, NULL, NULL);
-
-    if (svgSurf == NULL)
-    {
-        plutosvg_document_destroy(svgDoc);
-        goto skia;
-    }
-
-    {
-        plutovg_surface_write_to_png(svgSurf, "/home/eduardo/camera.png");
-
-        // Swap R B
-        int h, i;
-        uint8_t tmp;
-        uint8_t *pix { plutovg_surface_get_data(svgSurf) };
-        for (int y = 0; y < plutovg_surface_get_height(svgSurf); y++)
-        {
-            h = y * plutovg_surface_get_stride(svgSurf);
-
-            for (int x = 0; x < plutovg_surface_get_width(svgSurf) * 4; x+=4)
-            {
-                i = h + x;
-                tmp = pix[i];
-                pix[i] = pix[i + 2];
-                pix[i + 2] = tmp;
-            }
-        }
-    }
-
-    {
-        GrGLTextureInfo texInfo;
-        texInfo.fFormat = GL_RGBA8;
-        texInfo.fTarget = GL_TEXTURE_2D;
-        glGenTextures(1, &texInfo.fID);
-        glBindTexture(GL_TEXTURE_2D, texInfo.fID);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, customSize.width(), customSize.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, plutovg_surface_get_data(svgSurf));
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glFinish();
-
-        auto backendTexture = GrBackendTextures::MakeGL(
-            customSize.width(),
-            customSize.height(),
-            skgpu::Mipmapped::kNo,
-            texInfo);
-
-        auto skImage = SkImages::AdoptTextureFrom(
-            akApp()->glContext()->skContext().get(),
-            backendTexture,
-            GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
-            kRGBA_8888_SkColorType,
-            SkAlphaType::kPremul_SkAlphaType);
-
-        plutovg_surface_destroy(svgSurf);
-        plutosvg_document_destroy(svgDoc);
-
-        if (skImage)
-            return skImage;
-
-        glDeleteTextures(1, &texInfo.fID);
-    }
-
-skia:
-    auto img = SkImages::DeferredFromEncodedData(SkData::MakeFromFileName(path.c_str()), SkAlphaType::kPremul_SkAlphaType);
+    img = SkImages::DeferredFromEncodedData(SkData::MakeFromFileName(path.c_str()), SkAlphaType::kPremul_SkAlphaType);
 
     if (!img)
     {
         AKLog::error("[AKImageLoader] Failed to load image:  %s", path.c_str());
-        return img;
+        return nullptr;
     }
 
     auto skImage = SkImages::TextureFromImage(akApp()->glContext()->skContext().get(), img.get());
+
+    SkISize customSize;
 
     if (size.width() <= 0)
         customSize.fWidth = skImage->width();

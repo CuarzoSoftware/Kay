@@ -32,19 +32,17 @@ egl_dep         = dependency('egl')
 gl_dep          = dependency('gl')
 glesv2_dep      = dependency('glesv2')
 skia_dep        = dependency('cuarzo-skia')
+skia_svg_dep    = dependency('cuarzo-skia-svg')
 xkbcommon_dep   = dependency('xkbcommon')
-plutovg_dep     = dependency('plutovg', fallback: ['plutovg', 'plutovg_dep'])
-plutosvg_dep    = dependency('plutosvg', fallback: ['plutosvg', 'plutosvg_dep'])
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
 
 deps = [
   skia_dep,
+  skia_svg_dep,
   egl_dep,
   gl_dep,
   glesv2_dep,
   yoga_dep,
-  plutovg_dep,
-  plutosvg_dep,
   xkbcommon_dep
 ]
 
