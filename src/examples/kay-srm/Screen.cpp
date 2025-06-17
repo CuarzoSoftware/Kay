@@ -1,10 +1,10 @@
-#include <skia/gpu/ganesh/gl/GrGLAssembleInterface.h>
-#include <skia/gpu/ganesh/gl/GrGLDirectContext.h>
-#include <skia/gpu/ganesh/gl/GrGLBackendSurface.h>
-#include <skia/gpu/ganesh/SkSurfaceGanesh.h>
-#include <skia/gpu/ganesh/GrBackendSurface.h>
-#include <skia/gpu/ganesh/GrDirectContext.h>
-#include <skia/core/SkColorSpace.h>
+#include <CZ/skia/gpu/ganesh/gl/GrGLAssembleInterface.h>
+#include <CZ/skia/gpu/ganesh/gl/GrGLDirectContext.h>
+#include <CZ/skia/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <CZ/skia/gpu/ganesh/SkSurfaceGanesh.h>
+#include <CZ/skia/gpu/ganesh/GrBackendSurface.h>
+#include <CZ/skia/gpu/ganesh/GrDirectContext.h>
+#include <CZ/skia/core/SkColorSpace.h>
 
 #include <AK/AKGLContext.h>
 #include <AK/AKLog.h>

@@ -2,9 +2,9 @@
 #define AKPAINTER_H
 
 #include <AK/AKTransform.h>
-#include <skia/core/SkColor.h>
-#include <skia/core/SkRegion.h>
-#include <skia/core/SkImage.h>
+#include <CZ/skia/core/SkColor.h>
+#include <CZ/skia/core/SkRegion.h>
+#include <CZ/skia/core/SkImage.h>
 #include <AK/AKObject.h>
 #include <GLES2/gl2.h>
 

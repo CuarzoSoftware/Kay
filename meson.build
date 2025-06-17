@@ -31,14 +31,14 @@ pkg             = import('pkgconfig')
 egl_dep         = dependency('egl')
 gl_dep          = dependency('gl')
 glesv2_dep      = dependency('glesv2')
-skia_dep        = dependency('cuarzo-skia')
-skia_svg_dep    = dependency('cuarzo-skia-svg')
+skia_dep        = dependency('cz-skia')
+cz_core_dep     = dependency('cz-core')
 xkbcommon_dep   = dependency('xkbcommon')
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
 
 deps = [
+cz_core_dep,
   skia_dep,
-  skia_svg_dep,
   egl_dep,
   gl_dep,
   glesv2_dep,
@@ -65,7 +65,6 @@ endif
 sources = run_command('find', './src/AK', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n')
 header_dirs = [
   ['./src/AK', 'AK'],
-  ['./src/AK/third_party', 'AK/third_party'],
   ['./src/AK/nodes', 'AK/nodes'],
   ['./src/AK/effects', 'AK/effects'],
   ['./src/AK/events', 'AK/events'],
@@ -101,7 +100,7 @@ kay = library(
     install : true)
 
 kay_dep = declare_dependency(
-    dependencies: [skia_dep, yoga_dep, egl_dep, gl_dep, glesv2_dep],
+    dependencies: deps,
     include_directories : ['./src'],
     link_with : kay)
 
@@ -116,12 +115,12 @@ pkg.generate(
     description: 'C++ GUI toolkit powered by Skia and Yoga.',
     version: meson.project_version(),
     filebase: 'Kay',
-    requires: ['Skia', 'egl', 'gl', 'glesv2'])
+    requires: ['cz-skia'])
 
 # -------------- EXAMPLES --------------
 
 if get_option('build_examples')
-    louvre_dep = dependency('Louvre')
+    louvre_dep = dependency('cz-louvre')
     pixmap_dep = dependency('pixman-1')
     srm_dep = dependency('SRM')
     wl_mod = import('unstable-wayland')

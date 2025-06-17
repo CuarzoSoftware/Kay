@@ -12,10 +12,10 @@
 #include <algorithm>
 #include <yoga/Yoga.h>
 
-#include <skia/core/SkCanvas.h>
-#include <skia/gpu/ganesh/gl/GrGLBackendSurface.h>
-#include <skia/gpu/ganesh/GrDirectContext.h>
-#include <skia/gpu/ganesh/SkSurfaceGanesh.h>
+#include <CZ/skia/core/SkCanvas.h>
+#include <CZ/skia/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <CZ/skia/gpu/ganesh/GrDirectContext.h>
+#include <CZ/skia/gpu/ganesh/SkSurfaceGanesh.h>
 
 #include <AK/events/AKPointerMoveEvent.h>
 #include <AK/events/AKPointerEnterEvent.h>

@@ -1,7 +1,7 @@
-#include <skia/core/SkCanvas.h>
-#include <skia/effects/SkImageFilters.h>
-#include <skia/gpu/ganesh/GrDirectContext.h>
-#include <skia/core/SkRRect.h>
+#include <CZ/skia/core/SkCanvas.h>
+#include <CZ/skia/effects/SkImageFilters.h>
+#include <CZ/skia/gpu/ganesh/GrDirectContext.h>
+#include <CZ/skia/core/SkRRect.h>
 #include <AK/effects/AKBackgroundBlurEffect.h>
 #include <AK/events/AKRenderEvent.h>
 #include <AK/AKApplication.h>

@@ -1,7 +1,7 @@
-#include <skia/gpu/ganesh/GrBackendSurface.h>
-#include <skia/gpu/ganesh/SkImageGanesh.h>
-#include <skia/gpu/ganesh/SkSurfaceGanesh.h>
-#include <skia/gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <CZ/skia/gpu/ganesh/GrBackendSurface.h>
+#include <CZ/skia/gpu/ganesh/SkImageGanesh.h>
+#include <CZ/skia/gpu/ganesh/SkSurfaceGanesh.h>
+#include <CZ/skia/gpu/ganesh/gl/GrGLBackendSurface.h>
 #include <AK/nodes/AKRenderable.h>
 #include <AK/AKPainter.h>
 #include <AK/AKTheme.h>

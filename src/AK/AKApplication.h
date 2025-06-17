@@ -7,8 +7,8 @@
 #include <AK/AKEventSource.h>
 #include <AK/AKSafeEventQueue.h>
 
-#include <skia/modules/skparagraph/include/FontCollection.h>
-#include <skia/gpu/ganesh/GrContextOptions.h>
+#include <CZ/skia/modules/skparagraph/include/FontCollection.h>
+#include <CZ/skia/gpu/ganesh/GrContextOptions.h>
 
 #include <EGL/egl.h>
 #include <sys/epoll.h>

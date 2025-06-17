@@ -1,8 +1,8 @@
 #ifndef AKTARGET_H
 #define AKTARGET_H
 
-#include <skia/core/SkSurface.h>
-#include <skia/core/SkRect.h>
+#include <CZ/skia/core/SkSurface.h>
+#include <CZ/skia/core/SkRect.h>
 #include <AK/AKObject.h>
 #include <AK/AKTransform.h>
 

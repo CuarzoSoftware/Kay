@@ -2,7 +2,7 @@
 #define AKBACKGROUNDDAMAGETRACKER_H
 
 #include <AK/AKObject.h>
-#include <skia/core/SkRegion.h>
+#include <CZ/skia/core/SkRegion.h>
 
 /**
  * @brief Background capturer.

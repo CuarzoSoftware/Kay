@@ -1,7 +1,7 @@
 #ifndef AKRRECT_H
 #define AKRRECT_H
 
-#include <skia/core/SkRect.h>
+#include <CZ/skia/core/SkRect.h>
 #include <AK/AK.h>
 
 class AK::AKRRect : public SkIRect

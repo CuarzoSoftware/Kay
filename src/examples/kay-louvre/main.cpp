@@ -1,19 +1,19 @@
-#include <skia//gpu/ganesh/gl/GrGLBackendSurface.h>
-#include <skia/core/SkMaskFilter.h>
-#include <skia/effects/SkBlurMaskFilter.h>
-#include <skia/gpu/ganesh/SkSurfaceGanesh.h>
-#include <skia/gpu/ganesh/SkImageGanesh.h>
-#include <skia/core/SkImage.h>
-#include <skia/core/SkSurface.h>
-#include <skia/core/SkCanvas.h>
-#include <skia/core/SkColorSpace.h>
-#include <skia/effects/SkImageFilters.h>
-#include <skia/effects/SkGradientShader.h>
-#include <skia/utils/SkParsePath.h>
-#include <skia/effects/SkBlurMaskFilter.h>
-#include <skia/core/SkRRect.h>
-#include <skia/utils/SkParsePath.h>
-#include <skia/gpu/ganesh/GrDirectContext.h>
+#include <CZ/skia//gpu/ganesh/gl/GrGLBackendSurface.h>
+#include <CZ/skia/core/SkMaskFilter.h>
+#include <CZ/skia/effects/SkBlurMaskFilter.h>
+#include <CZ/skia/gpu/ganesh/SkSurfaceGanesh.h>
+#include <CZ/skia/gpu/ganesh/SkImageGanesh.h>
+#include <CZ/skia/core/SkImage.h>
+#include <CZ/skia/core/SkSurface.h>
+#include <CZ/skia/core/SkCanvas.h>
+#include <CZ/skia/core/SkColorSpace.h>
+#include <CZ/skia/effects/SkImageFilters.h>
+#include <CZ/skia/effects/SkGradientShader.h>
+#include <CZ/skia/utils/SkParsePath.h>
+#include <CZ/skia/effects/SkBlurMaskFilter.h>
+#include <CZ/skia/core/SkRRect.h>
+#include <CZ/skia/utils/SkParsePath.h>
+#include <CZ/skia/gpu/ganesh/GrDirectContext.h>
 
 #include <LPainter.h>
 #include <LLauncher.h>
@@ -25,19 +25,19 @@
 #include <LPointer.h>
 #include <LLog.h>
 #include <LSeat.h>
-#include <skia/core/SkPoint.h>
+#include <CZ/skia/core/SkPoint.h>
 #include <LKeyboard.h>
 #include <LAnimation.h>
 #include <LOpenGL.h>
 #include <LScreenshotRequest.h>
 #include <LExclusiveZone.h>
-#include <LKeyboardKeyEvent.h>
+#include <Events/LKeyboardKeyEvent.h>
 #include <LBackgroundBlur.h>
-#include <LLayerRole.h>
+#include <Roles/LLayerRole.h>
 
-#include <protocols/BackgroundBlur/GBackgroundBlurManager.h>
-#include <protocols/InvisibleRegion/GInvisibleRegionManager.h>
-#include <protocols/SvgPath/GSvgPathManager.h>
+#include <Protocols/BackgroundBlur/GBackgroundBlurManager.h>
+#include <Protocols/InvisibleRegion/GInvisibleRegionManager.h>
+#include <Protocols/SvgPath/GSvgPathManager.h>
 
 #include <AK/nodes/AKSubScene.h>
 #include <AK/nodes/AKImageFrame.h>
@@ -96,8 +96,8 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
     skTextureInfo.fTarget = texture->target();
 
     skTexture = GrBackendTextures::MakeGL(
-        texture->sizeB().w(),
-        texture->sizeB().h(),
+        texture->sizeB().width(),
+        texture->sizeB().height(),
         skgpu::Mipmapped::kNo,
         skTextureInfo);
 
@@ -110,13 +110,6 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
         colorSpace,
         nullptr,
         nullptr);
-}
-
-static void louvreRegion2Skia(const LRegion &lRegion, SkRegion *skRegion) noexcept
-{
-    Int32 n;
-    const LBox *boxes { lRegion.boxes(&n) };
-    skRegion->setRects((const SkIRect*)boxes, n);
 }
 
 /**
@@ -503,28 +496,19 @@ public:
         if (isWallpaper)
             return;
 
-        Int32 n;
-        const LBox *boxes = opaqueRegion().boxes(&n);
-        node.opaqueRegion.setRects((const SkIRect*)boxes, n);
+        node.opaqueRegion = opaqueRegion();
     }
 
     void invisibleRegionChanged() override
     {
         LSurface::invisibleRegionChanged();
-
-        Int32 n;
-        const LBox *boxes = invisibleRegion().boxes(&n);
-        node.invisibleRegion.setRects((const SkIRect*)boxes, n);
+        node.invisibleRegion = invisibleRegion();
     }
 
     void damageChanged() override
     {
         LSurface::damageChanged();
-        Int32 n;
-        const LBox *boxes = damage().boxes(&n);
-        SkRegion region;
-        region.setRects((const SkIRect*)boxes, n);
-        node.addDamage(region);
+        node.addDamage(damage());
     }
 
     void bufferTransformChanged() override
@@ -541,9 +525,7 @@ public:
 
     void srcRectChanged() override
     {
-        node.setCustomSrcRect(SkRect::MakeXYWH(
-            srcRect().x(), srcRect().y(),
-            srcRect().w(), srcRect().h()));
+        node.setCustomSrcRect(srcRect());
     }
 
     void mappingChanged() override
@@ -567,8 +549,8 @@ public:
     //AKBackgroundImageShadowEffect shadow { 6, {0,0}, 0x66000000, this };
 };
 
-#include <skia/modules/svg/include/SkSVGDOM.h>
-#include <skia/core/SkStream.h>
+#include <CZ/skia/modules/svg/include/SkSVGDOM.h>
+#include <CZ/skia/core/SkStream.h>
 
 class Output final : public LOutput
 {
@@ -584,11 +566,6 @@ public:
     void paintGL() override
     {
         inPaintGL = true;
-        Int32 n;
-        const LBox *boxes;
-        SkRegion region, outDamage;
-        LRegion damage;
-        SkRegion cursorDamage;
 
         // Create an SkSurface for the current screen framebuffer
         // Depending on the backend this can change each frame, but luckly
@@ -600,8 +577,8 @@ public:
         };
 
         const GrBackendRenderTarget backendTarget = GrBackendRenderTargets::MakeGL(
-            realBufferSize().w(),
-            realBufferSize().h(),
+            realBufferSize().width(),
+            realBufferSize().height(),
             0, 0,
             fbInfo);
 
@@ -630,7 +607,7 @@ public:
             {
                 if (s->backgroundBlur()->supported())
                 {
-                    if (s->toplevel()->pendingConfiguration().state.check(LToplevelRole::Activated))
+                    if (s->toplevel()->pendingConfiguration().state.has(LToplevelRole::Activated))
                         s->backgroundBlur()->configureState(LBackgroundBlur::Enabled);
                     else
                         s->backgroundBlur()->configureState(LBackgroundBlur::Disabled);
@@ -640,17 +617,20 @@ public:
                     fullscreenToplevel = true;
             }
 
-            const LPoint &pos { s->rolePos() };
+            const SkIPoint &pos { s->rolePos() };
             s->node.layout().setPosition(YGEdgeLeft, pos.x());
             s->node.layout().setPosition(YGEdgeTop, pos.y());
-            s->node.layout().setWidth(s->size().w());
-            s->node.layout().setHeight(s->size().h());
+            s->node.layout().setWidth(s->size().width());
+            s->node.layout().setHeight(s->size().height());
 
             if (s->hasDamage())
                 s->node.setImage(louvreTex2SkiaImage(s->texture(), this));
         }
 
         kay->topbar.setVisible(!fullscreenToplevel);
+
+        SkRegion cursorDamage = cursor()->damage(this);
+        SkRegion outDamage;
 
         // We can ask the scene which region was repainted
         if (hasBufferDamageSupport() || usingFractionalScale())
@@ -659,12 +639,8 @@ public:
             kay->target->outDamageRegion = nullptr;
 
         // If hw cursor is disabled or during screen captures
-        const LRegion &softwareCursorDamage = cursor()->damage(this);
-        boxes = softwareCursorDamage.boxes(&n);
-
-        if (n > 0)
+        if (!cursorDamage.isEmpty())
         {
-            cursorDamage.setRects((SkIRect*)boxes, n);
             kay->target->inDamageRegion = &cursorDamage;
         }
         else
@@ -676,7 +652,7 @@ public:
         kay->target->setAge(currentBufferAge());
 
         // Rect of the scene to capture relative to the root node
-        kay->target->setViewport(SkRect::MakeXYWH(pos().x(), pos().y(), size().w(), size().h()));
+        kay->target->setViewport(SkRect::MakeXYWH(pos().x(), pos().y(), size().width(), size().height()));
 
         // If the screen is rotated/flipped
         kay->target->setTransform(static_cast<AKTransform>(transform()));
@@ -701,7 +677,7 @@ public:
 
             for (LOutput *o : compositor()->outputs())
             {
-                if (LRect(s->rolePos(), s->size()).intersects(o->rect()))
+                if (SkIRect::Intersects(SkIRect::MakePtSize(s->rolePos(), s->size()), o->rect()))
                     s->sendOutputEnterEvent(o);
                 else
                     s->sendOutputLeaveEvent(o);
@@ -714,14 +690,7 @@ public:
             if (!usingFractionalScale())
                 outDamage.translate(pos().x(), pos().y());
 
-            SkRegion::Iterator it(outDamage);
-            while (!it.done())
-            {
-                damage.addRect(it.rect().x(), it.rect().y(), it.rect().width(), it.rect().height());
-                it.next();
-            }
-
-            setBufferDamage(&damage);
+            setBufferDamage(&outDamage);
         }
 
         for (auto *shReq : screenshotRequests())
@@ -763,7 +732,7 @@ public:
             // nodes to keep track of damage, previous dimensions, and other properties.
             target = comp()->kay->scene.createTarget();
             target->setClearColor(SK_ColorBLACK);
-            target->setViewport(SkRect::MakeXYWH(output->pos().x(), output->pos().y(), output->size().w(), output->size().h()));
+            target->setViewport(SkRect::MakeXYWH(output->pos().x(), output->pos().y(), output->size().width(), output->size().height()));
             target->setBakedComponentsScale(output->scale());
 
             target->on.markedDirty.subscribe(target, [output](AKSceneTarget &){
@@ -826,8 +795,8 @@ public:
             }
 
             topbarExclusiveZone.setOnRectChangeCallback([this](LExclusiveZone *zone){
-                topbar.layout().setWidth(zone->rect().w());
-                topbar.layout().setHeight(zone->rect().h());
+                topbar.layout().setWidth(zone->rect().width());
+                topbar.layout().setHeight(zone->rect().height());
             });
 
             resizeGL();
@@ -967,16 +936,16 @@ public:
             Int32 x { 0 };
             for (LOutput *o : comp()->outputs())
             {
-                o->setPos(LPoint(x, 0));
-                x += o->size().w();
+                o->setPos(SkIPoint(x, 0));
+                x += o->size().width();
                 o->moveGL();
             }
 
-            background.layout().setWidth(output->size().w());
-            background.layout().setHeight(output->size().h());
+            background.layout().setWidth(output->size().width());
+            background.layout().setHeight(output->size().height());
         }
 
-        LWeak<Output> output;
+        CZWeak<Output> output;
         AKContainer background { YGFlexDirectionColumn, false, /*&comp()->kay->background*/ };
         AKText instructions {
             "F1: Launch Weston Terminal\nRight Click: Show Context Menu.\nNote: Blur only works if launched from a TTY (DRM backend)",
@@ -1001,7 +970,7 @@ public:
 
         AKTextField textField { &background };
 
-        LWeak<LTexture> assetsTexture;
+        CZWeak<LTexture> assetsTexture;
         sk_sp<SkImage> assetsImage;
         AKImageFrame assetsView { &background };
         AKSceneTarget *target { nullptr };
@@ -1195,18 +1164,16 @@ public:
         configureState(Enabled);
     }
 
-    void propsChanged(LBitset<PropChanges> ch, const Props &) override
+    void propsChanged(CZBitset<PropChanges> ch, const Props &) override
     {
         auto *surf { static_cast<Surface*>(surface()) };
 
-        if (ch.check(RegionChanged))
+        if (ch.has(RegionChanged))
         {
-            SkRegion skRegion;
-            louvreRegion2Skia(region(), &skRegion);
-            surf->blur.setRegion(skRegion);
+            surf->blur.setRegion(region());
         }
 
-        if (ch.check(MaskChanged))
+        if (ch.has(MaskChanged))
         {
             if (maskType() == NoMask)
                 surf->blur.clearClip();
@@ -1215,8 +1182,8 @@ public:
                     AKRRect(SkIRect::MakeXYWH(
                         roundRectMask().x(),
                         roundRectMask().y(),
-                        roundRectMask().w(),
-                        roundRectMask().h()),
+                        roundRectMask().width(),
+                        roundRectMask().height()),
                     roundRectMask().fRadTL,
                     roundRectMask().fRadTR,
                     roundRectMask().fRadBR,

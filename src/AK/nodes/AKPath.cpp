@@ -1,7 +1,7 @@
 #include <AK/AKSurface.h>
 #include <AK/nodes/AKPath.h>
 #include <AK/events/AKBakeEvent.h>
-#include <skia/core/SkCanvas.h>
+#include <CZ/skia/core/SkCanvas.h>
 
 using namespace AK;
 

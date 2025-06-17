@@ -1,7 +1,7 @@
-#include <skia/core/SkCanvas.h>
-#include <skia/effects/SkBlurMaskFilter.h>
-#include <skia/effects/SkColorMatrixFilter.h>
-#include <skia/core/SkRRect.h>
+#include <CZ/skia/core/SkCanvas.h>
+#include <CZ/skia/effects/SkBlurMaskFilter.h>
+#include <CZ/skia/effects/SkColorMatrixFilter.h>
+#include <CZ/skia/core/SkRRect.h>
 #include <AK/events/AKRenderEvent.h>
 #include <AK/effects/AKBackgroundBoxShadowEffect.h>
 #include <AK/AKSceneTarget.h>

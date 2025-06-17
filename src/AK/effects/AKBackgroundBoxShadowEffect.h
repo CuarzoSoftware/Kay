@@ -3,7 +3,7 @@
 
 #include <AK/effects/AKBackgroundEffect.h>
 #include <AK/AKBorderRadius.h>
-#include <skia/core/SkCanvas.h>
+#include <CZ/skia/core/SkCanvas.h>
 
 class AK::AKBackgroundBoxShadowEffect : public AKBackgroundEffect
 {

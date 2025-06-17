@@ -1,17 +1,17 @@
-#include <skia/core/SkCanvas.h>
-#include <skia/effects/SkImageFilters.h>
-#include <skia/core/SkBitmap.h>
+#include <CZ/skia/core/SkCanvas.h>
+#include <CZ/skia/effects/SkImageFilters.h>
+#include <CZ/skia/core/SkBitmap.h>
 #include <AK/AKApplication.h>
 #include <AK/AKSurface.h>
 #include <AK/AKGLContext.h>
 #include <AK/utils/AKImageLoader.h>
 #include <AK/AKLog.h>
-#include <skia/core/SkImage.h>
-#include <skia/gpu/ganesh/SkImageGanesh.h>
-#include <skia/core/SkStream.h>
+#include <CZ/skia/core/SkImage.h>
+#include <CZ/skia/gpu/ganesh/SkImageGanesh.h>
+#include <CZ/skia/core/SkStream.h>
 
-#include <skia/modules/svg/include/SkSVGDOM.h>
-#include <skia/svg/SkSVGCanvas.h>
+#include <CZ/skia/modules/svg/include/SkSVGDOM.h>
+#include <CZ/skia/svg/SkSVGCanvas.h>
 
 using namespace AK;
 

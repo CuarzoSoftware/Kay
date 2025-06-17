@@ -4,7 +4,7 @@
 #include <AK/nodes/AKBakeable.h>
 #include <AK/AKBrush.h>
 #include <AK/AKPen.h>
-#include <skia/core/SkPath.h>
+#include <CZ/skia/core/SkPath.h>
 
 /**
  * @brief Baked path node.

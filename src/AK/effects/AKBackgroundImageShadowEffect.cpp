@@ -1,6 +1,6 @@
-#include <skia/core/SkCanvas.h>
-#include <skia/effects/SkImageFilters.h>
-#include <skia/effects/SkColorMatrixFilter.h>
+#include <CZ/skia/core/SkCanvas.h>
+#include <CZ/skia/effects/SkImageFilters.h>
+#include <CZ/skia/effects/SkColorMatrixFilter.h>
 #include <AK/events/AKRenderEvent.h>
 #include <AK/effects/AKBackgroundImageShadowEffect.h>
 #include <AK/nodes/AKBakeable.h>

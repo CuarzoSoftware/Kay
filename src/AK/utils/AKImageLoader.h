@@ -2,7 +2,7 @@
 #define AKIMAGELOADER_H
 
 #include <AK/AK.h>
-#include <skia/core/SkImage.h>
+#include <CZ/skia/core/SkImage.h>
 #include <filesystem>
 
 // TODO: Rename to AKImageUtils

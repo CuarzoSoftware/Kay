@@ -2,7 +2,7 @@
 #define AKBACKGROUNDPATHSHADOWEFFECT_H
 
 #include <AK/effects/AKBackgroundEffect.h>
-#include <skia/core/SkCanvas.h>
+#include <CZ/skia/core/SkCanvas.h>
 
 // Only works with AKBackeables
 class AK::AKBackgroundImageShadowEffect : public AKBackgroundEffect

@@ -10,10 +10,10 @@
 #include <AK/events/AKPointerButtonEvent.h>
 #include <AK/AKLog.h>
 
-#include <skia/gpu/ganesh/SkSurfaceGanesh.h>
-#include <skia/core/SkColorSpace.h>
-#include <skia/utils/SkParsePath.h>
-#include <skia/pathops/SkPathOps.h>
+#include <CZ/skia/gpu/ganesh/SkSurfaceGanesh.h>
+#include <CZ/skia/core/SkColorSpace.h>
+#include <CZ/skia/utils/SkParsePath.h>
+#include <CZ/skia/pathops/SkPathOps.h>
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
