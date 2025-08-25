@@ -1,25 +1,25 @@
-#include <Marco/MApplication.h>
-#include <Marco/MScreen.h>
-#include <Marco/roles/MToplevel.h>
-#include <Marco/nodes/MVibrancyView.h>
-#include <AK/utils/AKImageLoader.h>
-#include <AK/nodes/AKContainer.h>
-#include <AK/nodes/AKText.h>
-#include <AK/nodes/AKButton.h>
-#include <AK/nodes/AKSolidColor.h>
-#include <AK/nodes/AKImageFrame.h>
-#include <AK/nodes/AKTextField.h>
-#include <AK/nodes/AKWindowButtonGroup.h>
-#include <AK/nodes/AKScroll.h>
-#include <AK/effects/AKEdgeShadow.h>
-#include <AK/effects/AKBackgroundBlurEffect.h>
-#include <AK/events/AKVibrancyEvent.h>
-#include <AK/AKTheme.h>
-#include <AK/AKLog.h>
+#include <CZ/Marco/MApplication.h>
+#include <CZ/Marco/MScreen.h>
+#include <CZ/Marco/roles/MToplevel.h>
+#include <CZ/Marco/nodes/MVibrancyView.h>
+#include <CZ/AK/Utils/AKImageLoader.h>
+#include <CZ/AK/Nodes/AKContainer.h>
+#include <CZ/AK/Nodes/AKText.h>
+#include <CZ/AK/Nodes/AKButton.h>
+#include <CZ/AK/Nodes/AKSolidColor.h>
+#include <CZ/AK/Nodes/AKImageFrame.h>
+#include <CZ/AK/Nodes/AKTextField.h>
+#include <CZ/AK/Nodes/AKWindowButtonGroup.h>
+#include <CZ/AK/Nodes/AKScroll.h>
+#include <CZ/AK/Effects/AKEdgeShadow.h>
+#include <CZ/AK/Effects/AKBackgroundBlurEffect.h>
+#include <CZ/AK/Events/AKVibrancyEvent.h>
+#include <CZ/AK/AKTheme.h>
+#include <CZ/AK/AKLog.h>
 #include <XDGKit/XDGKit.h>
 #include <iostream>
 
-using namespace AK;
+using namespace CZ;
 using namespace XDG;
 
 static std::shared_ptr<XDGKit> xdg;
@@ -170,7 +170,7 @@ public:
 
     AKScroll body { this };
 
-    AKEdgeShadow leftShadow { AKEdgeLeft, this };
+    AKEdgeShadow leftShadow { CZEdgeLeft, this };
     AKImageFrame cat { AKImageLoader::loadFile(akAssetsDir() / "logo.png"), &body };
     AKButton cursorButton { "🖱️ Cursor: Default", &body };
     AKButton builtinDecorationsButton { "Toggle built-in decorations", &body };
@@ -191,7 +191,7 @@ public:
     AKSolidColor topbar { 0xAAFFFFFF, this };
     AKBackgroundBlurEffect inAppBlur { /*&topbar*/ };
     AKText helloWorld { "🚀 Hello World!", &topbar };
-    AKEdgeShadow shadow { AKEdgeBottom, &topbar };
+    AKEdgeShadow shadow { CZEdgeBottom, &topbar };
 };
 
 class Window : public MToplevel
@@ -228,7 +228,7 @@ public:
         rightContainer.newWindowButton.onClick.subscribe(this, [this](const auto &){
             Window *newWin = new Window();
             newWin->setMapped(true);
-            AKWeak<MToplevel> ref(this);
+            CZWeak<MToplevel> ref(this);
             newWin->onMappedChanged.subscribe(newWin, [ref, newWin](){
                 if (ref && newWin->mapped())
                     newWin->setParentToplevel(ref);
@@ -261,7 +261,7 @@ public:
 
         rightContainer.mapButton.onClick.subscribe(this, [this](const auto &){
             setMapped(false);
-            AKTimer::OneShot(1000, [this](AKTimer*){
+            CZTimer::OneShot(1000, [this](CZTimer*){
                 setMapped(true);
             });
         });
@@ -271,7 +271,7 @@ public:
         });
     }
 
-    void windowStateEvent(const AKWindowStateEvent &e) override
+    void windowStateEvent(const CZWindowStateEvent &e) override
     {
         MToplevel::windowStateEvent(e);
 
@@ -287,14 +287,14 @@ public:
         }
     }
 
-    bool eventFilter(const AKEvent &event, AKObject &target) override
+    bool eventFilter(const CZEvent &event, AKObject &target) override
     {
         if (&target == &rightContainer.leftShadow)
         {
-            if (event.type() == AKEvent::PointerButton)
+            if (event.type() == CZEvent::PointerButton)
             {
-                const auto &e { static_cast<const AKPointerButtonEvent&>(event) };
-                if (e.state() == AKPointerButtonEvent::Pressed)
+                const auto &e { static_cast<const CZPointerButtonEvent&>(event) };
+                if (e.state() == CZPointerButtonEvent::Pressed)
                 {
                     rightContainer.leftShadow.enablePointerGrab(true);
                     leftMenu.startResize();
@@ -305,11 +305,11 @@ public:
                     leftMenu.stopResize();
                 }
             }
-            else if (event.type() == AKEvent::PointerMove)
+            else if (event.type() == CZEvent::PointerMove)
             {
                 leftMenu.updateResize();
             }
-            else if (event.type() == AKEvent::PointerLeave)
+            else if (event.type() == CZEvent::PointerLeave)
             {
                 rightContainer.leftShadow.enablePointerGrab(false);
                 leftMenu.stopResize();

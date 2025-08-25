@@ -3,14 +3,14 @@
 
 #include <Application.h>
 #include <ProgressBar.h>
-#include <AK/AKScene.h>
-#include <AK/nodes/AKContainer.h>
-#include <AK/nodes/AKImageFrame.h>
-#include <AK/nodes/AKText.h>
+#include <CZ/AK/AKScene.h>
+#include <CZ/AK/Nodes/AKContainer.h>
+#include <CZ/AK/Nodes/AKImageFrame.h>
+#include <CZ/AK/Nodes/AKText.h>
 
 #include <SRM/SRMConnector.h>
 
-using namespace AK;
+using namespace CZ;
 
 struct Screen : public AKContainer
 {
@@ -20,7 +20,7 @@ struct Screen : public AKContainer
     void updateDimensions() noexcept;
     void updateTarget() noexcept;
 
-    AKSceneTarget *target { nullptr };
+    AKTarget *target { nullptr };
     SRMConnector *connector { nullptr };
     AKImageFrame logo { this };
     ProgressBar progressBar { this };

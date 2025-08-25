@@ -39,37 +39,37 @@
 #include <Protocols/InvisibleRegion/GInvisibleRegionManager.h>
 #include <Protocols/SvgPath/GSvgPathManager.h>
 
-#include <AK/nodes/AKSubScene.h>
-#include <AK/nodes/AKImageFrame.h>
-#include <AK/nodes/AKContainer.h>
-#include <AK/nodes/AKSolidColor.h>
-#include <AK/nodes/AKRoundContainer.h>
-#include <AK/nodes/AKButton.h>
-#include <AK/nodes/AKPath.h>
-#include <AK/nodes/AKTextField.h>
+#include <CZ/AK/Nodes/AKSubScene.h>
+#include <CZ/AK/Nodes/AKImageFrame.h>
+#include <CZ/AK/Nodes/AKContainer.h>
+#include <CZ/AK/Nodes/AKSolidColor.h>
+#include <CZ/AK/Nodes/AKRoundContainer.h>
+#include <CZ/AK/Nodes/AKButton.h>
+#include <CZ/AK/Nodes/AKPath.h>
+#include <CZ/AK/Nodes/AKTextField.h>
 
-#include <AK/effects/AKBackgroundBoxShadowEffect.h>
-#include <AK/effects/AKBackgroundImageShadowEffect.h>
-#include <AK/effects/AKBackgroundBlurEffect.h>
+#include <CZ/AK/Effects/AKBackgroundBoxShadowEffect.h>
+#include <CZ/AK/Effects/AKBackgroundImageShadowEffect.h>
+#include <CZ/AK/Effects/AKBackgroundBlurEffect.h>
 
-#include <AK/events/AKPointerMoveEvent.h>
-#include <AK/events/AKPointerButtonEvent.h>
-#include <AK/events/AKKeyboardKeyEvent.h>
-#include <AK/events/AKBakeEvent.h>
-#include <AK/input/AKKeyboard.h>
+#include <CZ/Events/CZPointerMoveEvent.h>
+#include <CZ/Events/CZPointerButtonEvent.h>
+#include <CZ/Events/CZKeyboardKeyEvent.h>
+#include <CZ/AK/Events/AKBakeEvent.h>
+#include <CZ/AK/Input/AKKeyboard.h>
 
-#include <AK/AKApplication.h>
-#include <AK/AKScene.h>
-#include <AK/AKSurface.h>
-#include <AK/AKTheme.h>
-#include <AK/AKGLContext.h>
-#include <AK/AKTimer.h>
-#include <AK/AKLog.h>
+#include <CZ/AK/AKApp.h>
+#include <CZ/AK/AKScene.h>
+#include <CZ/Ream/RSurface.h>
+#include <CZ/AK/AKTheme.h>
+#include <CZ/AK/AKGLContext.h>
+#include <CZ/CZTimer.h>
+#include <CZ/AK/AKLog.h>
 
 #include <cassert>
 
 using namespace Louvre;
-using namespace AK;
+using namespace CZ;
 
 static SkScalar blurRadius { 0.f };
 
@@ -84,7 +84,7 @@ static const std::string logoSVG { "M9.05.435c-.58-.58-1.52-.58-2.1 0L.436 6.95c
 
 // Creates an SkImage from an LTexture (its just a wrapper, there is no copy involved)
 // Todo: properly handle other formats
-static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
+static std::shared_ptr<RImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
 {
     if (!texture)
         return nullptr;
@@ -102,7 +102,7 @@ static sk_sp<SkImage> louvreTex2SkiaImage(LTexture *texture, LOutput *o)
         skTextureInfo);
 
     return SkImages::BorrowTextureFrom(
-        akApp()->glContext()->skContext().get(),
+        AKApp::Get()->glContext()->skContext().get(),
         skTexture,
         GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
         kBGRA_8888_SkColorType,
@@ -239,7 +239,7 @@ public:
         updateShadow();
     }
 
-    void setBrush(const AKBrush &brush) noexcept
+    void setBrush(const SkPaint &brush) noexcept
     {
         if (m_brush == brush)
             return;
@@ -248,7 +248,7 @@ public:
         addChange(CHBrush);
     }
 
-    void setPen(const AKPen &pen) noexcept
+    void setPen(const SkPaint &pen) noexcept
     {
         if (m_pen == pen)
             return;
@@ -260,9 +260,9 @@ public:
     AKContainer itemsContainer { YGFlexDirectionColumn, true, this };
     AKBackgroundBlurEffect blur { this };
 protected:
-    AKBrush m_shadowBrush; // Shadow style (color basically)
-    AKBrush m_brush; // Fill style
-    AKPen m_pen; // Stroke style
+    SkPaint m_shadowBrush; // Shadow style (color basically)
+    SkPaint m_brush; // Fill style
+    SkPaint m_pen; // Stroke style
     SkScalar m_borderRadius = 8.f;
     SkScalar m_shadowRadius = 24.f;
     SkPoint m_shadowOffset { 0.f, 8.f };
@@ -389,7 +389,7 @@ public:
         kay = std::make_unique<Kay>();
 
         addFdListener(kay->app.fd(), nullptr, [](auto, auto, auto) -> int {
-            akApp()->processLoop(0);
+            AKApp::Get()->processLoop(0);
             return 0;
         });
 
@@ -424,7 +424,7 @@ public:
             scene.setRoot(&root);
             surfaces.layout().setPositionType(YGPositionTypeAbsolute);
         }
-        AKApplication app;
+        AKApp app;
         AKScene scene;
         AKContainer root;
         AKContainer wallpaper { YGFlexDirectionColumn, false, &root };
@@ -459,7 +459,7 @@ class Surface final : public LSurface
 public:
     Surface(const void *data) noexcept : LSurface(data) {
         node.enableAutoDamage(false);
-        node.setSrcRectMode(AKRenderableImage::SrcRectMode::Custom);
+        node.setSrcRectMode(AKImage::SrcRectMode::Custom);
         node.layout().setPositionType(YGPositionTypeAbsolute);
     }
     Compositor *comp() const noexcept { return static_cast<Compositor*>(compositor()); }
@@ -514,7 +514,7 @@ public:
     void bufferTransformChanged() override
     {
         LSurface::bufferTransformChanged();
-        node.setSrcTransform(static_cast<AKTransform>(bufferTransform()));
+        node.setSrcTransform(static_cast<CZTransform>(bufferTransform()));
     }
 
     void bufferScaleChanged() override
@@ -538,7 +538,7 @@ public:
     }
 
     bool isWallpaper { false };
-    AKRenderableImage node { &comp()->kay->surfaces };
+    AKImage node { &comp()->kay->surfaces };
     AKBackgroundBlurEffect blur { };
 };
 
@@ -583,7 +583,7 @@ public:
             fbInfo);
 
         kay->target->setSurface(SkSurfaces::WrapBackendRenderTarget(
-            akApp()->glContext()->skContext().get(),
+            AKApp::Get()->glContext()->skContext().get(),
             backendTarget,
             fbInfo.fFBOID == 0 ? GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin : GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
             SkColorType::kRGB_888x_SkColorType,
@@ -655,7 +655,7 @@ public:
         kay->target->setViewport(SkRect::MakeXYWH(pos().x(), pos().y(), size().width(), size().height()));
 
         // If the screen is rotated/flipped
-        kay->target->setTransform(static_cast<AKTransform>(transform()));
+        kay->target->setTransform(static_cast<CZTransform>(transform()));
 
         // Rect within the screen fb to render the viewport to (in this case the entire screen)
         kay->target->setDstRect(SkIRect::MakeXYWH(0, 0, backendTarget.width(), backendTarget.height()));
@@ -712,7 +712,7 @@ public:
     void uninitializeGL() override
     {
         kay.reset();
-        akApp()->freeGLContextData();
+        AKApp::Get()->freeGLContextData();
     }
 
     bool inPaintGL { false };
@@ -735,7 +735,7 @@ public:
             target->setViewport(SkRect::MakeXYWH(output->pos().x(), output->pos().y(), output->size().width(), output->size().height()));
             target->setBakedComponentsScale(output->scale());
 
-            target->on.markedDirty.subscribe(target, [output](AKSceneTarget &){
+            target->on.markedDirty.subscribe(target, [output](AKTarget &){
 
                 if (output->inPaintGL)
                     return;
@@ -849,10 +849,10 @@ public:
                     "Flipped270"
                 };
 
-                if (assetsView.srcTransform() == AKTransform::Flipped270)
-                    assetsView.setSrcTransform(AKTransform::Normal);
+                if (assetsView.srcTransform() == CZTransform::Flipped270)
+                    assetsView.setSrcTransform(CZTransform::Normal);
                 else
-                    assetsView.setSrcTransform((AKTransform)(Int32(assetsView.srcTransform())+1));
+                    assetsView.setSrcTransform((CZTransform)(Int32(assetsView.srcTransform())+1));
 
                 imgTransform.setText(transformName[Int32(assetsView.srcTransform())]);
             });
@@ -906,8 +906,8 @@ public:
             textStyle.setFontStyle(SkFontStyle::Bold());
             instructions.setTextStyle(textStyle);
 
-            AKWeak buttonRef { &customBackgroundButton };
-            AKTimer::OneShot(1000, [buttonRef](AKTimer *timer){
+            CZWeak buttonRef { &customBackgroundButton };
+            CZTimer::OneShot(1000, [buttonRef](CZTimer *timer){
                 if (buttonRef)
                 {
                     buttonRef->setBackgroundColor(0xFF000000 | rand());
@@ -971,9 +971,9 @@ public:
         AKTextField textField { &background };
 
         CZWeak<LTexture> assetsTexture;
-        sk_sp<SkImage> assetsImage;
+        std::shared_ptr<RImage> assetsImage;
         AKImageFrame assetsView { &background };
-        AKSceneTarget *target { nullptr };
+        AKTarget *target { nullptr };
 
         AKSubScene topbar { &comp()->kay->overlay };
         AKBackgroundBlurEffect topbarBlur { &topbar };
@@ -993,9 +993,9 @@ class Pointer final : public LPointer
 {
 public:
     using LPointer::LPointer;
-    AKPointerMoveEvent moveEvent;
-    AKPointerButtonEvent buttonEvent;
-    AKWeak<MenuItem> focus;
+    CZPointerMoveEvent moveEvent;
+    CZPointerButtonEvent buttonEvent;
+    CZWeak<MenuItem> focus;
 
     AKNode *nodeAt(const SkIPoint &globalPos, UInt64 filter) const noexcept
     {
@@ -1017,7 +1017,7 @@ public:
 
         moveEvent.setX(cursor()->pos().x());
         moveEvent.setY(cursor()->pos().y());
-        akApp()->sendEvent(moveEvent, static_cast<Compositor*>(compositor())->kay->scene);
+        CZCore::Get()->sendEvent(moveEvent, static_cast<Compositor*>(compositor())->kay->scene);
 
         MenuItem *newFocus { (MenuItem*)nodeAt(SkIPoint(cursor()->pos().x(), cursor()->pos().y()), MENU_ITEM) };
 
@@ -1056,12 +1056,12 @@ public:
 
         return;
 
-        buttonEvent.setButton((AKPointerButtonEvent::Button)event.button());
-        buttonEvent.setState((AKPointerButtonEvent::State)event.state());
+        buttonEvent.setButton((CZPointerButtonEvent::Button)event.button());
+        buttonEvent.setState((CZPointerButtonEvent::State)event.state());
         buttonEvent.setSerial(event.serial());
         buttonEvent.setMs(event.ms());
         buttonEvent.setUs(event.us());
-        akApp()->sendEvent(buttonEvent, static_cast<Compositor*>(compositor())->kay->scene);
+        CZCore::Get()->sendEvent(buttonEvent, static_cast<Compositor*>(compositor())->kay->scene);
 
         if (event.button() == BTN_RIGHT && event.state() == LPointerButtonEvent::Pressed)
         {
@@ -1103,17 +1103,17 @@ class Keyboard : public LKeyboard
 {
 public:
     using LKeyboard::LKeyboard;
-    AKKeyboardKeyEvent keyboardKeyEvent;
+    CZKeyboardKeyEvent keyboardKeyEvent;
 
     void keyEvent(const LKeyboardKeyEvent &event) override
     {
         LKeyboard::keyEvent(event);
         akKeyboard().updateKeyState(event.keyCode(), event.state());
         keyboardKeyEvent.setKeyCode(event.keyCode());
-        keyboardKeyEvent.setState((AKKeyboardKeyEvent::State)event.state());
+        keyboardKeyEvent.setState((CZKeyboardKeyEvent::State)event.state());
         keyboardKeyEvent.setMs(event.ms());
         keyboardKeyEvent.setSerial(event.serial());
-        akApp()->sendEvent(keyboardKeyEvent, static_cast<Compositor*>(compositor())->kay->scene);
+        CZCore::Get()->sendEvent(keyboardKeyEvent, static_cast<Compositor*>(compositor())->kay->scene);
 
         if (isKeyCodePressed(KEY_LEFTMETA) && isKeyCodePressed(KEY_UP))
         {

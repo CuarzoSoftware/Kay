@@ -1,10 +1,10 @@
 #ifndef PROGRESSBAR_H
 #define PROGRESSBAR_H
 
-#include <AK/AKTime.h>
-#include <AK/nodes/AKBakeable.h>
+#include <CZ/AK/AKTime.h>
+#include <CZ/AK/Nodes/AKBakeable.h>
 
-using namespace AK;
+using namespace CZ;
 
 class ProgressBar : public AKBakeable
 {

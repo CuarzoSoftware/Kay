@@ -6,8 +6,8 @@
 #include <CZ/skia/gpu/ganesh/GrDirectContext.h>
 #include <CZ/skia/core/SkColorSpace.h>
 
-#include <AK/AKGLContext.h>
-#include <AK/AKLog.h>
+#include <CZ/AK/AKGLContext.h>
+#include <CZ/AK/AKLog.h>
 
 #include <SRMCore.h>
 #include <SRMDevice.h>
@@ -29,7 +29,7 @@ Screen::Screen(SRMConnector *connector) noexcept :
     srmConnectorSetUserData(connector, this);
     target = app()->scene.createTarget();
     target->setClearColor(SK_ColorBLACK);
-    target->on.markedDirty.subscribe(this, [connector](AKSceneTarget&){
+    target->on.markedDirty.subscribe(this, [connector](AKTarget&){
         srmConnectorRepaint(connector);
     });
 
@@ -108,7 +108,7 @@ void Screen::updateTarget() noexcept
     const SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
 
     target->setSurface(SkSurfaces::WrapBackendRenderTarget(
-        akApp()->glContext()->skContext().get(),
+        AKApp::Get()->glContext()->skContext().get(),
         skTarget,
         GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin,
         SkColorType::kRGB_888x_SkColorType,
@@ -127,6 +127,6 @@ void Screen::updateTarget() noexcept
         layout().width().value,
         layout().height().value));
     target->setDstRect(SkIRect::MakeWH(skTarget.width(), skTarget.height()));
-    target->setTransform(AKTransform::Normal);
+    target->setTransform(CZTransform::Normal);
     target->setAge(srmConnectorGetCurrentBufferAge(connector));
 }

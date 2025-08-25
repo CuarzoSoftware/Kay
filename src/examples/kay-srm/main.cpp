@@ -1,7 +1,7 @@
 #include <Application.h>
-#include <AK/AKTimer.h>
+#include <CZ/CZTimer.h>
 
-using namespace AK;
+using namespace CZ;
 
 int main(void)
 {
@@ -9,6 +9,6 @@ int main(void)
     setenv("KAY_DEBUG", "3", 0);
 
     Application app;
-    AKTimer::OneShot(10000, [&app](AKTimer*){ app.finish(); });
+    CZTimer::OneShot(10000, [&app](CZTimer*){ app.finish(); });
     return app.exec();
 }

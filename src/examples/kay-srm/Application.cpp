@@ -6,7 +6,7 @@
 #include <SRMList.h>
 #include <SRMLog.h>
 
-#include <AK/AKTheme.h>
+#include <CZ/AK/AKTheme.h>
 
 #include <Application.h>
 #include <Screen.h>
@@ -88,7 +88,7 @@ static void connectorPluggedEventHandler(SRMListener *, SRMConnector *connector)
     initConnector(connector);
 }
 
-Application::Application() noexcept : AKApplication()
+Application::Application() noexcept : AKApp()
 {
     scene.setRoot(&root);
     core = srmCoreCreate(&srmInterface, this);

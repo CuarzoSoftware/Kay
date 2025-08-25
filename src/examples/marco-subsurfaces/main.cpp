@@ -1,12 +1,12 @@
-#include <AK/AKLog.h>
-#include <Marco/MApplication.h>
-#include <Marco/roles/MToplevel.h>
-#include <Marco/roles/MSubsurface.h>
-#include <AK/nodes/AKButton.h>
-#include <AK/nodes/AKText.h>
-#include <AK/AKAnimation.h>
+#include <CZ/AK/AKLog.h>
+#include <CZ/Marco/MApplication.h>
+#include <CZ/Marco/roles/MToplevel.h>
+#include <CZ/Marco/roles/MSubsurface.h>
+#include <CZ/AK/Nodes/AKButton.h>
+#include <CZ/AK/Nodes/AKText.h>
+#include <CZ/AK/AKAnimation.h>
 
-using namespace AK;
+using namespace CZ;
 
 class SubWindow : public MSubsurface
 {
@@ -31,7 +31,7 @@ public:
 
         toggleMap.onClick.subscribe(this, [this](const auto &){
             setMapped(false);
-            AKTimer::OneShot(1000, [this](AKTimer*){
+            CZTimer::OneShot(1000, [this](CZTimer*){
                 setMapped(true);
             });
         });

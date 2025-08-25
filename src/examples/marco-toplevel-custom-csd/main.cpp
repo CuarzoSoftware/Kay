@@ -1,13 +1,13 @@
-#include <AK/AKLog.h>
-#include <Marco/MApplication.h>
-#include <Marco/roles/MToplevel.h>
-#include <AK/nodes/AKButton.h>
-#include <AK/events/AKLayoutEvent.h>
-#include <AK/utils/AKImageLoader.h>
-#include <AK/AKTheme.h>
-#include <AK/AKAnimation.h>
+#include <CZ/AK/AKLog.h>
+#include <CZ/Marco/MApplication.h>
+#include <CZ/Marco/roles/MToplevel.h>
+#include <CZ/AK/Nodes/AKButton.h>
+#include <CZ/Events/CZLayoutEvent.h>
+#include <CZ/AK/Utils/AKImageLoader.h>
+#include <CZ/AK/AKTheme.h>
+#include <CZ/AK/AKAnimation.h>
 
-using namespace AK;
+using namespace CZ;
 
 class Window : public MToplevel
 {
@@ -50,7 +50,7 @@ public:
                 anim->start();
         });
 
-        onStatesChanged.subscribe(this, [this](const AKWindowStateEvent &){
+        onStatesChanged.subscribe(this, [this](const CZWindowStateEvent &){
 
             if (activated())
                 setDecorationMargins({32, 32, 32, 32});
@@ -121,11 +121,11 @@ public:
     }
 
     // Detect when the window's central node size changes
-    void layoutEvent(const AKLayoutEvent &e) override
+    void layoutEvent(const CZLayoutEvent &e) override
     {
         MToplevel::layoutEvent(e);
 
-        if (e.changes().check(AKLayoutEvent::Size))
+        if (e.changes().has(CZLayoutEvent::Size))
             updateDecorations();
     }
 

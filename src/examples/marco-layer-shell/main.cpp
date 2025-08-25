@@ -1,20 +1,20 @@
-#include <Marco/roles/MSubsurface.h>
-#include <Marco/MApplication.h>
-#include <Marco/MScreen.h>
-#include <Marco/roles/MLayerSurface.h>
-#include <Marco/roles/MSubsurface.h>
-#include <Marco/roles/MPopup.h>
-#include <AK/nodes/AKText.h>
-#include <AK/nodes/AKButton.h>
-#include <AK/AKLog.h>
-#include <AK/nodes/AKImageFrame.h>
-#include <AK/utils/AKImageLoader.h>
-#include <AK/AKAnimation.h>
-#include <AK/AKGLContext.h>
-#include <AK/events/AKWindowCloseEvent.h>
-#include <AK/events/AKPointerButtonEvent.h>
+#include <CZ/Marco/roles/MSubsurface.h>
+#include <CZ/Marco/MApplication.h>
+#include <CZ/Marco/MScreen.h>
+#include <CZ/Marco/roles/MLayerSurface.h>
+#include <CZ/Marco/roles/MSubsurface.h>
+#include <CZ/Marco/roles/MPopup.h>
+#include <CZ/AK/Nodes/AKText.h>
+#include <CZ/AK/Nodes/AKButton.h>
+#include <CZ/AK/AKLog.h>
+#include <CZ/AK/Nodes/AKImageFrame.h>
+#include <CZ/AK/Utils/AKImageLoader.h>
+#include <CZ/AK/AKAnimation.h>
+#include <CZ/AK/AKGLContext.h>
+#include <CZ/AK/Events/AKWindowCloseEvent.h>
+#include <CZ/Events/CZPointerButtonEvent.h>
 
-using namespace AK;
+using namespace CZ;
 
 static const std::vector<Int32> exclusiveZones { 0, -1, 200, 300, 400, 500, 600, 700, 800 };
 static size_t exclusiveZoneI { 0 };
@@ -35,11 +35,11 @@ public:
 
         anchorLButton.onClick.subscribe(this, [this](const auto &){
             auto tmpAnchor { anchor() };
-            tmpAnchor.setFlag(AKEdgeLeft, !anchor().check(AKEdgeLeft));
+            tmpAnchor.setFlag(CZEdgeLeft, !anchor().has(CZEdgeLeft));
             setAnchor(tmpAnchor);
-            anchorLButton.setText(std::string("Anchor L: ") + (anchor().check(AKEdgeLeft) ? "ON" : "OFF"));
+            anchorLButton.setText(std::string("Anchor L: ") + (anchor().has(CZEdgeLeft) ? "ON" : "OFF"));
 
-            if (anchor().checkAll(AKEdgeLeft | AKEdgeRight))
+            if (anchor().checkAll(CZEdgeLeft | CZEdgeRight))
                 requestAvailableWidth();
             else
                 layout().setWidthAuto();
@@ -47,11 +47,11 @@ public:
 
         anchorTButton.onClick.subscribe(this, [this](const auto &){
             auto tmpAnchor { anchor() };
-            tmpAnchor.setFlag(AKEdgeTop, !anchor().check(AKEdgeTop));
+            tmpAnchor.setFlag(CZEdgeTop, !anchor().has(CZEdgeTop));
             setAnchor(tmpAnchor);
-            anchorTButton.setText(std::string("Anchor T: ") + (anchor().check(AKEdgeTop) ? "ON" : "OFF"));
+            anchorTButton.setText(std::string("Anchor T: ") + (anchor().has(CZEdgeTop) ? "ON" : "OFF"));
 
-            if (anchor().checkAll(AKEdgeTop | AKEdgeBottom))
+            if (anchor().checkAll(CZEdgeTop | CZEdgeBottom))
                 requestAvailableHeight();
             else
                 layout().setHeightAuto();
@@ -59,11 +59,11 @@ public:
 
         anchorBButton.onClick.subscribe(this, [this](const auto &){
             auto tmpAnchor { anchor() };
-            tmpAnchor.setFlag(AKEdgeBottom, !anchor().check(AKEdgeBottom));
+            tmpAnchor.setFlag(CZEdgeBottom, !anchor().has(CZEdgeBottom));
             setAnchor(tmpAnchor);
-            anchorBButton.setText(std::string("Anchor B: ") + (anchor().check(AKEdgeBottom) ? "ON" : "OFF"));
+            anchorBButton.setText(std::string("Anchor B: ") + (anchor().has(CZEdgeBottom) ? "ON" : "OFF"));
 
-            if (anchor().checkAll(AKEdgeTop | AKEdgeBottom))
+            if (anchor().checkAll(CZEdgeTop | CZEdgeBottom))
                 requestAvailableHeight();
             else
                 layout().setHeightAuto();
@@ -71,11 +71,11 @@ public:
 
         anchorRButton.onClick.subscribe(this, [this](const auto &){
             auto tmpAnchor { anchor() };
-            tmpAnchor.setFlag(AKEdgeRight, !anchor().check(AKEdgeRight));
+            tmpAnchor.setFlag(CZEdgeRight, !anchor().has(CZEdgeRight));
             setAnchor(tmpAnchor);
-            anchorRButton.setText(std::string("Anchor R: ") + (anchor().check(AKEdgeRight) ? "ON" : "OFF"));
+            anchorRButton.setText(std::string("Anchor R: ") + (anchor().has(CZEdgeRight) ? "ON" : "OFF"));
 
-            if (anchor().checkAll(AKEdgeLeft | AKEdgeRight))
+            if (anchor().checkAll(CZEdgeLeft | CZEdgeRight))
                 requestAvailableWidth();
             else
                 layout().setWidthAuto();
@@ -140,7 +140,7 @@ public:
         unmapBtn.onClick.subscribe(this, [this](const auto &){
             setMapped(false);
 
-            AKTimer::OneShot(1000, [this](AKTimer*){
+            CZTimer::OneShot(1000, [this](CZTimer*){
                 setMapped(true);
             });
         });
@@ -155,7 +155,7 @@ public:
         });
 
         setLayer(MLayerSurface::Overlay);
-        setAnchor(AKEdgeLeft | AKEdgeTop | AKEdgeRight | AKEdgeBottom);
+        setAnchor(CZEdgeLeft | CZEdgeTop | CZEdgeRight | CZEdgeBottom);
         setExclusiveZone(exclusiveZones[exclusiveZoneI]);
         setScreen(nullptr);
         setScope("A");

@@ -1,5 +1,5 @@
 project(
-    'Kay',
+    'cz-kay',
     'c','cpp',
     version : '0.1.0',
     meson_version: '>= 0.62.0',
@@ -28,17 +28,19 @@ add_project_arguments([
 
 cpp             = meson.get_compiler('cpp')
 pkg             = import('pkgconfig')
+cz_core_dep     = dependency('cz-core')
+cz_skia_dep     = dependency('cz-skia')
+cz_ream_dep     = dependency('cz-ream')
 egl_dep         = dependency('egl')
 gl_dep          = dependency('gl')
 glesv2_dep      = dependency('glesv2')
-skia_dep        = dependency('cz-skia')
-cz_core_dep     = dependency('cz-core')
 xkbcommon_dep   = dependency('xkbcommon')
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
 
 deps = [
-cz_core_dep,
-  skia_dep,
+  cz_core_dep,
+  cz_skia_dep,
+  cz_ream_dep,
   egl_dep,
   gl_dep,
   glesv2_dep,
@@ -62,27 +64,26 @@ endif
 
 # -------------- SOURCES --------------
 
-sources = run_command('find', './src/AK', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n')
+sources = run_command('find', './src/CZ/AK', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n')
 header_dirs = [
-  ['./src/AK', 'AK'],
-  ['./src/AK/nodes', 'AK/nodes'],
-  ['./src/AK/effects', 'AK/effects'],
-  ['./src/AK/events', 'AK/events'],
-  ['./src/AK/utils', 'AK/utils'],
-  ['./src/AK/input', 'AK/input']
+  ['./src/CZ/AK', 'CZ/AK'],
+  ['./src/CZ/AK/Nodes', 'CZ/AK/Nodes'],
+  ['./src/CZ/AK/Effects', 'CZ/AK/Effects'],
+  ['./src/CZ/AK/Events', 'CZ/AK/Events'],
+  ['./src/CZ/AK/Input', 'CZ/AK/Input']
 ]
 
-if get_option('build_marco')
-  header_dirs += [
-    ['./src/Marco', 'Marco'],
-    ['./src/Marco/private', 'Marco/private'],
-    ['./src/Marco/roles', 'Marco/roles'],
-    ['./src/Marco/nodes', 'Marco/nodes'],
-    ['./src/Marco/protocols', 'Marco/protocols'],
-    ['./src/Marco/input', 'Marco/input']
-  ]
-  sources += run_command('find', './src/Marco', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n')
-endif
+#if get_option('build_marco')
+#  header_dirs += [
+#    ['./src/Marco', 'Marco'],
+#    ['./src/Marco/private', 'Marco/private'],
+#   ['./src/Marco/roles', 'Marco/roles'],
+#    ['./src/Marco/nodes', 'Marco/nodes'],
+#    ['./src/Marco/protocols', 'Marco/protocols'],
+#    ['./src/Marco/input', 'Marco/input']
+#  ]
+#  sources += run_command('find', './src/Marco', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n')
+#endif
 
 foreach header_dir : header_dirs
     header_files = run_command('find', header_dir[0], '-type', 'f', '-name', '*.h', '-maxdepth', '1', check : false).stdout().strip().split('\n')
@@ -92,16 +93,16 @@ endforeach
 # -------------- LIBRARY --------------
 
 kay = library(
-    'Kay',
+    'cz-kay',
     sources : sources,
-    include_directories : ['./src'],
+    include_directories : ['src'],
     dependencies : deps,
     soversion: VERSION_MAJOR,
     install : true)
 
 kay_dep = declare_dependency(
     dependencies: deps,
-    include_directories : ['./src'],
+    include_directories : ['src', 'src/CZ/AK'],
     link_with : kay)
 
 install_data(
@@ -111,30 +112,31 @@ install_data(
 
 pkg.generate(
     kay,
-    name: 'Kay',
+    name: 'cz-kay',
     description: 'C++ GUI toolkit powered by Skia and Yoga.',
     version: meson.project_version(),
-    filebase: 'Kay',
+    filebase: 'cz-kay',
+    subdirs: 'CZ/AK',
     requires: ['cz-skia'])
 
 # -------------- EXAMPLES --------------
 
-if get_option('build_examples')
-    louvre_dep = dependency('cz-louvre')
-    pixmap_dep = dependency('pixman-1')
-    srm_dep = dependency('SRM')
-    wl_mod = import('unstable-wayland')
+#if get_option('build_examples')
+#    louvre_dep = dependency('cz-louvre')
+#    pixmap_dep = dependency('pixman-1')
+#    srm_dep = dependency('SRM')
+#    wl_mod = import('unstable-wayland')
     
-    subdir('src/examples/kay-louvre')
+#    subdir('src/examples/kay-louvre')
     #subdir('src/examples/kay-srm')
-    subdir('src/examples/kay-wayland-client')
-    
-    if get_option('build_marco')
-      xdgkit_dep = dependency('XDGKit', fallback: ['XDGKit', 'xdgkit_dep'])
-      subdir('src/examples/marco-toplevel')
-      subdir('src/examples/marco-toplevel-custom-csd')
-      subdir('src/examples/marco-subsurfaces')
-      subdir('src/examples/marco-popup')
-      subdir('src/examples/marco-layer-shell')
-    endif
-endif
+#    subdir('src/examples/kay-wayland-client')
+#    
+#    if get_option('build_marco')
+#      xdgkit_dep = dependency('XDGKit', fallback: ['XDGKit', 'xdgkit_dep'])
+#      subdir('src/examples/marco-toplevel')
+#      subdir('src/examples/marco-toplevel-custom-csd')
+#      subdir('src/examples/marco-subsurfaces')
+#      subdir('src/examples/marco-popup')
+#      subdir('src/examples/marco-layer-shell')
+#    endif
+#endif

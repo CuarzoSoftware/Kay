@@ -1,16 +1,16 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include <AK/AKApplication.h>
-#include <AK/AKScene.h>
-#include <AK/utils/AKImageLoader.h>
-#include <AK/nodes/AKContainer.h>
+#include <CZ/AK/AKApp.h>
+#include <CZ/AK/AKScene.h>
+#include <CZ/AK/Utils/AKImageLoader.h>
+#include <CZ/AK/Nodes/AKContainer.h>
 
 #include <SRM/SRMCore.h>
 
-namespace AK
+namespace CZ
 {
-class Application : public AKApplication
+class Application : public AKApp
 {
 public:
     Application() noexcept;
@@ -24,7 +24,7 @@ public:
     AKContainer root;
 };
 
-inline static Application *app() noexcept { return (Application*)akApp(); }
+inline static Application *app() noexcept { return (Application*)AKApp::Get(); }
 }
 
 #endif // APPLICATION_H

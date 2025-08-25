@@ -13,15 +13,15 @@
 #include <cstring>
 #include <linux/input-event-codes.h>
 
-#include <AK/AKApplication.h>
-#include <AK/AKScene.h>
-#include <AK/AKGLContext.h>
-#include <AK/effects/AKBackgroundBoxShadowEffect.h>
-#include <AK/effects/AKBackgroundImageShadowEffect.h>
-#include <AK/nodes/AKRoundContainer.h>
-#include <AK/nodes/AKContainer.h>
-#include <AK/nodes/AKSolidColor.h>
-#include <AK/nodes/AKPath.h>
+#include <CZ/AK/AKApp.h>
+#include <CZ/AK/AKScene.h>
+#include <CZ/AK/AKGLContext.h>
+#include <CZ/AK/Effects/AKBackgroundBoxShadowEffect.h>
+#include <CZ/AK/Effects/AKBackgroundImageShadowEffect.h>
+#include <CZ/AK/Nodes/AKRoundContainer.h>
+#include <CZ/AK/Nodes/AKContainer.h>
+#include <CZ/AK/Nodes/AKSolidColor.h>
+#include <CZ/AK/Nodes/AKPath.h>
 
 #include <CZ/skia/gpu/ganesh/GrBackendSurface.h>
 #include <CZ/skia/gpu/ganesh/SkSurfaceGanesh.h>
@@ -29,7 +29,7 @@
 #include <CZ/skia/core/SkColorSpace.h>
 #include <CZ/skia/utils/SkParsePath.h>
 
-using namespace AK;
+using namespace CZ;
 
 static SkSurfaceProps skSurfaceProps(0, kUnknown_SkPixelGeometry);
 
@@ -39,7 +39,7 @@ static const std::string happySVG { "M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16M7 6.5C7 
 static const std::string heartSVG { "M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1" };
 static struct
 {
-    AKApplication ak;
+    AKApp ak;
     wl_display *wlDisplay;
     wl_registry *wlRegistry;
     wl_compositor *wlCompositor { nullptr };
@@ -104,7 +104,7 @@ struct Window
                                             {0,0}, SK_ColorBLACK,
                                             false, &roundContainer};
 
-    AKSceneTarget *target { nullptr };
+    AKTarget *target { nullptr };
 
     wl_callback *wlCallback { nullptr };
     wl_surface *wlSurface;
@@ -268,7 +268,7 @@ void Window::update() noexcept
             fbInfo);
 
         skSurface = SkSurfaces::WrapBackendRenderTarget(
-            akApp()->glContext()->skContext().get(),
+            AKApp::Get()->glContext()->skContext().get(),
             backendTarget,
             GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin,
             SkColorType::kRGBA_8888_SkColorType,
@@ -297,7 +297,7 @@ void Window::update() noexcept
     target->outDamageRegion = &damage;
     target->outOpaqueRegion = &opaque;
     target->setSurface(skSurface);
-    target->setTransform(AKTransform::Normal);
+    target->setTransform(CZTransform::Normal);
     target->setViewport(SkRect::MakeSize(SkSize::Make(size)));
     target->setDstRect(SkIRect::MakeSize(bufferSize));
     target->setAge(bufferAge);

@@ -1,8 +1,7 @@
-#include <AK/events/AKBakeEvent.h>
-#include <AK/AKAnimation.h>
+#include <CZ/AK/Events/AKBakeEvent.h>
+#include <CZ/AK/AKAnimation.h>
 #include <ProgressBar.h>
-#include <AK/AKBrush.h>
-#include <AK/AKPen.h>
+#include <CZ/skia/core/SkPaint.h>
 
 ProgressBar::ProgressBar(AKNode *parent) noexcept : AKBakeable(parent)
 {
@@ -34,8 +33,8 @@ void ProgressBar::bakeEvent(const AKBakeEvent &e)
         return;
 
     SkCanvas &c { e.canvas() };
-    AKPen pen;
-    AKBrush brush;
+    SkPaint pen;
+    SkPaint brush;
     constexpr SkScalar borderRadius { 4.f };
     constexpr SkScalar strokeWidth { 0.5f };
     SkRect rect { SkRect::MakeWH(globalRect().width(), globalRect().height()) };
