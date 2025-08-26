@@ -115,8 +115,12 @@ void AKScene::layoutTree() noexcept
 
     // Setup clip
     if (ct->inClip)
+    {
         ct->m_clip = *ct->inClip;
-    ct->m_clip.op(ct->m_sceneViewport, SkRegion::kIntersect_Op);
+        ct->m_clip.op(ct->m_sceneViewport, SkRegion::kIntersect_Op);
+    }
+    else
+        ct->m_clip.setRect(ct->m_sceneViewport);
 
     const bool isNestedScene { root()->parent() != nullptr && isSubScene() };
 
@@ -371,6 +375,7 @@ void AKScene::calculateNewDamage(AKNode *node)
             if (bakeable->surface())
             {
                 surfaceChanged = bakeable->m_surfaceScale != node->scale();
+                bakeable->m_surfaceScale = node->scale();
                 surfaceChanged |= bakeable->m_surface->resize(
                     bakeable->sceneRect().size(),
                     node->scale(), true);

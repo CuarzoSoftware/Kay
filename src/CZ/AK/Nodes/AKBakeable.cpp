@@ -1,5 +1,6 @@
 #include <CZ/AK/Nodes/AKBakeable.h>
 #include <CZ/AK/Events/AKRenderEvent.h>
+#include <CZ/AK/AKLog.h>
 #include <CZ/Ream/RSurface.h>
 #include <CZ/Ream/RPass.h>
 

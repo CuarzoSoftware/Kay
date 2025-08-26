@@ -244,14 +244,34 @@ public:
     const AKNode *slot() const noexcept { return m_slot ? m_slot.get() : this; }
     AKNode *slot() noexcept { return m_slot ? m_slot.get() : this; }
 
-    /* Insert at the end, nullptr unsets */
+    /**
+     * @brief Inserts the node at the end of the parent's children.
+     *
+     * Passing nullptr unsets the parent.
+     * If the parent is equal to the current parent, the node is re-inserted at the end.
+     */
     void setParent(AKNode *parent, bool ignoreSlot = false) noexcept;
+
+    /**
+     * @brief Inserts the node before (below) the other node.
+     *
+     * The new parent is set to other->parent().
+     * If other has no parent, the parent is unset.
+     */
+    void insertBefore(AKNode *other) noexcept;
+
+    /**
+     * @brief Inserts the node after (above) the other node.
+     *
+     * The new parent is set to other->parent().
+     * If other has no parent, the parent is unset.
+     */
+    void insertAfter(AKNode *other) noexcept;
+
     AKNode *parent() const noexcept { return m_parent; }
     AKNode *topmostParent() const noexcept;
     AKNode *bottommostRightChild() const noexcept;
     AKNode *bottommostLeftChild() const noexcept;
-    void insertBefore(AKNode *other) noexcept;
-    void insertAfter(AKNode *other) noexcept;
 
     // Sibling nodes
     AKNode *next() const noexcept { return m_parent && m_parent->m_children.back() != this ? m_parent->m_children[m_parentLink + 1] : nullptr; }

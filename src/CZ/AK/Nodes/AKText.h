@@ -23,7 +23,6 @@ public:
     };
 
     AKText(const std::string &text, AKNode *parent = nullptr) noexcept;
-    CZ_DISABLE_COPY(AKText)
 
     bool setText(const std::string &text) noexcept;
     const std::string &text() const noexcept;

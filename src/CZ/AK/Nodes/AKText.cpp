@@ -1,10 +1,11 @@
 #include <CZ/skia/core/SkCanvas.h>
 #include <CZ/AK/Nodes/AKText.h>
 #include <CZ/AK/Events/AKBakeEvent.h>
-#include <CZ/Ream/RSurface.h>
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKLog.h>
 #include <CZ/AK/AKApp.h>
+#include <CZ/Ream/RSurface.h>
+#include <CZ/Ream/RPass.h>
 #include <locale>
 #include <codecvt>
 
@@ -159,20 +160,21 @@ const std::vector<size_t> &AKText::codePointByteOffsets() const noexcept
     return m_codePointByteOffsets;
 }
 
-void AKText::bakeEvent(const AKBakeEvent &event)
+void AKText::bakeEvent(const AKBakeEvent &e)
 {
-    SkCanvas &c { event.canvas() };
-
-    if (event.damage.isEmpty() && !event.changes.testAnyOf(CHText, CHTextStyle, CHParagraphStyle, CHSelection))
+    if (e.damage.isEmpty() && !e.changes.testAnyOf(CHText, CHTextStyle, CHParagraphStyle, CHSelection))
         return;
 
-    c.save();
-    c.clipIRect(SkIRect::MakeSize(globalRect().size()));
-    c.clear(SK_ColorTRANSPARENT);
+    auto pass { e.surface->beginPass(RPassCap_SkCanvas) };
+    auto *c { pass->getCanvas() };
+
+    c->save();
+    c->clipIRect(SkIRect::MakeSize(worldRect().size()));
+    c->clear(SK_ColorTRANSPARENT);
 
     if (m_paragraph)
     {
-        m_paragraph->paint(&c, 0.f, 0.f);
+        m_paragraph->paint(c, 0.f, 0.f);
         /*AKLog::debug("AKText repainted: Tint %d %dx%d Alpha Baseline %f Ideo Baseline %f %s",
                      customTextureColorEnabled(),
                      globalRect().width(), globalRect().height(),
@@ -180,7 +182,7 @@ void AKText::bakeEvent(const AKBakeEvent &event)
                      m_paragraph->getIdeographicBaseline(),
                      m_text.c_str());*/
     }
-    c.restore();
+    c->restore();
 }
 
 void AKText::updateDimensions() noexcept
