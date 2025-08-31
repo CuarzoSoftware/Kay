@@ -13,6 +13,13 @@ AKLayout::AKLayout(AKNode &akNode) noexcept : m_node(YGNodeNew()), m_akNode(akNo
     m_config = YGConfigNew();
     YGConfigSetPointScaleFactor(m_config, 1.f);
     YGNodeSetConfig(m_node, m_config);
+
+    m_anchorNode.setOnDestroyCallback([this](CZObject*){
+        m_anchorNode.reset();
+        setPositionType(m_posTypeBeforeAnchorNode);
+        YGNodeMarkDirty(m_node);
+        m_akNode.addChange(AKNode::CHLayout);
+    });
 }
 
 void AKLayout::setDisplay(YGDisplay display) noexcept
@@ -30,6 +37,27 @@ void AKLayout::setDisplay(YGDisplay display) noexcept
     }
     else
         checkIsDirty();
+}
+
+void AKLayout::setAnchorNode(AKNode *anchor) noexcept
+{
+    if (m_anchorNode == anchor || anchor == &m_akNode)
+        return;
+
+    if (anchor)
+    {
+        if (!m_anchorNode)
+            m_posTypeBeforeAnchorNode = positionType();
+        setPositionType(YGPositionTypeAbsolute);
+        m_anchorNode.reset(anchor);
+        m_akNode.addChange(AKNode::CHLayout);
+    }
+    else
+    {
+        m_anchorNode.reset(anchor);
+        setPositionType(m_posTypeBeforeAnchorNode);
+        m_akNode.addChange(AKNode::CHLayout);
+    }
 }
 
 void AKLayout::checkIsDirty() noexcept
@@ -67,8 +95,6 @@ void AKLayout::apply(bool calculate, bool updateRoot) noexcept
             m_akNode.m_worldRect.setXYWH(
                 calculatedLeft(), calculatedTop(),
                 calculatedWidth(), calculatedHeight());
-
-            m_akNode.m_sceneRect = m_akNode.m_worldRect.makeOffset(-m_akNode.scene()->currentTarget()->m_worldViewport.topLeft());
         }
 
         for (AKNode *child : m_akNode.children(true))
@@ -113,9 +139,10 @@ void AKLayout::applyTree(AKNode *node)
 
     if (updateRect)
     {
+        const auto parentWorldPos { node->layout().anchorNode() ? node->layout().anchorNode()->worldRect().topLeft() : node->parent()->worldRect().topLeft() };
         const auto newWorldRect = SkIRect::MakeXYWH(
-            node->parent()->worldRect().x() + SkScalarFloorToInt(node->layout().calculatedLeft()),
-            node->parent()->worldRect().y() + SkScalarFloorToInt(node->layout().calculatedTop()),
+            parentWorldPos.x() + SkScalarFloorToInt(node->layout().calculatedLeft()),
+            parentWorldPos.y() + SkScalarFloorToInt(node->layout().calculatedTop()),
             SkScalarRoundToInt(node->layout().calculatedWidth()),
             SkScalarRoundToInt(node->layout().calculatedHeight()));
 
@@ -139,17 +166,17 @@ void AKLayout::applyTree(AKNode *node)
          * worldRect is not used for this because AKSubScene children would be
          * unnecessarily damaged when the sub scene position changes. */
 
-        if (node->subScene())
-        {
+        //if (node->subScene())
+        //{
             // AKSubScenes always set the RSurface::viewport().xy() = AKSubScene::worldRect().xy()
             // TODO: Add option to change the viewport pos?
-            node->m_sceneRect = node->m_worldRect.makeOffset(-node->subScene()->m_worldRect.topLeft());
-        }
-        else
-        {
+        //    node->m_sceneRect = node->m_worldRect.makeOffset(-node->subScene()->m_worldRect.topLeft());
+        //}
+        //else
+        //{
             // applyTree is only called by AKScene if the user provided a valid AKTarget, so this is safe
-            node->m_sceneRect = node->m_worldRect.makeOffset(-node->scene()->currentTarget()->m_worldViewport.topLeft());
-        }
+        //    node->m_sceneRect = node->m_worldRect.makeOffset(-node->scene()->currentTarget()->m_worldViewport.topLeft());
+        //}
     }
 
     if (updateScale || updateRect)

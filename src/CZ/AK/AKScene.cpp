@@ -280,13 +280,14 @@ void AKScene::calculateNewDamage(AKNode *node)
     if (bgFx)
     {
         // Background effect rects are calculated here because they depend on their target node rects
-        bgFx->onSceneCalculatedRect();
         bgFx->m_worldRect = bgFx->effectRect.makeOffset(-bgFx->targetNode()->worldRect().topLeft());
         bgFx->m_sceneRect = bgFx->m_worldRect.makeOffset(-ct->m_worldViewport.topLeft());
+        bgFx->onSceneCalculatedRect();
         bgFx->tData->visible = bgFx->visible() && bgFx->targetNode()->tData->visible;
     }
     else
     {
+        node->m_sceneRect = node->m_worldRect.makeOffset(-ct->m_worldViewport.topLeft());
         // Mark the node as visible if visible() is true and its parent is visible too
         // The weird check is to handle the case where the parent is a root node
         bool parentIsVisible { node->parent() && !node->parent()->parent() && node->parent()->visible() };
@@ -377,14 +378,14 @@ void AKScene::calculateNewDamage(AKNode *node)
                 surfaceChanged = bakeable->m_surfaceScale != node->scale();
                 bakeable->m_surfaceScale = node->scale();
                 surfaceChanged |= bakeable->m_surface->resize(
-                    bakeable->sceneRect().size(),
+                    bakeable->worldRect().size(),
                     node->scale(), true);
             }
             else
             {
                 surfaceChanged = true;
                 bakeable->m_surface = RSurface::Make(
-                    bakeable->sceneRect().size(),
+                    bakeable->worldRect().size(),
                     node->scale(), true);
             }
 
@@ -568,7 +569,7 @@ void AKScene::updateDamageTrackers() noexcept
         if (bdt->capturedDamage.isEmpty())
             continue;
 
-        bdt->capturedDamage.op(bdt->node().sceneRect(), SkRegion::Op::kIntersect_Op);
+        bdt->capturedDamage.op(bdt->node().m_sceneRect, SkRegion::Op::kIntersect_Op);
         bdt->capturedDamage.op(ct->m_sceneViewport, SkRegion::Op::kIntersect_Op);
 
         if (bdt->damageOutset() != 0)
@@ -585,7 +586,7 @@ void AKScene::updateDamageTrackers() noexcept
             bdt->capturedDamage = outset;
         }
 
-        bdt->capturedDamage.op(bdt->node().sceneRect(), SkRegion::Op::kIntersect_Op);
+        bdt->capturedDamage.op(bdt->node().m_sceneRect, SkRegion::Op::kIntersect_Op);
         bdt->capturedDamage.op(ct->m_sceneViewport, SkRegion::Op::kIntersect_Op);
         ct->m_damage.op(bdt->capturedDamage, SkRegion::Op::kUnion_Op);
     }
@@ -774,7 +775,7 @@ void AKScene::nodeTranslucentPass(AKRenderable *node, std::shared_ptr<RPass> pas
 {
     pass->save();
     SetPassParamsFromRenderable(pass, node, false);
-    CZCore::Get()->sendEvent(AKRenderEvent(*ct.get(), region, node->sceneRect(), pass, false), *node);
+    CZCore::Get()->sendEvent(AKRenderEvent(*ct.get(), region, node->m_sceneRect, pass, false), *node);
     pass->restore();
 }
 
@@ -782,7 +783,7 @@ void AKScene::nodeOpaquePass(AKRenderable *node, std::shared_ptr<RPass> pass, Sk
 {
     pass->save();
     SetPassParamsFromRenderable(pass, node, true);
-    CZCore::Get()->sendEvent(AKRenderEvent(*ct.get(), region, node->sceneRect(), pass, true), *node);
+    CZCore::Get()->sendEvent(AKRenderEvent(*ct.get(), region, node->m_sceneRect, pass, true), *node);
     pass->restore();
 }
 

@@ -2,6 +2,7 @@
 #define CZ_AKLAYOUT_H
 
 #include <CZ/AK/AK.h>
+#include <CZ/CZWeak.h>
 #include <yoga/Yoga.h>
 
 class CZ::AKLayout
@@ -152,6 +153,9 @@ public:
 
     void setPositionType(YGPositionType positionType) noexcept
     {
+        if (anchorNode())
+            return;
+
         YGNodeStyleSetPositionType(m_node, positionType);
         checkIsDirty();
     }
@@ -530,6 +534,30 @@ public:
     }
 
     /**
+     * @brief Sets an anchor node for this node.
+     *
+     * Makes this node’s position relative to the specified anchor node
+     * instead of its parent, while preserving the current hierarchy.
+     *
+     * While an anchor is set, the position type is forced to
+     * YGPositionTypeAbsolute. The previous position type is restored
+     * when the anchor is unset.
+     *
+     * If the anchor node is destroyed, it is automatically unset.
+     *
+     * @param anchor The node to use as anchor. Pass nullptr to unset.
+     *               Passing this node itself is ignored.
+     */
+    void setAnchorNode(AKNode *anchor) noexcept;
+
+    /**
+     * @brief Returns the current anchor node.
+     *
+     * @return The current anchor node, or nullptr if none is set.
+     */
+    AKNode *anchorNode() const noexcept { return m_anchorNode; }
+
+    /**
      * @brief Calculates the node layout.
      *
      * If the node has a parent, YGNodeCalculateLayout is called
@@ -578,6 +606,9 @@ private:
     YGNodeRef m_node { nullptr };
     AKNode &m_akNode;
     YGConfigRef m_config;
+
+    CZWeak<AKNode> m_anchorNode;
+    YGPositionType m_posTypeBeforeAnchorNode;
 };
 
 #endif // CZ_AKLAYOUT_H
