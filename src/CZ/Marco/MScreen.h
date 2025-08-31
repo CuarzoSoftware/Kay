@@ -2,9 +2,9 @@
 #define MSCREEN_H
 
 #include <CZ/AK/AKObject.h>
-#include <CZ/CZSignal.h>
-#include <CZ/CZTransform.h>
-#include <CZ/CZBitset.h>
+#include <CZ/Core/CZSignal.h>
+#include <CZ/Core/CZTransform.h>
+#include <CZ/Core/CZBitset.h>
 #include <CZ/Marco/Marco.h>
 #include <CZ/Marco/MProxy.h>
 #include <CZ/Marco/MApplication.h>

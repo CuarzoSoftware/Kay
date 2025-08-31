@@ -7,7 +7,7 @@
 #include <CZ/Events/CZKeyboardLeaveEvent.h>
 #include <CZ/Events/CZKeyboardModifiersEvent.h>
 #include <CZ/AK/Input/AKKeyboard.h>
-#include <CZ/CZWeak.h>
+#include <CZ/Core/CZWeak.h>
 
 class CZ::MKeyboard : public AKKeyboard
 {

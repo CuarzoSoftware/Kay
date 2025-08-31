@@ -5,7 +5,7 @@
 #include <CZ/Marco/protocols/viewporter-client.h>
 
 #include <CZ/AK/AKVibrancy.h>
-#include <CZ/CZSignal.h>
+#include <CZ/Core/CZSignal.h>
 #include <CZ/AK/Nodes/AKContainer.h>
 #include <CZ/AK/Nodes/AKSolidColor.h>
 #include <CZ/AK/AKScene.h>

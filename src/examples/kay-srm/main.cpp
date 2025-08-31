@@ -1,5 +1,5 @@
 #include <Application.h>
-#include <CZ/CZTimer.h>
+#include <CZ/Core/CZTimer.h>
 
 using namespace CZ;
 

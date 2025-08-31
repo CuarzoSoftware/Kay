@@ -4,8 +4,8 @@
 #include <CZ/Events/CZKeyboardEnterEvent.h>
 #include <CZ/Events/CZKeyboardLeaveEvent.h>
 #include <CZ/Events/CZPointerEnterEvent.h>
-#include <CZ/CZSafeEventQueue.h>
-#include <CZ/CZCore.h>
+#include <CZ/Core/CZSafeEventQueue.h>
+#include <CZ/Core/CZCore.h>
 
 #include <CZ/AK/Events/AKSceneChangedEvent.h>
 #include <CZ/AK/AKApp.h>

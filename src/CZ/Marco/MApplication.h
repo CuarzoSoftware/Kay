@@ -13,7 +13,7 @@
 #include <CZ/Marco/protocols/lvr-svg-path-client.h>
 #include <CZ/Marco/protocols/lvr-invisible-region-client.h>
 #include <CZ/AK/AKApp.h>
-#include <CZ/CZWeak.h>
+#include <CZ/Core/CZWeak.h>
 #include <CZ/Events/CZPointerEnterEvent.h>
 #include <CZ/Events/CZPointerMoveEvent.h>
 #include <CZ/Events/CZPointerLeaveEvent.h>

@@ -2,7 +2,7 @@
 #define CZ_AKEDGESHADOW_H
 
 #include <CZ/AK/Nodes/AKImage.h>
-#include <CZ/CZEdge.h>
+#include <CZ/Core/CZEdge.h>
 
 class CZ::AKEdgeShadow : public AKImage
 {

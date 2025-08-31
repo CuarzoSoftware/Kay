@@ -4,7 +4,7 @@
 #include <CZ/Marco/roles/MLayerSurface.h>
 #include <CZ/Marco/protocols/wlr-layer-shell-unstable-v1-client.h>
 #include <CZ/Marco/MScreen.h>
-#include <CZ/CZWeak.h>
+#include <CZ/Core/CZWeak.h>
 
 class CZ::MLayerSurface::Imp
 {

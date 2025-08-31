@@ -2,7 +2,7 @@
 #define MLAYERSHELL_H
 
 #include <CZ/Marco/roles/MSurface.h>
-#include <CZ/CZEdge.h>
+#include <CZ/Core/CZEdge.h>
 
 /**
  * @brief WLR Layer Shell Role

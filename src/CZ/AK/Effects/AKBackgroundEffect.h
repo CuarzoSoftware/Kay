@@ -2,7 +2,7 @@
 #define CZ_AKBACKGROUNDEFFECT_H
 
 #include <CZ/AK/Nodes/AKRenderable.h>
-#include <CZ/CZWeak.h>
+#include <CZ/Core/CZWeak.h>
 
 class CZ::AKBackgroundEffect : public AKRenderable
 {

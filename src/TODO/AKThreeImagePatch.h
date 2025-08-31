@@ -2,7 +2,7 @@
 #define CZ_AKTHREEIMAGEPATCH_H
 
 #include <CZ/AK/Nodes/AKRenderable.h>
-#include <CZ/CZOrientation.h>
+#include <CZ/Core/CZOrientation.h>
 
 /**
  * @brief Displays a horizontal three-patch image.

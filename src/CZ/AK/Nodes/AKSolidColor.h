@@ -2,7 +2,7 @@
 #define CZ_AKSOLIDCOLOR_H
 
 #include <CZ/AK/Nodes/AKRenderable.h>
-#include <CZ/CZBitset.h>
+#include <CZ/Core/CZBitset.h>
 #include <CZ/skia/core/SkPaint.h>
 
 /**

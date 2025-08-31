@@ -7,8 +7,8 @@
 #include <CZ/AK/AKLayout.h>
 #include <CZ/AK/AKChanges.h>
 
-#include <CZ/CZWeak.h>
-#include <CZ/CZBitset.h>
+#include <CZ/Core/CZWeak.h>
+#include <CZ/Core/CZBitset.h>
 
 #include <CZ/skia/core/SkImage.h>
 #include <CZ/skia/core/SkSurface.h>

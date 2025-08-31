@@ -7,7 +7,7 @@
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKApp.h>
 
-#include <CZ/CZCore.h>
+#include <CZ/Core/CZCore.h>
 #include <CZ/Ream/RSurface.h>
 #include <CZ/Ream/RImage.h>
 #include <CZ/Ream/RPass.h>

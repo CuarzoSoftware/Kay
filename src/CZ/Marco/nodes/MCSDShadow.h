@@ -4,7 +4,7 @@
 #include <CZ/Marco/Marco.h>
 #include <CZ/Marco/MTheme.h>
 #include <CZ/AK/Nodes/AKRenderable.h>
-#include <CZ/CZWeak.h>
+#include <CZ/Core/CZWeak.h>
 
 class CZ::MCSDShadow : public AKRenderable
 {

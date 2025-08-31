@@ -4,8 +4,8 @@
 #include <CZ/AK/Nodes/AKNode.h>
 #include <CZ/AK/AKObject.h>
 #include <CZ/AK/AKTarget.h>
-#include <CZ/CZWindowState.h>
-#include <CZ/CZTimer.h>
+#include <CZ/Core/CZWindowState.h>
+#include <CZ/Core/CZTimer.h>
 #include <memory.h>
 #include <vector>
 

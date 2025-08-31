@@ -1,7 +1,7 @@
 #ifndef CZ_AKLOG_H
 #define CZ_AKLOG_H
 
-#include <CZ/CZLogger.h>
+#include <CZ/Core/CZLogger.h>
 
 #define AKLog AKLogger()
 

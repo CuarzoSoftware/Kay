@@ -4,8 +4,8 @@
 #include <CZ/AK/AKBackgroundDamageTracker.h>
 #include <CZ/Ream/Ream.h>
 
-#include <CZ/CZSignal.h>
-#include <CZ/CZWeak.h>
+#include <CZ/Core/CZSignal.h>
+#include <CZ/Core/CZWeak.h>
 
 #include <CZ/skia/core/SkSurface.h>
 #include <CZ/skia/core/SkMatrix.h>

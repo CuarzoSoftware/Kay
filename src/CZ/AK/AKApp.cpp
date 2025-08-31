@@ -3,7 +3,7 @@
 #include <CZ/AK/AKLog.h>
 
 #include <CZ/Ream/RCore.h>
-#include <CZ/CZCore.h>
+#include <CZ/Core/CZCore.h>
 
 #include <CZ/skia/ports/SkFontMgr_fontconfig.h>
 

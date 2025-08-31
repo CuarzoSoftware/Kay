@@ -1,7 +1,7 @@
 #ifndef CZ_AKOBJECT_H
 #define CZ_AKOBJECT_H
 
-#include <CZ/CZObject.h>
+#include <CZ/Core/CZObject.h>
 #include <CZ/AK/AK.h>
 
 /**

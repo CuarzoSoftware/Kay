@@ -3,7 +3,7 @@
 
 #include <CZ/AK/Effects/AKBackgroundEffect.h>
 #include <CZ/Ream/RSurface.h>
-#include <CZ/CZSignal.h>
+#include <CZ/Core/CZSignal.h>
 #include <CZ/AK/AKRRect.h>
 #include <CZ/skia/core/SkPath.h>
 

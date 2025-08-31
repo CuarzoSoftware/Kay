@@ -2,7 +2,7 @@
 #define CZ_AKIMAGE_H
 
 #include <CZ/AK/Nodes/AKRenderable.h>
-#include <CZ/CZTransform.h>
+#include <CZ/Core/CZTransform.h>
 #include <CZ/Ream/Ream.h>
 
 /**

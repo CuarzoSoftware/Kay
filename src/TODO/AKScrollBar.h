@@ -4,8 +4,8 @@
 #include <CZ/AK/Nodes/AKContainer.h>
 #include <CZ/AK/Nodes/AKThreeImagePatch.h>
 #include <CZ/AK/AKAnimation.h>
-#include <CZ/CZTimer.h>
-#include <CZ/CZEdge.h>
+#include <CZ/Core/CZTimer.h>
+#include <CZ/Core/CZEdge.h>
 
 class CZ::AKScrollBar : public AKThreeImagePatch
 {

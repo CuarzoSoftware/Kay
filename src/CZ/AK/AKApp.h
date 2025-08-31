@@ -3,7 +3,7 @@
 
 #include <CZ/AK/Input/AKPointer.h>
 #include <CZ/AK/Input/AKKeyboard.h>
-#include <CZ/Cuarzo.h>
+#include <CZ/Core/Cuarzo.h>
 #include <CZ/Ream/Ream.h>
 #include <CZ/skia/modules/skparagraph/include/FontCollection.h>
 

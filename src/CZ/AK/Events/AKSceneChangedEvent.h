@@ -2,7 +2,7 @@
 #define CZ_AKSCENECHANGEDEVENT_H
 
 #include <CZ/Events/CZEvent.h>
-#include <CZ/CZWeak.h>
+#include <CZ/Core/CZWeak.h>
 #include <CZ/AK/AK.h>
 
 class CZ::AKSceneChangedEvent final : public CZEvent

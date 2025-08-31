@@ -63,7 +63,7 @@
 #include <CZ/Ream/RSurface.h>
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKGLContext.h>
-#include <CZ/CZTimer.h>
+#include <CZ/Core/CZTimer.h>
 #include <CZ/AK/AKLog.h>
 
 #include <cassert>

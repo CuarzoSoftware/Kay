@@ -3,7 +3,7 @@
 
 #include <CZ/Marco/Marco.h>
 #include <CZ/AK/AKCursor.h>
-#include <CZ/CZWeak.h>
+#include <CZ/Core/CZWeak.h>
 #include <CZ/AK/Input/AKPointer.h>
 #include <CZ/Events/CZPointerEnterEvent.h>
 #include <CZ/Events/CZPointerMoveEvent.h>
