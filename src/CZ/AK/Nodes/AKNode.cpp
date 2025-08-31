@@ -36,8 +36,10 @@ AKNode::~AKNode()
     while (!m_backgroundEffects.empty())
         removeBackgroundEffect(*m_backgroundEffects.begin());
 
-    setParent(nullptr);
+    while (!m_children.empty())
+        m_children.back()->setParent(nullptr, false);
 
+    setParent(nullptr, false);
     notifyDestruction();
 }
 
