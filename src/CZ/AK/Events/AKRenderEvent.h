@@ -8,7 +8,8 @@
 
 /**
  * @brief Render event.
- * @ingroup CZEvents
+ *
+ * Unlike bake events, the destination coords are relative to the current target surface.
  */
 class CZ::AKRenderEvent : public CZEvent
 {
@@ -28,10 +29,19 @@ public:
         opaque(opaque)
     {}
 
+    // The current target
     const AKTarget &target;
+
+    // Damage within rect
     const SkRegion &damage;
+
+    // Node rect relative to the current target surface
     const SkIRect &rect;
+
+    // The pass to use for rendering
     std::shared_ptr<RPass> pass;
+
+    // Indicates if damage only contains rects from the opaque region (blending should be disabled)
     bool opaque;
 };
 

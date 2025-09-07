@@ -280,7 +280,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     if (bgFx)
     {
         // Background effect rects are calculated here because they depend on their target node rects
-        bgFx->m_worldRect = bgFx->effectRect.makeOffset(-bgFx->targetNode()->worldRect().topLeft());
+        bgFx->m_worldRect = bgFx->effectRect.makeOffset(bgFx->targetNode()->worldRect().topLeft());
         bgFx->m_sceneRect = bgFx->m_worldRect.makeOffset(-ct->m_worldViewport.topLeft());
         bgFx->onSceneCalculatedRect();
         bgFx->tData->visible = bgFx->visible() && bgFx->targetNode()->tData->visible;

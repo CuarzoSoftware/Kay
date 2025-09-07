@@ -9,6 +9,7 @@
 
 #include <CZ/AK/Events/AKSceneChangedEvent.h>
 #include <CZ/AK/AKApp.h>
+#include <CZ/AK/AKLog.h>
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKScene.h>
 #include <CZ/AK/Nodes/AKNode.h>
@@ -540,6 +541,7 @@ void AKNode::addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept
     m_backgroundEffects.insert(backgroundEffect);
     backgroundEffect->m_targetNode.reset(this);
     backgroundEffect->onTargetNodeChanged();
+    AKLog(CZFatal, "Effect added");
 }
 
 void AKNode::removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept

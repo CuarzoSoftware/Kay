@@ -47,8 +47,6 @@ public:
 
     AKBackgroundBlurEffect(AKNode *target = nullptr) noexcept;
 
-    CZ_DISABLE_COPY(AKBackgroundBlurEffect)
-
     void setFullSize() noexcept
     {
         if (m_areaType == FullSize)
@@ -126,7 +124,6 @@ private:
     ClipType m_clipType { NoClip };
     std::shared_ptr<RSurface> m_blur;
     std::shared_ptr<RSurface> m_blur2;
-    std::shared_ptr<RSurface> m_roundCorners[4]; // TL, TR, BR, BL
 };
 
 #endif // CZ_AKBACKGROUNDBLUREFFECT_H

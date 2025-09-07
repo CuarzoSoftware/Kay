@@ -300,7 +300,7 @@ public:
     const AKLayout &layout() const noexcept { return m_layout; }
     AKLayout &layout() noexcept { return m_layout; }
     SkIRect worldRect() const noexcept { return m_worldRect; }
-    // SkIRect sceneRect() const noexcept { return m_sceneRect; }
+    SkIRect sceneRect() const noexcept { return m_sceneRect; }
     Int32 scale() const noexcept { return m_scale; }
 
     bool isPointerOver() const noexcept;
