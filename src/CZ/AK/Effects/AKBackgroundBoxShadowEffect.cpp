@@ -6,6 +6,7 @@
 #include <CZ/AK/Effects/AKBackgroundBoxShadowEffect.h>
 #include <CZ/AK/AKTarget.h>
 #include <CZ/Ream/RSurface.h>
+#include <CZ/Ream/RPass.h>
 #include <CZ/skia/core/SkPaint.h>
 
 using namespace CZ;
@@ -14,7 +15,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
 {
     const auto &chg { changes() };
 
-    if (m_prevRect == targetNode()->globalRect() &&
+    if (m_prevRect == targetNode()->worldRect() &&
         m_prevScale == targetNode()->scale() &&
         !chg.testAnyOf(CHOffset, CHFillBackground, CHBorderRadius, CHRadius) &&
         m_surface)
@@ -35,7 +36,7 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
         m_prevScale = targetNode()->scale();
     }
 
-    effectRect = SkIRect::MakeWH(targetNode()->globalRect().width(), targetNode()->globalRect().height());
+    effectRect = SkIRect::MakeWH(targetNode()->worldRect().width(), targetNode()->worldRect().height());
     effectRect.outset(m_radius, m_radius);
     effectRect.offset(offset().x(), offset().y());
 
@@ -155,19 +156,16 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
                 true);
         }
 
-        SkCanvas &canvas { *m_surface->surface()->getCanvas() };
+        auto pass { m_surface->beginPass() };
+        SkCanvas &canvas { *pass->getCanvas() };
         SkPaint brush;
         canvas.save();
-        canvas.scale(
-            m_surface->scale(),
-            m_surface->scale());
         canvas.clear(SK_ColorTRANSPARENT);
         brush.setBlendMode(SkBlendMode::kSrc);
         brush.setColor(SK_ColorWHITE);
         brush.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, m_radius/3.f));
         canvas.drawRect(SkRect::MakeXYWH(m_radius, m_radius, centerSize, centerSize), brush);
         canvas.restore();
-        //m_surface->surface()->flush();
     }
 
     if (needsFullDamage)
@@ -177,7 +175,6 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
 // TODO: Use nine patch if fill background is enabled
 void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexcept
 {
-    /* TODO
     bool needsNewSurface { m_surface == nullptr };
     bool needsFullDamage { needsNewSurface };
     const auto &chg { changes() };
@@ -211,12 +208,10 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
                 true);
         }
 
-        SkCanvas &canvas { *m_surface->surface()->getCanvas() };
+        auto pass { m_surface->beginPass() };
+        SkCanvas &canvas { *pass->getCanvas() };
         SkPaint brush;
         canvas.save();
-        canvas.scale(
-            m_surface->scale(),
-            m_surface->scale());
         canvas.clipIRect(SkIRect::MakeWH(effectRect.size().width() + 1, effectRect.size().height() + 1));
         canvas.clear(SK_ColorTRANSPARENT);
         brush.setBlendMode(SkBlendMode::kSrc);
@@ -255,14 +250,11 @@ void AKBackgroundBoxShadowEffect::onSceneCalculatedRectWithBorderRadius() noexce
 
     if (needsFullDamage)
         addDamage(AK_IRECT_INF);
-
-    */
 }
 
 
 void AKBackgroundBoxShadowEffect::renderEvent(const AKRenderEvent &p)
 {
-    /* TODO
     if (m_borderRadius.fBL != 0 || m_borderRadius.fBR != 0 || m_borderRadius.fTL != 0 || m_borderRadius.fTR != 0)
     {
         onRenderWithBorderRadius(p);
@@ -274,23 +266,17 @@ void AKBackgroundBoxShadowEffect::renderEvent(const AKRenderEvent &p)
     if (!fillBackgroundEnabled())
         fullDamage.op(targetNode()->sceneRect(), SkRegion::Op::kDifference_Op);
 
+    auto *painter { p.pass->getPainter() };
+    RDrawImageInfo info {};
+
     for (int i = 0; i < 9; i++)
     {
-        SkRegion clippedDamage { fullDamage };
-        clippedDamage.op(m_dstRects[i], SkRegion::Op::kIntersect_Op);
-
-        p.painter.bindTextureMode({
-            .texture = m_surface->image(),
-            .pos = { m_dstRects[i].x(), m_dstRects[i].y() },
-            .srcRect = m_srcRects[i],
-            .dstSize = m_dstRects[i].size(),
-            .srcTransform = CZTransform::Normal,
-            .srcScale = SkScalar(m_surface->scale())
-        });
-
-        p.painter.drawRegion(clippedDamage);
+        info.image = m_surface->image();
+        info.dst = m_dstRects[i];
+        info.src = m_srcRects[i];
+        info.srcScale = targetNode()->scale();
+        painter->drawImage(info, &fullDamage);
     }
-    */
 }
 
 void AKBackgroundBoxShadowEffect::onRenderWithBorderRadius(const AKRenderEvent &p) noexcept
@@ -326,22 +312,13 @@ void AKBackgroundBoxShadowEffect::onRenderWithBorderRadius(const AKRenderEvent &
         finalDamage.op(toExclude, SkRegion::Op::kDifference_Op);
     }
 
-    /* TODO
-    const SkRect src { SkRect::MakeWH(sceneRect().size().width(), sceneRect().size().height()) };
-
-    p.painter.bindTextureMode({
-        .texture = m_surface->image(),
-        .pos = { sceneRect().x(), sceneRect().y() },
-        .srcRect = src,
-        .dstSize = sceneRect().size(),
-        .srcTransform = CZTransform::Normal,
-        .srcScale = SkScalar(m_surface->scale())
-    });
-
-    p.painter.drawRegion(finalDamage);*/
+    auto *painter { p.pass->getPainter() };
+    RDrawImageInfo info {};
+    info.image = m_surface->image();
+    info.src = SkRect::MakeWH(sceneRect().size().width(), sceneRect().size().height());
+    info.dst = sceneRect();
+    info.srcScale = targetNode()->scale();
+    painter->drawImage(info, &finalDamage);
 }
 
-void AKBackgroundBoxShadowEffect::onTargetNodeChanged()
-{
-
-}
+void AKBackgroundBoxShadowEffect::onTargetNodeChanged() {}

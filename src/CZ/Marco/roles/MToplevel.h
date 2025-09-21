@@ -2,7 +2,7 @@
 #define MTOPLEVEL_H
 
 #include <CZ/Marco/roles/MSurface.h>
-#include <CZ/AK/AKWindowState.h>
+#include <CZ/Core/CZWindowState.h>
 
 /**
  * @brief Represents a toplevel window.
@@ -106,8 +106,6 @@ public:
      */
     MToplevel() noexcept;
 
-    CZ_DISABLE_COPY(MToplevel)
-
     /**
      * @brief Destructor for `MToplevel`.
      */
@@ -122,7 +120,7 @@ public:
      * @return A bitset representing the current window states.
      * @see windowStateEvent(), onStatesChanged
      */
-    CZBitset<AKWindowState> states() const noexcept;
+    CZBitset<CZWindowState> states() const noexcept;
 
     /**
      * @brief Requests the compositor to maximize or unmaximize the window.
@@ -282,7 +280,7 @@ public:
      *
      * @return `true` if the request is successful, `false` otherwise.
      */
-    bool showWindowMenu(const AKInputEvent &event, const SkIPoint &pos) noexcept;
+    bool showWindowMenu(const CZInputEvent &event, const SkIPoint &pos) noexcept;
 
     /**
      * @brief Retrieves the current decoration mode of the window.
@@ -420,7 +418,7 @@ public:
      * If the request is not ignored, the toplevel window will be unmapped (see setMapped()) but not
      * destroyed.
      */
-    CZSignal<const AKWindowCloseEvent&> onBeforeClose;
+    CZSignal<const CZCloseEvent&> onBeforeClose;
 
     /**
      * @brief Signal emitted when the suggested window size changes.
@@ -530,8 +528,8 @@ protected:
      */
     void windowStateEvent(const CZWindowStateEvent &event) override;
     void pointerButtonEvent(const CZPointerButtonEvent &event) override;
-    bool eventFilter(const CZEvent &event, AKObject &object) override;
-    bool event(const CZEvent &e) override;
+    bool eventFilter(const CZEvent &event, CZObject &object) noexcept override;
+    bool event(const CZEvent &e) noexcept override;
     void onUpdate() noexcept override;
 
 private:

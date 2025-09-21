@@ -80,12 +80,12 @@ AKTextField::AKTextField(AKNode *parent) noexcept : AKContainer(YGFlexDirection:
 void AKTextField::layoutEvent(const CZLayoutEvent &event)
 {
     AKContainer::layoutEvent(event);
-    if (event.changes().has(CZLayoutChangeSize))
+    if (event.changes.has(CZLayoutChangeSize))
     {
         updateDimensions();
         updateTextPosition();
     }
-    if (event.changes().has(CZLayoutChangeScale))
+    if (event.changes.has(CZLayoutChangeScale))
         updateScale();
     event.accept();
 }
@@ -166,13 +166,13 @@ void AKTextField::pointerButtonEvent(const CZPointerButtonEvent &event)
     AKContainer::pointerButtonEvent(event);
     setKeyboardFocus(true);
 
-    if (event.button() == BTN_LEFT)
+    if (event.button == BTN_LEFT)
     {
-        if (event.state() == CZPointerButtonEvent::Pressed)
+        if (event.pressed)
         {
             m_selectionStart = m_text.codePointAt(
-                akPointer().pos().x() - SkScalar(m_text.globalRect().x()),
-                akPointer().pos().y() - SkScalar(m_text.globalRect().y()));
+                akPointer().pos().x() - SkScalar(m_text.worldRect().x()),
+                akPointer().pos().y() - SkScalar(m_text.worldRect().y()));
             m_caretRightOffset = m_text.codePointByteOffsets().size()  - m_selectionStart;
             updateCaretPos();
             m_interactiveSelection = true;
@@ -196,8 +196,8 @@ void AKTextField::pointerMoveEvent(const CZPointerMoveEvent &event)
     if (m_interactiveSelection)
     {
         size_t selectionEnd {  m_text.codePointAt(
-            event.pos().x() - SkScalar(m_text.globalRect().x()),
-            event.pos().y() - SkScalar(m_text.globalRect().y())) };
+            event.localPos.x() - SkScalar(m_text.worldRect().x()),
+            event.localPos.y() - SkScalar(m_text.worldRect().y())) };
 
         m_text.setSelection(std::min(m_selectionStart, selectionEnd), std::abs(Int64(m_selectionStart) - Int64(selectionEnd)));
     }
@@ -228,7 +228,7 @@ void AKTextField::windowStateEvent(const CZWindowStateEvent &event)
 
 void AKTextField::updateDimensions() noexcept
 {
-    m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(globalRect().width());
+    m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(worldRect().width());
 }
 
 void AKTextField::updateScale() noexcept

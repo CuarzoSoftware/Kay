@@ -58,7 +58,7 @@ public:
     {
         m_brush.setAntiAlias(true);
         m_pen.setAntiAlias(true);
-        enableCustomTextureColor(true);
+        enableReplaceImageColor(true);
     };
 
     /**
@@ -70,10 +70,8 @@ public:
     {
         m_brush.setAntiAlias(true);
         m_pen.setAntiAlias(true);
-        enableCustomTextureColor(true);
+        enableReplaceImageColor(true);
     };
-
-    CZ_DISABLE_COPY(AKPath)
 
     /**
      * @brief Sets the path.

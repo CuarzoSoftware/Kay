@@ -1,4 +1,3 @@
-#ifdef CZ_MARCO_ENABLED
 #ifndef CZ_AKWINDOWBUTTONGROUP_H
 #define CZ_AKWINDOWBUTTONGROUP_H
 
@@ -13,7 +12,7 @@ public:
     AKWindowButton minimizeButton { AKWindowButton::Type::Minimize, this };
     AKWindowButton maximizeButton { AKWindowButton::Type::Fullscreen, this };
 protected:
-    bool eventFilter(const CZEvent &e, AKObject &o) override;
+    bool eventFilter(const CZEvent &e, CZObject &o) noexcept override;
     void sceneChangedEvent(const AKSceneChangedEvent &e) override;
     void pointerEnterEvent(const CZPointerEnterEvent &e) override;
     void pointerLeaveEvent(const CZPointerLeaveEvent &e) override;
@@ -22,4 +21,3 @@ protected:
 };
 
 #endif // CZ_AKWINDOWBUTTONGROUP_H
-#endif

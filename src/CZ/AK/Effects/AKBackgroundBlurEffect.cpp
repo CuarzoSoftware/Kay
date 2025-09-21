@@ -1,5 +1,3 @@
-#include "RImage.h"
-#include "RPass.h"
 #include <CZ/skia/core/SkCanvas.h>
 #include <CZ/skia/effects/SkImageFilters.h>
 #include <CZ/skia/gpu/ganesh/GrDirectContext.h>
@@ -10,6 +8,8 @@
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKLog.h>
+#include <CZ/Ream/RImage.h>
+#include <CZ/Ream/RPass.h>
 
 using namespace CZ;
 
@@ -43,7 +43,6 @@ void AKBackgroundBlurEffect::onSceneCalculatedRect()
 
     if (clipType() == NoClip)
     {
-        AKLog(CZFatal, "NoClip");
         effectRect = m_finalRegion.getBounds();
         bdt.setCaptureRect(SkIRect::MakeSize(effectRect.size()));
 

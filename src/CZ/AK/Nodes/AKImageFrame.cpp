@@ -38,8 +38,7 @@ void AKImageFrame::init() noexcept
 void AKImageFrame::updateDimensions() noexcept
 {
     if (!image() ||
-        image()->width() <= 0 ||
-        image()->height() <= 0 ||
+        image()->size().isEmpty() ||
         (sizeMode() != SizeMode::Fill && (layout().calculatedWidth() <= 0.f || layout().calculatedHeight() <= 0.f)))
     {
         m_renderableImage.setVisible(false);
@@ -59,10 +58,10 @@ void AKImageFrame::updateDimensions() noexcept
     }
     else
     {
-        if (CZ::is90Transform(srcTransform()))
-            srcRect.setWH(image()->height(), image()->width());
+        if (CZ::Is90Transform(srcTransform()))
+            srcRect.setWH(image()->size().height(), image()->size().width());
         else
-            srcRect.setWH(image()->width(), image()->height());
+            srcRect.setWH(image()->size().width(), image()->size().height());
     }
 
     if (sizeMode() == SizeMode::Fill)
@@ -117,7 +116,7 @@ void AKImageFrame::updateDimensions() noexcept
         m_renderableImage.layout().setPosition(YGEdgeTop, YGUndefined);
 
         // X-axis
-        if (alignment.checkAll(AKAlignLeft | AKAlignRight) || !alignment.has(AKAlignLeft | AKAlignRight))
+        if (alignment.hasAll(AKAlignLeft | AKAlignRight) || !alignment.has(AKAlignLeft | AKAlignRight))
             layout().setJustifyContent(YGJustifyCenter);
         else if (alignment.has(AKAlignLeft))
             layout().setJustifyContent(YGJustifyFlexStart);
@@ -125,7 +124,7 @@ void AKImageFrame::updateDimensions() noexcept
             layout().setJustifyContent(YGJustifyFlexEnd);
 
         // Y-axis
-        if (alignment.checkAll(AKAlignTop | AKAlignBottom) || !alignment.has(AKAlignTop | AKAlignBottom))
+        if (alignment.hasAll(AKAlignTop | AKAlignBottom) || !alignment.has(AKAlignTop | AKAlignBottom))
             layout().setAlignItems(YGAlignCenter);
         else if (alignment.has(AKAlignTop))
             layout().setAlignItems(YGAlignFlexStart);

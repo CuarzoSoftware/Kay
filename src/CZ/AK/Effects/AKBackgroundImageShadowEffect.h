@@ -23,8 +23,8 @@ public:
         m_offset(offset),
         m_radius(radius)
     {
-        enableCustomTextureColor(true);
-        setColorWithAlpha(color);
+        enableReplaceImageColor(true);
+        setColor(color);
 
         if (targetNode)
             targetNode->addBackgroundEffect(this);
@@ -66,7 +66,7 @@ public:
     }
 
 protected:
-    using AKRenderable::enableCustomTextureColor;
+    using AKRenderable::enableReplaceImageColor;
 
     void onSceneCalculatedRect() override;
     void renderEvent(const AKRenderEvent &event) override;

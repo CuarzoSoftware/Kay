@@ -22,8 +22,6 @@ namespace CZ
 
     class AKLog;
 
-    class AKRRect;
-
     class AKScene;  /* Renders a root AKNode into an AKTarget */
     class AKTarget;
     class AKTarget; /* An AKScene render destination */

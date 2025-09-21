@@ -24,7 +24,7 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
     m_slot.layout().setWidthPercent(100.f);
     m_slot.layout().setHeightPercent(100.f);
 
-    m_kineticYAnim.setOnUpdateCallback([this](AKAnimation *a){
+    m_kineticYAnim.setOnUpdateCallback([this](CZAnimation *a){
         if (!m_fingersDownY)
         {
             if (-offsetY() - m_vel.fY < m_contentBounds.fTop)
@@ -52,13 +52,13 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
         }
     });
 
-    m_kineticYAnim.setOnFinishCallback([this](AKAnimation *){
+    m_kineticYAnim.setOnFinishCallback([this](CZAnimation *){
         m_vel.fY = 0.f;
         moveYPrivate(m_vel.fY);
         repaint();
     });
 
-    m_kineticXAnim.setOnUpdateCallback([this](AKAnimation *a){
+    m_kineticXAnim.setOnUpdateCallback([this](CZAnimation *a){
         if (!m_fingersDownX)
         {                         
             if (-offsetX() < m_contentBounds.fLeft)
@@ -86,7 +86,7 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
         }
     });
 
-    m_kineticXAnim.setOnFinishCallback([this](AKAnimation *){
+    m_kineticXAnim.setOnFinishCallback([this](CZAnimation *){
         m_vel.fX = 0.f;
         moveXPrivate(m_vel.fX);
         repaint();
@@ -208,17 +208,17 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
 
     // Invert axes if needed
 
-    if (e.hasX())
-        dx = - e.axes().x() * AKTheme::ScrollKineticSpeed;
+    if (e.hasX)
+        dx = - e.axes.x() * AKTheme::ScrollKineticSpeed;
 
-    if (e.hasY())
-        dy = - e.axes().y() * AKTheme::ScrollKineticSpeed;
+    if (e.hasY)
+        dy = - e.axes.y() * AKTheme::ScrollKineticSpeed;
 
-    if (e.source() != CZPointerScrollEvent::Finger)
+    if (e.source != CZPointerScrollEvent::Finger)
     {
         m_vel.set(0.f, 0.f);
 
-        if (e.source() != CZPointerScrollEvent::Continuous)
+        if (e.source != CZPointerScrollEvent::Continuous)
         {
             dx *= 4.f;
             dy *= 4.f;
@@ -226,10 +226,10 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
 
         // TODO: Handle each source type case ?
 
-        if (e.hasX())
+        if (e.hasX)
             moveXPrivate(dx);
 
-        if (e.hasY())
+        if (e.hasY)
             moveYPrivate(dy);
 
         applyConstraints();
@@ -237,14 +237,14 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
         return;
     }
 
-    if (e.hasX())
+    if (e.hasX)
     {
         // If == 0.f it means kinetic stop (fingers released)
-        m_fingersDownX = e.axes().x() != 0.f;
+        m_fingersDownX = e.axes.x() != 0.f;
 
         if (m_fingersDownX)
         {
-            m_lastFingerTimeX = AKTime::ms();
+            m_lastFingerTimeX = CZTime::Ms();
             m_kineticXAnim.stop();
 
             m_vel.fX = dx;
@@ -280,7 +280,7 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
         // Kinetic stop!
         else
         {
-            const bool fingersStillForTooLong { AKTime::ms() - m_lastFingerTimeX > 64 };
+            const bool fingersStillForTooLong { CZTime::Ms() - m_lastFingerTimeX > 64 };
             const bool outOfBounds { -offsetX() < m_contentBounds.fLeft || -offsetX() + layout().calculatedWidth() > m_contentBounds.fRight };
 
             if (outOfBounds || !fingersStillForTooLong)
@@ -293,13 +293,13 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
         }
     }
 
-    if (e.hasY())
+    if (e.hasY)
     {
-        m_fingersDownY = e.axes().y() != 0.f;
+        m_fingersDownY = e.axes.y() != 0.f;
 
         if (m_fingersDownY)
         {
-            m_lastFingerTimeY = AKTime::ms();
+            m_lastFingerTimeY = CZTime::Ms();
             m_kineticYAnim.stop();
 
             m_vel.fY = dy;
@@ -330,7 +330,7 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
         // Kinetic stop!
         else
         {
-            const bool fingersStillForTooLong { AKTime::ms() - m_lastFingerTimeY > 64 };
+            const bool fingersStillForTooLong { CZTime::Ms() - m_lastFingerTimeY > 64 };
             const bool outOfBounds { -offsetY() - m_vel.fY < m_contentBounds.fTop || -offsetY() - m_vel.fY + layout().calculatedHeight() > m_contentBounds.fBottom };
 
             if (outOfBounds || !fingersStillForTooLong)
@@ -349,17 +349,17 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
 
 void AKScroll::sceneChangedEvent(const AKSceneChangedEvent &e)
 {
-    if (e.oldScene())
-        e.oldScene()->removeEventFilter(this);
-    if (e.newScene())
-        e.newScene()->installEventFilter(this);
+    if (e.oldScene)
+        e.oldScene->removeEventFilter(this);
+    if (e.newScene)
+        e.newScene->installEventFilter(this);
 }
 
 void AKScroll::layoutEvent(const CZLayoutEvent &e)
 {
     AKContainer::layoutEvent(e);
 
-    if (!e.changes().has(CZLayoutEvent::Size)) return;
+    if (!e.changes.has(CZLayoutChangeSize)) return;
 
     m_vel.set(0.f, 0.f);
     calculateContentBounds();
@@ -367,24 +367,24 @@ void AKScroll::layoutEvent(const CZLayoutEvent &e)
     layout().calculate();
 }
 
-bool AKScroll::eventFilter(const CZEvent &ev, AKObject &t)
+bool AKScroll::eventFilter(const CZEvent &event, CZObject &t) noexcept
 {
-    if (ev.type() != CZEvent::KeyboardKey)
-        return AKContainer::eventFilter(ev, t);
+    if (event.type() != CZEvent::Type::KeyboardKey)
+        return AKContainer::eventFilter(event, t);
 
-    const auto &e { static_cast<const CZKeyboardKeyEvent&>(ev) };
+    const auto &e { static_cast<const CZKeyboardKeyEvent&>(event) };
 
-    if (e.state() == CZKeyboardKeyEvent::Pressed)
+    if (e.pressed)
     {
         constexpr SkScalar delta { 128.f };
 
-        if (e.keyCode() == KEY_DOWN)
+        if (e.keyCode == KEY_DOWN)
             setOffsetY(offsetY() - delta);
-        else if (e.keyCode() == KEY_UP)
+        else if (e.keyCode == KEY_UP)
             setOffsetY(offsetY() + delta);
-        else if (e.keyCode() == KEY_RIGHT)
+        else if (e.keyCode == KEY_RIGHT)
             setOffsetX(offsetX() - delta);
-        else if (e.keyCode() == KEY_LEFT)
+        else if (e.keyCode == KEY_LEFT)
             setOffsetX(offsetX() + delta);
     }
 

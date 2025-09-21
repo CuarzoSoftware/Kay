@@ -2,8 +2,8 @@
 #define CZ_AKSCROLL_H
 
 #include <CZ/AK/Nodes/AKContainer.h>
-#include <CZ/AK/AKAnimation.h>
 #include <CZ/AK/Nodes/AKScrollBar.h>
+#include <CZ/Core/CZAnimation.h>
 
 class CZ::AKScroll : public AKContainer
 {
@@ -36,7 +36,7 @@ protected:
     void pointerScrollEvent(const CZPointerScrollEvent &e) override;
     void sceneChangedEvent(const AKSceneChangedEvent &e) override;
     void layoutEvent(const CZLayoutEvent &e) override;
-    bool eventFilter(const CZEvent &e, AKObject &target) noexcept override;
+    bool eventFilter(const CZEvent &event, CZObject &target) noexcept override;
 
     void updateBarXPrivate() noexcept;
     void updateBarYPrivate() noexcept;
@@ -44,8 +44,8 @@ protected:
     void moveYPrivate(SkScalar dy) noexcept;
 
     AKContainer m_slot;
-    AKAnimation m_kineticYAnim;
-    AKAnimation m_kineticXAnim;
+    CZAnimation m_kineticYAnim;
+    CZAnimation m_kineticXAnim;
     SkPoint m_vel { 0.f, 0.f };
     SkIRect m_contentBounds { 0, 0, 0, 0};
     Int64 m_lastFingerTimeX;

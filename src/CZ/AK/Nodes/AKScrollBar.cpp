@@ -14,22 +14,22 @@ AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept
     opaqueRegion.setRect(AK_IRECT_INF);
     setOpacity(0.f);
     setVisible(false);
-    m_handle.enableCustomTextureColor(true);
-    m_handle.setColorWithAlpha(SkColorSetARGB(128, 0, 0, 0));
+    m_handle.enableReplaceImageColor(true);
+    m_handle.setColor(SkColorSetARGB(128, 0, 0, 0));
     setKeepSidesAspectRatio(false);
     m_handle.setKeepSidesAspectRatio(false);
     layout().setPositionType(YGPositionTypeAbsolute);
     setEdge(edge);
 
     m_fadeOutAnim.setDuration(300);
-    m_fadeOutAnim.setOnUpdateCallback([this](AKAnimation *a){
+    m_fadeOutAnim.setOnUpdateCallback([this](CZAnimation *a){
 
         if (opacity() > 0.f)
             setOpacity(1.0 - a->value());
         m_handle.setOpacity(0.5 * (1.0 - a->value()));
     });
 
-    m_fadeOutAnim.setOnFinishCallback([this](AKAnimation *){
+    m_fadeOutAnim.setOnFinishCallback([this](CZAnimation *){
 
         if (m_preventHide)
             return;
@@ -57,7 +57,7 @@ AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept
     });
 
     m_hoverAnim.setDuration(100);
-    m_hoverAnim.setOnUpdateCallback([this](AKAnimation *a){
+    m_hoverAnim.setOnUpdateCallback([this](CZAnimation *a){
         setOpacity(a->value());
 
         if (m_handle.orientation() == CZOrientation::H)
@@ -68,7 +68,7 @@ AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept
                 (AKTheme::ScrollBarHandleWidthHover - AKTheme::ScrollBarHandleWidth) * a->value());
     });
 
-    m_hoverAnim.setOnFinishCallback([this](AKAnimation *){
+    m_hoverAnim.setOnFinishCallback([this](CZAnimation *){
         setOpacity(1.f);
     });
 
@@ -209,7 +209,7 @@ void AKScrollBar::updatePosByPointer(SkScalar pointerPos) noexcept
     if (!m_scroll)
         return;
 
-    SkIRect realRect { globalRect() };
+    SkIRect realRect { worldRect() };
 
     if (m_handle.orientation() == CZOrientation::H)
     {
@@ -253,18 +253,19 @@ void AKScrollBar::pointerButtonEvent(const CZPointerButtonEvent &e)
 {
     AKThreeImagePatch::pointerButtonEvent(e);
 
-    if (e.button() != BTN_LEFT)
+    if (e.button != BTN_LEFT)
         return;
 
-    if (e.state() == CZPointerButtonEvent::Pressed)
+    if (e.pressed)
     {
         m_dragging = true;
         enablePointerGrab(true);
 
+        /*
         if (m_handle.orientation() == CZOrientation::H)
             updatePosByPointer(app()->pointer().pos().x());
         else
-            updatePosByPointer(app()->pointer().pos().y());
+            updatePosByPointer(app()->pointer().pos().y());*/
     }
     else
     {
@@ -281,9 +282,9 @@ void AKScrollBar::pointerMoveEvent(const CZPointerMoveEvent &e)
         return;
 
     if (m_handle.orientation() == CZOrientation::H)
-        updatePosByPointer(e.pos().x());
+        updatePosByPointer(e.localPos.x());
     else
-        updatePosByPointer(e.pos().y());
+        updatePosByPointer(e.localPos.y());
 }
 
 void AKScrollBar::pointerEnterEvent(const CZPointerEnterEvent &)
@@ -306,7 +307,7 @@ void AKScrollBar::layoutEvent(const CZLayoutEvent &e)
 {
     AKThreeImagePatch::layoutEvent(e);
 
-    if (e.changes().has(CZLayoutEvent::Scale | CZLayoutEvent::Size))
+    if (e.changes.has(CZLayoutChangeScale | CZLayoutChangeSize))
         updateImages();
 }
 

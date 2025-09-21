@@ -22,7 +22,6 @@ public:
     };
 
     AKButton(const std::string &text, AKNode *parent = nullptr) noexcept;
-    CZ_DISABLE_COPY(AKButton)
 
     void setText(const std::string &text) noexcept;
 

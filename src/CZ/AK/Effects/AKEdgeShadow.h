@@ -15,8 +15,6 @@ public:
     };
 
     AKEdgeShadow(CZEdge edge, AKNode *parent = nullptr) noexcept;
-    CZ_DISABLE_COPY(AKEdgeShadow)
-
     void setEdge(CZEdge edge) noexcept;
     CZEdge edge() const noexcept { return m_edge; };
 

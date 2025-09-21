@@ -40,10 +40,8 @@ public:
      * @param parent The parent AKNode. Defaults to `nullptr` if no parent is provided.
      */
     AKThreeImagePatch(CZOrientation orientation, AKNode *parent = nullptr) noexcept :
-        AKRenderable(RenderableHint::Texture, parent),
+        AKRenderable(RenderableHint::Image, parent),
         m_orientation(orientation) {};
-
-    CZ_DISABLE_COPY(AKThreeImagePatch)
 
     void setOrientation(CZOrientation orientation) noexcept
     {

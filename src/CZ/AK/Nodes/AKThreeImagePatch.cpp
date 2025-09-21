@@ -1,20 +1,19 @@
+#include <CZ/Ream/RPass.h>
 #include <CZ/AK/Nodes/AKThreeImagePatch.h>
 #include <CZ/AK/Events/AKRenderEvent.h>
 #include <CZ/AK/AKLog.h>
 
 using namespace CZ;
 
-void AKThreeImagePatch::renderEvent(const AKRenderEvent &params)
+void AKThreeImagePatch::renderEvent(const AKRenderEvent &e)
 {
     if (!m_image || m_imageScale <= 0)
         return;
 
-    /* TODO:
-    const SkIRect &rect { params.rect };
-    const SkRegion &damage { params.damage };
-    AKPainter &painter { params.painter };
+    const SkIRect &rect { e.rect };
+    auto *painter { e.pass->getPainter() };
     SkIRect dsts[3];
-    SkRegion region;
+    RDrawImageInfo info {};
 
     if (orientation() == CZOrientation::H)
     {
@@ -38,22 +37,12 @@ void AKThreeImagePatch::renderEvent(const AKRenderEvent &params)
 
         for (Int32 i = 0; i < 3; i++)
         {
-            region = damage;
-            region.op(dsts[i], SkRegion::Op::kIntersect_Op);
-
-            if (region.isEmpty())
-                continue;
-
-            painter.bindTextureMode({
-                .texture = m_image,
-                .pos = dsts[i].topLeft(),
-                .srcRect = srcs[i],
-                .dstSize = dsts[i].size(),
-                .srcTransform = transforms[i],
-                .srcScale = m_imageScale
-            });
-
-            painter.drawRegion(region);
+            info.image = m_image;
+            info.dst = dsts[i];
+            info.src = srcs[i];
+            info.srcScale = m_imageScale;
+            info.srcTransform = transforms[i];
+            painter->drawImage(info, &e.damage);
         }
     }
     else
@@ -79,23 +68,12 @@ void AKThreeImagePatch::renderEvent(const AKRenderEvent &params)
 
         for (Int32 i = 0; i < 3; i++)
         {
-            region = damage;
-            region.op(dsts[i], SkRegion::Op::kIntersect_Op);
-
-            if (region.isEmpty())
-                continue;
-
-            painter.bindTextureMode({
-                .texture = m_image,
-                .pos = dsts[i].topLeft(),
-                .srcRect = srcs[i],
-                .dstSize = dsts[i].size(),
-                .srcTransform = transforms[i],
-                .srcScale = m_imageScale
-            });
-
-            painter.drawRegion(region);
+            info.image = m_image;
+            info.dst = dsts[i];
+            info.src = srcs[i];
+            info.srcScale = m_imageScale;
+            info.srcTransform = transforms[i];
+            painter->drawImage(info, &e.damage);
         }
     }
-    */
 }

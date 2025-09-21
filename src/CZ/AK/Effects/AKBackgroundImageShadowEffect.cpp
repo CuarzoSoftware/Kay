@@ -6,6 +6,8 @@
 #include <CZ/AK/Nodes/AKBakeable.h>
 #include <CZ/AK/AKTarget.h>
 #include <CZ/Ream/RSurface.h>
+#include <CZ/Ream/RPass.h>
+#include <CZ/Ream/RImage.h>
 #include <CZ/skia/core/SkPaint.h>
 
 using namespace CZ;
@@ -28,7 +30,7 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
     }
 
     const SkISize prevSize { effectRect.size() };
-    effectRect = SkIRect::MakeWH(bakeableTarget->globalRect().width(), bakeableTarget->globalRect().height());
+    effectRect = SkIRect::MakeWH(bakeableTarget->worldRect().width(), bakeableTarget->worldRect().height());
     effectRect.outset(m_radius, m_radius);
     effectRect.offset(offset().x(), offset().y());
 
@@ -49,7 +51,8 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
                 true);
         }
 
-        SkCanvas &canvas { *m_surface->surface()->getCanvas() };
+        auto pass { m_surface->beginPass() };
+        SkCanvas &canvas { *pass->getCanvas() };
         SkPaint brush;
         canvas.save();
         canvas.scale(
@@ -59,11 +62,11 @@ void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
         brush.setBlendMode(SkBlendMode::kSrc);
         brush.setImageFilter(SkImageFilters::DropShadowOnly(0, 0, m_radius/3.f, m_radius/3.f, SK_ColorBLACK, nullptr));
         canvas.drawImageRect(
-            bakeableTarget->surface()->image(),
+            bakeableTarget->surface()->image()->skImage(),
             SkRect::MakeXYWH(0, 0,
-                             bakeableTarget->globalRect().width() * bakeableTarget->scale(),
-                             bakeableTarget->globalRect().height() * bakeableTarget->scale()),
-            SkRect::MakeXYWH(m_radius, m_radius, bakeableTarget->globalRect().width(), bakeableTarget->globalRect().height()),
+                             bakeableTarget->worldRect().width() * bakeableTarget->scale(),
+                             bakeableTarget->worldRect().height() * bakeableTarget->scale()),
+            SkRect::MakeXYWH(m_radius, m_radius, bakeableTarget->worldRect().width(), bakeableTarget->worldRect().height()),
             SkFilterMode::kLinear,
             &brush,
             SkCanvas::kFast_SrcRectConstraint);
@@ -82,21 +85,14 @@ void AKBackgroundImageShadowEffect::renderEvent(const AKRenderEvent &p)
     if (!bakeableTarget || !bakeableTarget->surface())
         return;
 
-    const SkRect src { SkRect::MakeWH(p.rect.size().width(), p.rect.size().height()) };
+    auto *painter { p.pass->getPainter() };
+    RDrawImageInfo info {};
+    info.image = m_surface->image();
+    info.dst = p.rect;
+    info.src = SkRect::MakeWH(p.rect.size().width(), p.rect.size().height());
+    info.srcScale = bakeableTarget->scale();
 
-    p.painter.bindTextureMode({
-        .texture = m_surface->image(),
-        .pos = { p.rect.x(), p.rect.y() },
-        .srcRect = src,
-        .dstSize = p.rect.size(),
-        .srcTransform = CZTransform::Normal,
-        .srcScale = SkScalar(m_surface->scale())
-    });
-
-    p.painter.drawRegion(p.damage);
+    painter->drawImage(info, &p.damage);
 }
 
-void AKBackgroundImageShadowEffect::onTargetNodeChanged()
-{
-
-}
+void AKBackgroundImageShadowEffect::onTargetNodeChanged() {}

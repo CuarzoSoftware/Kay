@@ -1,11 +1,13 @@
-#ifdef CZ_MARCO_ENABLED
+#include <CZ/Core/CZCore.h>
 #include <CZ/Events/CZPointerButtonEvent.h>
-#include <CZ/AK/Events/AKWindowCloseEvent.h>
+#include <CZ/Events/CZCloseEvent.h>
 #include <CZ/AK/Nodes/AKWindowButton.h>
 #include <CZ/AK/AKApp.h>
 #include <CZ/AK/AKTheme.h>
 
+#ifdef CZ_ENABLE_MARCO
 #include <CZ/Marco/roles/MToplevel.h>
+#endif
 
 using namespace CZ;
 
@@ -45,21 +47,23 @@ bool AKWindowButton::setState(State state) noexcept
 
 void AKWindowButton::pointerButtonEvent(const CZPointerButtonEvent &e)
 {
-    if (state() == State::Disabled || e.button() != CZPointerButtonEvent::Left)
+    if (state() == State::Disabled || e.button != BTN_LEFT)
         return;
 
     e.accept();
 
-    if (e.state() == CZPointerButtonEvent::Pressed)
+    if (e.pressed)
         setState(Pressed);
     else
     {
+#ifdef CZ_ENABLE_MARCO
+
         if (MToplevel *tl = dynamic_cast<MToplevel*>(window()))
         {
             switch (type())
             {
             case Type::Close:
-                if (CZCore::Get()->sendEvent(AKWindowCloseEvent(), *tl))
+                if (CZCore::Get()->sendEvent(CZCloseEvent(), *tl))
                     tl->setMapped(false);
                 break;
             case Type::Fullscreen:
@@ -76,8 +80,7 @@ void AKWindowButton::pointerButtonEvent(const CZPointerButtonEvent &e)
                 break;
             }
         }
-
+#endif
         onClick.notify();
     }
 }
-#endif

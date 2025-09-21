@@ -3,8 +3,11 @@
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKLog.h>
 
+#include <CZ/Ream/RCore.h>
 #include <CZ/Ream/RSurface.h>
 #include <CZ/Ream/RPass.h>
+#include <CZ/Ream/RImage.h>
+#include <CZ/Ream/RDevice.h>
 
 #include <CZ/skia/gpu/ganesh/GrRecordingContext.h>
 #include <CZ/skia/gpu/ganesh/GrDirectContext.h>
@@ -369,10 +372,9 @@ std::shared_ptr<RImage> CZ::AKTheme::edgeShadowImage(Int32 scale) noexcept
     return surface->image();
 }
 
-/*
 std::shared_ptr<RImage> CZ::AKTheme::windowButtonImage(Int32 scale, AKWindowButton::Type type, AKWindowButton::State state)
 {
-    AK_UNUSED(scale)
+    CZ_UNUSED(scale)
 
     // Being lazy and always using scale 2
 
@@ -385,24 +387,33 @@ std::shared_ptr<RImage> CZ::AKTheme::windowButtonImage(Int32 scale, AKWindowButt
 
     std::shared_ptr<RImage> image;
 
+    auto *mainDevice { RCore::Get()->mainDevice() };
+
+    RImageConstraints cons {};
+    cons.allocator = mainDevice;
+    cons.caps[mainDevice] = RImageCap_Src | RImageCap_SkImage;
+
+    auto fmt { mainDevice->textureFormats().formats().find(DRM_FORMAT_ARGB8888) };
+    assert(fmt != mainDevice->textureFormats().formats().end());
+
     switch (state)
     {
     case AKWindowButton::State::Disabled:
-        image = AKImageLoader::loadFile(akAssetsDir() / "window_button_disabled.png");
+        image = RImage::LoadFile(akAssetsDir() / "window_button_disabled.png", *fmt, {}, &cons);
         break;
     case AKWindowButton::State::Normal:
         switch (type)
         {
             case CZ::AKWindowButton::Type::Close:
-                image = AKImageLoader::loadFile(akAssetsDir() / "window_button_close_normal.png");
+                image = RImage::LoadFile(akAssetsDir() / "window_button_close_normal.png", *fmt, {}, &cons);
                 break;
             case CZ::AKWindowButton::Type::Minimize:
-                image = AKImageLoader::loadFile(akAssetsDir() / "window_button_minimize_normal.png");
+                image = RImage::LoadFile(akAssetsDir() / "window_button_minimize_normal.png", *fmt, {}, &cons);
                 break;
             case CZ::AKWindowButton::Type::Maximize:
             case CZ::AKWindowButton::Type::Fullscreen:
             case CZ::AKWindowButton::Type::UnsetFullscreen:
-                image = AKImageLoader::loadFile(akAssetsDir() / "window_button_maximize_normal.png");
+                image = RImage::LoadFile(akAssetsDir() / "window_button_maximize_normal.png", *fmt, {}, &cons);
                 break;
         }
         break;
@@ -410,19 +421,19 @@ std::shared_ptr<RImage> CZ::AKTheme::windowButtonImage(Int32 scale, AKWindowButt
         switch (type)
         {
         case CZ::AKWindowButton::Type::Close:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_close_hover.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_close_hover.png", *fmt, {}, &cons);
             break;
         case CZ::AKWindowButton::Type::Minimize:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_minimize_hover.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_minimize_hover.png", *fmt, {}, &cons);
             break;
         case CZ::AKWindowButton::Type::Maximize:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_maximize_hover.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_maximize_hover.png", *fmt, {}, &cons);
             break;
         case CZ::AKWindowButton::Type::Fullscreen:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_fullscreen_hover.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_fullscreen_hover.png", *fmt, {}, &cons);
             break;
         case CZ::AKWindowButton::Type::UnsetFullscreen:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_unset_fullscreen_hover.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_unset_fullscreen_hover.png", *fmt, {}, &cons);
             break;
         }
         break;
@@ -430,24 +441,24 @@ std::shared_ptr<RImage> CZ::AKTheme::windowButtonImage(Int32 scale, AKWindowButt
         switch (type)
         {
         case CZ::AKWindowButton::Type::Close:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_close_pressed.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_close_pressed.png", *fmt, {}, &cons);
             break;
         case CZ::AKWindowButton::Type::Minimize:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_minimize_pressed.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_minimize_pressed.png", *fmt, {}, &cons);
             break;
         case CZ::AKWindowButton::Type::Maximize:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_maximize_pressed.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_maximize_pressed.png", *fmt, {}, &cons);
             break;
         case CZ::AKWindowButton::Type::Fullscreen:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_fullscreen_pressed.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_fullscreen_pressed.png", *fmt, {}, &cons);
             break;
         case CZ::AKWindowButton::Type::UnsetFullscreen:
-            image = AKImageLoader::loadFile(akAssetsDir() / "window_button_unset_fullscreen_pressed.png");
+            image = RImage::LoadFile(akAssetsDir() / "window_button_unset_fullscreen_pressed.png", *fmt, {}, &cons);
             break;
         }
         break;
     default:
-        image = AKImageLoader::loadFile(akAssetsDir() / "window_button_disabled.png");
+        image = RImage::LoadFile(akAssetsDir() / "window_button_disabled.png", *fmt, {}, &cons);
         break;
     }
 
@@ -458,7 +469,6 @@ std::shared_ptr<RImage> CZ::AKTheme::windowButtonImage(Int32 scale, AKWindowButt
 
     return image;
 }
-*/
 
 std::shared_ptr<RImage> CZ::AKTheme::topLeftRoundCornerMask(Int32 radius, Int32 scale) noexcept
 {

@@ -1,4 +1,3 @@
-#ifdef CZ_MARCO_ENABLED
 #ifndef CZ_AKWINDOWBUTTON_H
 #define CZ_AKWINDOWBUTTON_H
 
@@ -41,4 +40,3 @@ protected:
 };
 
 #endif // CZ_AKWINDOWBUTTON_H
-#endif

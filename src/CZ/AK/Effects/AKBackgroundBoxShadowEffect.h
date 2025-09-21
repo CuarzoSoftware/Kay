@@ -26,8 +26,8 @@ public:
         m_radius(radius),
         m_fillBackgroundEnabled(fillBackground)
     {
-        enableCustomTextureColor(true);
-        setColorWithAlpha(color);
+        enableReplaceImageColor(true);
+        setColor(color);
 
         if (targetNode)
             targetNode->addBackgroundEffect(this);
@@ -97,7 +97,7 @@ public:
     }
 
 protected:
-    using AKRenderable::enableCustomTextureColor;
+    using AKRenderable::enableReplaceImageColor;
 
     void onSceneCalculatedRect() override;
     void onSceneCalculatedRectWithBorderRadius() noexcept;

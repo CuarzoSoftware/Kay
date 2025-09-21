@@ -8,8 +8,8 @@ AKEdgeShadow::AKEdgeShadow(CZEdge edge, AKNode *parent) noexcept : AKImage(paren
 {
     layout().setPositionType(YGPositionTypeAbsolute);
     setEdge(edge);
-    enableCustomTextureColor(true);
-    setColorWithAlpha(AKTheme::EdgeShadowColor);
+    enableReplaceImageColor(true);
+    setColor(AKTheme::EdgeShadowColor);
     setImage(theme()->edgeShadowImage(scale()));
 }
 
@@ -54,7 +54,7 @@ void AKEdgeShadow::setEdge(CZEdge edge) noexcept
 void AKEdgeShadow::layoutEvent(const CZLayoutEvent &event)
 {
     AKImage::layoutEvent(event);
-    if (event.changes().has(CZLayoutChangeScale))
+    if (event.changes.has(CZLayoutChangeScale))
     {
         setImage(theme()->edgeShadowImage(scale()));
         addDamage(AK_IRECT_INF);

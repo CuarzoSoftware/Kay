@@ -76,11 +76,11 @@ void AKButton::pointerButtonEvent(const CZPointerButtonEvent &event)
 {
     AKSubScene::pointerButtonEvent(event);
 
-    if (event.button() == CZPointerButtonEvent::Left)
+    if (event.button == BTN_LEFT)
     {
-        const bool triggerOnClicked { !event.state() && pressed() && isPointerOver() };
-        setPressed(event.state());
-        enablePointerGrab(event.state());
+        const bool triggerOnClicked { !event.pressed && pressed() && isPointerOver() };
+        setPressed(event.pressed);
+        enablePointerGrab(event.pressed);
 
         if (triggerOnClicked)
             onClick.notify(event);
@@ -92,7 +92,7 @@ void AKButton::pointerButtonEvent(const CZPointerButtonEvent &event)
 void AKButton::windowStateEvent(const CZWindowStateEvent &event)
 {
     AKSubScene::windowStateEvent(event);
-    if (event.changes().has(AKActivated))
+    if (event.changes.has(CZWinActivated))
         updateStyle();
     event.accept();
 }
@@ -100,9 +100,9 @@ void AKButton::windowStateEvent(const CZWindowStateEvent &event)
 void AKButton::layoutEvent(const CZLayoutEvent &event)
 {
     AKSubScene::layoutEvent(event);
-    if (event.changes().has(CZLayoutChangeScale))
+    if (event.changes.has(CZLayoutChangeScale))
         updateStyle();
-    else if (event.changes().has(CZLayoutChangeSize))
+    else if (event.changes.has(CZLayoutChangeSize))
         updateOpaqueRegion();
     event.accept();
 }
@@ -118,9 +118,9 @@ void AKButton::applyLayoutConstraints() noexcept
 void AKButton::updateOpaqueRegion() noexcept
 {
     if (!activated() || m_backgroundColor == SK_ColorWHITE)
-        m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(globalRect().width());
+        m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(worldRect().width());
     else
-        m_hThreePatch.opaqueRegion = theme()->buttonTintedOpaqueRegion(globalRect().width());
+        m_hThreePatch.opaqueRegion = theme()->buttonTintedOpaqueRegion(worldRect().width());
 }
 
 void AKButton::updateStyle() noexcept
@@ -141,19 +141,19 @@ void AKButton::updateStyle() noexcept
         m_hThreePatch.setImage(theme()->buttonPlainHThreePatchImage(scale()));
         m_hThreePatch.setSideSrcRect(AKTheme::ButtonPlainHThreePatchSideSrcRect);
         m_hThreePatch.setCenterSrcRect(AKTheme::ButtonPlainHThreePatchCenterSrcRect);
-        m_text.enableCustomTextureColor(false);
+        m_text.enableReplaceImageColor(false);
     }
     else
     {
         m_hThreePatch.setImage(theme()->buttonTintedHThreePatchImage(scale()));
         m_hThreePatch.setSideSrcRect(AKTheme::ButtonTintedHThreePatchSideSrcRect);
         m_hThreePatch.setCenterSrcRect(AKTheme::ButtonTintedHThreePatchCenterSrcRect);
-        m_text.enableCustomTextureColor(true);
+        m_text.enableReplaceImageColor(true);
 
         if (enabled())
-            m_text.setColorWithoutAlpha(SK_ColorWHITE);
+            m_text.setColor(SK_ColorWHITE);
         else
-            m_text.enableCustomTextureColor(false);
+            m_text.enableReplaceImageColor(false);
     }
 
     m_text.setOpacity(contentOpacity);

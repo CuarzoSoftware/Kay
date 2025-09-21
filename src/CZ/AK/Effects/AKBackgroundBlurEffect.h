@@ -4,7 +4,7 @@
 #include <CZ/AK/Effects/AKBackgroundEffect.h>
 #include <CZ/Ream/RSurface.h>
 #include <CZ/Core/CZSignal.h>
-#include <CZ/AK/AKRRect.h>
+#include <CZ/Core/CZRRect.h>
 #include <CZ/skia/core/SkPath.h>
 
 /**
@@ -74,7 +74,7 @@ public:
 
     const SkRegion &region() const noexcept { return m_userRegion; };
 
-    void setRoundRectClip(const AKRRect &rRect) noexcept
+    void setRoundRectClip(const CZRRect &rRect) noexcept
     {
         if (m_clipType == RoundRect && rRect == m_rRectClip)
             return;
@@ -84,7 +84,7 @@ public:
         addChange(CHClip);
     }
 
-    const AKRRect &roundRectClip() const noexcept { return m_rRectClip; };
+    const CZRRect &roundRectClip() const noexcept { return m_rRectClip; };
 
 
     void setPathClip(const SkPath &path) noexcept
@@ -118,7 +118,7 @@ protected:
 private:
     using AKBackgroundEffect::setStackPosition;
     SkRegion m_userRegion, m_finalRegion;
-    AKRRect m_rRectClip;
+    CZRRect m_rRectClip;
     SkPath m_pathClip;
     AreaType m_areaType { FullSize };
     ClipType m_clipType { NoClip };

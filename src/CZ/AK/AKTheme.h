@@ -6,7 +6,7 @@
 #include <CZ/skia/core/SkImage.h>
 #include <CZ/skia/core/SkRegion.h>
 #include <CZ/skia/core/SkFont.h>
-// TODO #include <CZ/AK/Nodes/AKWindowButton.h>
+#include <CZ/AK/Nodes/AKWindowButton.h>
 #include <CZ/AK/AK.h>
 #include <CZ/Ream/Ream.h>
 #include <CZ/Core/CZOrientation.h>
@@ -101,7 +101,7 @@ public:
 
     static inline SkISize   WindowButtonSize                        { 12, 12 };
     static inline Int32     WindowButtonGap                         { 8 };
-    // virtual std::shared_ptr<RImage>  windowButtonImage                       (Int32 scale, AKWindowButton::Type type, AKWindowButton::State state);
+    virtual std::shared_ptr<RImage>  windowButtonImage                       (Int32 scale, AKWindowButton::Type type, AKWindowButton::State state);
 
     /* Masks */
     virtual std::shared_ptr<RImage>  topLeftRoundCornerMask                  (Int32 radius, Int32 scale) noexcept;
@@ -124,10 +124,10 @@ protected:
             std::shared_ptr<RImage>>> m_topLeftRoundCornerMasks;
 
     /* AKWindowButton [scale][type][state] */
-    /*std::unordered_map<Int32,
+    std::unordered_map<Int32,
         std::unordered_map<AKWindowButton::Type,
             std::unordered_map<AKWindowButton::State,
-                std::shared_ptr<RImage>>>> m_windowButtons;*/
+                std::shared_ptr<RImage>>>> m_windowButtons;
 
     /* Round Line Patch [orientation][scale][diam] */
     std::unordered_map<CZOrientation,

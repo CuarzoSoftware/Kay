@@ -11,19 +11,19 @@ AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(CZOrientat
     setInputRegion(&empty);
     setSideSrcRect(AKTheme::TextCaretVThreePatchSideSrcRect);
     setCenterSrcRect(AKTheme::TextCaretVThreePatchCenterSrcRect);
-    enableCustomTextureColor(true);
-    setColorWithAlpha(AKTheme::SystemBlue);
+    enableReplaceImageColor(true);
+    setColor(AKTheme::SystemBlue);
     layout().setWidth(AKTheme::TextCaretVThreePatchSideSrcRect.width());
     layout().setHeight(16);
     updateDimensions();
 
     m_blinkAnimation.setDuration(1200);
 
-    m_blinkAnimation.setOnUpdateCallback([this](AKAnimation *anim){
+    m_blinkAnimation.setOnUpdateCallback([this](CZAnimation *anim){
         setOpacity((1.f + SkScalarCos(anim->value() * M_PI * 2.f)) * 0.5f);
     });
 
-    m_blinkAnimation.setOnFinishCallback([this](AKAnimation *anim){
+    m_blinkAnimation.setOnFinishCallback([this](CZAnimation *anim){
         if (animated())
             anim->start();
     });
