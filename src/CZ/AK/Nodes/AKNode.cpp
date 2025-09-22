@@ -69,8 +69,7 @@ bool AKNode::damageTargets() noexcept
 
 void AKNode::damageTargetsAndPropagate() noexcept
 {
-    if (!damageTargets())
-        return;
+    damageTargets();
 
     for (AKNode *child : m_children)
         child->damageTargetsAndPropagate();
