@@ -374,17 +374,17 @@ bool AKScroll::eventFilter(const CZEvent &event, CZObject &t) noexcept
 
     const auto &e { static_cast<const CZKeyboardKeyEvent&>(event) };
 
-    if (e.pressed)
+    if (e.isPressed)
     {
         constexpr SkScalar delta { 128.f };
 
-        if (e.keyCode == KEY_DOWN)
+        if (e.code == KEY_DOWN)
             setOffsetY(offsetY() - delta);
-        else if (e.keyCode == KEY_UP)
+        else if (e.code == KEY_UP)
             setOffsetY(offsetY() + delta);
-        else if (e.keyCode == KEY_RIGHT)
+        else if (e.code == KEY_RIGHT)
             setOffsetX(offsetX() - delta);
-        else if (e.keyCode == KEY_LEFT)
+        else if (e.code == KEY_LEFT)
             setOffsetX(offsetX() + delta);
     }
 

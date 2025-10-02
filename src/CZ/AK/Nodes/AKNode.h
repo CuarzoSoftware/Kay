@@ -2,13 +2,13 @@
 #define CZ_AKNODE_H
 
 #include <CZ/AK/AKBackgroundDamageTracker.h>
-#include <CZ/AK/AKCursor.h>
 #include <CZ/AK/AKObject.h>
 #include <CZ/AK/AKLayout.h>
 #include <CZ/AK/AKChanges.h>
 
 #include <CZ/Core/CZWeak.h>
 #include <CZ/Core/CZBitset.h>
+#include <CZ/Core/CZCursorShape.h>
 
 #include <CZ/skia/core/SkImage.h>
 #include <CZ/skia/core/SkSurface.h>
@@ -277,7 +277,7 @@ public:
     AKNode *next() const noexcept { return m_parent && m_parent->m_children.back() != this ? m_parent->m_children[m_parentLink + 1] : nullptr; }
     AKNode *prev() const noexcept { return m_parent && m_parentLink > 0 ? m_parent->m_children[m_parentLink - 1] : nullptr; }
 
-    bool isSubchildOf(AKNode *node) const noexcept { return (node && parent()) && (parent() == node || parent()->isSubchildOf(node)); }
+    bool isSubchildOf(const AKNode *node) const noexcept { return (node && parent()) && (parent() == node || parent()->isSubchildOf(node)); }
 
     const std::vector<AKNode*> &children(bool ignoreSlot = false) const noexcept { return ignoreSlot ? m_children : slot()->children(true); }
 
@@ -288,8 +288,10 @@ public:
     bool childrenClippingEnabled() const noexcept { return m_flags.has(ChildrenClipping); }
     void enableChildrenClipping(bool enable) noexcept;
 
+    // nullptr means the entire node receives input
     void setInputRegion(const SkRegion *region) noexcept { m_inputRegion = region ? std::make_unique<SkRegion>(*region) : nullptr; }
     const SkRegion *inputRegion() const noexcept { return m_inputRegion.get(); }
+
     bool insideLastTarget() const noexcept { return m_flags.has(InsideLastTarget); }
     bool renderedOnLastTarget() const noexcept { return m_flags.has(RenderedOnLastTarget); }
     void clearRenderedOnLastTarget() noexcept { m_flags.remove(RenderedOnLastTarget); }
@@ -303,10 +305,28 @@ public:
     SkIRect sceneRect() const noexcept { return m_sceneRect; }
     Int32 scale() const noexcept { return m_scale; }
 
+    /**
+     * @brief Checks whether AKPointer::pos() is currently within worldRect().
+     *
+     * @note This may return `true` even if the node is visually obscured by
+     *       overlay nodes.
+     */
     bool isPointerOver() const noexcept;
-    bool hasPointerFocus() const noexcept { return m_flags.has(HasPointerFocus); }
-    void enablePointerGrab(bool enabled) noexcept;
-    bool pointerGrabEnabled() const noexcept { return m_flags.has(PointerGrab);}
+
+    /**
+     * @brief Checks whether this node currently has pointer focus.
+     *
+     * Pointer focus is assigned by the parent scene when handling pointer events
+     * to the first node whose input region intersects the pointer position.
+     * The node with direct focus can be queried via `scene()->pointerFocus()`.
+     *
+     * Focus is also propagated upward through the parent hierarchy. Therefore,
+     * this method may return `true` even if:
+     *   - `this != scene()->pointerFocus()`
+     *   - `isPointerOver()` returns `false`.
+     */
+    bool hasPointerFocus() const noexcept;
+
     void setKeyboardFocus(bool focused) noexcept;
     bool hasKeyboardFocus() const noexcept;
 
@@ -387,8 +407,8 @@ public:
     // TODO: Add if macro for when Marco is disabled
     MSurface *window() const noexcept;
 
-    AKCursor cursor() const noexcept { return m_cursor; }
-    void setCursor(AKCursor cursor) { m_cursor = cursor; }
+    CZCursorShape cursor() const noexcept { return m_cursor; }
+    void setCursor(CZCursorShape cursor) { m_cursor = cursor; }
 
     // Padding + non absolute nodes dimensions
     void innerBounds(SkRect *out) noexcept;
@@ -447,9 +467,6 @@ private:
         Notified                    = 1 << 2,
         InsideLastTarget            = 1 << 3,
         RenderedOnLastTarget        = 1 << 4,
-        HasPointerFocus             = 1 << 5,
-        ChildHasPointerFocus        = 1 << 6,
-        PointerGrab                 = 1 << 7,
         DiminishOpacityOnInactive   = 1 << 8,
         ChildrenNeedPosUpdate       = 1 << 9,
         ChildrenNeedScaleUpdate     = 1 << 10,
@@ -543,7 +560,7 @@ private:
 
     // Target-specific state, including AKSubScene targets
     mutable std::unordered_map<AKTarget*, TargetData> m_targets;
-    AKCursor m_cursor { AKCursor::Default };
+    CZCursorShape m_cursor { CZCursorShape::Default };
     std::vector<CZWeak<AKBackgroundDamageTracker>> m_overlayBdts;
 };
 

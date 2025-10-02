@@ -32,6 +32,10 @@ void AKSubScene::bakeChildren(const AKBakeEvent &event) noexcept
     if (!m_target->isDirty() && event.damage.isEmpty() && parentTargetData->changes.none())
         return;
 
+    auto geo { event.surface->geometry() };
+    geo.viewport.offsetTo(worldRect().x(), worldRect().y());
+    event.surface->setGeometry(geo);
+
     // Viewport and dst are set by the parent scene
     m_target->age = parentTargetData->changes.test(CHSize) ? 1 : 0;
     m_target->setBakedNodesScale(scale());

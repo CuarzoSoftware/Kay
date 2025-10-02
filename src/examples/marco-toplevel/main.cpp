@@ -55,7 +55,7 @@ public:
         resizeStartWidth = globalRect().width();
         resizeStartPointerX = app()->pointer().pos().x();
         resizing = true;
-        app()->pointer().setCursor(AKCursor::ColResize);
+        app()->pointer().setCursor(CZCursorShape::ColResize);
     }
 
     void updateResize() noexcept
@@ -71,7 +71,7 @@ public:
         resizing = false;
         parent()->layout().setMaxWidthYGValue(prevParentMaxWidth);
         layout().setMaxWidthYGValue(prevMaxWidth);
-        app()->pointer().setCursor(AKCursor::Default);
+        app()->pointer().setCursor(CZCursorShape::Default);
 
         /*MToplevel *win { dynamic_cast<MToplevel*>(window()) };
         if (win)
@@ -99,7 +99,7 @@ public:
         enableChildrenClipping(false);
 
         inAppBlur.shader = 3;
-        leftShadow.setCursor(AKCursor::ColResize);
+        leftShadow.setCursor(CZCursorShape::ColResize);
         leftShadow.enableDiminishOpacityOnInactive(true);
         shadow.enableDiminishOpacityOnInactive(true);
         topbar.enableChildrenClipping(false);
@@ -221,8 +221,8 @@ public:
             else
                 cursor++;
 
-            rightContainer.cursorButton.setText(std::string("🖱️ Cursor: ") + cursorToString((AKCursor)cursor));
-            pointer().setCursor((AKCursor)cursor);
+            rightContainer.cursorButton.setText(std::string("🖱️ Cursor: ") + cursorToString((CZCursorShape)cursor));
+            pointer().setCursor((CZCursorShape)cursor);
         });
 
         rightContainer.newWindowButton.onClick.subscribe(this, [this](const auto &){

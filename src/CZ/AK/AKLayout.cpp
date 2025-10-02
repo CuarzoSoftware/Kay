@@ -15,7 +15,7 @@ AKLayout::AKLayout(AKNode &akNode) noexcept : m_node(YGNodeNew()), m_akNode(akNo
     YGNodeSetConfig(m_node, m_config);
 
     m_anchorNode.setOnDestroyCallback([this](CZObject*){
-        m_anchorNode.reset();
+        // m_anchorNode.reset();
         setPositionType(m_posTypeBeforeAnchorNode);
         YGNodeMarkDirty(m_node);
         m_akNode.addChange(AKNode::CHLayout);

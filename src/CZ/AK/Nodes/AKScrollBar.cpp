@@ -4,6 +4,7 @@
 #include <CZ/AK/Nodes/AKScrollBar.h>
 #include <CZ/AK/Nodes/AKScroll.h>
 #include <CZ/AK/AKTheme.h>
+#include <CZ/AK/AKScene.h>
 
 using namespace CZ;
 
@@ -259,7 +260,9 @@ void AKScrollBar::pointerButtonEvent(const CZPointerButtonEvent &e)
     if (e.pressed)
     {
         m_dragging = true;
-        enablePointerGrab(true);
+
+        if (scene())
+            scene()->setPointerGrab(this);
 
         /*
         if (m_handle.orientation() == CZOrientation::H)
@@ -270,7 +273,9 @@ void AKScrollBar::pointerButtonEvent(const CZPointerButtonEvent &e)
     else
     {
         m_dragging = false;
-        enablePointerGrab(false);
+
+        if (scene() && scene()->pointerGrab() == this)
+            scene()->setPointerGrab(nullptr);
     }
 }
 
@@ -282,9 +287,9 @@ void AKScrollBar::pointerMoveEvent(const CZPointerMoveEvent &e)
         return;
 
     if (m_handle.orientation() == CZOrientation::H)
-        updatePosByPointer(e.localPos.x());
+        updatePosByPointer(e.pos.x());
     else
-        updatePosByPointer(e.localPos.y());
+        updatePosByPointer(e.pos.y());
 }
 
 void AKScrollBar::pointerEnterEvent(const CZPointerEnterEvent &)
@@ -299,7 +304,8 @@ void AKScrollBar::pointerLeaveEvent(const CZPointerLeaveEvent &)
 {
     m_preventHide = false;
     m_dragging = false;
-    enablePointerGrab(false);
+    if (scene() && scene()->pointerGrab() == this)
+        scene()->setPointerGrab(nullptr);
     m_fadeOutTimer.start(1000);
 }
 

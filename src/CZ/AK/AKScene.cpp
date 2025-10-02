@@ -1,3 +1,4 @@
+#include "RCore.h"
 #include <CZ/AK/AKScene.h>
 #include <CZ/AK/AKLog.h>
 #include <CZ/AK/Nodes/AKRenderable.h>
@@ -7,7 +8,19 @@
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKApp.h>
 
+#include <CZ/Events/CZPointerMoveEvent.h>
+#include <CZ/Events/CZPointerEnterEvent.h>
+#include <CZ/Events/CZPointerLeaveEvent.h>
+#include <CZ/Events/CZPointerButtonEvent.h>
+#include <CZ/Events/CZKeyboardKeyEvent.h>
+#include <CZ/Events/CZWindowStateEvent.h>
+#include <CZ/Events/CZKeyboardLeaveEvent.h>
+
+#include <CZ/AK/Events/AKRenderEvent.h>
+#include <CZ/AK/Events/AKBakeEvent.h>
+
 #include <CZ/Core/CZCore.h>
+#include <CZ/Core/CZKeymap.h>
 #include <CZ/Ream/RSurface.h>
 #include <CZ/Ream/RImage.h>
 #include <CZ/Ream/RPass.h>
@@ -21,16 +34,37 @@
 #include <CZ/skia/gpu/ganesh/GrDirectContext.h>
 #include <CZ/skia/gpu/ganesh/SkSurfaceGanesh.h>
 
-#include <CZ/Events/CZPointerMoveEvent.h>
-#include <CZ/Events/CZPointerEnterEvent.h>
-#include <CZ/Events/CZPointerLeaveEvent.h>
-#include <CZ/Events/CZPointerButtonEvent.h>
-#include <CZ/Events/CZKeyboardKeyEvent.h>
-#include <CZ/Events/CZWindowStateEvent.h>
-#include <CZ/AK/Events/AKRenderEvent.h>
-#include <CZ/AK/Events/AKBakeEvent.h>
-
 using namespace CZ;
+
+static void EnqueueAndPropagateToParent(const CZEvent &event, AKNode *from, AKNode *to, bool includeTo) noexcept
+{
+    auto core { CZCore::Get() };
+
+    if (!core) return;
+
+    auto e { event.copy() };
+
+    while (from)
+    {
+        core->postEvent(e, *from);
+
+        if (includeTo && from == to)
+            break;
+
+        from = from->parent();
+
+        if (!includeTo && from == to)
+            break;
+    }
+}
+
+static void EnqueueAndPropagateToChildren(std::shared_ptr<CZCore> core, std::shared_ptr<CZEvent> event, AKNode *root) noexcept
+{
+    core->postEvent(event, *root);
+
+    for (auto *child : root->children(true))
+        EnqueueAndPropagateToChildren(core, event, child);
+}
 
 AKScene::AKScene(bool isSubScene) noexcept : m_isSubScene(isSubScene)
 {
@@ -41,16 +75,29 @@ AKScene::AKScene(bool isSubScene) noexcept : m_isSubScene(isSubScene)
     m_win = std::make_unique<Window>();
 
     m_win->keyDelayTimer.setCallback([this](CZTimer *) {
-        if (akKeyboard().keyRepeatRateMs() > 0 && !akKeyboard().pressedKeyCodes().empty() && m_win->repeatedKey == akKeyboard().pressedKeyCodes().back())
-            m_win->keyRepeatTimer.start(0);
+
+        auto app { AKApp::Get() };
+        auto core { app->core() };
+
+        if (!core || !core->keymap() || core->keymap()->repeatRateMs() <= 0 || !app->keyboard().history().key.isPressed || app->keyboard().history().key.code != m_win->repeatedKey)
+            return;
+
+        m_win->keyRepeatTimer.start(0);
     });
 
     m_win->keyRepeatTimer.setCallback([this](CZTimer *timer) {
-        if (akKeyboard().keyRepeatRateMs() > 0 && !akKeyboard().pressedKeyCodes().empty() && m_win->repeatedKey == akKeyboard().pressedKeyCodes().back())
-        {
-            // TODO event(CZKeyboardKeyEvent(m_win->repeatedKey, CZKeyboardKeyEvent::Pressed));
-            timer->start(akKeyboard().keyRepeatRateMs());
-        }
+
+        auto app { AKApp::Get() };
+        auto core { app->core() };
+
+        if (!core || !core->keymap() || core->keymap()->repeatRateMs() <= 0 || !app->keyboard().history().key.isPressed || app->keyboard().history().key.code != m_win->repeatedKey)
+            return;
+
+        CZKeyboardKeyEvent e { app->keyboard().history().key };
+        e.isRepeat = true;
+
+        core->sendEvent(e, *this);
+        timer->start(core->keymap()->repeatRateMs());
     });
 }
 
@@ -59,6 +106,22 @@ std::shared_ptr<AKScene> AKScene::Make() noexcept
     auto scene { std::shared_ptr<AKScene>(new AKScene(false)) };
     scene->m_self = scene;
     return scene;
+}
+
+AKScene::~AKScene()
+{
+    auto app { AKApp::Get() };
+
+    CZSafeEventQueue queue;
+
+    if (app->pointer().focus() == this)
+        queue.addEvent(std::make_shared<CZPointerLeaveEvent>(), *app);
+
+    if (app->keyboard().focus() == this)
+        queue.addEvent(std::make_shared<CZKeyboardLeaveEvent>(), *app);
+
+    queue.dispatch();
+    notifyDestruction();
 }
 
 std::shared_ptr<AKScene> AKScene::MakeSubScene() noexcept
@@ -935,47 +998,12 @@ AKNode *AKScene::nextKeyboardFocusable() const noexcept
     return nullptr;
 }
 
-bool AKScene::event(const CZEvent &event) noexcept
+CZBitset<CZWindowState> AKScene::windowState() const noexcept
 {
-    if (!m_root || m_isSubScene)
-        return AKObject::event(event);
+    if (isSubScene())
+        return {};
 
-    m_win->e = &event;
-
-    switch (event.type()) {
-    case CZEvent::Type::PointerEnter:
-    {
-        /* TODO
-        const CZPointerEnterEvent &enterEvent { static_cast<const CZPointerEnterEvent &>(event) };
-        const CZPointerMoveEvent moveEvent { enterEvent.pos(), { 0.f, 0.f }, { 0.f, 0.f }, enterEvent.serial(), enterEvent.ms(), enterEvent.us(), enterEvent.device() };
-        m_win->e = &moveEvent;
-        handlePointerMoveEvent();*/
-        break;
-    }
-    case CZEvent::Type::PointerMove:
-        handlePointerMoveEvent();
-        break;
-    case CZEvent::Type::PointerLeave:
-        handlePointerLeaveEvent();
-        break;
-    case CZEvent::Type::PointerButton:
-        handlePointerButtonEvent();
-        break;
-    case CZEvent::Type::PointerScroll:
-        handlePointerScrollEvent();
-        break;
-    case CZEvent::Type::KeyboardKey:
-        handleKeyboardKeyEvent();
-        break;
-    case CZEvent::Type::WindowState:
-        handleWindowStateEvent();
-        break;
-    default:
-        return AKObject::event(event);
-        break;
-    }
-
-    return true;
+    return m_win->windowState;
 }
 
 void AKScene::addNodeDamage(AKNode &, const SkRegion &damage) noexcept
@@ -987,212 +1015,284 @@ void AKScene::addNodeDamage(AKNode &, const SkRegion &damage) noexcept
             bdt->capturedDamage.op(damage, SkRegion::Op::kUnion_Op);
 }
 
-void AKScene::handlePointerMoveEvent()
+bool AKScene::event(const CZEvent &event) noexcept
 {
-    /* TODO
-    auto &event { *static_cast<const CZPointerMoveEvent*>(m_win->e) };
-    const CZPointerEnterEvent enterEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
-    const CZPointerLeaveEvent leaveEvent(event.pos(), event.serial(), event.ms(), event.us(), event.device());
-    AKApp::Get()->pointer().m_pos = event.pos();
-    AKApp::Get()->pointer().m_windowFocus.reset(this);
-    m_root->removeFlagsAndPropagate(AKNode::Notified | AKNode::ChildHasPointerFocus);
-    m_win->pointerFocus.reset(nodeAt(event.pos()));
+    if (!m_root || m_isSubScene)
+        return AKObject::event(event);
 
-    if (m_win->pointerFocus)
-        m_win->pointerFocus->setFlagsAndPropagateToParents(AKNode::ChildHasPointerFocus, true);
+    switch (event.type()) {
+    case CZEvent::Type::PointerMove:
+        pointerMoveEvent((const CZPointerMoveEvent&)event);
+        break;
+    case CZEvent::Type::PointerButton:
+        pointerButtonEvent((const CZPointerButtonEvent&)event);
+        break;
+    case CZEvent::Type::PointerScroll:
+        pointerScrollEvent((const CZPointerScrollEvent&)event);
+        break;
+    case CZEvent::Type::KeyboardKey:
+        keyboardKeyEvent((const CZKeyboardKeyEvent&)event);
+        break;
+    case CZEvent::Type::PointerEnter:
+        pointerEnterEvent((const CZPointerEnterEvent&)event);
+        break;
+    case CZEvent::Type::PointerLeave:
+        pointerLeaveEvent((const CZPointerLeaveEvent&)event);
+        break;
+    case CZEvent::Type::KeyboardEnter:
+        keyboardEnterEvent((const CZKeyboardEnterEvent&)event);
+        break;
+    case CZEvent::Type::KeyboardLeave:
+        keyboardLeaveEvent((const CZKeyboardLeaveEvent&)event);
+        break;
+    case CZEvent::Type::WindowState:
+        windowStateEvent((const CZWindowStateEvent&)event);
+        break;
+    default:
+        return AKObject::event(event);
+        break;
+    }
 
-    AKNode::RIterator it { nullptr };
+    return true;
+}
 
-retry:
-    it.reset(m_root->bottommostRightChild());
-    m_treeChanged = false;
+void AKScene::setPointerGrab(AKNode *node) noexcept
+{
+    if (isSubScene() || (node && node->scene() != this))
+        return;
 
-    while (!it.done())
+    m_win->pointerGrab.reset(node);
+}
+
+AKNode *AKScene::pointerGrab() const noexcept
+{
+    if (isSubScene())
+        return {};
+
+    return m_win->pointerGrab;
+}
+
+AKNode *AKScene::pointerFocus() const noexcept
+{
+    if (isSubScene())
+        return {};
+
+    return m_win->pointerFocus;
+}
+
+AKNode *AKScene::keyboardFocus() const noexcept
+{
+    if (isSubScene())
+        return {};
+
+    return m_win->keyboardFocus;
+}
+
+void AKScene::pointerEnterEvent(const CZPointerEnterEvent &e) noexcept
+{
+    auto app { AKApp::Get() };
+
+    if (app->pointer().focus())
+        return;
+
+    auto self { m_self.lock() };
+    app->pointer().m_history.enter = e;
+    app->pointer().m_history.move.pos = e.pos;
+    app->pointer().m_focus.reset(this);
+    app->pointer().onFocusChanged.notify();
+
+    CZPointerMoveEvent move {};
+    move.pos = e.pos;
+    move.device = e.device;
+    move.serial = e.serial;
+    move.userData = e.userData;
+    move.ms = e.ms;
+    move.us = e.us;
+    pointerMoveEvent(move);
+}
+
+void AKScene::pointerMoveEvent(const CZPointerMoveEvent &e) noexcept
+{
+    auto app { AKApp::Get() };
+
+    if (app->pointer().focus() != this)
+        return;
+
+    CZPointerLeaveEvent leave {};
+    CZPointerEnterEvent enter {};
+    enter.pos = e.pos;
+    enter.device = leave.device = e.device;
+    enter.serial = leave.serial = e.serial;
+    enter.userData = leave.userData = e.userData;
+    enter.ms = leave.ms = e.ms;
+    enter.us = leave.us = e.us;
+
+    if (pointerGrab())
     {
-        if (it.node()->m_flags.has(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
+        EnqueueAndPropagateToParent(e, pointerGrab(), nullptr, false);
+    }
+    else
+    {
+        auto *node { nodeAt(app->pointer().pos()) };
 
-        it.node()->m_flags.add(AKNode::Notified);
-
-        if (it.node()->pointerGrabEnabled())
+        if (node)
         {
-            m_win->pointerFocus.reset(it.node());
-            CZCore::Get()->sendEvent(*m_win->e, *it.node());
+            if (pointerFocus())
+            {
+                if (pointerFocus() == node)
+                {
+                    EnqueueAndPropagateToParent(e, pointerFocus(), nullptr, false);
+                }
+                else if (pointerFocus()->isSubchildOf(node))
+                {
+                    EnqueueAndPropagateToParent(leave, pointerFocus(), node, false);
+                }
+                else if (node->isSubchildOf(pointerFocus()))
+                {
+                    EnqueueAndPropagateToParent(e, node, pointerFocus(), false);
+                }
+                else
+                {
+                    EnqueueAndPropagateToParent(leave, pointerFocus(), nullptr, false);
+                    EnqueueAndPropagateToParent(enter, node, nullptr, false);
+                }
+            }
+            else
+            {
+                EnqueueAndPropagateToParent(enter, pointerFocus(), nullptr, false);
+            }
         }
         else
         {
-            if (it.node()->m_flags.has(AKNode::ChildHasPointerFocus))
+            if (pointerFocus())
             {
-                if (it.node()->m_flags.has(AKNode::HasPointerFocus))
-                    CZCore::Get()->sendEvent(*m_win->e, *it.node());
-                else
-                {
-                    it.node()->m_flags.add(AKNode::HasPointerFocus);
-                    CZCore::Get()->sendEvent(enterEvent, *it.node());
-                }
-            }
-            else if (it.node()->m_flags.has(AKNode::HasPointerFocus))
-            {
-                it.node()->m_flags.remove(AKNode::HasPointerFocus);
-                CZCore::Get()->sendEvent(leaveEvent, *it.node());
+                EnqueueAndPropagateToParent(leave, pointerFocus(), nullptr, false);
+                m_win->pointerFocus.reset();
             }
         }
 
-        if (m_treeChanged)
-            goto retry;
-
-        it.next();
-    }*/
-}
-
-void AKScene::handlePointerLeaveEvent()
-{
-    auto &event { *static_cast<const CZPointerLeaveEvent*>(m_win->e) };
-    /* TODO
-    AKApp::Get()->pointer().m_pos = event.pos;
-
-    if (AKApp::Get()->pointer().m_windowFocus == this)
-        AKApp::Get()->pointer().m_windowFocus.reset();
-
-    m_root->removeFlagsAndPropagate(AKNode::Notified);
-
-    AKNode::RIterator it { nullptr };
-
-retry:
-    it.reset(m_root->bottommostRightChild());
-    m_treeChanged = false;
-
-    while (!it.done())
-    {
-        if (it.node()->m_flags.has(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
-
-        it.node()->m_flags.add(AKNode::Notified);
-
-        if (it.node()->m_flags.has(AKNode::HasPointerFocus))
-        {
-            it.node()->m_flags.remove(AKNode::HasPointerFocus);
-            CZCore::Get()->sendEvent(event, *it.node());
-        }
-
-        if (m_treeChanged)
-            goto retry;
-
-        it.next();
-    }
-    */
-}
-
-void AKScene::handlePointerButtonEvent()
-{
-    m_root->removeFlagsAndPropagate(AKNode::Notified);
-    AKNode::RIterator it { nullptr };
-
-retry:
-    it.reset(m_root->bottommostRightChild());
-    m_treeChanged = false;
-
-    while (!it.done())
-    {
-        if (it.node()->m_flags.has(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
-
-        it.node()->m_flags.add(AKNode::Notified);
-
-        if (it.node()->m_flags.has(AKNode::HasPointerFocus | AKNode::PointerGrab))
-            CZCore::Get()->sendEvent(*m_win->e, *it.node());
-
-        if (m_treeChanged)
-            goto retry;
-
-        it.next();
+        m_win->pointerFocus.reset(node);
     }
 }
 
-void AKScene::handlePointerScrollEvent()
+void AKScene::pointerButtonEvent(const CZPointerButtonEvent &e) noexcept
 {
-    m_root->removeFlagsAndPropagate(AKNode::Notified);
-    AKNode::RIterator it { nullptr };
+    auto app { AKApp::Get() };
 
-retry:
-    it.reset(m_root->bottommostRightChild());
-    m_treeChanged = false;
+    if (app->pointer().focus() != this)
+        return;
 
-    while (!it.done())
-    {
-        if (it.node()->m_flags.has(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
+    auto *target { pointerGrab() };
 
-        it.node()->m_flags.add(AKNode::Notified);
+    if (!target)
+        target = pointerFocus();
 
-        if (it.node()->m_flags.has(AKNode::HasPointerFocus | AKNode::PointerGrab))
-            CZCore::Get()->sendEvent(*m_win->e, *it.node());
+    if (!target)
+        return;
 
-        if (m_treeChanged)
-            goto retry;
-
-        it.next();
-    }
+    EnqueueAndPropagateToParent(e, target, nullptr, false);
 }
 
-void AKScene::handleKeyboardKeyEvent()
+void AKScene::pointerScrollEvent(const CZPointerScrollEvent &e) noexcept
 {
-    if (akKeyboard().keyRepeatRateMs() == 0 || akKeyboard().pressedKeyCodes().empty())
+    auto app { AKApp::Get() };
+
+    if (app->pointer().focus() != this)
+        return;
+
+    auto *target { pointerGrab() };
+
+    if (!target)
+        target = pointerFocus();
+
+    if (!target)
+        return;
+
+    EnqueueAndPropagateToParent(e, target, nullptr, false);
+}
+
+void AKScene::pointerLeaveEvent(const CZPointerLeaveEvent &e) noexcept
+{
+    auto app { AKApp::Get() };
+
+    if (app->pointer().focus() != this)
+        return;
+
+    auto self { m_self.lock() };
+    app->pointer().m_focus.reset();
+    app->pointer().onFocusChanged.notify();
+
+    if (!pointerFocus())
+        return;
+
+    EnqueueAndPropagateToParent(e, pointerFocus(), nullptr, false);
+    m_win->pointerFocus.reset();
+}
+
+void AKScene::keyboardEnterEvent(const CZKeyboardEnterEvent &e) noexcept
+{
+    auto app { AKApp::Get() };
+
+    if (app->keyboard().focus())
+        return;
+
+    auto self { m_self.lock() };
+    app->keyboard().m_history.enter = e;
+    app->keyboard().m_focus.reset(this);
+    app->keyboard().onFocusChanged.notify();
+}
+
+void AKScene::keyboardKeyEvent(const CZKeyboardKeyEvent &e) noexcept
+{
+    auto app { AKApp::Get() };
+
+    if (app->keyboard().focus() != this)
+        return;
+
+    auto core { app->core() };
+
+    if (core->keymap()->repeatRateMs() == 0 || core->keymap()->pressedKeys().empty())
     {
         m_win->keyDelayTimer.stop(false);
         m_win->keyRepeatTimer.stop(false);
         m_win->repeatedKey = -1;
     }
-    else if (akKeyboard().pressedKeyCodes().back() != m_win->repeatedKey)
+    else if (e.isPressed && !e.isRepeat && e.code != m_win->repeatedKey)
     {
         m_win->keyRepeatTimer.stop(false);
-        m_win->repeatedKey = akKeyboard().pressedKeyCodes().back();
-        m_win->keyDelayTimer.start(akKeyboard().keyRepeatDelayMs());
+        m_win->repeatedKey = e.code;
+        m_win->keyDelayTimer.start(core->keymap()->repeatDelayMs());
     }
 
     if (keyboardFocus())
-        CZCore::Get()->sendEvent(*m_win->e, *keyboardFocus());
+        EnqueueAndPropagateToParent(e, keyboardFocus(), nullptr, false);
 }
 
-void AKScene::handleWindowStateEvent()
+void AKScene::keyboardLeaveEvent(const CZKeyboardLeaveEvent &e) noexcept
 {
-    const CZWindowStateEvent &event { static_cast<const CZWindowStateEvent &>(*m_win->e) };
-    m_win->windowState = event.newState;
-    m_root->removeFlagsAndPropagate(AKNode::Notified);
-    AKNode::RIterator it { nullptr };
+    auto app { AKApp::Get() };
 
-retry:
-    it.reset(m_root->bottommostRightChild());
-    m_treeChanged = false;
+    if (app->keyboard().focus() != this)
+        return;
 
-    while (!it.done())
-    {
-        if (it.node()->m_flags.has(AKNode::Notified))
-        {
-            it.next();
-            continue;
-        }
+    auto self { m_self.lock() };
+    app->keyboard().m_focus.reset();
+    app->keyboard().onFocusChanged.notify();
 
-        it.node()->m_flags.add(AKNode::Notified);
-        CZCore::Get()->sendEvent(*m_win->e, *it.node());
+    if (!keyboardFocus())
+        return;
 
-        if (m_treeChanged)
-            goto retry;
+    EnqueueAndPropagateToParent(e, keyboardFocus(), nullptr, false);
+    m_win->keyboardFocus.reset();
+}
 
-        it.next();
-    }
+void AKScene::windowStateEvent(const CZWindowStateEvent &e) noexcept
+{
+    m_win->windowState = e.newState;
+    if (!m_root) return;
+
+    auto core { CZCore::Get() };
+    EnqueueAndPropagateToChildren(core, e.copy(), m_root);
 }
 
 void AKScene::SetPassParamsFromRenderable(std::shared_ptr<RPass> pass, AKRenderable *rend, bool opaque) noexcept

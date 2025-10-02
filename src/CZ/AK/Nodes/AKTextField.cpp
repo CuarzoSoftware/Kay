@@ -1,3 +1,5 @@
+#include <CZ/Core/CZCore.h>
+#include <CZ/Core/CZKeymap.h>
 #include <CZ/Events/CZWindowStateEvent.h>
 #include <CZ/Events/CZPointerMoveEvent.h>
 #include <CZ/Events/CZKeyboardEnterEvent.h>
@@ -8,13 +10,14 @@
 #include <CZ/AK/Input/AKPointer.h>
 #include <CZ/AK/Input/AKKeyboard.h>
 #include <CZ/AK/Nodes/AKTextField.h>
+#include <CZ/AK/AKApp.h>
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKLog.h>
 #include <linux/input-event-codes.h>
 
 using namespace CZ;
 
-static size_t utf8CharLenght(char c)
+static size_t utf8CharLength(char c)
 {
     if ((c & 0x80) == 0) return 1;
     if ((c & 0xE0) == 0xC0) return 2;
@@ -27,7 +30,7 @@ void removeUTF8CharAt(std::string &str, size_t index) {
     size_t size = 0;
     Int32 i = index;
     while (size == 0 && i >= 0) {
-        size = utf8CharLenght(str[i]);
+        size = utf8CharLength(str[i]);
 
         if (size == 0)
         {
@@ -40,15 +43,19 @@ void removeUTF8CharAt(std::string &str, size_t index) {
     }
 }
 
-
 AKTextField::AKTextField(AKNode *parent) noexcept : AKContainer(YGFlexDirection::YGFlexDirectionRow, true, parent)
 {
+    auto app { AKApp::Get() };
+    app->installEventFilter(this);
     setKeyboardFocusable(true);
     m_caret.setVisible(false);
     m_caret.setAnimated(false);
     m_caret.layout().setPositionType(YGPositionTypeAbsolute);
     //m_focusShadow.setStackPosition(AKBackgroundEffect::Behind);
-    setCursor(AKCursor::Text);
+    setCursor(CZCursorShape::Text);
+
+    SkRegion empty;
+    m_hThreePatch.setInputRegion(&empty);
     m_hThreePatch.layout().setFlex(1.f);
     m_hThreePatch.layout().setPadding(YGEdgeLeft, AKTheme::TextFieldPadding.left());
     m_hThreePatch.layout().setPadding(YGEdgeRight, AKTheme::TextFieldPadding.right());
@@ -56,10 +63,13 @@ AKTextField::AKTextField(AKNode *parent) noexcept : AKContainer(YGFlexDirection:
     m_hThreePatch.layout().setPadding(YGEdgeBottom, AKTheme::TextFieldPadding.bottom());
     m_hThreePatch.setSideSrcRect(AKTheme::TextFieldRoundHThreePatchSideSrcRect);
     m_hThreePatch.setCenterSrcRect(AKTheme::TextFieldRoundHThreePatchCenterSrcRect);
+
+    m_content.setInputRegion(&empty);
     m_content.layout().setFlex(1.f);
     m_content.layout().setJustifyContent(YGJustifyCenter);
     m_content.layout().setAlignItems(YGAlignCenter);
     m_content.layout().setFlexDirection(YGFlexDirectionRow);
+
     m_text.layout().setJustifyContent(YGJustifyCenter);
     m_text.layout().setAlignItems(YGAlignCenter);
     m_text.layout().setMargin(YGEdgeHorizontal, 4.f);
@@ -75,6 +85,27 @@ AKTextField::AKTextField(AKNode *parent) noexcept : AKContainer(YGFlexDirection:
     m_text.onTextChanged.subscribe(this, [this]{
         updateCaretPos();
     });
+}
+
+bool AKTextField::eventFilter(const CZEvent &event, CZObject &target) noexcept
+{
+    auto app { AKApp::Get() };
+
+    if (hasKeyboardFocus() &&
+        &target == app.get() &&
+        event.type() == CZEvent::Type::PointerButton &&
+        scene() &&
+        (
+            app->pointer().focus() != scene() ||
+            !scene()->pointerFocus() ||
+            (
+                scene()->pointerFocus() != this &&
+                !scene()->pointerFocus()->isSubchildOf(this)
+            )
+        ))
+        setKeyboardFocus(false);
+
+    return false;
 }
 
 void AKTextField::layoutEvent(const CZLayoutEvent &event)
@@ -102,18 +133,25 @@ void AKTextField::keyboardKeyEvent(const CZKeyboardKeyEvent &e)
 {
     AKContainer::keyboardKeyEvent(e);
 
-    /* TODO
-    if (e.state() != CZKeyboardKeyEvent::Pressed)
+    if (!e.isPressed)
         return;
+
+    auto keymap { CZCore::Get()->keymap() };
+
+    if (!keymap)
+    {
+        AKLog(CZWarning, CZLN, "No keymap");
+        return;
+    }
 
     e.accept();
 
-    if (akKeyboard().isKeyCodePressed(KEY_A) &&
-        (akKeyboard().isKeyCodePressed(KEY_LEFTCTRL) || akKeyboard().isKeyCodePressed(KEY_RIGHTCTRL)))
+    if (keymap->pressedKeys().contains(KEY_A) &&
+        (keymap->pressedKeys().contains(KEY_LEFTCTRL) || keymap->pressedKeys().contains(KEY_RIGHTCTRL)))
     {
         m_text.setSelection(0, m_text.codePointByteOffsets().size());
     }
-    else if (e.keySymbol() == XKB_KEY_Tab)
+    else if (e.code == XKB_KEY_Tab)
     {
         if (scene())
         {
@@ -122,19 +160,19 @@ void AKTextField::keyboardKeyEvent(const CZKeyboardKeyEvent &e)
                 next->setKeyboardFocus(true);
         }
     }
-    else if (e.keySymbol() == XKB_KEY_Left)
+    else if (e.symbol == XKB_KEY_Left)
     {
         moveCaretLeft();
     }
-    else if (e.keySymbol() == XKB_KEY_Right)
+    else if (e.symbol == XKB_KEY_Right)
     {
         moveCaretRight();
     }
-    else if (e.keySymbol() == XKB_KEY_BackSpace)
+    else if (e.symbol == XKB_KEY_BackSpace)
     {
         removeUTF8();
     }
-    else if (e.keySymbol() == XKB_KEY_Return)
+    else if (e.symbol == XKB_KEY_Return)
     {
         //if (m_text.setText(m_text.text() + "😊"))
         //    updateTextPosition();
@@ -142,14 +180,12 @@ void AKTextField::keyboardKeyEvent(const CZKeyboardKeyEvent &e)
     }
     else
     {
-        const char *key { e.keyString() };
-
-        if (strlen(key) > 0)
+        if (!e.utf8.empty())
         {
             //AKLog::debug("Key %s", key);
-            addUTF8(key);
+            addUTF8(e.utf8.c_str());
         }
-    }*/
+    }
 }
 
 void AKTextField::keyboardLeaveEvent(const CZKeyboardLeaveEvent &event)
@@ -176,13 +212,15 @@ void AKTextField::pointerButtonEvent(const CZPointerButtonEvent &event)
             m_caretRightOffset = m_text.codePointByteOffsets().size()  - m_selectionStart;
             updateCaretPos();
             m_interactiveSelection = true;
-            enablePointerGrab(true);
+            if (scene())
+                scene()->setPointerGrab(this);
             m_text.setSelection(0, 0);
         }
         else
         {
             m_interactiveSelection = false;
-            enablePointerGrab(false);
+            if (scene() && scene()->pointerGrab() == this)
+                scene()->setPointerGrab(nullptr);
         }
     }
 
@@ -196,8 +234,8 @@ void AKTextField::pointerMoveEvent(const CZPointerMoveEvent &event)
     if (m_interactiveSelection)
     {
         size_t selectionEnd {  m_text.codePointAt(
-            event.localPos.x() - SkScalar(m_text.worldRect().x()),
-            event.localPos.y() - SkScalar(m_text.worldRect().y())) };
+            event.pos.x() - SkScalar(m_text.worldRect().x()),
+            event.pos.y() - SkScalar(m_text.worldRect().y())) };
 
         m_text.setSelection(std::min(m_selectionStart, selectionEnd), std::abs(Int64(m_selectionStart) - Int64(selectionEnd)));
     }

@@ -4,7 +4,7 @@
 
 using namespace CZ;
 
-void MPointer::setCursor(AKCursor cursor) noexcept
+void MPointer::setCursor(CZCursorShape cursor) noexcept
 {
     if (!m_forceCursorUpdate && m_cursor == cursor && m_cursorSurface)
         return;
@@ -13,7 +13,7 @@ void MPointer::setCursor(AKCursor cursor) noexcept
 
     m_cursor = cursor;
 
-    if (cursor == AKCursor::Hidden)
+    if (cursor == CZCursorShape::Hidden)
     {
         wl_pointer_set_cursor(app()->wayland().pointer, eventHistory().enter.serial(), NULL, 0, 0);
         return;
@@ -49,8 +49,8 @@ void MPointer::setCursor(AKCursor cursor) noexcept
 
     if (!image)
     {
-        assert("Marco requires a default cursor theme. See https://wiki.archlinux.org/title/Cursor_themes#The_default_cursor_theme" && cursor != AKCursor::Default);
-        setCursor(AKCursor::Default);
+        assert("Marco requires a default cursor theme. See https://wiki.archlinux.org/title/Cursor_themes#The_default_cursor_theme" && cursor != CZCursorShape::Default);
+        setCursor(CZCursorShape::Default);
         return;
     }
 
@@ -62,13 +62,13 @@ void MPointer::setCursor(AKCursor cursor) noexcept
     wl_pointer_set_cursor(app()->wayland().pointer, eventHistory().enter.serial(), m_cursorSurface, image->hotspot_x/scale, image->hotspot_y/scale);
 }
 
-AKCursor MPointer::findNonDefaultCursor(AKNode *node) const noexcept
+CZCursorShape MPointer::findNonDefaultCursor(AKNode *node) const noexcept
 {
-    while (node && node->cursor() == AKCursor::Default)
+    while (node && node->cursor() == CZCursorShape::Default)
         node = node->parent();
 
     if (node)
         return node->cursor();
 
-    return AKCursor::Default;
+    return CZCursorShape::Default;
 }

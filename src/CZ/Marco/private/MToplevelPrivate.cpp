@@ -230,7 +230,7 @@ void MToplevel::Imp::handleRootPointerMoveEvent(const CZPointerMoveEvent &event)
 {
     if (!obj.visible() || obj.fullscreen())
     {
-        obj.rootNode()->setCursor(AKCursor::Default);
+        obj.rootNode()->setCursor(CZCursorShape::Default);
         return;
     }
 
@@ -249,17 +249,17 @@ void MToplevel::Imp::handleRootPointerMoveEvent(const CZPointerMoveEvent &event)
         resizeEdges |= XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM;
 
     if (resizeEdges == XDG_TOPLEVEL_RESIZE_EDGE_LEFT || resizeEdges == XDG_TOPLEVEL_RESIZE_EDGE_RIGHT)
-        obj.rootNode()->setCursor(AKCursor::EWResize);
+        obj.rootNode()->setCursor(CZCursorShape::EWResize);
     else if (resizeEdges == XDG_TOPLEVEL_RESIZE_EDGE_TOP || resizeEdges == XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM)
-        obj.rootNode()->setCursor(AKCursor::NSResize);
+        obj.rootNode()->setCursor(CZCursorShape::NSResize);
     else if (resizeEdges == (XDG_TOPLEVEL_RESIZE_EDGE_TOP | XDG_TOPLEVEL_RESIZE_EDGE_LEFT) ||
              resizeEdges == (XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM | XDG_TOPLEVEL_RESIZE_EDGE_RIGHT))
-        obj.rootNode()->setCursor(AKCursor::NWSEResize);
+        obj.rootNode()->setCursor(CZCursorShape::NWSEResize);
     else if (resizeEdges == (XDG_TOPLEVEL_RESIZE_EDGE_TOP | XDG_TOPLEVEL_RESIZE_EDGE_RIGHT) ||
              resizeEdges == (XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM | XDG_TOPLEVEL_RESIZE_EDGE_LEFT))
-        obj.rootNode()->setCursor(AKCursor::NESWResize);
+        obj.rootNode()->setCursor(CZCursorShape::NESWResize);
     else
-        obj.rootNode()->setCursor(AKCursor::Default);
+        obj.rootNode()->setCursor(CZCursorShape::Default);
 }
 
 void MToplevel::Imp::unmap() noexcept

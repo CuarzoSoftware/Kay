@@ -1,5 +1,6 @@
 #include <CZ/Events/CZEvent.h>
 #include <CZ/AK/AKApp.h>
+#include <CZ/AK/AKScene.h>
 #include <CZ/AK/AKLog.h>
 
 #include <CZ/Ream/RCore.h>
@@ -20,7 +21,7 @@ AKApp::AKApp(std::shared_ptr<CZCore> cuarzo, std::shared_ptr<RCore> ream) noexce
     m_fontCollection->enableFontFallback();
 }
 
-std::shared_ptr<AKApp> AKApp::Make() noexcept
+std::shared_ptr<AKApp> AKApp::GetOrMake() noexcept
 {
     if (auto app = s_app.lock())
         return app;
@@ -61,14 +62,6 @@ sk_sp<skia::textlayout::FontCollection> AKApp::fontCollection() const noexcept
     return m_fontCollection;
 }
 
-AKPointer &AKApp::pointer() noexcept
-{
-    if (!m_pointer)
-        m_pointer.reset(new AKPointer());
-
-    return *m_pointer.get();
-}
-
 AKKeyboard &AKApp::keyboard() noexcept
 {
     if (!m_keyboard)
@@ -77,12 +70,47 @@ AKKeyboard &AKApp::keyboard() noexcept
     return *m_keyboard.get();
 }
 
-void AKApp::setPointer(AKPointer *pointer) noexcept
+bool AKApp::event(const CZEvent &event) noexcept
 {
-    if (m_pointer.get() == pointer)
-        return;
+    if (event.isPointerEvent())
+    {
+        switch (event.type())
+        {
+        case CZEvent::Type::PointerButton:
+            pointer().m_history.button = (CZPointerButtonEvent&)event;
+            break;
+        case CZEvent::Type::PointerMove:
+            pointer().m_history.move = (CZPointerMoveEvent&)event;
+            break;
+        case CZEvent::Type::PointerLeave:
+            pointer().m_history.leave = (CZPointerLeaveEvent&)event;
+            break;
+        case CZEvent::Type::PointerScroll:
+            pointer().m_history.scroll = (CZPointerScrollEvent&)event;
+            break;
+        default:
+            break;
+        }
 
-    m_pointer.reset(pointer);
+        if (pointer().focus() && event.type() != CZEvent::Type::PointerEnter)
+            core()->sendEvent(event, *pointer().focus());
+    }
+    else if (event.isKeyboardEvent())
+    {
+        switch (event.type())
+        {
+        case CZEvent::Type::KeyboardKey:
+            keyboard().m_history.key = (CZKeyboardKeyEvent&)event;
+            break;
+        default:
+            break;
+        }
+
+        if (keyboard().focus() && event.type() != CZEvent::Type::KeyboardEnter)
+            core()->sendEvent(event, *keyboard().focus());
+    }
+
+    return AKObject::event(event);
 }
 
 void AKApp::setKeyboard(AKKeyboard *keyboard) noexcept

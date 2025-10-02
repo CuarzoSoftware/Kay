@@ -17,8 +17,8 @@ class CZ::AKTextField : public AKContainer
 {
 public:
     AKTextField(AKNode *parent = nullptr) noexcept;
-    CZ_DISABLE_COPY(AKTextField)
 protected:
+    bool eventFilter(const CZEvent &event, CZObject &target) noexcept override;
     void layoutEvent(const CZLayoutEvent &event) override;
     void keyboardEnterEvent(const CZKeyboardEnterEvent &event) override;
     void keyboardKeyEvent(const CZKeyboardKeyEvent &event) override;

@@ -6,7 +6,6 @@
 
 /**
  * @brief Blinking caret for text fields.
- * @ingroup AKNodes
  */
 class CZ::AKTextCaret : public AKThreeImagePatch
 {

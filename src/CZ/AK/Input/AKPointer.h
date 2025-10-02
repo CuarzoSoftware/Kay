@@ -21,36 +21,32 @@ public:
         CZPointerScrollEvent scroll;
     };
 
-    AKScene *windowFocus() const noexcept
-    {
-        return m_windowFocus;
-    }
+    SkPoint pos() const noexcept { return history().move.pos; }
+    const EventHistory &history() const noexcept{ return m_history; }
 
-    const SkPoint &pos() const noexcept
-    {
-        return m_pos;
-    }
-
-    void setPos(const SkPoint &pos) noexcept
-    {
-        m_pos = pos;
-    }
-
-    const EventHistory &history() const noexcept
-    {
-        return m_history;
-    }
+    /**
+     * @brief Returns the scene currently holding pointer focus.
+     *
+     * @note In the context of Marco, a scene can be thought of as a window.
+     *
+     * This represents the last scene that received a CZPointerEnterEvent.
+     * Scenes that are not focused will ignore other pointer events.
+     * Each scene provides information about its focused nodes.
+     *
+     * @see onFocusChanged
+     *
+     * @return The focused AKScene, or nullptr if none.
+     */
+    AKScene *focus() const noexcept { return m_focus; }
+    CZSignal<> onFocusChanged;
 
 protected:
     AKPointer() = default;
-    CZ_DISABLE_COPY(AKPointer)
 
 private:
     friend class AKApp;
     friend class AKScene;
-    SkPoint m_pos {};
-    CZWeak<AKNode> m_focus;
-    CZWeak<AKScene> m_windowFocus;
+    CZWeak<AKScene> m_focus;
     EventHistory m_history {};
 };
 

@@ -13,7 +13,7 @@ class CZ::AKScene : public AKObject
 {
 public:
     [[nodiscard]] static std::shared_ptr<AKScene> Make() noexcept;
-    ~AKScene() { notifyDestruction(); }
+    ~AKScene();
     bool isSubScene() const noexcept { return m_isSubScene; };
 
     [[nodiscard]] std::shared_ptr<AKTarget> makeTarget() noexcept;
@@ -34,10 +34,12 @@ public:
     AKNode *nodeAt(const SkPoint &pos) const noexcept;
     AKNode *root() const noexcept { return m_root; }
 
-    AKNode *pointerFocus() const noexcept { return m_win->pointerFocus; };
-    AKNode *keyboardFocus() const noexcept { return m_win->keyboardFocus; };
+    void setPointerGrab(AKNode *node) noexcept;
+    AKNode *pointerGrab() const noexcept;
+    AKNode *pointerFocus() const noexcept;
+    AKNode *keyboardFocus() const noexcept;
     AKNode *nextKeyboardFocusable() const noexcept;
-    CZBitset<CZWindowState> windowState() const noexcept { return m_win->windowState; }
+    CZBitset<CZWindowState> windowState() const noexcept;
 protected:
     bool event(const CZEvent &event) noexcept override;
 private:
@@ -63,7 +65,7 @@ private:
 
     struct Window
     {
-        const CZEvent *e;
+        CZWeak<AKNode> pointerGrab;
         CZWeak<AKNode> pointerFocus;
         CZWeak<AKNode> keyboardFocus;
         CZTimer keyDelayTimer, keyRepeatTimer;
@@ -85,12 +87,18 @@ private:
     void renderNodes(AKNode *node);
     void nodeTranslucentPass(AKRenderable *node, std::shared_ptr<RPass> pass, SkRegion &region) noexcept;
     void nodeOpaquePass(AKRenderable *node, std::shared_ptr<RPass> pass, SkRegion &region) noexcept;
-    void handlePointerMoveEvent();
-    void handlePointerLeaveEvent();
-    void handlePointerButtonEvent();
-    void handlePointerScrollEvent();
-    void handleKeyboardKeyEvent();
-    void handleWindowStateEvent();
+
+    void pointerEnterEvent(const CZPointerEnterEvent &e) noexcept;
+    void pointerMoveEvent(const CZPointerMoveEvent &e) noexcept;
+    void pointerButtonEvent(const CZPointerButtonEvent &e) noexcept;
+    void pointerScrollEvent(const CZPointerScrollEvent &e) noexcept;
+    void pointerLeaveEvent(const CZPointerLeaveEvent &e) noexcept;
+
+    void keyboardEnterEvent(const CZKeyboardEnterEvent &e) noexcept;
+    void keyboardKeyEvent(const CZKeyboardKeyEvent &e) noexcept;
+    void keyboardLeaveEvent(const CZKeyboardLeaveEvent &e) noexcept;
+
+    void windowStateEvent(const CZWindowStateEvent &e) noexcept;
 
     static void SetPassParamsFromRenderable(std::shared_ptr<RPass> pass, AKRenderable *rend, bool opaque) noexcept;
 };

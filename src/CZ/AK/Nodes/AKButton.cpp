@@ -13,7 +13,7 @@ using namespace CZ;
 AKButton::AKButton(const std::string &text, AKNode *parent) noexcept : AKSubScene(parent),
     m_text(text, &m_content)
 {
-    setCursor(AKCursor::Pointer);
+    setCursor(CZCursorShape::Pointer);
     m_text.setTextStyle(theme()->ButtonTextStyle);
     m_hThreePatch.layout().setFlex(1.f);
     m_hThreePatch.layout().setPadding(YGEdgeLeft, AKTheme::ButtonPadding.left());
@@ -51,7 +51,7 @@ void AKButton::setEnabled(bool enabled) noexcept
     if (m_enabled == enabled)
         return;
 
-    setCursor(enabled ? AKCursor::Pointer : AKCursor::NotAllowed);
+    setCursor(enabled ? CZCursorShape::Pointer : CZCursorShape::NotAllowed);
     m_enabled = enabled;
     m_hThreePatch.setOpacity(enabled ? 1.f : AKTheme::ButtonDisabledOpacity);
     m_text.setOpacity(m_hThreePatch.opacity());
@@ -80,7 +80,17 @@ void AKButton::pointerButtonEvent(const CZPointerButtonEvent &event)
     {
         const bool triggerOnClicked { !event.pressed && pressed() && isPointerOver() };
         setPressed(event.pressed);
-        enablePointerGrab(event.pressed);
+
+        if (event.pressed)
+        {
+            if (scene())
+                scene()->setPointerGrab(this);
+        }
+        else
+        {
+            if (scene() && scene()->pointerGrab() == this)
+                scene()->setPointerGrab(nullptr);
+        }
 
         if (triggerOnClicked)
             onClick.notify(event);

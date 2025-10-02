@@ -112,20 +112,6 @@ const AKChanges &AKNode::changes() const noexcept
     return emptyChanges;
 }
 
-void AKNode::enablePointerGrab(bool enabled) noexcept
-{
-    if (pointerGrabEnabled() == enabled)
-        return;
-
-    m_flags.setFlag(PointerGrab, enabled);
-
-    if (enabled && !hasPointerFocus())
-    {
-        m_flags.add(HasPointerFocus);
-        CZCore::Get()->sendEvent(CZPointerEnterEvent(), *this);
-    }
-}
-
 AKNode *AKNode::topmostInvisibleParent() const noexcept
 {
     AKNode *topmost { nullptr };
@@ -161,7 +147,7 @@ void AKNode::setScene(AKScene *scene) noexcept
     if (m_scene)
         m_scene->m_treeChanged = true;
 
-    AKSceneChangedEvent event { m_scene, scene };
+    auto event { std::make_shared<AKSceneChangedEvent>(m_scene, scene) };
 
     m_scene.reset(scene);
 
@@ -176,7 +162,7 @@ void AKNode::setScene(AKScene *scene) noexcept
 
 void AKNode::propagateScene(AKScene *scene) noexcept
 {
-    CZCore::Get()->postEvent(AKSceneChangedEvent(m_scene, scene), *this);
+    CZCore::Get()->postEvent(std::make_shared<AKSceneChangedEvent>(m_scene, scene), *this);
     m_scene.reset(scene);
 
     for (AKNode *child : m_children)
@@ -487,7 +473,12 @@ AKTarget *AKNode::currentTarget() const noexcept
 bool AKNode::isPointerOver() const noexcept
 {
     AKPointer &p { AKApp::Get()->pointer() };
-    return scene() && scene() == p.windowFocus() && worldRect().contains(p.pos().x(), p.pos().y());
+    return scene() && scene() == p.focus() && worldRect().contains(p.pos().x(), p.pos().y());
+}
+
+bool AKNode::hasPointerFocus() const noexcept
+{
+    return scene() && (scene()->pointerFocus() == this || scene()->pointerFocus()->isSubchildOf(this));
 }
 
 void AKNode::setKeyboardFocus(bool set) noexcept
@@ -503,10 +494,10 @@ void AKNode::setKeyboardFocus(bool set) noexcept
         CZSafeEventQueue queue;
 
         if (scene()->keyboardFocus())
-            queue.addEvent(CZKeyboardLeaveEvent(), *scene()->keyboardFocus());
+            queue.addEvent(std::make_shared<CZKeyboardLeaveEvent>(), *scene()->keyboardFocus());
 
         scene()->m_win->keyboardFocus.reset(this);
-        queue.addEvent(CZKeyboardEnterEvent(), *this);
+        queue.addEvent(std::make_shared<CZKeyboardEnterEvent>(), *this);
         queue.dispatch();
     }
     else
@@ -540,7 +531,6 @@ void AKNode::addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept
     m_backgroundEffects.insert(backgroundEffect);
     backgroundEffect->m_targetNode.reset(this);
     backgroundEffect->onTargetNodeChanged();
-    AKLog(CZFatal, "Effect added");
 }
 
 void AKNode::removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept

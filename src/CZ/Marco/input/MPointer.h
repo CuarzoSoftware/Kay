@@ -2,8 +2,8 @@
 #define MPOINTER_H
 
 #include <CZ/Marco/Marco.h>
-#include <CZ/AK/AKCursor.h>
 #include <CZ/Core/CZWeak.h>
+#include <CZ/Core/CZCursorShape.h>
 #include <CZ/AK/Input/AKPointer.h>
 #include <CZ/Events/CZPointerEnterEvent.h>
 #include <CZ/Events/CZPointerMoveEvent.h>
@@ -28,8 +28,8 @@ public:
         CZPointerScrollEvent scroll;
     };
 
-    AKCursor cursor() const noexcept { return m_cursor; };
-    void setCursor(AKCursor cursor) noexcept;
+    CZCursorShape cursor() const noexcept { return m_cursor; };
+    void setCursor(CZCursorShape cursor) noexcept;
     MSurface *focus() const noexcept { return m_focus; };
     const EventHistory &eventHistory() const noexcept { return m_eventHistory; };
     const std::unordered_set<UInt32> pressedButtons() const noexcept { return m_pressedButtons; };
@@ -40,15 +40,15 @@ public:
 
 private:
     friend class MApplication;
-    AKCursor findNonDefaultCursor(AKNode *node) const noexcept;
+    CZCursorShape findNonDefaultCursor(AKNode *node) const noexcept;
     EventHistory m_eventHistory;
     CZPointerScrollEvent m_framedScrollEvent;
     std::unordered_set<UInt32> m_pressedButtons;
     CZWeak<MSurface> m_focus;
     wl_surface *m_cursorSurface { nullptr };
     wl_cursor_theme *m_cursorTheme { nullptr };
-    std::unordered_map<AKCursor, wl_cursor*> m_cursors;
-    AKCursor m_cursor { AKCursor::Default };
+    std::unordered_map<CZCursorShape, wl_cursor*> m_cursors;
+    CZCursorShape m_cursor { CZCursorShape::Default };
     bool m_forceCursorUpdate { true };
     bool m_hasPendingAxisEvent { false };
 };

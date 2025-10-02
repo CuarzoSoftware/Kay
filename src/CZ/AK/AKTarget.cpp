@@ -26,8 +26,8 @@ void AKTarget::setBakedNodesScale(Int32 scale) noexcept
 
 void AKTarget::markDirty() noexcept
 {
-    if (isDirty())
-        return;
+    //if (isDirty())
+    //    return;
 
     m_isDirty = true;
     onMarkedDirty.notify(*this);
