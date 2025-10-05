@@ -20,8 +20,6 @@ namespace CZ
     class AKChanges;
     class AKBackgroundDamageTracker;
 
-    class AKLog;
-
     class AKScene;  /* Renders a root AKNode into an AKTarget */
     class AKTarget;
     class AKTarget; /* An AKScene render destination */
@@ -71,6 +69,9 @@ namespace CZ
     class AKBakeEvent;
     class AKSceneChangedEvent;
     class AKVibrancyEvent;
+
+    /************ MARCO *************/
+    class MSurface;
 
     AKTheme *theme() noexcept;
     void setTheme(AKTheme *theme) noexcept;

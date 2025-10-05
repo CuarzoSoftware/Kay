@@ -14,9 +14,8 @@
 #include <CZ/AK/AKScene.h>
 #include <CZ/AK/Nodes/AKNode.h>
 #include <CZ/AK/Nodes/AKSubScene.h>
+#include <CZ/AK/Nodes/AKContainer.h>
 #include <CZ/AK/Effects/AKBackgroundEffect.h>
-
-#include <CZ/Marco/nodes/MRootSurfaceNode.h>
 
 #include <CZ/Ream/RSurface.h>
 
@@ -551,16 +550,16 @@ AKNode *AKNode::root() const noexcept
     return m_scene->root();
 }
 
+MSurface *AKNode::parentWindow() const noexcept
+{
+    if (!m_scene)
+        return nullptr;
+    return m_scene->window();
+}
+
 bool AKNode::activated() const noexcept
 {
     return scene() && scene()->windowState().has(CZWinActivated);
-}
-
-MSurface *AKNode::window() const noexcept
-{
-    if (MRootSurfaceNode *node = dynamic_cast<MRootSurfaceNode*>(root()))
-        return &node->surface();
-    return nullptr;
 }
 
 void AKNode::innerBounds(SkRect *out) noexcept

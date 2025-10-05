@@ -24,6 +24,8 @@ public:
     SkPoint pos() const noexcept { return history().move.pos; }
     const EventHistory &history() const noexcept{ return m_history; }
 
+    // TODO: Add pressed buttons
+
     /**
      * @brief Returns the scene currently holding pointer focus.
      *

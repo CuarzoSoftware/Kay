@@ -1006,6 +1006,14 @@ CZBitset<CZWindowState> AKScene::windowState() const noexcept
     return m_win->windowState;
 }
 
+MSurface *AKScene::window() const noexcept
+{
+    if (isSubScene())
+        return {};
+
+    return m_win->window;
+}
+
 void AKScene::addNodeDamage(AKNode &, const SkRegion &damage) noexcept
 {
     ct->m_damage.op(damage, SkRegion::Op::kUnion_Op);

@@ -31,9 +31,6 @@ pkg             = import('pkgconfig')
 cz_core_dep     = dependency('cz-core')
 cz_skia_dep     = dependency('cz-skia')
 cz_ream_dep     = dependency('cz-ream')
-egl_dep         = dependency('egl')
-gl_dep          = dependency('gl')
-glesv2_dep      = dependency('glesv2')
 xkbcommon_dep   = dependency('xkbcommon')
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
 
@@ -41,26 +38,9 @@ deps = [
   cz_core_dep,
   cz_skia_dep,
   cz_ream_dep,
-  egl_dep,
-  gl_dep,
-  glesv2_dep,
   yoga_dep,
   xkbcommon_dep
 ]
-
-if get_option('build_examples') or get_option('build_marco')
-  wayland_client_dep  = dependency('wayland-client')
-  wayland_cursor_dep  = dependency('wayland-cursor')
-  wayland_egl_dep     = dependency('wayland-egl')
-endif
-
-if get_option('build_marco')
-  deps += [
-    wayland_client_dep,
-    wayland_cursor_dep,
-    wayland_egl_dep
-  ]
-endif
 
 # -------------- SOURCES --------------
 
@@ -72,18 +52,6 @@ header_dirs = [
   ['./src/CZ/AK/Events', 'CZ/AK/Events'],
   ['./src/CZ/AK/Input', 'CZ/AK/Input']
 ]
-
-#if get_option('build_marco')
-#  header_dirs += [
-#    ['./src/Marco', 'Marco'],
-#    ['./src/Marco/private', 'Marco/private'],
-#   ['./src/Marco/roles', 'Marco/roles'],
-#    ['./src/Marco/nodes', 'Marco/nodes'],
-#    ['./src/Marco/protocols', 'Marco/protocols'],
-#    ['./src/Marco/input', 'Marco/input']
-#  ]
-#  sources += run_command('find', './src/Marco', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n')
-#endif
 
 foreach header_dir : header_dirs
     header_files = run_command('find', header_dir[0], '-type', 'f', '-name', '*.h', '-maxdepth', '1', check : false).stdout().strip().split('\n')
@@ -118,25 +86,3 @@ pkg.generate(
     filebase: 'cz-kay',
     subdirs: 'CZ/AK',
     requires: ['cz-skia'])
-
-# -------------- EXAMPLES --------------
-
-#if get_option('build_examples')
-#    louvre_dep = dependency('cz-louvre')
-#    pixmap_dep = dependency('pixman-1')
-#    srm_dep = dependency('SRM')
-#    wl_mod = import('unstable-wayland')
-    
-#    subdir('src/examples/kay-louvre')
-    #subdir('src/examples/kay-srm')
-#    subdir('src/examples/kay-wayland-client')
-#    
-#    if get_option('build_marco')
-#      xdgkit_dep = dependency('XDGKit', fallback: ['XDGKit', 'xdgkit_dep'])
-#      subdir('src/examples/marco-toplevel')
-#      subdir('src/examples/marco-toplevel-custom-csd')
-#      subdir('src/examples/marco-subsurfaces')
-#      subdir('src/examples/marco-popup')
-#      subdir('src/examples/marco-layer-shell')
-#    endif
-#endif

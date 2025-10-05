@@ -1,7 +1,3 @@
-option('build_marco', 
-    type : 'boolean', 
-    value : true)
-    
 option('build_examples', 
     type : 'boolean', 
     value : true)

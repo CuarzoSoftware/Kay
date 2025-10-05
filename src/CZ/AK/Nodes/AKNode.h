@@ -402,10 +402,9 @@ public:
      */
     AKNode *root() const noexcept;
 
-    bool activated() const noexcept;
+    MSurface *parentWindow() const noexcept;
 
-    // TODO: Add if macro for when Marco is disabled
-    MSurface *window() const noexcept;
+    bool activated() const noexcept;
 
     CZCursorShape cursor() const noexcept { return m_cursor; }
     void setCursor(CZCursorShape cursor) { m_cursor = cursor; }

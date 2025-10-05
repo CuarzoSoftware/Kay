@@ -40,12 +40,15 @@ public:
     AKNode *keyboardFocus() const noexcept;
     AKNode *nextKeyboardFocusable() const noexcept;
     CZBitset<CZWindowState> windowState() const noexcept;
+
+    MSurface *window() const noexcept;
 protected:
     bool event(const CZEvent &event) noexcept override;
 private:
     friend class AKTarget;
     friend class AKNode;
     friend class AKSubScene;
+    friend class MSurface;
     static std::shared_ptr<AKScene> MakeSubScene() noexcept;
     AKScene(bool isSubScene) noexcept;
     bool validateTarget(std::shared_ptr<AKTarget> target) noexcept;
@@ -65,6 +68,7 @@ private:
 
     struct Window
     {
+        CZWeak<MSurface> window;
         CZWeak<AKNode> pointerGrab;
         CZWeak<AKNode> pointerFocus;
         CZWeak<AKNode> keyboardFocus;
