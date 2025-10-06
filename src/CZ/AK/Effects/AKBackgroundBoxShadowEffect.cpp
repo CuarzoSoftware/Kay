@@ -11,7 +11,7 @@
 
 using namespace CZ;
 
-void AKBackgroundBoxShadowEffect::onSceneCalculatedRect()
+void AKBackgroundBoxShadowEffect::targetNodeRectCalculated()
 {
     const auto &chg { changes() };
 

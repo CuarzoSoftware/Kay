@@ -68,7 +68,7 @@ public:
 protected:
     using AKRenderable::enableReplaceImageColor;
 
-    void onSceneCalculatedRect() override;
+    void targetNodeRectCalculated() override;
     void renderEvent(const AKRenderEvent &event) override;
     void onTargetNodeChanged() override;
 

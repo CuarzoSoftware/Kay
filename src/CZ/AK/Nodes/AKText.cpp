@@ -173,15 +173,8 @@ void AKText::bakeEvent(const AKBakeEvent &e)
     c->clear(SK_ColorTRANSPARENT);
 
     if (m_paragraph)
-    {
         m_paragraph->paint(c, 0.f, 0.f);
-        /*AKLog::debug("AKText repainted: Tint %d %dx%d Alpha Baseline %f Ideo Baseline %f %s",
-                     customTextureColorEnabled(),
-                     globalRect().width(), globalRect().height(),
-                     m_paragraph->getAlphabeticBaseline(),
-                     m_paragraph->getIdeographicBaseline(),
-                     m_text.c_str());*/
-    }
+
     c->restore();
 }
 

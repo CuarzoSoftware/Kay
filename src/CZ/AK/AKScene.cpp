@@ -343,9 +343,9 @@ void AKScene::calculateNewDamage(AKNode *node)
     if (bgFx)
     {
         // Background effect rects are calculated here because they depend on their target node rects
+        bgFx->targetNodeRectCalculated();
         bgFx->m_worldRect = bgFx->effectRect.makeOffset(bgFx->targetNode()->worldRect().topLeft());
         bgFx->m_sceneRect = bgFx->m_worldRect.makeOffset(-ct->m_worldViewport.topLeft());
-        bgFx->onSceneCalculatedRect();
         bgFx->tData->visible = bgFx->visible() && bgFx->targetNode()->tData->visible;
     }
     else
@@ -393,7 +393,7 @@ void AKScene::calculateNewDamage(AKNode *node)
     {
         hasBDT = true;
         const SkScalar scale { node->bdt.scale() };
-        SkISize size { ct->m_sceneViewport.size() };
+        SkISize size { ct->surface->geometry().dst.roundOut().size() };
         const int modW { size.fWidth % node->bdt.divisibleBy() };
         const int modH { size.fHeight % node->bdt.divisibleBy() };
 
@@ -404,9 +404,15 @@ void AKScene::calculateNewDamage(AKNode *node)
 
         // TODO: Optimize all this mess
         if (node->bdt.m_surfaces.contains(ct.get()))
-            node->bdt.m_surfaces[ct.get()]->resize(size, scale, false);
+        {
+            //AKLog(CZFatal, "BDT RESIZE {},{} {} {}", size.width(), size.height(), scale, true);
+            node->bdt.m_surfaces[ct.get()]->resize(size, scale, true);
+        }
         else
+        {
+            //AKLog(CZFatal, "BDT CREATE {},{} {} {}", size.width(), size.height(), scale, false);
             node->bdt.m_surfaces[ct.get()] = RSurface::Make(size, scale, false);
+        }
 
         node->bdt.m_currentSurface = node->bdt.m_surfaces[ct.get()];
         auto geo { node->bdt.m_currentSurface->geometry() };

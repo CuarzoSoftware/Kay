@@ -5,6 +5,7 @@
 
 #include <CZ/Ream/RCore.h>
 #include <CZ/Core/CZCore.h>
+#include <CZ/Core/CZKeymap.h>
 
 #include <CZ/skia/ports/SkFontMgr_fontconfig.h>
 
@@ -101,6 +102,17 @@ bool AKApp::event(const CZEvent &event) noexcept
         {
         case CZEvent::Type::KeyboardKey:
             keyboard().m_history.key = (CZKeyboardKeyEvent&)event;
+            break;
+        case CZEvent::Type::KeyboardModifiers:
+            keyboard().m_history.modifiers = (CZKeyboardModifiersEvent&)event;
+            CZCore::Get()->keymap()->updateModifiers(
+                keyboard().m_history.modifiers.modifiers.depressed,
+                keyboard().m_history.modifiers.modifiers.latched,
+                keyboard().m_history.modifiers.modifiers.locked,
+                keyboard().m_history.modifiers.modifiers.group);
+            break;
+        case CZEvent::Type::KeyboardLeave:
+            keyboard().m_history.leave = (CZKeyboardLeaveEvent&)event;
             break;
         default:
             break;

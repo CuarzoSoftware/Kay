@@ -12,7 +12,7 @@
 
 using namespace CZ;
 
-void AKBackgroundImageShadowEffect::onSceneCalculatedRect()
+void AKBackgroundImageShadowEffect::targetNodeRectCalculated()
 {
     AKBakeable *bakeableTarget = dynamic_cast<AKBakeable*>(targetNode());
 

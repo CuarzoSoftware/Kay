@@ -13,17 +13,21 @@ using namespace CZ;
 AKButton::AKButton(const std::string &text, AKNode *parent) noexcept : AKSubScene(parent),
     m_text(text, &m_content)
 {
+    SkRegion empty;
     setCursor(CZCursorShape::Pointer);
     m_text.setTextStyle(theme()->ButtonTextStyle);
+    m_text.setInputRegion(&empty);
     m_hThreePatch.layout().setFlex(1.f);
     m_hThreePatch.layout().setPadding(YGEdgeLeft, AKTheme::ButtonPadding.left());
     m_hThreePatch.layout().setPadding(YGEdgeRight, AKTheme::ButtonPadding.right());
     m_hThreePatch.layout().setPadding(YGEdgeTop, AKTheme::ButtonPadding.top());
     m_hThreePatch.layout().setPadding(YGEdgeBottom, AKTheme::ButtonPadding.bottom());
+    m_hThreePatch.setInputRegion(&empty);
     m_content.layout().setFlex(1.f);
     m_content.layout().setJustifyContent(YGJustifyCenter);
     m_content.layout().setAlignItems(YGAlignCenter);
     m_content.layout().setFlexDirection(YGFlexDirectionRow);
+    m_content.setInputRegion(&empty);
     updateStyle();
 }
 

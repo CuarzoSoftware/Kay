@@ -99,7 +99,7 @@ public:
 protected:
     using AKRenderable::enableReplaceImageColor;
 
-    void onSceneCalculatedRect() override;
+    void targetNodeRectCalculated() override;
     void onSceneCalculatedRectWithBorderRadius() noexcept;
     void renderEvent(const AKRenderEvent &event) override;
     void onRenderWithBorderRadius(const AKRenderEvent &event) noexcept;

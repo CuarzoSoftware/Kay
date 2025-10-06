@@ -4,6 +4,8 @@
 #include <CZ/Ream/RSurface.h>
 #include <CZ/AK/AKLog.h>
 
+#include <CZ/AK/Nodes/AKButton.h>
+
 using namespace CZ;
 
 AKSubScene::AKSubScene(AKNode *parent) noexcept : AKBakeable(parent)
@@ -37,7 +39,7 @@ void AKSubScene::bakeChildren(const AKBakeEvent &event) noexcept
     event.surface->setGeometry(geo);
 
     // Viewport and dst are set by the parent scene
-    m_target->age = parentTargetData->changes.test(CHSize) ? 1 : 0;
+    m_target->age = parentTargetData->changes.test(CHSize) ? 0 : 1;
     m_target->setBakedNodesScale(scale());
     m_target->surface = event.surface;
     m_target->inDamage = &event.damage;

@@ -151,7 +151,7 @@ void AKTextField::keyboardKeyEvent(const CZKeyboardKeyEvent &e)
     {
         m_text.setSelection(0, m_text.codePointByteOffsets().size());
     }
-    else if (e.code == XKB_KEY_Tab)
+    else if (e.symbol == XKB_KEY_Tab)
     {
         if (scene())
         {

@@ -406,8 +406,24 @@ public:
 
     bool activated() const noexcept;
 
-    CZCursorShape cursor() const noexcept { return m_cursor; }
-    void setCursor(CZCursorShape cursor) { m_cursor = cursor; }
+    /**
+     * @brief Returns the current cursor shape.
+     *
+     * Defaults to CZCursorShape::Default.
+     *
+     * @see setCursor()
+     */
+    std::optional<CZCursorShape> cursor() const noexcept { return m_cursor; }
+
+    /**
+     * @brief Sets the cursor shape for this node.
+     *
+     * The assigned shape will be shown while the node has pointer focus.
+     *
+     * @param cursor The cursor shape to use, or std::nullopt to hide the cursor.
+     */
+    void setCursor(std::optional<CZCursorShape> cursor) { m_cursor = cursor; }
+
 
     // Padding + non absolute nodes dimensions
     void innerBounds(SkRect *out) noexcept;
@@ -559,7 +575,7 @@ private:
 
     // Target-specific state, including AKSubScene targets
     mutable std::unordered_map<AKTarget*, TargetData> m_targets;
-    CZCursorShape m_cursor { CZCursorShape::Default };
+    std::optional<CZCursorShape> m_cursor { CZCursorShape::Default };
     std::vector<CZWeak<AKBackgroundDamageTracker>> m_overlayBdts;
 };
 

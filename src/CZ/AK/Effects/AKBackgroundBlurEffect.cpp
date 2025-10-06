@@ -24,19 +24,59 @@ AKBackgroundBlurEffect::AKBackgroundBlurEffect(AKNode *target) noexcept :
     bdt.setDamageOutset(42);
 }
 
-void AKBackgroundBlurEffect::onSceneCalculatedRect()
+void AKBackgroundBlurEffect::setFullSize() noexcept
+{
+    if (m_areaType == FullSize)
+        return;
+
+    m_areaType = FullSize;
+    addChange(CHArea);
+}
+
+void AKBackgroundBlurEffect::setRegion(const SkRegion &region) noexcept
+{
+    m_areaType = Region;
+    m_userRegion = region;
+    addChange(CHArea);
+}
+
+void AKBackgroundBlurEffect::clearClip() noexcept
+{
+    if (m_clipType == NoClip)
+        return;
+
+    m_clipType = NoClip;
+    addChange(CHClip);
+}
+
+void AKBackgroundBlurEffect::setRoundRectClip(const CZRRect &rRect) noexcept
+{
+    if (m_clipType == RoundRect && rRect == m_rRectClip)
+        return;
+
+    m_clipType = RoundRect;
+    m_rRectClip = rRect;
+    addChange(CHClip);
+}
+
+void AKBackgroundBlurEffect::setPathClip(const SkPath &path) noexcept
+{
+    m_clipType = Path;
+    m_pathClip = path;
+    addChange(CHClip);
+}
+
+void AKBackgroundBlurEffect::targetNodeRectCalculated()
 {
     onTargetLayoutUpdated.notify();
 
-    bool changedSize { false };
-
     if (areaType() == FullSize)
-    {
-        changedSize = m_finalRegion.getBounds().size() != targetNode()->worldRect().size();
         m_finalRegion.setRect(SkIRect::MakeSize(targetNode()->worldRect().size()));
-    }
     else // Region
         m_finalRegion = m_userRegion;
+
+    const auto bounds { m_finalRegion.getBounds() };
+    const bool changedSize { effectRect.size() != bounds.size() };
 
     if (!changes().testAnyOf(CHArea, CHClip) && !changedSize)
         return;
@@ -148,7 +188,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
 
     bool reblur { !bdt.capturedDamage.isEmpty() };
     bool copyAll { false };
-    SkScalar bdtScale { bdt.currentSurface()->geometry().dst.width() / bdt.currentSurface()->geometry().viewport.width() };
+    SkScalar bdtScale { bdt.scale() };
     SkScalar scale { bdtScale * 0.5f};
     SkScalar blur2Scale { scale * 0.5f };
     SkISize copySize = p.rect.size();
@@ -325,7 +365,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         c.translate(
             p.rect.x() - pathLocalRect.x(),
             p.rect.y() - pathLocalRect.y());
-        c.clipPath(m_pathClip, true);
+        c.clipPath(m_pathClip, false);
         c.translate(
             pathLocalRect.x() - p.rect.x(),
             pathLocalRect.y() - p.rect.y());
