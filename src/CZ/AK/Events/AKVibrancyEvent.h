@@ -10,11 +10,9 @@ class CZ::AKVibrancyEvent : public CZEvent
 public:
     CZ_EVENT_DECLARE_COPY
 
-    AKVibrancyEvent(AKVibrancyState state, AKVibrancyStyle style) noexcept : CZEvent(Type::Vibrancy),
-        state(state),
-        style(style) {}
+    AKVibrancyEvent(AKVibrancyState state) noexcept : CZEvent(Type::Vibrancy),
+        state(state) {}
 
     AKVibrancyState state;
-    AKVibrancyStyle style;
 };
 #endif // CZ_AKVIBRANCYEVENT_H

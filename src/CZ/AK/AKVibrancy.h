@@ -3,13 +3,6 @@
 
 namespace CZ
 {
-    enum class AKVibrancyStyle
-    {
-        None,
-        Dark,
-        Light
-    };
-
     enum class AKVibrancyState
     {
         Disabled,
