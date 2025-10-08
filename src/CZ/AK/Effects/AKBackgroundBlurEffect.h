@@ -3,6 +3,7 @@
 
 #include <CZ/AK/Effects/AKBackgroundEffect.h>
 #include <CZ/Ream/RSurface.h>
+#include <CZ/Core/CZColorScheme.h>
 #include <CZ/Core/CZSignal.h>
 #include <CZ/Core/CZRRect.h>
 #include <CZ/skia/core/SkPath.h>
@@ -31,9 +32,10 @@ public:
      */
     enum Changes
     {
-        CHArea,   ///< Indicates that the blur area has changed.
-        CHClip,   ///< Indicates that the clipping shape has changed.
-        CHLast    ///< Sentinel value (not used directly).
+        CHArea,        ///< Indicates that the blur area has changed.
+        CHClip,        ///< Indicates that the clipping shape has changed.
+        CHColorScheme, ///< Indicates that the color scheme has changed.
+        CHLast         ///< Sentinel value (not used directly).
     };
 
     /**
@@ -65,6 +67,9 @@ public:
      * @param target The node to which this effect is applied. Can be nullptr.
      */
     AKBackgroundBlurEffect(AKNode *target = nullptr) noexcept;
+
+    bool setColorScheme(CZColorScheme scheme) noexcept;
+    CZColorScheme colorScheme() const noexcept { return m_colorScheme; }
 
     /**
      * @brief Returns the current area type (FullSize or Region).
@@ -150,6 +155,7 @@ private:
     SkPath m_pathClip;
     AreaType m_areaType { FullSize };
     ClipType m_clipType { NoClip };
+    CZColorScheme m_colorScheme { CZColorScheme::Unknown };
     std::shared_ptr<RSurface> m_blur;
     std::shared_ptr<RSurface> m_blur2;
 };

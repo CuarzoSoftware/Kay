@@ -24,6 +24,22 @@ AKBackgroundBlurEffect::AKBackgroundBlurEffect(AKNode *target) noexcept :
     bdt.setDamageOutset(42);
 }
 
+bool AKBackgroundBlurEffect::setColorScheme(CZColorScheme scheme) noexcept
+{
+    const auto changed { m_colorScheme != scheme };
+    bool needsRepaint { false };
+
+    if (scheme == CZColorScheme::Dark)
+        needsRepaint = m_colorScheme != CZColorScheme::Dark;
+    else
+        needsRepaint = m_colorScheme == CZColorScheme::Dark;
+
+    if (needsRepaint)
+        addChange(CHColorScheme);
+
+    return changed;
+}
+
 void AKBackgroundBlurEffect::setFullSize() noexcept
 {
     if (m_areaType == FullSize)
@@ -78,8 +94,11 @@ void AKBackgroundBlurEffect::targetNodeRectCalculated()
     const auto bounds { m_finalRegion.getBounds() };
     const bool changedSize { effectRect.size() != bounds.size() };
 
-    if (!changes().testAnyOf(CHArea, CHClip) && !changedSize)
+    if (!changes().testAnyOf(CHArea, CHClip, CHColorScheme) && !changedSize)
         return;
+
+    if (changes().test(CHColorScheme))
+        addDamage(AK_IRECT_INF);
 
     if (clipType() == NoClip)
     {
@@ -186,8 +205,9 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
     if (!bdt.currentSurface() || p.damage.isEmpty() || p.rect.isEmpty())
         return;
 
-    bool reblur { !bdt.capturedDamage.isEmpty() };
-    bool copyAll { false };
+    const auto schemeChanged { changes().test(CHColorScheme) };
+    bool reblur { !bdt.capturedDamage.isEmpty() || schemeChanged };
+    bool copyAll { schemeChanged };
     SkScalar bdtScale { bdt.scale() };
     SkScalar scale { bdtScale * 0.5f};
     SkScalar blur2Scale { scale * 0.5f };
@@ -230,15 +250,16 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         info.src = SkRect::Make(p.rect);
 
         if (copyAll)
-            painter->drawImageEffect(info, RPainter::VibrancyLightH);
+            painter->drawImageEffect(info, RPainter::VibrancyH);
         else
         {
             bdt.capturedDamage.translate(-p.rect.x(), -p.rect.y());
             bdt.capturedDamage.op(info.dst, SkRegion::Op::kIntersect_Op);
-            painter->drawImageEffect(info, RPainter::VibrancyLightH, &bdt.capturedDamage);
+            painter->drawImageEffect(info, RPainter::VibrancyH, &bdt.capturedDamage);
         }
 
         // V Pass: 0.5 blur => 0.25 blur + saturation
+        auto fx { colorScheme() == CZColorScheme::Dark ? RPainter::VibrancyDarkV : RPainter::VibrancyLightV };
         pass = m_blur2->beginPass(RPassCap_Painter);
         painter = pass->getPainter();
 
@@ -249,9 +270,9 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         info.dst = m_blur2->geometry().viewport.roundOut();
 
         if (copyAll)
-            painter->drawImageEffect(info, RPainter::VibrancyLightV);
+            painter->drawImageEffect(info, fx);
         else
-            painter->drawImageEffect(info, RPainter::VibrancyLightV, &bdt.capturedDamage);
+            painter->drawImageEffect(info, fx, &bdt.capturedDamage);
     }
 
     if (clipType() == NoClip)
