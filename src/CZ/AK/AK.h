@@ -37,6 +37,7 @@ namespace CZ
     class AKPath;
     class AKImage;
     class AKImageFrame;
+    class AKIcon;
     class AKThreeImagePatch;
     class AKTextCaret;
     class AKText;

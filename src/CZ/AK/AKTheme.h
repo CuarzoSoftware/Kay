@@ -35,6 +35,8 @@ public:
     static inline SkColor   SystemGray          { 0xFF7B7B81 };
     static inline SkColor   LinkColor           { 0xFF094FD1 };
     static inline SkColor   FocusOutlineColor   { 0xFF86b4fa };
+    static inline SkColor   IconLightScheme     { 0xFF444444 };
+    static inline SkColor   IconDarkScheme      { 0xFFFFFFFF };
 
     /* Fonts */
 
@@ -108,6 +110,7 @@ public:
 
     /* Icon Font */
     std::shared_ptr<AKIconFont> iconFont;
+
 protected:
 
     /* AKButton */
