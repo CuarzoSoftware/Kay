@@ -45,6 +45,7 @@ std::shared_ptr<AKApp> AKApp::GetOrMake() noexcept
 
     auto app { std::shared_ptr<AKApp>(new AKApp(cuarzo, ream)) };
     s_app = app;
+    setTheme(nullptr);
     return app;
 }
 

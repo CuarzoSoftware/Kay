@@ -4,13 +4,9 @@
 using namespace CZ;
 
 static AKTheme *m_theme { nullptr };
-static const std::filesystem::path m_assetsDir { KAY_DEFAULT_ASSETS_PATH };
 
 AKTheme *CZ::theme() noexcept
 {
-    if (!m_theme)
-        setTheme(nullptr);
-
     return m_theme;
 }
 
@@ -40,7 +36,14 @@ AKPointer &CZ::akPointer() noexcept
     return AKApp::Get()->pointer();
 }
 
-const std::filesystem::path &CZ::akAssetsDir() noexcept
+const std::filesystem::path &CZ::AKAssetsDir() noexcept
 {
-    return m_assetsDir;
+    static const std::filesystem::path AssetsDir { CZ_KAY_ASSETS_DIR };
+    return AssetsDir;
+}
+
+const std::filesystem::path &CZ::AKFontsDir() noexcept
+{
+    static const std::filesystem::path FontsDir { CZ_KAY_FONTS_DIR };
+    return FontsDir;
 }

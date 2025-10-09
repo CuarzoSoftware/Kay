@@ -1,5 +1,5 @@
 project(
-    'cz-kay',
+    'Kay',
     'c','cpp',
     version : '0.1.0',
     meson_version: '>= 0.62.0',
@@ -12,16 +12,27 @@ VERSION_MAJOR = meson.project_version().split('.')[0]
 VERSION_MINOR = meson.project_version().split('.')[1]
 VERSION_PATCH = meson.project_version().split('.')[2]
 VERSION_BUILD = run_command('cat', './BUILD', check : false).stdout()
+HEADERS_INSTALL_DIR = join_paths(get_option('prefix'), get_option('includedir'), 'CZ/AK')
+FONTS_INSTALL_DIR = join_paths('/usr/share/fonts/cuarzo')
+ASSETS_INSTALL_DIR = join_paths(get_option('prefix'), get_option('datadir'), 'Kay/Assets')
+CONF_FILE_NAME = 'CZ' + meson.project_name() + 'Version.h'
 
-HEADERS_INSTALL_PATH = join_paths(get_option('prefix'), get_option('includedir'))
-ASSETS_INSTALL_PATH = join_paths(get_option('prefix'), get_option('datadir'), 'Kay/assets')
+conf = configuration_data()
+conf.set('VERSION_MAJOR', VERSION_MAJOR)
+conf.set('VERSION_MINOR', VERSION_MINOR)
+conf.set('VERSION_PATCH', VERSION_PATCH)
+conf_file = configure_file(
+    input : 'src/CZ/AK/' + CONF_FILE_NAME +'.in',
+    output : CONF_FILE_NAME,
+    configuration : conf)
+
+install_data(
+    conf_file,
+    install_dir: HEADERS_INSTALL_DIR)
 
 add_project_arguments([
-    '-DKAY_VERSION_MAJOR=@0@'.format(VERSION_MAJOR.to_int()),
-    '-DKAY_VERSION_MINOR=@0@'.format(VERSION_MINOR.to_int()),
-    '-DKAY_VERSION_PATCH=@0@'.format(VERSION_PATCH.to_int()),
-    '-DKAY_VERSION_BUILD=@0@'.format(VERSION_BUILD.to_int()),
-    '-DKAY_DEFAULT_ASSETS_PATH="@0@"'.format(ASSETS_INSTALL_PATH)
+    '-DCZ_KAY_ASSETS_DIR="@0@"'.format(ASSETS_INSTALL_DIR),
+    '-DCZ_KAY_FONTS_DIR="@0@"'.format(FONTS_INSTALL_DIR)
 ], language: 'cpp')
 
 # -------------- DEPENDENCIES --------------
@@ -55,7 +66,7 @@ header_dirs = [
 
 foreach header_dir : header_dirs
     header_files = run_command('find', header_dir[0], '-type', 'f', '-name', '*.h', '-maxdepth', '1', check : false).stdout().strip().split('\n')
-    install_headers(header_files, install_dir : join_paths(HEADERS_INSTALL_PATH, header_dir[1]))
+    install_headers(header_files, install_dir : join_paths(HEADERS_INSTALL_DIR, header_dir[1]))
 endforeach
 
 # -------------- LIBRARY --------------
@@ -75,7 +86,12 @@ kay_dep = declare_dependency(
 
 install_data(
     run_command('find', './assets', '-type', 'f', '-name', '*[.png,.jpg]', check : false).stdout().strip().split('\n'),
-    install_dir: ASSETS_INSTALL_PATH
+    install_dir: ASSETS_INSTALL_DIR
+)
+
+install_data(
+    run_command('find', './assets/fonts', '-type', 'f', '-name', '*[.ttf,.otf,.codepoints]', check : false).stdout().strip().split('\n'),
+    install_dir: FONTS_INSTALL_DIR
 )
 
 pkg.generate(

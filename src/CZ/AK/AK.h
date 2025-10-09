@@ -49,6 +49,8 @@ namespace CZ
     class AKScroll;
     class AKScrollBar;
 
+    class AKIconFont;
+
     /************ EFFECTS ************/
 
     class AKRoundCornersEffect;
@@ -78,7 +80,9 @@ namespace CZ
     sk_sp<SkFontMgr> akFontManager() noexcept;
     AKPointer &akPointer() noexcept;
     AKKeyboard &akKeyboard() noexcept;
-    const std::filesystem::path &akAssetsDir() noexcept;
+    const std::filesystem::path &AKAssetsDir() noexcept;
+    const std::filesystem::path &AKFontsDir() noexcept;
+
 };
 
 #define AK_IRECT_INF SkIRect::MakeLTRB(-2147483, -2147483, 2147483, 2147483)

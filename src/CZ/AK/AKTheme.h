@@ -105,6 +105,9 @@ public:
 
     /* Masks */
     virtual std::shared_ptr<RImage>  topLeftRoundCornerMask                  (Int32 radius, Int32 scale) noexcept;
+
+    /* Icon Font */
+    std::shared_ptr<AKIconFont> iconFont;
 protected:
 
     /* AKButton */
