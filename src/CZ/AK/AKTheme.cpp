@@ -502,3 +502,34 @@ std::shared_ptr<RImage> CZ::AKTheme::topLeftRoundCornerMask(Int32 radius, Int32 
     return surface->image();
 }
 
+std::shared_ptr<RImage> AKTheme::roundContainerNinePatch(Int32 radius, Int32 scale, SkIRect &outCenterSrc) noexcept
+{
+    if (radius <= 0 || scale <= 0)
+        return {};
+
+    const auto pixelSize { radius * scale };
+    outCenterSrc.setXYWH(radius, radius, 1, 1);
+
+    auto cache { m_roundContainerNinePatch[pixelSize] };
+
+    if (auto image = cache.lock())
+        return image;
+
+    const auto size { SkISize(radius * 2 + 1, radius * 2 + 1) };
+    auto surface { RSurface::Make(size, scale, true) };
+    auto pass { surface->beginPass(RPassCap_SkCanvas) };
+    auto &c { *pass->getCanvas() };
+
+    c.clear(SK_ColorTRANSPARENT);
+
+    SkPaint paint;
+    paint.setStroke(false);
+    paint.setAntiAlias(true);
+    paint.setColor(SK_ColorWHITE);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    c.drawRoundRect(SkRect::Make(size), radius, radius, paint);
+
+    m_roundContainerNinePatch[pixelSize] = surface->image();
+    return surface->image();
+}
+

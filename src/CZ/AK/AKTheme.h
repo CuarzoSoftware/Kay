@@ -60,8 +60,8 @@ public:
     static inline SkRect    ButtonTintedHThreePatchCenterSrcRect    { ButtonPlainHThreePatchCenterSrcRect };
     virtual SkRegion        buttonPlainOpaqueRegion                 (Int32 width) noexcept;
     virtual SkRegion        buttonTintedOpaqueRegion                (Int32 width) noexcept;
-    virtual std::shared_ptr<RImage>  buttonPlainHThreePatchImage             (Int32 scale) noexcept;
-    virtual std::shared_ptr<RImage>  buttonTintedHThreePatchImage            (Int32 scale) noexcept;
+    virtual std::shared_ptr<RImage>  buttonPlainHThreePatchImage    (Int32 scale) noexcept;
+    virtual std::shared_ptr<RImage>  buttonTintedHThreePatchImage   (Int32 scale) noexcept;
 
     /* AKTextField */
 
@@ -75,7 +75,7 @@ public:
 
     static inline SkRect    TextCaretVThreePatchCenterSrcRect       { SkRect::MakeXYWH(0.f, 1.f, 2.f, 1.f) };
     static inline SkRect    TextCaretVThreePatchSideSrcRect         { SkRect::MakeWH(2.f, 2.f) };
-    virtual std::shared_ptr<RImage>  textCaretVThreePatchImage               (Int32 scale) noexcept;
+    virtual std::shared_ptr<RImage>  textCaretVThreePatchImage      (Int32 scale) noexcept;
 
     /* AKScroll */
     static inline SkScalar  ScrollKineticSpeed                      { 1.5f };
@@ -84,14 +84,14 @@ public:
     static inline SkScalar  ScrollBounceOffsetLimit                 { 96.f };
     static inline SkScalar  ScrollBarHandleWidth                    { 7.f };
     static inline SkScalar  ScrollBarHandleWidthHover               { 11.f };
-    virtual std::shared_ptr<RImage>  roundLineThreePatchImage                (CZOrientation orientation, Int32 diam, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
-    virtual std::shared_ptr<RImage>  scrollRailThreePatchImage               (CZOrientation orientation, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
+    virtual std::shared_ptr<RImage>  roundLineThreePatchImage       (CZOrientation orientation, Int32 diam, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
+    virtual std::shared_ptr<RImage>  scrollRailThreePatchImage      (CZOrientation orientation, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
 
     /* AKEdgeShadow */
 
     static inline Int32     EdgeShadowRadius                        { 2 };
     static inline SkColor   EdgeShadowColor                         { 0x80000000 };
-    virtual std::shared_ptr<RImage>  edgeShadowImage                         (Int32 scale) noexcept;
+    virtual std::shared_ptr<RImage>  edgeShadowImage                (Int32 scale) noexcept;
 
     /* Blur */
 
@@ -103,13 +103,16 @@ public:
 
     static inline SkISize   WindowButtonSize                        { 12, 12 };
     static inline Int32     WindowButtonGap                         { 8 };
-    virtual std::shared_ptr<RImage>  windowButtonImage                       (Int32 scale, AKWindowButton::Type type, AKWindowButton::State state);
+    virtual std::shared_ptr<RImage>  windowButtonImage              (Int32 scale, AKWindowButton::Type type, AKWindowButton::State state);
 
     /* Masks */
-    virtual std::shared_ptr<RImage>  topLeftRoundCornerMask                  (Int32 radius, Int32 scale) noexcept;
+    virtual std::shared_ptr<RImage>  topLeftRoundCornerMask         (Int32 radius, Int32 scale) noexcept;
 
-    /* Icon Font */
+    /* Icon Font (could be nullptr) */
     std::shared_ptr<AKIconFont> iconFont;
+
+    /* Solid round container 9-patch */
+    virtual std::shared_ptr<RImage>  roundContainerNinePatch        (Int32 radius, Int32 scale, SkIRect &outCenterSrc) noexcept;
 
 protected:
 
@@ -145,6 +148,9 @@ protected:
     std::unordered_map<CZOrientation,
         std::unordered_map<Int32,
             std::shared_ptr<RImage>>> m_scrollRailThreePatchImage;
+
+    /* Round container 9-patch [pixel radius] = image */
+    std::unordered_map<Int32, std::weak_ptr<RImage>> m_roundContainerNinePatch;
 };
 
 #endif // CZ_AKTHEME_H

@@ -579,7 +579,7 @@ public:
      *          an AKNode::layoutEvent(). If the parent dimensions depend on its
      *          children and the provided available width and height do not match
      *          those of the parent, the scene may calculate incorrect values for
-     *          AKNode::rect() and AKNode::globalRect().
+     *          AKNode::rect() and AKNode::worldRect().
      *
      * @note This function only updates the `calculated...()` layout values, which are
      *       always relative to the parent node. Properties such as AKNode::rect()

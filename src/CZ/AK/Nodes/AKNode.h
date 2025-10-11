@@ -361,10 +361,6 @@ public:
     void addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
     void removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
 
-    /* Triggered before the scene starts rendering and
-     * after rect() and globalRect() are calculated */
-    virtual void onSceneBegin() {}
-
     /**
      * @brief Background damage tracker
      *
@@ -454,6 +450,9 @@ public:
 protected:
     void setSlot(AKNode *slot) noexcept;
     bool event(const CZEvent &event) noexcept override;
+    /* Triggered before the scene starts rendering and
+     * after worldRect() is calculated (after layoutEvent()) */
+    virtual void onSceneBegin() {}
     virtual void layoutEvent(const CZLayoutEvent &event);
     virtual void windowStateEvent(const CZWindowStateEvent &event);
     virtual void pointerEnterEvent(const CZPointerEnterEvent &event);

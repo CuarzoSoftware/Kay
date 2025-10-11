@@ -23,21 +23,18 @@ std::shared_ptr<AKIconFont> AKIconFont::Make(const std::string &fontFamily, cons
     if (!fileStream)
     {
         AKLog(CZError, CZLN, "Unable to open codepoints file: {}", codepoints.c_str());
-        return {};
+        return AKIconFont::Make(fontFamily);
     }
 
     std::ostringstream buffer;
     buffer << fileStream.rdbuf();
 
+    return AKIconFont::Make(fontFamily, buffer.str().c_str());
+}
+
+std::shared_ptr<CZ::AKIconFont> AKIconFont::Make(const std::string &fontFamily, const char *codepoints) noexcept
+{
     auto iconFont { std::shared_ptr<AKIconFont>(new AKIconFont()) };
-    iconFont->m_codepoints = ParseCodepoints(buffer.str());
-
-    if (!iconFont->m_codepoints)
-    {
-        AKLog(CZError, CZLN, "Failed to parse codepoints file: {}", codepoints.c_str());
-        return {};
-    }
-
     iconFont->m_style.setFontFamilies({SkString(fontFamily)});
     iconFont->m_paragraphStyle.setTextDirection(skia::textlayout::TextDirection::kLtr);
     iconFont->m_builder = skia::textlayout::ParagraphBuilderImpl::make(iconFont->m_paragraphStyle, AKApp::Get()->fontCollection());
@@ -48,18 +45,24 @@ std::shared_ptr<AKIconFont> AKIconFont::Make(const std::string &fontFamily, cons
         return {};
     }
 
+    if (codepoints)
+    {
+        iconFont->m_codepoints = ParseCodepoints(codepoints);
+
+        if (!iconFont->m_codepoints)
+        {
+            AKLog(CZError, CZLN, "Failed to parse codepoints");
+            return iconFont;
+        }
+    }
+
     return iconFont;
 }
 
-std::shared_ptr<RImage> AKIconFont::getIcon(const std::string &iconName, UInt32 size) noexcept
+std::shared_ptr<RImage> AKIconFont::getIconByName(const std::string &iconName, UInt32 size) noexcept
 {
-    if (size == 0)
+    if (!hasCodepointMap())
         return {};
-
-    auto found { m_cache[iconName][size] };
-
-    if (auto lock = found.lock())
-        return lock;
 
     auto utf8 { m_codepoints->find(iconName) };
 
@@ -68,6 +71,19 @@ std::shared_ptr<RImage> AKIconFont::getIcon(const std::string &iconName, UInt32 
         AKLog(CZError, CZLN, "No codepoint found for the icon: {}", iconName);
         return {};
     }
+
+    return getIconByUTF8(utf8->second, size);
+}
+
+std::shared_ptr<RImage> AKIconFont::getIconByUTF8(const std::string &utf8, UInt32 size) noexcept
+{
+    if (size == 0)
+        return {};
+
+    auto found { m_cache[utf8][size] };
+
+    if (auto lock = found.lock())
+        return lock;
 
     auto surface { RSurface::Make(SkISize(size, size), 1, true) };
 
@@ -79,17 +95,17 @@ std::shared_ptr<RImage> AKIconFont::getIcon(const std::string &iconName, UInt32 
 
     auto pass { surface->beginPass(RPassCap_SkCanvas) };
     auto *c { pass->getCanvas() };
-
     c->clear(SK_ColorTRANSPARENT);
     m_builder->Reset();
     SkPaint p;
+    p.setBlendMode(SkBlendMode::kSrc);
     p.setAntiAlias(true);
     p.setColor(SK_ColorWHITE);
     m_style.setForegroundColor(p);
     m_style.setHeight(size);
     m_style.setFontSize(size);
     m_builder->pushStyle(m_style);
-    m_builder->addText(utf8->second.c_str());
+    m_builder->addText(utf8.c_str());
     m_paragraph = m_builder->Build();
 
     if (!m_paragraph)
@@ -98,13 +114,30 @@ std::shared_ptr<RImage> AKIconFont::getIcon(const std::string &iconName, UInt32 
         return {};
     }
 
-    m_paragraph->layout(3000000);
-    m_paragraph->getMaxIntrinsicWidth();
+    m_paragraph->layout(size);
+
+    if (m_paragraph->getMaxIntrinsicWidth() <= 0 || m_paragraph->getHeight() <= 0)
+        return {};
+
+    float scaleX = size / m_paragraph->getMaxIntrinsicWidth();
+    float scaleY = size / m_paragraph->getHeight();
+
+    c->save();
+    c->scale(scaleX, scaleY);
     m_paragraph->paint(c, 0, 0);
+    c->restore();
     pass.reset();
 
-    m_cache[iconName][size] = surface->image();
+    m_cache[utf8][size] = surface->image();
     return surface->image();
+}
+
+bool AKIconFont::hasIconName(const std::string &iconName) const noexcept
+{
+    if (m_codepoints.has_value())
+        return m_codepoints->contains(iconName);
+
+    return false;
 }
 
 std::string AKIconFont::UTF8FromCodepoint(UInt32 cp) noexcept
@@ -133,8 +166,9 @@ std::string AKIconFont::UTF8FromCodepoint(UInt32 cp) noexcept
     return utf8;
 }
 
-std::optional<std::unordered_map<std::string, std::string>> AKIconFont::ParseCodepoints(const std::string &input) noexcept
+std::optional<std::unordered_map<std::string, std::string>> AKIconFont::ParseCodepoints(const char *input) noexcept
 {
+    assert(input);
     std::unordered_map<std::string, std::string> map;
     std::istringstream stream { input };
     std::string line;
