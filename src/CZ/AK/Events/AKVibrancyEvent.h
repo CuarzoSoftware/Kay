@@ -2,7 +2,7 @@
 #define CZ_AKVIBRANCYEVENT_H
 
 #include <CZ/AK/AK.h>
-#include <CZ/Events/CZEvent.h>
+#include <CZ/Core/Events/CZEvent.h>
 #include <CZ/AK/AKVibrancy.h>
 
 class CZ::AKVibrancyEvent : public CZEvent

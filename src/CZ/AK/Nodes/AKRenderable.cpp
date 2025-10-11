@@ -1,5 +1,5 @@
-#include <CZ/Events/CZWindowStateEvent.h>
-#include <CZ/Events/CZEvent.h>
+#include <CZ/Core/Events/CZWindowStateEvent.h>
+#include <CZ/Core/Events/CZEvent.h>
 #include <CZ/AK/Nodes/AKRenderable.h>
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKTheme.h>

@@ -1,6 +1,6 @@
-#include <CZ/Events/CZPointerMoveEvent.h>
-#include <CZ/Events/CZPointerButtonEvent.h>
-#include <CZ/Events/CZLayoutEvent.h>
+#include <CZ/Core/Events/CZPointerMoveEvent.h>
+#include <CZ/Core/Events/CZPointerButtonEvent.h>
+#include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/AK/Nodes/AKScrollBar.h>
 #include <CZ/AK/Nodes/AKScroll.h>
 #include <CZ/AK/AKTheme.h>

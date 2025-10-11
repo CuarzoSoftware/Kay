@@ -100,5 +100,5 @@ pkg.generate(
     description: 'C++ GUI toolkit powered by Skia and Yoga.',
     version: meson.project_version(),
     filebase: 'cz-kay',
-    subdirs: 'CZ/AK',
-    requires: ['cz-skia'])
+    subdirs: ['CZ', 'CZ/AK', 'CZ/AK/Nodes', 'CZ/AK/Events', 'CZ/AK/Effects', 'CZ/AK/Input'],
+    libraries: deps)

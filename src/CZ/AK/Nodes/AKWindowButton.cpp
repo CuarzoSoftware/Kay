@@ -1,6 +1,6 @@
 #include <CZ/Core/CZCore.h>
-#include <CZ/Events/CZPointerButtonEvent.h>
-#include <CZ/Events/CZCloseEvent.h>
+#include <CZ/Core/Events/CZPointerButtonEvent.h>
+#include <CZ/Core/Events/CZCloseEvent.h>
 #include <CZ/AK/Nodes/AKWindowButton.h>
 #include <CZ/AK/AKApp.h>
 #include <CZ/AK/AKTheme.h>

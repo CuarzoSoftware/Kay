@@ -1,5 +1,5 @@
 #include <CZ/AK/Effects/AKEdgeShadow.h>
-#include <CZ/Events/CZLayoutEvent.h>
+#include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/AK/AKTheme.h>
 
 using namespace CZ;

@@ -52,9 +52,9 @@
 #include <CZ/AK/Effects/AKBackgroundImageShadowEffect.h>
 #include <CZ/AK/Effects/AKBackgroundBlurEffect.h>
 
-#include <CZ/Events/CZPointerMoveEvent.h>
-#include <CZ/Events/CZPointerButtonEvent.h>
-#include <CZ/Events/CZKeyboardKeyEvent.h>
+#include <CZ/Core/Events/CZPointerMoveEvent.h>
+#include <CZ/Core/Events/CZPointerButtonEvent.h>
+#include <CZ/Core/Events/CZKeyboardKeyEvent.h>
 #include <CZ/AK/Events/AKBakeEvent.h>
 #include <CZ/AK/Input/AKKeyboard.h>
 

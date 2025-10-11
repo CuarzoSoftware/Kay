@@ -1,9 +1,9 @@
 #include <CZ/skia/core/SkColorSpace.h>
 #include <CZ/skia/gpu/ganesh/SkImageGanesh.h>
 #include <CZ/skia/gpu/ganesh/SkSurfaceGanesh.h>
-#include <CZ/Events/CZKeyboardEnterEvent.h>
-#include <CZ/Events/CZKeyboardLeaveEvent.h>
-#include <CZ/Events/CZPointerEnterEvent.h>
+#include <CZ/Core/Events/CZKeyboardEnterEvent.h>
+#include <CZ/Core/Events/CZKeyboardLeaveEvent.h>
+#include <CZ/Core/Events/CZPointerEnterEvent.h>
 #include <CZ/Core/CZSafeEventQueue.h>
 #include <CZ/Core/CZCore.h>
 

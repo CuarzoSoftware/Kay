@@ -1,7 +1,7 @@
 #ifndef CZ_AKSCENECHANGEDEVENT_H
 #define CZ_AKSCENECHANGEDEVENT_H
 
-#include <CZ/Events/CZEvent.h>
+#include <CZ/Core/Events/CZEvent.h>
 #include <CZ/Core/CZWeak.h>
 #include <CZ/AK/AK.h>
 

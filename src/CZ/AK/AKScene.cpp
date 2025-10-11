@@ -1,4 +1,3 @@
-#include "RCore.h"
 #include <CZ/AK/AKScene.h>
 #include <CZ/AK/AKLog.h>
 #include <CZ/AK/Nodes/AKRenderable.h>
@@ -8,22 +7,24 @@
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKApp.h>
 
-#include <CZ/Events/CZPointerMoveEvent.h>
-#include <CZ/Events/CZPointerEnterEvent.h>
-#include <CZ/Events/CZPointerLeaveEvent.h>
-#include <CZ/Events/CZPointerButtonEvent.h>
-#include <CZ/Events/CZKeyboardKeyEvent.h>
-#include <CZ/Events/CZWindowStateEvent.h>
-#include <CZ/Events/CZKeyboardLeaveEvent.h>
+#include <CZ/Core/Events/CZPointerMoveEvent.h>
+#include <CZ/Core/Events/CZPointerEnterEvent.h>
+#include <CZ/Core/Events/CZPointerLeaveEvent.h>
+#include <CZ/Core/Events/CZPointerButtonEvent.h>
+#include <CZ/Core/Events/CZKeyboardKeyEvent.h>
+#include <CZ/Core/Events/CZWindowStateEvent.h>
+#include <CZ/Core/Events/CZKeyboardLeaveEvent.h>
 
 #include <CZ/AK/Events/AKRenderEvent.h>
 #include <CZ/AK/Events/AKBakeEvent.h>
 
 #include <CZ/Core/CZCore.h>
 #include <CZ/Core/CZKeymap.h>
+
 #include <CZ/Ream/RSurface.h>
 #include <CZ/Ream/RImage.h>
 #include <CZ/Ream/RPass.h>
+#include <CZ/Ream/RCore.h>
 
 #include <cassert>
 #include <algorithm>

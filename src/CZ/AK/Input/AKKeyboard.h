@@ -4,10 +4,10 @@
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
 #include <CZ/AK/AKObject.h>
-#include <CZ/Events/CZKeyboardEnterEvent.h>
-#include <CZ/Events/CZKeyboardKeyEvent.h>
-#include <CZ/Events/CZKeyboardModifiersEvent.h>
-#include <CZ/Events/CZKeyboardLeaveEvent.h>
+#include <CZ/Core/Events/CZKeyboardEnterEvent.h>
+#include <CZ/Core/Events/CZKeyboardKeyEvent.h>
+#include <CZ/Core/Events/CZKeyboardModifiersEvent.h>
+#include <CZ/Core/Events/CZKeyboardLeaveEvent.h>
 #include <CZ/Core/CZWeak.h>
 
 class CZ::AKKeyboard : public AKObject

@@ -3,7 +3,7 @@
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKLog.h>
 #include <CZ/AK/Nodes/AKSubScene.h>
-#include <CZ/Events/CZLayoutEvent.h>
+#include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/Core/CZCore.h>
 
 using namespace CZ;

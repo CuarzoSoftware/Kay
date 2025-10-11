@@ -1,7 +1,7 @@
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/Nodes/AKNode.h>
 #include <CZ/AK/AKScene.h>
-#include <CZ/Utils/CZVectorUtils.h>
+#include <CZ/Core/Utils/CZVectorUtils.h>
 
 using namespace CZ;
 

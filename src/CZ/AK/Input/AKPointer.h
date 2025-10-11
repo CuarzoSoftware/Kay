@@ -3,11 +3,11 @@
 
 #include <CZ/AK/AKObject.h>
 #include <CZ/Core/CZWeak.h>
-#include <CZ/Events/CZPointerEnterEvent.h>
-#include <CZ/Events/CZPointerLeaveEvent.h>
-#include <CZ/Events/CZPointerButtonEvent.h>
-#include <CZ/Events/CZPointerMoveEvent.h>
-#include <CZ/Events/CZPointerScrollEvent.h>
+#include <CZ/Core/Events/CZPointerEnterEvent.h>
+#include <CZ/Core/Events/CZPointerLeaveEvent.h>
+#include <CZ/Core/Events/CZPointerButtonEvent.h>
+#include <CZ/Core/Events/CZPointerMoveEvent.h>
+#include <CZ/Core/Events/CZPointerScrollEvent.h>
 
 class CZ::AKPointer : public AKObject
 {

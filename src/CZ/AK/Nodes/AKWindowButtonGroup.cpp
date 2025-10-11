@@ -1,6 +1,6 @@
-#include <CZ/Events/CZWindowStateEvent.h>
-#include <CZ/Events/CZPointerButtonEvent.h>
-#include <CZ/Events/CZKeyboardKeyEvent.h>
+#include <CZ/Core/Events/CZWindowStateEvent.h>
+#include <CZ/Core/Events/CZPointerButtonEvent.h>
+#include <CZ/Core/Events/CZKeyboardKeyEvent.h>
 #include <CZ/AK/Events/AKSceneChangedEvent.h>
 #include <CZ/AK/Nodes/AKWindowButtonGroup.h>
 #include <CZ/AK/AKScene.h>

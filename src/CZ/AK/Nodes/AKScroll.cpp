@@ -1,8 +1,8 @@
-#include <CZ/Events/CZLayoutEvent.h>
+#include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/AK/Nodes/AKScroll.h>
-#include <CZ/Events/CZKeyboardKeyEvent.h>
+#include <CZ/Core/Events/CZKeyboardKeyEvent.h>
 #include <CZ/AK/Events/AKSceneChangedEvent.h>
-#include <CZ/Events/CZPointerScrollEvent.h>
+#include <CZ/Core/Events/CZPointerScrollEvent.h>
 #include <CZ/AK/AKScene.h>
 #include <CZ/AK/AKTheme.h>
 #include <linux/input-event-codes.h>

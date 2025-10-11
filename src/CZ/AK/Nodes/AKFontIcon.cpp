@@ -2,7 +2,7 @@
 #include <CZ/AK/AKIconFont.h>
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/Events/AKRenderEvent.h>
-#include <CZ/Events/CZLayoutEvent.h>
+#include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/Ream/RImage.h>
 #include <CZ/Ream/RPass.h>
 
@@ -89,6 +89,8 @@ void AKFontIcon::onSceneBegin()
             else
                 m_image = m_iconFont->getIconByName(m_icon, worldRect().width() * scale());
         }
+
+        addDamage(AK_IRECT_INF);
     }
 
     if (m_image)

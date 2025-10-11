@@ -1,4 +1,4 @@
-#include "AK/nodes/AKText.h"
+#include <CZ/AK/nodes/AKText.h>
 #include <wayland-client.h>
 #include <wayland-egl.h>
 #include <xdg-shell-client-protocol.h>
