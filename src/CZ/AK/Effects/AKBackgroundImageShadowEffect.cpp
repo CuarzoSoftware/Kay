@@ -12,6 +12,18 @@
 
 using namespace CZ;
 
+AKBackgroundImageShadowEffect::AKBackgroundImageShadowEffect(SkScalar radius, const SkIPoint &offset, SkColor color, AKBakeable *targetNode) noexcept :
+    AKBackgroundEffect(Background),
+    m_offset(offset),
+    m_radius(radius)
+{
+    enableReplaceImageColor(true);
+    setColor(color);
+
+    if (targetNode)
+        targetNode->addBackgroundEffect(this);
+}
+
 void AKBackgroundImageShadowEffect::targetNodeRectCalculated()
 {
     AKBakeable *bakeableTarget = dynamic_cast<AKBakeable*>(targetNode());
@@ -55,9 +67,6 @@ void AKBackgroundImageShadowEffect::targetNodeRectCalculated()
         SkCanvas &canvas { *pass->getCanvas() };
         SkPaint brush;
         canvas.save();
-        canvas.scale(
-            bakeableTarget->scale(),
-            bakeableTarget->scale());
         canvas.clear(SK_ColorTRANSPARENT);
         brush.setBlendMode(SkBlendMode::kSrc);
         brush.setImageFilter(SkImageFilters::DropShadowOnly(0, 0, m_radius/3.f, m_radius/3.f, SK_ColorBLACK, nullptr));

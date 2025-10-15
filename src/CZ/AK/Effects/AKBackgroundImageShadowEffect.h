@@ -17,20 +17,8 @@ public:
     };
 
     explicit AKBackgroundImageShadowEffect(SkScalar radius,
-                                         const SkIPoint &offset, SkColor color,
-                                        AKNode *targetNode = nullptr) noexcept :
-        AKBackgroundEffect(Background),
-        m_offset(offset),
-        m_radius(radius)
-    {
-        enableReplaceImageColor(true);
-        setColor(color);
-
-        if (targetNode)
-            targetNode->addBackgroundEffect(this);
-    }
-
-    CZ_DISABLE_COPY(AKBackgroundImageShadowEffect)
+                                           const SkIPoint &offset, SkColor color,
+                                           AKBakeable *targetNode = nullptr) noexcept;
 
     void setRadius(SkScalar radius) noexcept
     {
