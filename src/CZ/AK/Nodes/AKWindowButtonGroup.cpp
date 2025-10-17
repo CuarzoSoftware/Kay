@@ -26,6 +26,10 @@ AKWindowButtonGroup::AKWindowButtonGroup(AKNode *parent) noexcept :
 
 bool AKWindowButtonGroup::eventFilter(const CZEvent &ev, CZObject &o) noexcept
 {
+    // TODO: Fix this
+    CZ_UNUSED(ev)
+    CZ_UNUSED(o)
+    
 #ifdef CZ_ENABLE_MARCO
 
     if (ev.type() == CZEvent::Type::KeyboardKey && &o == (AKObject*)scene() && window() && window()->role() == MSurface::Role::Toplevel)

@@ -122,15 +122,25 @@ int utf16ToCodePointIndex(const std::u16string& utf16Str, size_t utf16Index) {
     return codePointIndex;
 }
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 size_t AKText::codePointAt(SkScalar x, SkScalar y) const noexcept
 {
     if (!m_paragraph)
         return 0;
 
+    // TODO: Replace this (deprecated)
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
     std::u16string utf16Str = converter.from_bytes(m_skText);
     return utf16ToCodePointIndex(utf16Str, m_paragraph->getGlyphPositionAtCoordinate(x, y).position);
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 SkRect AKText::glyphAtCodePoint(size_t codePoint) const noexcept
 {

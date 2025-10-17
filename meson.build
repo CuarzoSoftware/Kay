@@ -1,5 +1,5 @@
 project(
-    'Kay',
+    'cz-kay',
     'c','cpp',
     version : '0.1.0',
     meson_version: '>= 0.62.0',
@@ -8,6 +8,7 @@ project(
         'buildtype=release',
         'cpp_std=c++20'])
 
+NAME='Kay'
 VERSION_MAJOR = meson.project_version().split('.')[0]
 VERSION_MINOR = meson.project_version().split('.')[1]
 VERSION_PATCH = meson.project_version().split('.')[2]
@@ -15,7 +16,7 @@ VERSION_BUILD = run_command('cat', './BUILD', check : false).stdout()
 HEADERS_INSTALL_DIR = join_paths(get_option('prefix'), get_option('includedir'))
 FONTS_INSTALL_DIR = join_paths('/usr/share/fonts/cuarzo')
 ASSETS_INSTALL_DIR = join_paths(get_option('prefix'), get_option('datadir'), 'Kay/Assets')
-CONF_FILE_NAME = 'CZ' + meson.project_name() + 'Version.h'
+CONF_FILE_NAME = 'CZ' + NAME + 'Version.h'
 
 conf = configuration_data()
 conf.set('VERSION_MAJOR', VERSION_MAJOR)
@@ -71,7 +72,7 @@ endforeach
 
 # -------------- LIBRARY --------------
 
-kay = library(
+cz_kay = library(
     'cz-kay',
     sources : sources,
     include_directories : ['src'],
@@ -79,10 +80,10 @@ kay = library(
     soversion: VERSION_MAJOR,
     install : true)
 
-kay_dep = declare_dependency(
+cz_kay_dep = declare_dependency(
     dependencies: deps,
-    include_directories : ['src', 'src/CZ/AK'],
-    link_with : kay)
+    include_directories : ['src', 'src/CZ'],
+    link_with : cz_kay)
 
 install_data(
     run_command('find', './assets', '-type', 'f', '-name', '*[.png,.jpg]', check : false).stdout().strip().split('\n'),
@@ -95,7 +96,7 @@ install_data(
 )
 
 pkg.generate(
-    kay,
+    cz_kay,
     name: 'cz-kay',
     description: 'C++ GUI toolkit powered by Skia and Yoga.',
     version: meson.project_version(),
