@@ -1,136 +1,222 @@
 #include <CZ/AK/Nodes/AKImageFrame.h>
+#include <CZ/AK/Events/AKRenderEvent.h>
+#include <CZ/AK/AKLog.h>
 #include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/Ream/RImage.h>
-#include <CZ/AK/AKLog.h>
+#include <CZ/Ream/RPass.h>
 
 using namespace CZ;
 
 AKImageFrame::AKImageFrame(AKNode *parent) noexcept :
-    AKContainer(YGFlexDirectionRow, true, parent),
-    m_renderableImage(this)
-{
-    init();
-}
+    AKRenderable(RenderableHint::Image, parent) {}
 
 AKImageFrame::AKImageFrame(std::shared_ptr<RImage> image, AKNode *parent) noexcept :
-    AKContainer(YGFlexDirectionRow, true, parent),
-    m_renderableImage(image, this)
+    AKRenderable(RenderableHint::Image, parent),
+    m_image(image){}
+
+bool AKImageFrame::setImage(std::shared_ptr<RImage> image) noexcept
 {
-    init();
+    if (image == m_image)
+        return false;
+
+    m_image = image;
+    addChange(CHImage);
+    return true;
 }
 
-void AKImageFrame::layoutEvent(const CZLayoutEvent &event)
+bool AKImageFrame::setTransform(CZTransform transform) noexcept
 {
-    AKContainer::layoutEvent(event);
-    if (sizeMode() != SizeMode::Fill && event.changes.has(CZLayoutChangeSize))
-        updateDimensions();
-    event.accept();
+    if (m_transform == transform)
+        return false;
+
+    m_transform = transform;
+    addChange(CHTransform);
+    return false;
 }
 
-void AKImageFrame::init() noexcept
+bool AKImageFrame::setAlignment(CZAlignment alignment) noexcept
 {
-    layout().setOverflow(YGOverflowHidden);
-    m_renderableImage.layout().setPositionType(YGPositionTypeAbsolute);
-    m_renderableImage.layout().setFlex(1.f);
-    updateDimensions();
+    if (m_alignment == alignment)
+        return false;
+
+    m_alignment = alignment;
+    addChange(CHAlignment);
+    return true;
 }
 
-void AKImageFrame::updateDimensions() noexcept
+bool AKImageFrame::setSizeMode(SizeMode mode) noexcept
 {
-    if (!image() ||
-        image()->size().isEmpty() ||
-        (sizeMode() != SizeMode::Fill && (layout().calculatedWidth() <= 0.f || layout().calculatedHeight() <= 0.f)))
+    if (m_sizeMode == mode)
+        return false;
+
+    m_sizeMode = mode;
+    addChange(CHSizeMode);
+    return true;
+}
+
+bool AKImageFrame::setSrcRect(std::optional<SkRect> rect) noexcept
+{
+    if (m_srcRect == rect)
+        return false;
+
+    m_srcRect = rect;
+    addChange(CHSrcRect);
+    return false;
+}
+
+bool AKImageFrame::setScale(SkScalar scale) noexcept
+{
+    if (scale < 0.1f) scale = 0.1f;
+
+    if (scale == m_scale)
+        return false;
+
+    m_scale = scale;
+    addChange(CHScale);
+    return true;
+}
+
+void AKImageFrame::onSceneBegin()
+{
+    AKRenderable::onSceneBegin();
+
+    if (!m_image)
     {
-        m_renderableImage.setVisible(false);
+        invisibleRegion.setRect(AK_IRECT_INF);
         return;
     }
 
-    m_renderableImage.setVisible(true);
+    const auto &ch { changes() };
 
-    SkRect srcRect { 0.f, 0.f, 0.f, 0.f };
+    if (!ch.testAnyOf(CHLayoutSize, CHSizeMode, CHScale, CHImage, CHSrcRect, CHTransform, CHAlignment))
+        return;
 
-    if (srcRectMode() == AKImage::SrcRectMode::Custom)
-    {
-        if (customSrcRect().isEmpty())
-            return;
+    addDamage(AK_IRECT_INF);
 
-        srcRect = customSrcRect();
-    }
+    /* CALC SRC RECT */
+
+    if (m_srcRect.has_value())
+        m_finalSrcRect = m_srcRect.value();
     else
     {
-        if (CZ::Is90Transform(srcTransform()))
-            srcRect.setWH(image()->size().height(), image()->size().width());
+        if (CZ::Is90Transform(m_transform))
+            m_finalSrcRect.setWH(m_image->size().height(), m_image->size().width());
         else
-            srcRect.setWH(image()->size().width(), image()->size().height());
+            m_finalSrcRect.setWH(m_image->size().width(), m_image->size().height());
     }
+
+    /* CALC DST RECT */
 
     if (sizeMode() == SizeMode::Fill)
     {
-        layout().setAlignItems(YGAlignFlexStart);
-        layout().setJustifyContent(YGJustifyFlexStart);
-        m_renderableImage.layout().setAspectRatio(YGUndefined);
-        m_renderableImage.layout().setPosition(YGEdgeLeft, 0.f);
-        m_renderableImage.layout().setPosition(YGEdgeTop, 0.f);
-        m_renderableImage.layout().setWidthPercent(100.f);
-        m_renderableImage.layout().setHeightPercent(100.f);
+        m_dst.setSize(worldRect().size());
+        invisibleRegion.setEmpty();
     }
     else if (sizeMode() == SizeMode::Contain)
     {
-        const Float32 aspectRatio { layout().calculatedWidth() / layout().calculatedHeight() };
-        m_renderableImage.layout().setAspectRatio(srcRect.width()/srcRect.height());
+        const auto frameSize { SkSize::Make(worldRect().size()) };
+        const auto imageSize { SkSize::Make(m_finalSrcRect.width(), m_finalSrcRect.height()) };
 
-        if (aspectRatio >= m_renderableImage.layout().aspectRatio())
-        {
-            m_renderableImage.layout().setHeightPercent(100.f);
-            m_renderableImage.layout().setWidthAuto();
-        }
-        else
-        {
-            m_renderableImage.layout().setWidthPercent(100.f);
-            m_renderableImage.layout().setHeightAuto();
-        }
+        // Scale imageSize to fit frameSize while preserving aspect ratio
+        const auto scaleX { frameSize.width() / imageSize.width() };
+        const auto scaleY { frameSize.height() / imageSize.height() };
+        const auto scale { std::min(scaleX, scaleY) }; // Preserve aspect ratio
+
+        const auto scaledWidth { imageSize.width() * scale };
+        const auto scaledHeight { imageSize.height() * scale };
+
+        // Position based on alignment
+        SkScalar x = 0.f, y = 0.f;
+
+        const CZBitset<CZEdge> alignment { m_alignment };
+
+        // Horizontal alignment
+        if (alignment & CZEdgeLeft)
+            x = 0;
+        else if (alignment & CZEdgeRight)
+            x = frameSize.width() - scaledWidth;
+        else // Center horizontally
+            x = (frameSize.width() - scaledWidth) * 0.5f;
+
+        // Vertical alignment
+        if (alignment & CZEdgeTop)
+            y = 0;
+        else if (alignment & CZEdgeBottom)
+            y = frameSize.height() - scaledHeight;
+        else // Center vertically
+            y = (frameSize.height() - scaledHeight) * 0.5f;
+
+        m_dst = SkRect::MakeXYWH(x, y, scaledWidth, scaledHeight).round();
+
+        invisibleRegion.setRect(SkIRect::MakeSize(worldRect().size()));
+        invisibleRegion.op(m_dst, SkRegion::kDifference_Op);
     }
     else // Cover
     {
-        const Float32 aspectRatio { layout().calculatedWidth() / layout().calculatedHeight() };
-        m_renderableImage.layout().setAspectRatio(srcRect.width()/srcRect.height());
+        const auto frameSize { SkSize::Make(worldRect().size()) };
+        const auto imageSize { SkSize::Make(m_finalSrcRect.width(), m_finalSrcRect.height()) };
 
-        if (aspectRatio < m_renderableImage.layout().aspectRatio())
+        // Scale to cover while preserving aspect ratio
+        const auto scaleX { frameSize.width() / imageSize.width() };
+        const auto scaleY { frameSize.height() / imageSize.height() };
+        const auto scale { std::max(scaleX, scaleY) };
+
+        const auto scaledWidth { imageSize.width() * scale };
+        const auto scaledHeight { imageSize.height() * scale };
+
+        SkScalar x = 0.f, y = 0.f;
+
+        const CZBitset<CZEdge> alignment { m_alignment };
+
+        // Horizontal positioning
+        if (alignment & CZEdgeLeft)
         {
-            m_renderableImage.layout().setHeightPercent(100.f);
-            m_renderableImage.layout().setWidthAuto();
+            // Right edge matches frame right
+            x = frameSize.width() - scaledWidth;
         }
-        else
+        else if (alignment & CZEdgeRight)
         {
-            m_renderableImage.layout().setWidthPercent(100.f);
-            m_renderableImage.layout().setHeightAuto();
+            // Left edge matches frame left
+            x = 0.f;
         }
+        else // Center horizontally
+        {
+            x = (frameSize.width() - scaledWidth) * 0.5f;
+        }
+
+        // Vertical positioning
+        if (alignment & CZEdgeTop)
+        {
+            // Bottom edge matches frame bottom
+            y = frameSize.height() - scaledHeight;
+        }
+        else if (alignment & CZEdgeBottom)
+        {
+            // Top edge matches frame top
+            y = 0.f;
+        }
+        else // Center vertically
+        {
+            y = (frameSize.height() - scaledHeight) * 0.5f;
+        }
+
+        m_dst = SkRect::MakeXYWH(x, y, scaledWidth, scaledHeight).round();
+        invisibleRegion.setEmpty();
     }
-
-    // Alignment
-    if (sizeMode() != SizeMode::Fill)
-    {
-        const CZBitset<AKAlignment> alignment { m_alignment };
-
-        m_renderableImage.layout().setPosition(YGEdgeLeft, YGUndefined);
-        m_renderableImage.layout().setPosition(YGEdgeTop, YGUndefined);
-
-        // X-axis
-        if (alignment.hasAll(AKAlignLeft | AKAlignRight) || !alignment.has(AKAlignLeft | AKAlignRight))
-            layout().setJustifyContent(YGJustifyCenter);
-        else if (alignment.has(AKAlignLeft))
-            layout().setJustifyContent(YGJustifyFlexStart);
-        else if (alignment.has(AKAlignRight))
-            layout().setJustifyContent(YGJustifyFlexEnd);
-
-        // Y-axis
-        if (alignment.hasAll(AKAlignTop | AKAlignBottom) || !alignment.has(AKAlignTop | AKAlignBottom))
-            layout().setAlignItems(YGAlignCenter);
-        else if (alignment.has(AKAlignTop))
-            layout().setAlignItems(YGAlignFlexStart);
-        else if (alignment.has(AKAlignBottom))
-            layout().setAlignItems(YGAlignFlexEnd);
-
-        layout().calculate();
-    }        
 }
+
+void AKImageFrame::renderEvent(const AKRenderEvent &e)
+{
+    if (e.damage.isEmpty() || !m_image)
+        return;
+
+    auto *p { e.pass->getPainter() };
+    RDrawImageInfo info {};
+    info.image = m_image;
+    info.dst = m_dst.makeOffset(e.rect.topLeft());
+    info.src = m_finalSrcRect;
+    info.srcScale = m_srcRect.has_value() ? m_scale : 1.f;
+    info.srcTransform = m_transform;
+    p->drawImage(info, &e.damage);
+}
+

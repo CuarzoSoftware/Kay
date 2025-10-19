@@ -237,8 +237,7 @@ void AKScene::notifyBegin(AKNode *node)
         for (auto it = node->children(true).rbegin(); it != node->children(true).rend(); it++)
             notifyBegin(*it);
 
-    if (visible)
-        node->onSceneBegin();
+    node->onSceneBegin();
 }
 
 void AKScene::calculateTreeDamage() noexcept
