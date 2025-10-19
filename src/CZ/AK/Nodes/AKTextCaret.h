@@ -1,13 +1,13 @@
 #ifndef CZ_AKTEXTCARET_H
 #define CZ_AKTEXTCARET_H
 
-#include <CZ/AK/Nodes/AKThreeImagePatch.h>
+#include <CZ/AK/Nodes/AKThreePatch.h>
 #include <CZ/Core/CZAnimation.h>
 
 /**
  * @brief Blinking caret for text fields.
  */
-class CZ::AKTextCaret : public AKThreeImagePatch
+class CZ::AKTextCaret : public AKThreePatch
 {
 public:
     AKTextCaret(AKNode *parent = nullptr) noexcept;

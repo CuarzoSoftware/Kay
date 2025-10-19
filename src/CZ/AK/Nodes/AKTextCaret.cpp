@@ -5,7 +5,7 @@
 
 using namespace CZ;
 
-AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreeImagePatch(CZOrientation::V, parent)
+AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreePatch(CZOrientation::V, parent)
 {
     SkRegion empty;
     setInputRegion(&empty);
@@ -47,7 +47,7 @@ void AKTextCaret::setAnimated(bool enabled) noexcept
 
 void AKTextCaret::layoutEvent(const CZLayoutEvent &event)
 {
-    AKThreeImagePatch::layoutEvent(event);
+    AKThreePatch::layoutEvent(event);
 
     if (event.changes.has(CZLayoutChangeScale))
         updateDimensions();

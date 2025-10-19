@@ -5,22 +5,13 @@
 #include <CZ/Core/CZOrientation.h>
 
 /**
- * @brief Displays a horizontal three-patch image.
- * @ingroup AKNodes
+ * @brief Vertical or horizontal three image patch
  *
- * This component renders a three-patch image composed of:
- * - A **fixed-width left side**, displaying the subrectangle of the image defined by `sideSrcRect()`.
- * - A **stretchable center**, displaying the subrectangle of the image defined by `centerSrcRect()`.
- * - A **fixed-width right side**, displaying a horizontally mirrored version of the subrectangle defined by `sideSrcRect()`.
- *
- * The layout follows this pattern:
- * **[Fixed Left] [Stretched Center] [Mirrored Left Side]**
+ * [Fixed Left/Top] [Stretched Center] [Mirrored Left/Top Side]
  *
  * @note The height of all three parts is stretched to match the component's height.
- *
- * This node is commonly used in components like `AKButton` or `AKTextField` to optimize memory usage and improve rendering performance.
  */
-class CZ::AKThreeImagePatch : public AKRenderable
+class CZ::AKThreePatch : public AKRenderable
 {
 public:
     enum Changes
@@ -35,13 +26,12 @@ public:
     };
 
     /**
-     * @brief Constructs an AKHThreePatch node.
-     *
-     * @param parent The parent AKNode. Defaults to `nullptr` if no parent is provided.
+     * @brief Constructs an AKThreePatch node.
      */
-    AKThreeImagePatch(CZOrientation orientation, AKNode *parent = nullptr) noexcept :
+    AKThreePatch(CZOrientation orientation, AKNode *parent = nullptr) noexcept :
         AKRenderable(RenderableHint::Image, parent),
         m_orientation(orientation) {};
+
 
     void setOrientation(CZOrientation orientation) noexcept
     {
@@ -53,17 +43,14 @@ public:
         addDamage(AK_IRECT_INF);
     }
 
-    CZOrientation orientation() const noexcept
-    {
-        return m_orientation;
-    }
+    CZOrientation orientation() const noexcept { return m_orientation; }
 
     /**
-     * @brief Sets the subrectangle of the image() used for the left side.
+     * @brief Sets the subrect of the image used for the left/top side.
      *
-     * The right side uses the same subrectangle but horizontally mirrored.
+     * The right/bottom side uses the same subrectangle but mirrored.
      *
-     * @param rect The subrectangle of image() in logical coordinates. Use setScale() to specify the image() scaling factor.
+     * @param rect The subrect in logical coordinates.
      */
     void setSideSrcRect(const SkRect &rect) noexcept
     {
@@ -76,9 +63,9 @@ public:
     }
 
     /**
-     * @brief Returns the subrectangle of the image() used for the left side.
+     * @brief Returns the subrect of the imaga used for the left/top side.
      *
-     * @return The subrectangle in logical coordinates.
+     * @return The subrect in logical coordinates.
      */
     const SkRect &sideSrcRect() const noexcept
     {
@@ -86,9 +73,9 @@ public:
     }
 
     /**
-     * @brief Sets the subrectangle of the image() used for the stretchable center.
+     * @brief Sets the subrect of the image used for the stretchable center.
      *
-     * @param rect The subrectangle of the image in logical coordinates. Use setScale() to specify the image() scaling factor.
+     * @param rect The subrect in logical coordinates.
      */
     void setCenterSrcRect(const SkRect &rect) noexcept
     {
@@ -101,25 +88,25 @@ public:
     }
 
     /**
-     * @brief Returns the subrectangle of the image() used for the stretchable center.
+     * @brief Returns the subrect of the image used for the stretchable center.
      *
-     * @return The subrectangle in logical coordinates.
+     * @return The subrect in logical coordinates.
      */
-    const SkRect &centerSrcRect() const noexcept
-    {
-        return m_centerSrcRect;
-    }
+    const SkRect &centerSrcRect() const noexcept { return m_centerSrcRect; }
 
     /**
-     * @brief Sets the scaling factor for the image().
+     * @brief Sets the scaling factor of the image.
      *
      * This scaling factor is used to properly convert sideSrcRect() and centerSrcRect()
-     * into buffer coordiantes.
+     * into pixel coordiantes.
      *
      * @param scale The scaling factor to apply.
      */
     void setImageScale(SkScalar scale) noexcept
     {
+        if (scale < 0.1f)
+            scale = 0.1f;
+
         if (scale == m_imageScale)
             return;
 
@@ -129,22 +116,18 @@ public:
     }
 
     /**
-     * @brief Returns the current scaling factor applied to the image().
+     * @brief Returns the current scaling factor of the image.
      *
      * @return The scaling factor. The default value is 1.f.
      */
-    SkScalar imageScale() const noexcept
-    {
-        return m_imageScale;
-    }
+    SkScalar imageScale() const noexcept { return m_imageScale; }
 
     /**
      * @brief Sets the patch image source.
      *
-     * The image should contain two parts: left and center. The left and right sides are defined by sideSrcRect(),
-     * while the center by centerSrcRect().
+     * The image should contain two parts: left or top and center.
      *
-     * @param image The SkImage to be used for rendering or `nullptr` to unset.
+     * @param image `nullptr` to unset.
      */
     void setImage(std::shared_ptr<RImage> image) noexcept
     {
@@ -159,18 +142,17 @@ public:
     /**
      * @brief Returns the current patch image.
      *
-     * @return The SkImage being used or `nullptr`.
+     * @return The image being used or `nullptr`.
      */
-    std::shared_ptr<RImage> image() const noexcept
-    {
-        return m_image;
-    }
+    std::shared_ptr<RImage> image() const noexcept { return m_image; }
 
-    bool keepSidesAspectRatio() const noexcept
-    {
-        return m_keepSidesAspectRatio;
-    }
+    bool keepSidesAspectRatio() const noexcept { return m_keepSidesAspectRatio; }
 
+    /**
+     * @brief Forces to keep sides aspect ratio.
+     *
+     * Enabled by default.
+     */
     bool setKeepSidesAspectRatio(bool keepAspectRatio) noexcept
     {
         if (keepAspectRatio == m_keepSidesAspectRatio)

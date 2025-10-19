@@ -2,7 +2,7 @@
 #define CZ_AKBUTTON_H
 
 #include <CZ/AK/Nodes/AKSubScene.h>
-#include <CZ/AK/Nodes/AKThreeImagePatch.h>
+#include <CZ/AK/Nodes/AKThreePatch.h>
 #include <CZ/AK/Nodes/AKText.h>
 #include <CZ/AK/Nodes/AKContainer.h>
 
@@ -43,7 +43,7 @@ protected:
     void applyLayoutConstraints() noexcept;
     void updateOpaqueRegion() noexcept;
     void updateStyle() noexcept;
-    AKThreeImagePatch m_hThreePatch { CZOrientation::H, this };
+    AKThreePatch m_hThreePatch { CZOrientation::H, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
     AKText m_text;
     SkColor m_backgroundColor { SK_ColorWHITE };

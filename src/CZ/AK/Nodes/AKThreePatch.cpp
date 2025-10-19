@@ -1,11 +1,11 @@
 #include <CZ/Ream/RPass.h>
-#include <CZ/AK/Nodes/AKThreeImagePatch.h>
+#include <CZ/AK/Nodes/AKThreePatch.h>
 #include <CZ/AK/Events/AKRenderEvent.h>
 #include <CZ/AK/AKLog.h>
 
 using namespace CZ;
 
-void AKThreeImagePatch::renderEvent(const AKRenderEvent &e)
+void AKThreePatch::renderEvent(const AKRenderEvent &e)
 {
     if (!m_image || m_imageScale <= 0)
         return;

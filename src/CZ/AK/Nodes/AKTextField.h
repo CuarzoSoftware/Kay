@@ -3,7 +3,7 @@
 
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/Nodes/AKSubScene.h>
-#include <CZ/AK/Nodes/AKThreeImagePatch.h>
+#include <CZ/AK/Nodes/AKThreePatch.h>
 #include <CZ/AK/Nodes/AKTextCaret.h>
 #include <CZ/AK/Nodes/AKContainer.h>
 #include <CZ/AK/Nodes/AKText.h>
@@ -34,7 +34,7 @@ protected:
     void removeUTF8() noexcept;
     void moveCaretRight() noexcept;
     void moveCaretLeft() noexcept;
-    AKThreeImagePatch m_hThreePatch { CZOrientation::H, this };
+    AKThreePatch m_hThreePatch { CZOrientation::H, this };
     AKContainer m_content { YGFlexDirectionRow, true, &m_hThreePatch };
     AKText m_text { "", &m_content };
     AKTextCaret m_caret { &m_text };

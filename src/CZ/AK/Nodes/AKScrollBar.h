@@ -2,17 +2,17 @@
 #define CZ_AKSCROLLBAR_H
 
 #include <CZ/AK/Nodes/AKContainer.h>
-#include <CZ/AK/Nodes/AKThreeImagePatch.h>
+#include <CZ/AK/Nodes/AKThreePatch.h>
 #include <CZ/Core/CZAnimation.h>
 #include <CZ/Core/CZTimer.h>
 #include <CZ/Core/CZEdge.h>
 
-class CZ::AKScrollBar : public AKThreeImagePatch
+class CZ::AKScrollBar : public AKThreePatch
 {
 public:
     enum Changes
     {
-        CHEdge = AKThreeImagePatch::CHLast,
+        CHEdge = AKThreePatch::CHLast,
         CHPosPercent,
         CHSizePercent,
         CHLast
@@ -35,9 +35,9 @@ public:
     SkScalar sizePercent() const noexcept { return m_sizePercent; }
 
 protected:
-    using AKThreeImagePatch::setOrientation;
-    using AKThreeImagePatch::setImage;
-    using AKThreeImagePatch::setImageScale;
+    using AKThreePatch::setOrientation;
+    using AKThreePatch::setImage;
+    using AKThreePatch::setImageScale;
     void updatePosByPointer(SkScalar pointerPos) noexcept;
     void pointerButtonEvent(const CZPointerButtonEvent &e) override;
     void pointerMoveEvent(const CZPointerMoveEvent &e) override;
@@ -49,7 +49,7 @@ protected:
     SkScalar m_posPercent { 0.f };
     SkScalar m_sizePercent { 100.f };
     AKContainer m_space { YGFlexDirectionRow, false, this };
-    AKThreeImagePatch m_handle { CZOrientation::H, this };
+    AKThreePatch m_handle { CZOrientation::H, this };
     CZEdge m_edge { CZEdgeNone };
     CZTimer m_fadeOutTimer;
     CZAnimation m_fadeOutAnim;

@@ -9,7 +9,7 @@
 using namespace CZ;
 
 AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept :
-    AKThreeImagePatch(edge == CZEdgeLeft || edge == CZEdgeRight ? CZOrientation::V : CZOrientation::H, parent),
+    AKThreePatch(edge == CZEdgeLeft || edge == CZEdgeRight ? CZOrientation::V : CZOrientation::H, parent),
     m_scroll(scroll)
 {
     opaqueRegion.setRect(AK_IRECT_INF);
@@ -252,7 +252,7 @@ void AKScrollBar::updatePosByPointer(SkScalar pointerPos) noexcept
 
 void AKScrollBar::pointerButtonEvent(const CZPointerButtonEvent &e)
 {
-    AKThreeImagePatch::pointerButtonEvent(e);
+    AKThreePatch::pointerButtonEvent(e);
 
     if (e.button != BTN_LEFT)
         return;
@@ -281,7 +281,7 @@ void AKScrollBar::pointerButtonEvent(const CZPointerButtonEvent &e)
 
 void AKScrollBar::pointerMoveEvent(const CZPointerMoveEvent &e)
 {
-    AKThreeImagePatch::pointerMoveEvent(e);
+    AKThreePatch::pointerMoveEvent(e);
 
     if (!m_dragging)
         return;
@@ -311,7 +311,7 @@ void AKScrollBar::pointerLeaveEvent(const CZPointerLeaveEvent &)
 
 void AKScrollBar::layoutEvent(const CZLayoutEvent &e)
 {
-    AKThreeImagePatch::layoutEvent(e);
+    AKThreePatch::layoutEvent(e);
 
     if (e.changes.has(CZLayoutChangeScale | CZLayoutChangeSize))
         updateImages();
