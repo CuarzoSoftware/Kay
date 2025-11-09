@@ -158,6 +158,7 @@ private:
     CZColorScheme m_colorScheme { CZColorScheme::Unknown };
     std::shared_ptr<RSurface> m_blur;
     std::shared_ptr<RSurface> m_blur2;
+    std::shared_ptr<RImage> m_firstQuarterCircleMasks[4];
 };
 
 #endif // CZ_AKBACKGROUNDBLUREFFECT_H

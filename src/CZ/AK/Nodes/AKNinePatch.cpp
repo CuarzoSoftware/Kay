@@ -20,6 +20,7 @@ bool AKNinePatch::setImage(std::shared_ptr<RImage> image) noexcept
 
     m_image = image;
     addChange(CHImage);
+    addDamage(AK_IRECT_INF);
     return true;
 }
 
@@ -30,6 +31,7 @@ bool AKNinePatch::setCenter(SkIRect center) noexcept
 
     m_center = center;
     addChange(CHCenter);
+    addDamage(AK_IRECT_INF);
     return true;
 }
 

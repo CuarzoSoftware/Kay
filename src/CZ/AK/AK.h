@@ -34,6 +34,7 @@ namespace CZ
     class AKSubScene;   /* A node whose children are drawn into its own buffer and then rendered into an AKTarget */
 
     class AKSolidColor;
+    class AKRoundSolidColor;
     class AKPath;
     class AKImage;
     class AKImageFrame;

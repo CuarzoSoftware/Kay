@@ -49,6 +49,51 @@ CZ::AKTheme::AKTheme() noexcept
             SkFontStyle::Slant::kUpright_Slant));
 
     iconFont = AKIconFont::Make("Material Icons Round", AKFontsDir() / "MaterialIconsRound-Regular.codepoints");
+
+    RRect9Patch.setFactory([](Int32 radius, Int32 scale) -> std::shared_ptr<AKAsset::RRect9Patch>
+    {
+        if (radius <= 0) radius = 1;
+        if (scale <= 0) scale = 1;
+
+        const SkIRect center { SkIRect::MakeXYWH(radius, radius, 1, 1) };
+        const auto size { SkISize(radius * 2 + 1, radius * 2 + 1) };
+        auto surface { RSurface::Make(size, scale, true) };
+        auto pass { surface->beginPass(RPassCap_SkCanvas) };
+        auto &c { *pass->getCanvas() };
+
+        c.clear(SK_ColorTRANSPARENT);
+
+        SkPaint paint;
+        paint.setStroke(false);
+        paint.setAntiAlias(true);
+        paint.setColor(SK_ColorWHITE);
+        paint.setBlendMode(SkBlendMode::kSrc);
+        c.drawRoundRect(SkRect::Make(size), radius, radius, paint);
+
+        return std::make_shared<AKAsset::RRect9Patch>(surface->image(), center);
+    });
+
+    FirstQuadrantCircleMask.setFactory([](Int32 radius, Int32 scale) -> std::shared_ptr<RImage>
+    {
+        if (radius <= 0) radius = 1;
+        if (scale <= 0) scale = 1;
+
+        AKLog.setLevel(CZTrace);
+        AKLog(CZFatal, "First quadrant {} {}", radius, scale);
+
+        auto surface = RSurface::Make(SkISize(radius, radius), scale, true);
+        auto pass { surface->beginPass(RPassCap_SkCanvas) };
+        auto &c { *pass->getCanvas() };
+        c.clear(SK_ColorTRANSPARENT);
+
+        SkPaint paint;
+        paint.setStroke(false);
+        paint.setAntiAlias(true);
+        paint.setColor(SK_ColorWHITE);
+        paint.setBlendMode(SkBlendMode::kSrc);
+        c.drawCircle(SkPoint::Make(radius, radius), radius, paint);
+        return surface->image();
+    });
 }
 
 SkRegion CZ::AKTheme::buttonPlainOpaqueRegion(Int32 width) noexcept
@@ -472,64 +517,3 @@ std::shared_ptr<RImage> CZ::AKTheme::windowButtonImage(Int32 scale, AKWindowButt
 
     return image;
 }
-
-std::shared_ptr<RImage> CZ::AKTheme::topLeftRoundCornerMask(Int32 radius, Int32 scale) noexcept
-{
-    assert(radius > 0 && scale > 0);
-
-    auto &scalesMap { m_topLeftRoundCornerMasks[scale] };
-
-    const auto &it { scalesMap.find(radius) };
-
-    if (it != scalesMap.end())
-        return it->second;
-
-    auto surface = RSurface::Make(SkISize(radius, radius), scale, true);
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto &c { *pass->getCanvas() };
-
-    // c.scale(surface->scale(), surface->scale());
-    c.clear(SK_ColorTRANSPARENT);
-
-    SkPaint paint;
-    paint.setStroke(false);
-    paint.setAntiAlias(true);
-    paint.setColor(SK_ColorWHITE);
-    paint.setBlendMode(SkBlendMode::kSrc);
-    c.drawCircle(SkPoint::Make(radius, radius), radius, paint);
-
-    scalesMap[radius] = surface->image();
-    return surface->image();
-}
-
-std::shared_ptr<RImage> AKTheme::roundContainerNinePatch(Int32 radius, Int32 scale, SkIRect &outCenterSrc) noexcept
-{
-    if (radius <= 0 || scale <= 0)
-        return {};
-
-    const auto pixelSize { radius * scale };
-    outCenterSrc.setXYWH(radius, radius, 1, 1);
-
-    auto cache { m_roundContainerNinePatch[pixelSize] };
-
-    if (auto image = cache.lock())
-        return image;
-
-    const auto size { SkISize(radius * 2 + 1, radius * 2 + 1) };
-    auto surface { RSurface::Make(size, scale, true) };
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto &c { *pass->getCanvas() };
-
-    c.clear(SK_ColorTRANSPARENT);
-
-    SkPaint paint;
-    paint.setStroke(false);
-    paint.setAntiAlias(true);
-    paint.setColor(SK_ColorWHITE);
-    paint.setBlendMode(SkBlendMode::kSrc);
-    c.drawRoundRect(SkRect::Make(size), radius, radius, paint);
-
-    m_roundContainerNinePatch[pixelSize] = surface->image();
-    return surface->image();
-}
-

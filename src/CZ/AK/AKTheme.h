@@ -10,7 +10,20 @@
 #include <CZ/AK/AK.h>
 #include <CZ/Ream/Ream.h>
 #include <CZ/Core/CZOrientation.h>
+#include <CZ/Core/CZAssetManager.h>
 #include <unordered_map>
+
+namespace CZ
+{
+namespace AKAsset
+{
+    struct RRect9Patch
+    {
+        std::shared_ptr<RImage> image;
+        SkIRect center;
+    };
+}
+};
 
 class CZ::AKTheme
 {
@@ -93,26 +106,20 @@ public:
     static inline SkColor   EdgeShadowColor                         { 0x80000000 };
     virtual std::shared_ptr<RImage>  edgeShadowImage                (Int32 scale) noexcept;
 
-    /* Blur */
-
-    static inline SkScalar  BlurVibrancySigma                       { 3.8f };
-    static inline SkColor4f BlurVibrancyLightColor                  { 0.86f, 0.86f, 0.86f, 0.68f };
-    static inline SkColor4f BlurVibrancyDarkColor                   { 0.05f, 0.05f, 0.05f, 0.92f };
-
     /* Window Button */
 
     static inline SkISize   WindowButtonSize                        { 12, 12 };
     static inline Int32     WindowButtonGap                         { 8 };
     virtual std::shared_ptr<RImage>  windowButtonImage              (Int32 scale, AKWindowButton::Type type, AKWindowButton::State state);
 
-    /* Masks */
-    virtual std::shared_ptr<RImage>  topLeftRoundCornerMask         (Int32 radius, Int32 scale) noexcept;
+    /* First quadrant of a circle white-filled */
+    CZAssetManager<RImage, Int32 /*radius*/, Int32 /*scale*/> FirstQuadrantCircleMask;
 
     /* Icon Font (could be nullptr) */
     std::shared_ptr<AKIconFont> iconFont;
 
     /* Solid round container 9-patch */
-    virtual std::shared_ptr<RImage>  roundContainerNinePatch        (Int32 radius, Int32 scale, SkIRect &outCenterSrc) noexcept;
+    CZAssetManager<AKAsset::RRect9Patch, Int32 /*radius*/, Int32 /*scale*/> RRect9Patch;
 
 protected:
 
@@ -126,11 +133,6 @@ protected:
 
     /* AKEdgeShadow */
     std::unordered_map<Int32,std::shared_ptr<RImage>> m_edgeShadowImage;
-
-    /* Round Corner Masks [scale][size] */
-    std::unordered_map<Int32,
-        std::unordered_map<Int32,
-            std::shared_ptr<RImage>>> m_topLeftRoundCornerMasks;
 
     /* AKWindowButton [scale][type][state] */
     std::unordered_map<Int32,
@@ -148,9 +150,6 @@ protected:
     std::unordered_map<CZOrientation,
         std::unordered_map<Int32,
             std::shared_ptr<RImage>>> m_scrollRailThreePatchImage;
-
-    /* Round container 9-patch [pixel radius] = image */
-    std::unordered_map<Int32, std::weak_ptr<RImage>> m_roundContainerNinePatch;
 };
 
 #endif // CZ_AKTHEME_H

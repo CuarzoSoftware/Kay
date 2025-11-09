@@ -348,7 +348,8 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             if (cornerDamage.isEmpty())
                 continue;
 
-            maskInfo.image = theme()->topLeftRoundCornerMask(cornerDstRects[i].width(), targetNode()->scale());
+            m_firstQuarterCircleMasks[i] = theme()->FirstQuadrantCircleMask.get(cornerDstRects[i].width(), targetNode()->scale());
+            maskInfo.image = m_firstQuarterCircleMasks[i];
             maskInfo.dst = cornerDstRects[i];
             maskInfo.src = SkRect::Make(maskInfo.image->size());
             maskInfo.srcTransform = maskTransforms[i];
