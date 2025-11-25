@@ -6,6 +6,7 @@
 #include <CZ/skia/core/SkImage.h>
 #include <CZ/skia/core/SkRegion.h>
 #include <CZ/skia/core/SkFont.h>
+#include <CZ/AK/ThirdParty/Material/dynamiccolor/dynamic_scheme.h>
 #include <CZ/AK/Nodes/AKWindowButton.h>
 #include <CZ/AK/AK.h>
 #include <CZ/Ream/Ream.h>
@@ -27,12 +28,16 @@ namespace AKAsset
 
 class CZ::AKTheme
 {
-public:
+public:    
     AKTheme() noexcept;
     virtual ~AKTheme() {}
 
+    std::shared_ptr<AKColorTheme> colorTheme() noexcept { return m_colorTheme; }
+
     /* Colors */
 
+    static inline SkColor   Blue                { 0xFF3498DB };
+    static inline SkColor   Primary             { Blue };
     static inline SkColor   SystemRed           { 0xFFFC2125 };
     static inline SkColor   SystemGreen         { 0xFF29C732 };
     static inline SkColor   SystemBlue          { 0xFF0A60FF };
@@ -62,19 +67,7 @@ public:
     static inline SkScalar  RenderableInactiveOpacityFactor { 0.5f };
 
     /* AKButton */
-
-    static inline SkScalar  ButtonPressedBackgroundDarkness         { 0.95f };
-    static inline SkScalar  ButtonContentPressedOpacity             { 0.85f };
-    static inline SkScalar  ButtonDisabledOpacity                   { 0.3f };
-    static inline SkRect    ButtonPadding                           { 16.f, 2.f, 16.f, 2.f };
-    static inline SkRect    ButtonPlainHThreePatchSideSrcRect       { SkRect::MakeWH(8.f, 24.f) };
-    static inline SkRect    ButtonTintedHThreePatchSideSrcRect      { ButtonPlainHThreePatchSideSrcRect };
-    static inline SkRect    ButtonPlainHThreePatchCenterSrcRect     { SkRect::MakeXYWH(8.f, 0.f, 1.f, 24.f) };
-    static inline SkRect    ButtonTintedHThreePatchCenterSrcRect    { ButtonPlainHThreePatchCenterSrcRect };
-    virtual SkRegion        buttonPlainOpaqueRegion                 (Int32 width) noexcept;
-    virtual SkRegion        buttonTintedOpaqueRegion                (Int32 width) noexcept;
-    virtual std::shared_ptr<RImage>  buttonPlainHThreePatchImage    (Int32 scale) noexcept;
-    virtual std::shared_ptr<RImage>  buttonTintedHThreePatchImage   (Int32 scale) noexcept;
+    static inline Int32     AKButtonBorderRadius                    { 8 };
 
     /* AKTextField */
 
@@ -119,9 +112,11 @@ public:
     std::shared_ptr<AKIconFont> iconFont;
 
     /* Solid round container 9-patch */
-    CZAssetManager<AKAsset::RRect9Patch, Int32 /*radius*/, Int32 /*scale*/> RRect9Patch;
+    CZAssetManager<AKAsset::RRect9Patch, Int32 /*radius*/, Int32 /*scale*/, SkColor /*backgroundColor*/, Int32 /*strokeWidth*/, SkColor /*strokeColor*/> RRect9Patch;
 
 protected:
+
+    std::shared_ptr<AKColorTheme> m_colorTheme;
 
     /* AKButton */
     std::unordered_map<Int32,std::shared_ptr<RImage>> m_buttonPlainHThreePatchImage;

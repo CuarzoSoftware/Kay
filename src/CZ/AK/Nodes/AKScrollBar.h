@@ -3,7 +3,7 @@
 
 #include <CZ/AK/Nodes/AKContainer.h>
 #include <CZ/AK/Nodes/AKThreePatch.h>
-#include <CZ/Core/CZAnimation.h>
+#include <CZ/Core/CZLinearAnimation.h>
 #include <CZ/Core/CZTimer.h>
 #include <CZ/Core/CZEdge.h>
 
@@ -52,8 +52,8 @@ protected:
     AKThreePatch m_handle { CZOrientation::H, this };
     CZEdge m_edge { CZEdgeNone };
     CZTimer m_fadeOutTimer;
-    CZAnimation m_fadeOutAnim;
-    CZAnimation m_hoverAnim;
+    CZLinearAnimation m_fadeOutAnim;
+    CZLinearAnimation m_hoverAnim;
     CZWeak<AKScroll> m_scroll;
     bool m_dragging { false };
     bool m_preventHide { false };

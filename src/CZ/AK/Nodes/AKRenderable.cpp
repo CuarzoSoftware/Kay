@@ -1,11 +1,19 @@
 #include <CZ/Core/Events/CZWindowStateEvent.h>
 #include <CZ/Core/Events/CZEvent.h>
+#include <CZ/Core/Events/CZColorSchemeEvent.h>
 #include <CZ/AK/Nodes/AKRenderable.h>
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKTheme.h>
 #include <CZ/Ream/RPass.h>
 
 using namespace CZ;
+
+AKRenderable::AKRenderable(RenderableHint hint, AKNode *parent) noexcept :
+    AKNode(parent),
+    m_renderableHint(hint)
+{
+    m_caps |= RenderableBit;
+}
 
 void AKRenderable::addDamage(const SkRegion &region) noexcept
 {

@@ -4,49 +4,32 @@
 #include <CZ/Core/Events/CZPointerButtonEvent.h>
 #include <CZ/Core/Events/CZWindowStateEvent.h>
 #include <CZ/Core/Events/CZLayoutEvent.h>
+#include <CZ/Core/CZColor.h>
+#include <CZ/AK/AKColorTheme.h>
+#include <CZ/AK/AKScene.h>
 #include <CZ/AK/Nodes/AKButton.h>
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKLog.h>
 
 using namespace CZ;
 
-AKButton::AKButton(const std::string &text, AKNode *parent) noexcept : AKSubScene(parent),
-    m_text(text, &m_content)
+AKButton::AKButton(const std::string &text, AKNode *parent) noexcept :
+    AKRoundSolidColor(0x00000000, AKTheme::AKButtonBorderRadius, parent),
+    m_icon("star", 32, this),
+    m_text(text, this)
 {
+    auto the { colorTheme() };
+    const auto &scheme { the->scheme(colorScheme()) };
+    setColor(scheme.GetPrimary());
     SkRegion empty;
     setCursor(CZCursorShape::Pointer);
+    layout().setPadding(YGEdgeAll, 8.f);
+    layout().setJustifyContent(YGJustifyCenter);
+    layout().setAlignItems(YGAlignCenter);
+    layout().setFlexDirection(YGFlexDirectionRow);
     m_text.setTextStyle(theme()->ButtonTextStyle);
     m_text.setInputRegion(&empty);
-    m_hThreePatch.layout().setFlex(1.f);
-    m_hThreePatch.layout().setPadding(YGEdgeLeft, AKTheme::ButtonPadding.left());
-    m_hThreePatch.layout().setPadding(YGEdgeRight, AKTheme::ButtonPadding.right());
-    m_hThreePatch.layout().setPadding(YGEdgeTop, AKTheme::ButtonPadding.top());
-    m_hThreePatch.layout().setPadding(YGEdgeBottom, AKTheme::ButtonPadding.bottom());
-    m_hThreePatch.setInputRegion(&empty);
-    m_content.layout().setFlex(1.f);
-    m_content.layout().setJustifyContent(YGJustifyCenter);
-    m_content.layout().setAlignItems(YGAlignCenter);
-    m_content.layout().setFlexDirection(YGFlexDirectionRow);
-    m_content.setInputRegion(&empty);
-    updateStyle();
-}
-
-void AKButton::setText(const std::string &text) noexcept
-{
-    if (text == m_text.text())
-        return;
-
-    m_text.setText(text);
-    updateStyle();
-}
-
-void AKButton::setBackgroundColor(SkColor color) noexcept
-{
-    if (m_backgroundColor == color)
-        return;
-
-    m_backgroundColor = color;
-    addChange(CHBackgroundColor);
+    m_text.enableReplaceImageColor(true);
     updateStyle();
 }
 
@@ -57,10 +40,7 @@ void AKButton::setEnabled(bool enabled) noexcept
 
     setCursor(enabled ? CZCursorShape::Pointer : CZCursorShape::NotAllowed);
     m_enabled = enabled;
-    m_hThreePatch.setOpacity(enabled ? 1.f : AKTheme::ButtonDisabledOpacity);
-    m_text.setOpacity(m_hThreePatch.opacity());
     addChange(CHEnabled);
-    updateStyle();
 }
 
 void AKButton::setPressed(bool pressed) noexcept
@@ -73,12 +53,17 @@ void AKButton::setPressed(bool pressed) noexcept
 
     m_pressed = pressed;
     addChange(CHPressed);
+}
+
+void AKButton::onSceneBegin()
+{
     updateStyle();
+    AKRoundSolidColor::onSceneBegin();
 }
 
 void AKButton::pointerButtonEvent(const CZPointerButtonEvent &event)
 {
-    AKSubScene::pointerButtonEvent(event);
+    AKRoundSolidColor::pointerButtonEvent(event);
 
     if (event.button == BTN_LEFT)
     {
@@ -105,74 +90,76 @@ void AKButton::pointerButtonEvent(const CZPointerButtonEvent &event)
 
 void AKButton::windowStateEvent(const CZWindowStateEvent &event)
 {
-    AKSubScene::windowStateEvent(event);
-    if (event.changes.has(CZWinActivated))
-        updateStyle();
+    AKRoundSolidColor::windowStateEvent(event);
     event.accept();
-}
-
-void AKButton::layoutEvent(const CZLayoutEvent &event)
-{
-    AKSubScene::layoutEvent(event);
-    if (event.changes.has(CZLayoutChangeScale))
-        updateStyle();
-    else if (event.changes.has(CZLayoutChangeSize))
-        updateOpaqueRegion();
-    event.accept();
-}
-
-void AKButton::applyLayoutConstraints() noexcept
-{
-    layout().setMinWidth(2.f * AKTheme::ButtonPlainHThreePatchSideSrcRect.width() + 1);
-    layout().setMinHeight(AKTheme::ButtonPlainHThreePatchCenterSrcRect.height());
-    layout().setMaxHeight(layout().minHeight().value);
-    layout().setHeight(layout().minHeight().value);
-}
-
-void AKButton::updateOpaqueRegion() noexcept
-{
-    if (!activated() || m_backgroundColor == SK_ColorWHITE)
-        m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(worldRect().width());
-    else
-        m_hThreePatch.opaqueRegion = theme()->buttonTintedOpaqueRegion(worldRect().width());
 }
 
 void AKButton::updateStyle() noexcept
 {
-    SkColor4f finalBackgroundColor { SkColor4f::FromColor(activated() ? m_backgroundColor : SK_ColorWHITE) };
-    SkScalar contentOpacity { 1.f };
-
-    if (pressed())
+    switch (m_variant)
     {
-        finalBackgroundColor.fR *= AKTheme::ButtonPressedBackgroundDarkness;
-        finalBackgroundColor.fG *= AKTheme::ButtonPressedBackgroundDarkness;
-        finalBackgroundColor.fB *= AKTheme::ButtonPressedBackgroundDarkness;
-        contentOpacity = AKTheme::ButtonContentPressedOpacity;
+    case Variant::Filled:
+        updateStyleFilled();
+        break;
     }
+}
 
-    if (!activated() || m_backgroundColor == SK_ColorWHITE)
-    {
-        m_hThreePatch.setImage(theme()->buttonPlainHThreePatchImage(scale()));
-        m_hThreePatch.setSideSrcRect(AKTheme::ButtonPlainHThreePatchSideSrcRect);
-        m_hThreePatch.setCenterSrcRect(AKTheme::ButtonPlainHThreePatchCenterSrcRect);
-        m_text.enableReplaceImageColor(false);
-    }
-    else
-    {
-        m_hThreePatch.setImage(theme()->buttonTintedHThreePatchImage(scale()));
-        m_hThreePatch.setSideSrcRect(AKTheme::ButtonTintedHThreePatchSideSrcRect);
-        m_hThreePatch.setCenterSrcRect(AKTheme::ButtonTintedHThreePatchCenterSrcRect);
-        m_text.enableReplaceImageColor(true);
+void AKButton::updateStyleFilled() noexcept
+{
+    const auto &scheme { colorTheme()->scheme(colorScheme()) };
 
-        if (enabled())
-            m_text.setColor(SK_ColorWHITE);
+    if (m_type == Type::Default)
+    {
+        if (isPointerOver())
+        {
+            layout().setHeight(40);
+            layout().setMaxHeight(40);
+            layout().setMinHeight(40);
+            layout().setPadding(YGEdgeTop, 0);
+            layout().setPadding(YGEdgeBottom, 0);
+            layout().setPadding(YGEdgeLeft, 24);
+            layout().setPadding(YGEdgeRight, 24);
+            layout().setGap(YGGutterAll, 8);
+            setBorderRadius(20);
+            setBackgroundColor(scheme.GetPrimary());
+            setStrokeWidth(0);
+            m_shadow.reset();
+            m_icon.setSize(20);
+            m_icon.setColor(scheme.GetOnPrimary());
+            auto textStyle { m_text.textStyle() };
+            textStyle.setFontSize(14);
+            textStyle.setFontStyle(SkFontStyle(SkFontStyle::kMedium_Weight, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant));
+            m_text.setTextStyle(textStyle);
+            m_text.setColor(scheme.GetOnPrimary());
+        }
         else
-            m_text.enableReplaceImageColor(false);
-    }
+        {
+            layout().setHeight(40);
+            layout().setMaxHeight(40);
+            layout().setMinHeight(40);
+            layout().setPadding(YGEdgeTop, 0);
+            layout().setPadding(YGEdgeBottom, 0);
+            layout().setPadding(YGEdgeLeft, 24);
+            layout().setPadding(YGEdgeRight, 24);
+            layout().setGap(YGGutterAll, 8);
+            setBorderRadius(20);
 
-    m_text.setOpacity(contentOpacity);
-    m_hThreePatch.setColorFactor(finalBackgroundColor);
-    m_hThreePatch.setImageScale(scale());
-    updateOpaqueRegion();
-    applyLayoutConstraints();
+            SkColor4f overlay { SkColor4f::FromColor(scheme.GetOnPrimary()) };
+            overlay.fA = 0.08f;
+            //setBackgroundColor(SkColorOverInt(scheme.GetPrimary(), overlay.toSkColor()));
+            setStrokeWidth(0);
+            m_shadow.reset();
+            m_icon.setSize(20);
+            m_icon.setColor(scheme.GetOnPrimary());
+            auto textStyle { m_text.textStyle() };
+            textStyle.setFontSize(14);
+            textStyle.setFontStyle(SkFontStyle(SkFontStyle::kMedium_Weight, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant));
+            m_text.setTextStyle(textStyle);
+            m_text.setColor(scheme.GetOnPrimary());
+        }
+    }
+    else // Toggle
+    {
+
+    }
 }

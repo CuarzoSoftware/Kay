@@ -2,7 +2,7 @@
 #define CZ_AKTEXTCARET_H
 
 #include <CZ/AK/Nodes/AKThreePatch.h>
-#include <CZ/Core/CZAnimation.h>
+#include <CZ/Core/CZLinearAnimation.h>
 
 /**
  * @brief Blinking caret for text fields.
@@ -16,7 +16,7 @@ public:
 protected:
     void layoutEvent(const CZLayoutEvent &event) override;
     void updateDimensions() noexcept;
-    CZAnimation m_blinkAnimation;
+    CZLinearAnimation m_blinkAnimation;
     bool m_animated { false };
 };
 

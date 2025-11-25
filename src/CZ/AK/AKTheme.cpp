@@ -2,6 +2,7 @@
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKIconFont.h>
+#include <CZ/AK/AKColorTheme.h>
 #include <CZ/AK/AKLog.h>
 
 #include <CZ/Ream/RCore.h>
@@ -9,7 +10,9 @@
 #include <CZ/Ream/RPass.h>
 #include <CZ/Ream/RImage.h>
 #include <CZ/Ream/RDevice.h>
+#include <CZ/Ream/SK/RSKFormat.h>
 
+#include <CZ/skia/core/SkPixelRef.h>
 #include <CZ/skia/gpu/ganesh/GrRecordingContext.h>
 #include <CZ/skia/gpu/ganesh/GrDirectContext.h>
 #include <CZ/skia/effects/SkGradientShader.h>
@@ -17,10 +20,12 @@
 #include <CZ/skia/core/SkMaskFilter.h>
 #include <CZ/skia/core/SkBlurTypes.h>
 #include <CZ/skia/core/SkCanvas.h>
+#include <CZ/skia/core/SkBitmap.h>
 
 using namespace CZ;
+using namespace material_color_utilities;
 
-CZ::AKTheme::AKTheme() noexcept
+CZ::AKTheme::AKTheme() noexcept : m_colorTheme(AKColorTheme::MakeFromColor(0xFF3498DB))
 {
     DefaultFont.setTypeface(
         AKApp::Get()->fontManager()->matchFamilyStyle("Inter",
@@ -34,7 +39,7 @@ CZ::AKTheme::AKTheme() noexcept
     defaultTextStylePaint.setColor(SK_ColorBLACK);
     defaultTextStylePaint.setAntiAlias(true);
     DefaultTextStyle.setForegroundPaint(defaultTextStylePaint);
-    DefaultTextStyle.setFontSize(12);
+    DefaultTextStyle.setFontSize(11);
     DefaultTextStyle.setFontFamilies(std::vector<SkString>({SkString("Inter")}));
     DefaultTextStyle.setFontStyle(
         SkFontStyle(
@@ -50,27 +55,78 @@ CZ::AKTheme::AKTheme() noexcept
 
     iconFont = AKIconFont::Make("Material Icons Round", AKFontsDir() / "MaterialIconsRound-Regular.codepoints");
 
-    RRect9Patch.setFactory([](Int32 radius, Int32 scale) -> std::shared_ptr<AKAsset::RRect9Patch>
+    RRect9Patch.setFactory([](Int32 radius, Int32 scale, SkColor backgroundColor, Int32 strokeWidth, SkColor strokeColor) -> std::shared_ptr<AKAsset::RRect9Patch>
     {
         if (radius <= 0) radius = 1;
         if (scale <= 0) scale = 1;
+        if (strokeWidth < 0 || SkColorGetA(strokeColor) == 0) strokeWidth = 0;
 
-        const SkIRect center { SkIRect::MakeXYWH(radius, radius, 1, 1) };
-        const auto size { SkISize(radius * 2 + 1, radius * 2 + 1) };
-        auto surface { RSurface::Make(size, scale, true) };
-        auto pass { surface->beginPass(RPassCap_SkCanvas) };
-        auto &c { *pass->getCanvas() };
+        const auto rad { std::max(radius, strokeWidth) };
 
+        const SkIRect center { SkIRect::MakeXYWH(rad, rad, 1, 1) };
+        const auto size { SkISize(rad * 2 + 1, rad * 2 + 1) };
+        const auto pixelSize { SkISize(size.fWidth * scale, size.fHeight * scale) };
+        auto ream { RCore::Get() };
+        auto *mainDevice { ream->mainDevice() };
+        const auto fmt { mainDevice->textureFormats().formats().find(DRM_FORMAT_ARGB8888) };
+        assert(fmt != mainDevice->textureFormats().formats().end());
+
+        // Use raster for pixel perfect drawing
+
+        SkImageInfo info
+        {
+            SkImageInfo::Make(
+            pixelSize,
+            RSKFormat::FromDRM(fmt->format()),
+            kPremul_SkAlphaType)
+        };
+
+        SkBitmap bitmap;
+
+        if (!bitmap.tryAllocPixels(info))
+        {
+            AKLog(CZDebug, CZLN, "Failed to allocate SkBitmap pixels");
+            return {};
+        }
+
+        SkCanvas c { bitmap };
         c.clear(SK_ColorTRANSPARENT);
+        c.scale(scale, scale);
 
         SkPaint paint;
-        paint.setStroke(false);
         paint.setAntiAlias(true);
-        paint.setColor(SK_ColorWHITE);
         paint.setBlendMode(SkBlendMode::kSrc);
-        c.drawRoundRect(SkRect::Make(size), radius, radius, paint);
 
-        return std::make_shared<AKAsset::RRect9Patch>(surface->image(), center);
+        const auto rect { SkRect::Make(size) };
+
+        if (SkColorGetA(backgroundColor) > 0)
+        {
+            paint.setStroke(false);
+            paint.setColor(backgroundColor);
+            c.drawRoundRect(rect, radius, radius, paint);
+        }
+
+        if (strokeWidth > 0)
+        {
+            paint.setStroke(true);
+            paint.setColor(strokeColor);
+            paint.setStrokeWidth(strokeWidth);
+            const SkScalar inset { SkScalar(strokeWidth) * 0.5f };
+            const auto sRad { std::max(0.f, radius - inset) };
+            c.drawRoundRect(rect.makeInset(inset, inset), sRad, sRad, paint);
+        }
+
+        RPixelBufferInfo pixInfo {};
+        pixInfo.pixels = (UInt8*)bitmap.pixelRef()->pixels();
+        pixInfo.stride = bitmap.pixelRef()->rowBytes();
+        pixInfo.format = DRM_FORMAT_ARGB8888;
+        pixInfo.size = pixelSize;
+
+        RImageConstraints cons {};
+        cons.allocator = mainDevice;
+        cons.caps[mainDevice] = RImageCap_Src;
+
+        return std::make_shared<AKAsset::RRect9Patch>(RImage::MakeFromPixels(pixInfo, *fmt, &cons), center);
     });
 
     FirstQuadrantCircleMask.setFactory([](Int32 radius, Int32 scale) -> std::shared_ptr<RImage>
@@ -94,122 +150,6 @@ CZ::AKTheme::AKTheme() noexcept
         c.drawCircle(SkPoint::Make(radius, radius), radius, paint);
         return surface->image();
     });
-}
-
-SkRegion CZ::AKTheme::buttonPlainOpaqueRegion(Int32 width) noexcept
-{
-    SkRegion region;
-    region.op(SkIRect(3, 7, width - 3, 24 - 7), SkRegion::kUnion_Op);
-    region.op(SkIRect(7, 3, width - 7, 24 - 3), SkRegion::kUnion_Op);
-    return region;
-}
-
-SkRegion CZ::AKTheme::buttonTintedOpaqueRegion(Int32 width) noexcept
-{
-    SkRegion region;
-    region.op(SkIRect(3, 7, width - 3, 24 - 7), SkRegion::kUnion_Op);
-    region.op(SkIRect(7, 3, width - 7, 24 - 3), SkRegion::kUnion_Op);
-    return region;
-}
-
-std::shared_ptr<RImage> CZ::AKTheme::buttonPlainHThreePatchImage(Int32 scale) noexcept
-{
-    const auto it { m_buttonPlainHThreePatchImage.find(scale) };
-
-    if (it != m_buttonPlainHThreePatchImage.end())
-        return it->second;
-
-    auto surface = RSurface::Make(
-        SkISize(ButtonPlainHThreePatchSideSrcRect.width() + ButtonPlainHThreePatchCenterSrcRect.width(),
-               ButtonPlainHThreePatchSideSrcRect.height()),
-        scale, true);
-
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto &c { *pass->getCanvas() };
-    // c.scale(scale, scale);
-    c.clear(SK_ColorTRANSPARENT);
-
-    SkPaint paint;
-    const float borderRadius { 5.f };
-    SkRect roundRect { SkRect::MakeWH(surface->geometry().viewport.width() * 2, surface->geometry().viewport.height()) };
-
-    // Shadow
-    paint.setAntiAlias(true);
-    roundRect.inset(2.5f, 2.5f);
-    roundRect.offset(0.f, 0.5f);
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setColor(SkColorSetARGB(82, 0, 0, 0));
-    paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 1.f));
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-    paint.setMaskFilter(nullptr);
-    roundRect.offset(0.f, -0.5f);
-
-    // Border
-    paint.setBlendMode(SkBlendMode::kSrcOver);
-    paint.setStroke(true);
-    paint.setStrokeWidth(1.f);
-    paint.setColor(SkColorSetARGB(9, 0, 0, 0));
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-
-    // Fill
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setStroke(false);
-    paint.setColor(SK_ColorWHITE);
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-
-    m_buttonPlainHThreePatchImage[scale] = surface->image();
-    return surface->image();
-}
-
-std::shared_ptr<RImage> CZ::AKTheme::buttonTintedHThreePatchImage(Int32 scale) noexcept
-{
-    const auto it { m_buttonTintedHThreePatchImage.find(scale) };
-
-    if (it != m_buttonTintedHThreePatchImage.end())
-        return it->second;
-
-    auto surface = RSurface::Make(
-        SkISize(ButtonTintedHThreePatchSideSrcRect.width() + ButtonTintedHThreePatchCenterSrcRect.width(),
-               ButtonTintedHThreePatchSideSrcRect.height()),
-                scale, true);
-
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto &c { *pass->getCanvas() };
-    // c.scale(surface->scale(), surface->scale());
-    c.clear(SK_ColorTRANSPARENT);
-
-    SkPaint paint;
-    const float borderRadius { 5.f };
-    SkRect roundRect { SkRect::MakeWH(surface->geometry().viewport.width() * 2, surface->geometry().viewport.height()) };
-
-    const SkPoint gradPoints[] { SkPoint(0.f, 2.f), SkPoint(0.f, surface->geometry().viewport.height() - 4.f) };
-    const SkColor4f gradColors[] { SkColor4f::FromColor(0xFFFFFFFF), SkColor4f::FromColor(SkColorSetARGB(255, 239, 239, 239)) };
-    const SkScalar gradPos[] { 0.f, 1.f };
-
-    // Shadow
-    paint.setShader(SkGradientShader::MakeLinear(gradPoints, gradColors, SkColorSpace::MakeSRGB(), gradPos, 2, SkTileMode::kClamp));
-    paint.setAntiAlias(true);
-    roundRect.inset(2.5f, 2.5f);
-    roundRect.offset(0.f, 0.5f);
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 1.f));
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-    paint.setMaskFilter(nullptr);
-    roundRect.offset(0.f, -0.5f);
-
-    // Stroke
-    paint.setBlendMode(SkBlendMode::kSrcOver);
-    paint.setStroke(true);
-    paint.setStrokeWidth(1.f);
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-
-    // Fill
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setStroke(false);
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-
-    m_buttonTintedHThreePatchImage[scale] = surface->image();
-    return surface->image();
 }
 
 std::shared_ptr<RImage> CZ::AKTheme::textFieldRoundHThreePatchImage(Int32 scale) noexcept

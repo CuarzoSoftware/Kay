@@ -1,6 +1,7 @@
 #include <CZ/skia/core/SkColorSpace.h>
 #include <CZ/skia/gpu/ganesh/SkImageGanesh.h>
 #include <CZ/skia/gpu/ganesh/SkSurfaceGanesh.h>
+#include <CZ/Core/Events/CZColorSchemeEvent.h>
 #include <CZ/Core/Events/CZKeyboardEnterEvent.h>
 #include <CZ/Core/Events/CZKeyboardLeaveEvent.h>
 #include <CZ/Core/Events/CZPointerEnterEvent.h>
@@ -12,6 +13,7 @@
 #include <CZ/AK/AKLog.h>
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKScene.h>
+#include <CZ/AK/AKTheme.h>
 #include <CZ/AK/Nodes/AKNode.h>
 #include <CZ/AK/Nodes/AKSubScene.h>
 #include <CZ/AK/Nodes/AKContainer.h>
@@ -24,12 +26,14 @@
 
 using namespace CZ;
 
-AKNode::AKNode(AKNode *parent) noexcept
+AKNode::AKNode(AKNode *parent) noexcept : m_colorTheme(theme()->colorTheme())
 {
     m_app = AKApp::Get();
     assert(m_app && "Create an AKApp first");
     setParent(parent);
 }
+
+AKNode::AKNode() noexcept : m_colorTheme(theme()->colorTheme()) {};
 
 AKNode::~AKNode()
 {
@@ -451,6 +455,26 @@ void AKNode::insertAfter(AKNode *other) noexcept
     }
 }
 
+void AKNode::setColorScheme(CZColorScheme scheme) noexcept
+{
+    if (scheme == CZColorScheme::Unknown)
+        scheme = CZColorScheme::Light;
+
+    if (m_colorScheme == scheme) return;
+
+    m_colorScheme = scheme;
+    addChange(CHColorScheme);
+}
+
+void AKNode::setColorTheme(std::shared_ptr<AKColorTheme> theme) noexcept
+{
+    if (m_colorTheme == theme || !theme)
+        return;
+
+    m_colorTheme = theme;
+    addChange(CHColorTheme);
+}
+
 void AKNode::enableChildrenClipping(bool enable) noexcept
 {
     if (childrenClippingEnabled() == enable)
@@ -677,6 +701,11 @@ bool AKNode::event(const CZEvent &event) noexcept
         if (!event.isAccepted())
             return false;
         break;
+    case CZEvent::Type::ColorScheme:
+        colorSchemeEvent((const CZColorSchemeEvent&)event);
+        if (!event.isAccepted())
+            return false;
+        break;
     default:
         return AKObject::event(event);
     }
@@ -688,6 +717,11 @@ void AKNode::layoutEvent(const CZLayoutEvent &event)
 {
     onLayoutChanged.notify(event);
     ((const CZEvent&)event).ignore();
+}
+
+void AKNode::colorSchemeEvent(const CZColorSchemeEvent &event)
+{
+    setColorScheme(event.scheme);
 }
 
 void AKNode::windowStateEvent(const CZWindowStateEvent &event)

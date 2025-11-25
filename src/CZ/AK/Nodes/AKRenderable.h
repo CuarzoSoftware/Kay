@@ -30,11 +30,7 @@ public:
         CHLast
     };
 
-    AKRenderable(RenderableHint hint, AKNode *parent = nullptr) noexcept :
-        AKNode(parent),
-        m_renderableHint(hint) {
-        m_caps |= RenderableBit;
-    }
+    AKRenderable(RenderableHint hint, AKNode *parent = nullptr) noexcept;
 
     void addDamage(const SkRegion &region) noexcept;
     void addDamage(const SkIRect &rect) noexcept;

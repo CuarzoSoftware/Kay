@@ -266,7 +266,7 @@ void AKTextField::windowStateEvent(const CZWindowStateEvent &event)
 
 void AKTextField::updateDimensions() noexcept
 {
-    m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(worldRect().width());
+    //m_hThreePatch.opaqueRegion = theme()->buttonPlainOpaqueRegion(worldRect().width());
 }
 
 void AKTextField::updateScale() noexcept

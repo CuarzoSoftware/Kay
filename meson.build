@@ -56,7 +56,7 @@ deps = [
 
 # -------------- SOURCES --------------
 
-sources = run_command('find', './src/CZ/AK', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp]', check : false).stdout().strip().split('\n')
+sources = run_command('find', './src/CZ/AK', '-type', 'f', '-name', '*[.cpp,.c,.h,.hpp,.cc]', check : false).stdout().strip().split('\n')
 header_dirs = [
   ['./src/CZ/AK', 'CZ/AK'],
   ['./src/CZ/AK/Nodes', 'CZ/AK/Nodes'],

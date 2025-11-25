@@ -9,6 +9,7 @@
 #include <CZ/Core/CZWeak.h>
 #include <CZ/Core/CZBitset.h>
 #include <CZ/Core/CZCursorShape.h>
+#include <CZ/Core/CZColorScheme.h>
 
 #include <CZ/skia/core/SkImage.h>
 #include <CZ/skia/core/SkSurface.h>
@@ -191,7 +192,7 @@ public:
         bool m_done;
     };
 
-    AKNode() noexcept { theme(); }
+    AKNode() noexcept;
     virtual ~AKNode();
 
     enum Cap
@@ -215,6 +216,8 @@ public:
         CHLayoutScale,
         CHParent,
         CHChildrenClipping,
+        CHColorScheme,
+        CHColorTheme,
         CHLast
     };
     void addChange(Change change) noexcept;
@@ -267,6 +270,15 @@ public:
      * If other has no parent, the parent is unset.
      */
     void insertAfter(AKNode *other) noexcept;
+
+    // Passing unknown is the same as passing light
+    void setColorScheme(CZColorScheme scheme) noexcept;
+
+    // Never unknown
+    CZColorScheme colorScheme() const noexcept { return m_colorScheme; }
+
+    std::shared_ptr<AKColorTheme> colorTheme() const noexcept { return m_colorTheme; }
+    void setColorTheme(std::shared_ptr<AKColorTheme> theme) noexcept;
 
     AKNode *parent() const noexcept { return m_parent; }
     AKNode *topmostParent() const noexcept;
@@ -454,6 +466,7 @@ protected:
      * after worldRect() is calculated (after layoutEvent()) */
     virtual void onSceneBegin() {}
     virtual void layoutEvent(const CZLayoutEvent &event);
+    virtual void colorSchemeEvent(const CZColorSchemeEvent &event);
     virtual void windowStateEvent(const CZWindowStateEvent &event);
     virtual void pointerEnterEvent(const CZPointerEnterEvent &event);
     virtual void pointerMoveEvent(const CZPointerMoveEvent &event);
@@ -532,8 +545,9 @@ private:
     std::shared_ptr<AKApp> m_app;
 
     CZBitset<Cap> m_caps;
-
     CZBitset<Flags> m_flags {};
+    CZColorScheme m_colorScheme { CZColorScheme::Light };
+    std::shared_ptr<AKColorTheme> m_colorTheme;
 
     // Set by the parent AKScene or AKSubScene during AKScene::render() (just to prevent frequent m_targets lookups)
     CZWeak<TargetData> tData;

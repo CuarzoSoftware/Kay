@@ -3,7 +3,7 @@
 
 #include <CZ/AK/Nodes/AKContainer.h>
 #include <CZ/AK/Nodes/AKScrollBar.h>
-#include <CZ/Core/CZAnimation.h>
+#include <CZ/Core/CZLinearAnimation.h>
 
 class CZ::AKScroll : public AKContainer
 {
@@ -44,8 +44,8 @@ protected:
     void moveYPrivate(SkScalar dy) noexcept;
 
     AKContainer m_slot;
-    CZAnimation m_kineticYAnim;
-    CZAnimation m_kineticXAnim;
+    CZLinearAnimation m_kineticYAnim;
+    CZLinearAnimation m_kineticXAnim;
     SkPoint m_vel { 0.f, 0.f };
     SkIRect m_contentBounds { 0, 0, 0, 0};
     Int64 m_lastFingerTimeX;
