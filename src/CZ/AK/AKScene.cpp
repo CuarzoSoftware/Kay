@@ -1160,10 +1160,12 @@ void AKScene::pointerMoveEvent(const CZPointerMoveEvent &e) noexcept
                 else if (pointerFocus()->isSubchildOf(node))
                 {
                     EnqueueAndPropagateToParent(leave, pointerFocus(), node, false);
+                    EnqueueAndPropagateToParent(e, node, nullptr, false);
                 }
                 else if (node->isSubchildOf(pointerFocus()))
                 {
-                    EnqueueAndPropagateToParent(e, node, pointerFocus(), false);
+                    EnqueueAndPropagateToParent(enter, node, pointerFocus(), false);
+                    EnqueueAndPropagateToParent(e, pointerFocus(), nullptr, false);
                 }
                 else
                 {

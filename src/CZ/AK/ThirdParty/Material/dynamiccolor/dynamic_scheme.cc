@@ -355,10 +355,8 @@ Argb DynamicScheme::GetColor(CZ::AKColorRole role) const
     case CZ::AKColorRole::TertiaryFixedDim: return GetTertiaryFixedDim();
     case CZ::AKColorRole::OnTertiaryFixed: return GetOnTertiaryFixed();
     case CZ::AKColorRole::OnTertiaryFixedVariant: return GetOnTertiaryFixedVariant();
+    default: return 0x00000000;
     }
-
-    // Default/fallback
-    return 0x00000000;  // transparent
 }
 
 }  // namespace material_color_utilities

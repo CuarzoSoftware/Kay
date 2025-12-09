@@ -72,6 +72,9 @@ namespace CZ
         TertiaryFixedDim,
         OnTertiaryFixed,
         OnTertiaryFixedVariant,
+
+        // Extra
+        Invisible
     };
 }
 
