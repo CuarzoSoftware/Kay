@@ -2,7 +2,6 @@
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKIconFont.h>
-#include <CZ/AK/AKColorTheme.h>
 #include <CZ/AK/AKLog.h>
 
 #include <CZ/Ream/RCore.h>
@@ -23,9 +22,8 @@
 #include <CZ/skia/core/SkBitmap.h>
 
 using namespace CZ;
-using namespace material_color_utilities;
 
-CZ::AKTheme::AKTheme() noexcept : m_colorTheme(AKColorTheme::MakeFromColor(0xFF3498DB))
+CZ::AKTheme::AKTheme() noexcept
 {
     DefaultFont.setTypeface(
         AKApp::Get()->fontManager()->matchFamilyStyle("Inter",

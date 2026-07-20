@@ -12,7 +12,7 @@ AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreePatch(CZOrientation::
     setSideSrcRect(AKTheme::TextCaretVThreePatchSideSrcRect);
     setCenterSrcRect(AKTheme::TextCaretVThreePatchCenterSrcRect);
     enableReplaceImageColor(true);
-    setColor(AKTheme::SystemBlue);
+    setColor(AKTheme::SystemBlue.resolve(colorScheme()));
     layout().setWidth(AKTheme::TextCaretVThreePatchSideSrcRect.width());
     layout().setHeight(16);
     updateDimensions();

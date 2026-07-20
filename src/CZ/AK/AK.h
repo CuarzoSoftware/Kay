@@ -17,7 +17,6 @@ namespace CZ
     class AKObject;
 
     class AKTheme;
-    class AKColorTheme;
     class AKChanges;
     class AKBackgroundDamageTracker;
 

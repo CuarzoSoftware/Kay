@@ -26,14 +26,14 @@
 
 using namespace CZ;
 
-AKNode::AKNode(AKNode *parent) noexcept : m_colorTheme(theme()->colorTheme())
+AKNode::AKNode(AKNode *parent) noexcept
 {
     m_app = AKApp::Get();
     assert(m_app && "Create an AKApp first");
     setParent(parent);
 }
 
-AKNode::AKNode() noexcept : m_colorTheme(theme()->colorTheme()) {};
+AKNode::AKNode() noexcept {};
 
 AKNode::~AKNode()
 {
@@ -464,15 +464,6 @@ void AKNode::setColorScheme(CZColorScheme scheme) noexcept
 
     m_colorScheme = scheme;
     addChange(CHColorScheme);
-}
-
-void AKNode::setColorTheme(std::shared_ptr<AKColorTheme> theme) noexcept
-{
-    if (m_colorTheme == theme || !theme)
-        return;
-
-    m_colorTheme = theme;
-    addChange(CHColorTheme);
 }
 
 void AKNode::enableChildrenClipping(bool enable) noexcept

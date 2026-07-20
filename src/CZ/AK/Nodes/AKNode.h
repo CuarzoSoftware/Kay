@@ -217,7 +217,6 @@ public:
         CHParent,
         CHChildrenClipping,
         CHColorScheme,
-        CHColorTheme,
         CHLast
     };
     void addChange(Change change) noexcept;
@@ -277,8 +276,6 @@ public:
     // Never unknown
     CZColorScheme colorScheme() const noexcept { return m_colorScheme; }
 
-    std::shared_ptr<AKColorTheme> colorTheme() const noexcept { return m_colorTheme; }
-    void setColorTheme(std::shared_ptr<AKColorTheme> theme) noexcept;
 
     AKNode *parent() const noexcept { return m_parent; }
     AKNode *topmostParent() const noexcept;
@@ -547,7 +544,6 @@ private:
     CZBitset<Cap> m_caps;
     CZBitset<Flags> m_flags {};
     CZColorScheme m_colorScheme { CZColorScheme::Light };
-    std::shared_ptr<AKColorTheme> m_colorTheme;
 
     // Set by the parent AKScene or AKSubScene during AKScene::render() (just to prevent frequent m_targets lookups)
     CZWeak<TargetData> tData;

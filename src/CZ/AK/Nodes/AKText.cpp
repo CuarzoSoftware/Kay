@@ -56,7 +56,7 @@ bool AKText::setTextStyle(const skia::textlayout::TextStyle &textStyle) noexcept
     m_textStyle = textStyle;
     m_selectedStyle = textStyle;
     SkPaint paint;
-    paint.setColor(AKTheme::SystemCyan);
+    paint.setColor(AKTheme::SystemCyan.resolve(colorScheme()));
     m_selectedStyle.setBackgroundPaint(paint);
     paint.setColor(SK_ColorWHITE);
     paint.setAntiAlias(true);
