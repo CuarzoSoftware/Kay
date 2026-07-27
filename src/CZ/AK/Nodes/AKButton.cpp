@@ -67,6 +67,7 @@ void AKButton::init() noexcept
     // Default fill = macOS control accent; content color is auto-derived from it by default
     // (the explicit content color below is the fallback used when auto is disabled).
     m_backgroundColor = AKTheme::ControlAccent;
+    m_offToggleBackgroundColor = AKTheme::SystemFill;
     m_contentColor = AKTheme::AlternateSelectedControlText;
 
     updateStyleColor();
@@ -127,7 +128,12 @@ void AKButton::pointerButtonEvent(const CZPointerButtonEvent &event)
         }
 
         if (triggerOnClicked)
+        {
+            if (m_toggleable)
+                setToggled(!m_toggled);
+
             onClick.notify(event);
+        }
 
         event.accept();
     }
@@ -158,17 +164,33 @@ void AKButton::updateStyleColor() noexcept
     static constexpr Float32 pressedOpacity  { 0.12f };
     static constexpr Float32 disabledOpacity { 0.38f };
 
-    const SkColor fill { m_backgroundColor.resolve(colorScheme()) };
+    // While toggleable, the base fill follows the toggle state: backgroundColor() when on,
+    // offToggleBackgroundColor() when off. Non-toggle buttons always use backgroundColor().
+    const CZAdaptiveColor &fillColor { (m_toggleable && !m_toggled) ? m_offToggleBackgroundColor : m_backgroundColor };
+    const SkColor fill { fillColor.resolve(colorScheme()) };
 
-    // Effective content color. In automatic mode it follows the fill's lightness with fixed
-    // endpoints (.light(), since the choice depends on the fill, not the app's color scheme):
-    // AKTheme::AlternateSelectedControlText (white) over dark fills, AKTheme::Label (primary ink)
-    // over light fills. Otherwise the set content color resolved for the current scheme.
-    const SkColor content {
-        m_contentColorAuto
-            ? (CZColorUtils::IsColorDark(fill) ? AKTheme::AlternateSelectedControlText.light()
-                                               : AKTheme::Label.light())
-            : m_contentColor.resolve(colorScheme()) };
+    // Effective content color. In automatic mode it contrasts with what the fill actually looks
+    // like: white (AKTheme::AlternateSelectedControlText) over dark fills, dark ink (AKTheme::Label)
+    // over light ones. Two refinements over a naive luma check:
+    //  - The fill is first composited over a light surface, so a translucent fill is judged by what
+    //    shows through (a light button) rather than its own RGB — e.g. SystemFill (a low-alpha tint)
+    //    reads as light and gets dark content in either color scheme.
+    //  - The darkness cutoff is raised above the 0.5 midpoint so mid-luminance fills (e.g. the
+    //    system green) count as dark and get readable white content.
+    // Endpoints are fixed (.light()) since the choice depends on the fill, not the app's scheme.
+    // Otherwise the set content color resolved for the current scheme is used.
+    SkColor content;
+
+    if (m_contentColorAuto)
+    {
+        static constexpr Float32 darkFillThreshold { 0.6f };
+        const SkColor effectiveFill { CZColorUtils::SrcOver(SK_ColorWHITE, fill) };
+        content = CZColorUtils::IsColorDark(effectiveFill, darkFillThreshold)
+            ? AKTheme::AlternateSelectedControlText.light()
+            : AKTheme::Label.light();
+    }
+    else
+        content = m_contentColor.resolve(colorScheme());
 
     // Container fill = base color + translucent state layer (9-patch replaceColor friendly).
     SkColor bg { fill };
@@ -195,6 +217,35 @@ void AKButton::setBackgroundColor(CZAdaptiveColor color) noexcept
 
     m_backgroundColor = color;
     updateStyleColor();
+}
+
+void AKButton::setOffToggleBackgroundColor(CZAdaptiveColor color) noexcept
+{
+    if (m_offToggleBackgroundColor == color)
+        return;
+
+    m_offToggleBackgroundColor = color;
+    updateStyleColor();
+}
+
+void AKButton::setToggleable(bool toggleable) noexcept
+{
+    if (m_toggleable == toggleable)
+        return;
+
+    m_toggleable = toggleable;
+    updateStyleColor();
+}
+
+void AKButton::setToggled(bool toggled) noexcept
+{
+    if (m_toggled == toggled)
+        return;
+
+    m_toggled = toggled;
+    addChange(CHToggled);
+    updateStyleColor();
+    onToggled.notify(m_toggled);
 }
 
 void AKButton::setContentColor(CZAdaptiveColor color) noexcept

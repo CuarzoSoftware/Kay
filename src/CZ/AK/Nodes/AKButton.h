@@ -23,6 +23,7 @@ public:
     {
         CHEnabled = AKRoundSolidColor::CHLast,
         CHPressed,
+        CHToggled,
         CHLast
     };
 
@@ -42,6 +43,17 @@ public:
 
     /** @brief The adaptive fill color. */
     CZAdaptiveColor backgroundColor() const noexcept { return m_backgroundColor; }
+
+    /**
+     * @brief Base fill used while the button is a toggle and currently OFF (see setToggleable()).
+     *
+     * When toggleable, the base fill follows the toggle state: backgroundColor() while on and this
+     * while off. Ignored for non-toggle buttons. Defaults to @ref AKTheme::SystemFill.
+     */
+    void setOffToggleBackgroundColor(CZAdaptiveColor color) noexcept;
+
+    /** @brief The adaptive off-state fill color. */
+    CZAdaptiveColor offToggleBackgroundColor() const noexcept { return m_offToggleBackgroundColor; }
 
     /**
      * @brief Label/icon color, as a @ref CZAdaptiveColor or a single SkColor (used for both).
@@ -68,10 +80,24 @@ public:
     void setPressed(bool pressed) noexcept;
     bool pressed() const noexcept { return m_pressed; };
 
+    /**
+     * @brief Makes the button behave as a toggle: each click flips toggled() and emits onToggled,
+     *        and the base fill follows the state (backgroundColor() on, offToggleBackgroundColor() off).
+     */
+    void setToggleable(bool toggleable) noexcept;
+    bool toggleable() const noexcept { return m_toggleable; }
+
+    /** @brief The toggle state. Changing it (by click or programmatically) emits onToggled. */
+    void setToggled(bool toggled) noexcept;
+    bool toggled() const noexcept { return m_toggled; }
+
     void setHovered(bool hover) noexcept;
     bool hovered() const noexcept { return m_hovered; }
 
     CZSignal<const CZPointerButtonEvent&> onClick;
+
+    /** @brief Emitted when the toggle state changes; carries the new state. */
+    CZSignal<bool> onToggled;
 
 protected:
     void init() noexcept;
@@ -82,6 +108,7 @@ protected:
     void updateStyleColor() noexcept;
 
     CZAdaptiveColor m_backgroundColor;
+    CZAdaptiveColor m_offToggleBackgroundColor;
     CZAdaptiveColor m_contentColor;
     bool m_contentColorAuto { true };
     AKFontIcon m_icon;
@@ -89,6 +116,8 @@ protected:
     bool m_enabled { true };
     bool m_pressed { false };
     bool m_hovered { false };
+    bool m_toggleable { false };
+    bool m_toggled { false };
 };
 
 #endif // CZ_AKBUTTON_H
