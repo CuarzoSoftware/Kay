@@ -456,6 +456,25 @@ public:
 
     CZSignal<const CZLayoutEvent &> onLayoutChanged;
 
+    /**
+     * @brief Emitted on a node when a child is added to it.
+     *
+     * @param added The newly added child.
+     * @param prevSibling The child now preceding it (nullptr if it became the first child).
+     *
+     * @note Not emitted while the parent itself is being destroyed. A child that is being destroyed
+     *       still triggers onChildRemoved, but a dynamic_cast to its concrete type will fail (its
+     *       derived part is already gone), which is the safe way to filter it.
+     */
+    CZSignal<AKNode* /*added*/, AKNode* /*prevSibling*/> onChildAdded;
+
+    /**
+     * @brief Emitted on a node when a child is removed from it (reparented or destroyed).
+     *
+     * @param removed The removed child.
+     */
+    CZSignal<AKNode* /*removed*/> onChildRemoved;
+
 protected:
     void setSlot(AKNode *slot) noexcept;
     bool event(const CZEvent &event) noexcept override;
@@ -554,6 +573,7 @@ private:
     AKNode *m_parent {};
     size_t m_parentLink {}; // Index of parent->children()
     std::vector<AKNode*> m_children;
+    bool m_beingDestroyed { false }; // Suppresses child signals while this node is destroyed.
 
     // Yoga layout
     AKLayout m_layout { *this };

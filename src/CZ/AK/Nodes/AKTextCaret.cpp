@@ -19,11 +19,11 @@ AKTextCaret::AKTextCaret(AKNode *parent) noexcept : AKThreePatch(CZOrientation::
 
     m_blinkAnimation.setDuration(1200);
 
-    m_blinkAnimation.setOnUpdateCallback([this](CZAnimation *anim){
+    m_blinkAnimation.onUpdate.subscribe(&m_blinkAnimation, [this](CZAnimation *anim){
         setOpacity((1.f + SkScalarCos(anim->value() * M_PI * 2.f)) * 0.5f);
     });
 
-    m_blinkAnimation.setOnFinishCallback([this](CZAnimation *anim){
+    m_blinkAnimation.onFinish.subscribe(&m_blinkAnimation, [this](CZAnimation *anim){
         if (animated())
             anim->start();
     });
@@ -40,7 +40,7 @@ void AKTextCaret::setAnimated(bool enabled) noexcept
         m_blinkAnimation.start();
     else
     {
-        m_blinkAnimation.stop();
+        m_blinkAnimation.pause();
         setOpacity(1.f);
     }
 }

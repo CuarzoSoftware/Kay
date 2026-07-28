@@ -37,6 +37,8 @@ AKNode::AKNode() noexcept {};
 
 AKNode::~AKNode()
 {
+    m_beingDestroyed = true;
+
     while (!m_backgroundEffects.empty())
         removeBackgroundEffect(*m_backgroundEffects.begin());
 
@@ -202,6 +204,8 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlo
 
     if (m_parent)
     {
+        AKNode *const oldParent { m_parent };
+
         if (!isBackgroundEffect)
         {
             if (handleChanges && m_parent != parent)
@@ -211,6 +215,9 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlo
         }
         auto next = m_parent->m_children.erase(m_parent->m_children.begin() + m_parentLink);
         for (; next != m_parent->m_children.end(); next++) (*next)->m_parentLink--;
+
+        if (!isBackgroundEffect && !oldParent->m_beingDestroyed)
+            oldParent->onChildRemoved.notify(this);
     }
 
     m_parent = parent;
@@ -240,6 +247,9 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlo
 
         if (scene())
             scene()->m_treeChanged = true;
+
+        if (!parent->m_beingDestroyed)
+            parent->onChildAdded.notify(this, prev());
     }
     else if (handleChanges)
     {
@@ -372,6 +382,9 @@ void AKNode::insertBefore(AKNode *other) noexcept
 
             if (!isBackgroundEffect && scene())
                 scene()->m_treeChanged = true;
+
+            if (!isBackgroundEffect && !m_parent->m_beingDestroyed)
+                m_parent->onChildAdded.notify(this, prev());
         }
         else
         {
@@ -443,6 +456,9 @@ void AKNode::insertAfter(AKNode *other) noexcept
 
             if (!isBackgroundEffect && scene())
                 scene()->m_treeChanged = true;
+
+            if (!isBackgroundEffect && !m_parent->m_beingDestroyed)
+                m_parent->onChildAdded.notify(this, prev());
         }
         else
         {

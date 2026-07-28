@@ -215,7 +215,7 @@ public:
     std::shared_ptr<AKIconFont> iconFont;
 
     /* Solid round container 9-patch */
-    CZAssetManager<AKAsset::RRect9Patch, Int32 /*radius*/, Int32 /*scale*/, SkColor /*backgroundColor*/, Int32 /*strokeWidth*/, SkColor /*strokeColor*/> RRect9Patch;
+    CZAssetManager<AKAsset::RRect9Patch, Int32 /*radTL*/, Int32 /*radTR*/, Int32 /*radBR*/, Int32 /*radBL*/, Int32 /*scale*/, SkColor /*backgroundColor*/, Int32 /*strokeWidth*/, SkColor /*strokeColor*/> RRect9Patch;
 
 protected:
 

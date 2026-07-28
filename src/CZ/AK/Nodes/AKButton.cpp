@@ -10,6 +10,7 @@
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKLog.h>
 #include <CZ/Core/Utils/CZColorUtils.h>
+#include <CZ/Core/CZEase.h>
 
 using namespace CZ;
 
@@ -49,6 +50,7 @@ void AKButton::init() noexcept
 
     SkRegion empty;
     m_text.setInputRegion(&empty);
+    m_icon.setInputRegion(&empty);
     m_text.enableReplaceImageColor(true);
     m_icon.enableReplaceImageColor(true);
     m_icon.setSize(20);
@@ -69,6 +71,13 @@ void AKButton::init() noexcept
     m_backgroundColor = AKTheme::ControlAccent;
     m_offToggleBackgroundColor = AKTheme::SystemFill;
     m_contentColor = AKTheme::AlternateSelectedControlText;
+
+    // Short color transitions: apply the eased colors each step and settle exactly on finish. An
+    // interruption (a new target while running) is handled in startColorTransition(), which resets
+    // the animation from the current interpolated color.
+    m_colorAnim.setDuration(140);
+    m_colorAnim.onUpdate.subscribe(&m_colorAnim, [this](CZAnimation*){ applyAnimatedColors(); });
+    m_colorAnim.onFinish.subscribe(&m_colorAnim, [this](CZAnimation*){ applyColors(m_bgTo, m_contentTo); });
 
     updateStyleColor();
 }
@@ -164,10 +173,12 @@ void AKButton::updateStyleColor() noexcept
     static constexpr Float32 pressedOpacity  { 0.12f };
     static constexpr Float32 disabledOpacity { 0.38f };
 
-    // While toggleable, the base fill follows the toggle state: backgroundColor() when on,
-    // offToggleBackgroundColor() when off. Non-toggle buttons always use backgroundColor().
-    const CZAdaptiveColor &fillColor { (m_toggleable && !m_toggled) ? m_offToggleBackgroundColor : m_backgroundColor };
-    const SkColor fill { fillColor.resolve(colorScheme()) };
+    const CZColorScheme scheme { colorScheme() };
+
+    // The base (idle) fill follows the toggle state: backgroundColor() when on, offToggleBackgroundColor()
+    // when off. Non-toggle buttons always use backgroundColor(). This also drives the content color.
+    const bool off { m_toggleable && !m_toggled };
+    const SkColor fill { (off ? m_offToggleBackgroundColor : m_backgroundColor).resolve(scheme) };
 
     // Effective content color. In automatic mode it contrasts with what the fill actually looks
     // like: white (AKTheme::AlternateSelectedControlText) over dark fills, dark ink (AKTheme::Label)
@@ -192,22 +203,89 @@ void AKButton::updateStyleColor() noexcept
     else
         content = m_contentColor.resolve(colorScheme());
 
-    // Container fill = base color + translucent state layer (9-patch replaceColor friendly).
+    // Precompute the fill for each interaction state (idle / hover / pressed) of the active toggle
+    // state, then pick the current one — no dynamic blending in the hot path. In automatic mode the
+    // hover/pressed fills are the idle fill plus a translucent state layer (the content color); in
+    // manual mode the explicit per-state colors are used verbatim (see setAutoBackgroundColor).
+    SkColor hover, pressed;
+
+    if (m_backgroundColorAuto)
+    {
+        hover   = CZColorUtils::StateSrcOver(fill, content, hoverOpacity);
+        pressed = CZColorUtils::StateSrcOver(fill, content, pressedOpacity);
+    }
+    else
+    {
+        hover   = (off ? m_offToggleHoverBackgroundColor   : m_hoverBackgroundColor).resolve(scheme);
+        pressed = (off ? m_offTogglePressedBackgroundColor : m_pressedBackgroundColor).resolve(scheme);
+    }
+
     SkColor bg { fill };
 
-    if (m_enabled && (m_pressed || m_hovered))
-        bg = CZColorUtils::StateSrcOver(fill, content, m_pressed ? pressedOpacity : hoverOpacity);
+    if (m_enabled && m_pressed)
+        bg = pressed;
+    else if (m_enabled && m_hovered)
+        bg = hover;
 
-    AKRoundSolidColor::setBackgroundColor(bg);
-
+    // Opacity (the disabled dim) is applied directly, not animated.
     const Float32 op { m_enabled ? 1.f : disabledOpacity };
     setOpacity(op);
-
-    // Content (label + icon) share the effective content color.
-    m_text.setColor(content);
     m_text.setOpacity(op);
-    m_icon.setColor(content);
     m_icon.setOpacity(op);
+
+    // Record the desired colors and drive them through the color animation.
+    m_bgTarget = bg;
+    m_contentTarget = content;
+
+    if (!m_colorsSeeded)
+    {
+        // First run: no animation, snap to the initial colors.
+        m_colorsSeeded = true;
+        m_bgFrom = m_bgTo = bg;
+        m_contentFrom = m_contentTo = content;
+        applyColors(bg, content);
+        return;
+    }
+
+    startColorTransition();
+}
+
+void AKButton::startColorTransition() noexcept
+{
+    // Start from the currently displayed colors (the interpolated value if a transition is already
+    // in flight), so an interruption redirects immediately from where we are instead of waiting.
+    const Float64 t { CZEase::InOutCubic(m_colorAnim.value()) };
+    const SkColor curBg { CZColorUtils::Mix(m_bgTo, m_bgFrom, t) };
+    const SkColor curContent { CZColorUtils::Mix(m_contentTo, m_contentFrom, t) };
+
+    m_bgFrom = curBg;
+    m_bgTo = m_bgTarget;
+    m_contentFrom = curContent;
+    m_contentTo = m_contentTarget;
+
+    if (m_bgFrom == m_bgTo && m_contentFrom == m_contentTo)
+    {
+        // Already at the target: settle here and stop any running transition.
+        m_colorAnim.pause();
+        applyColors(m_bgTo, m_contentTo);
+        return;
+    }
+
+    m_colorAnim.reset(); // restart from the beginning, even if currently running
+}
+
+void AKButton::applyAnimatedColors() noexcept
+{
+    const Float64 t { CZEase::InOutCubic(m_colorAnim.value()) };
+    applyColors(CZColorUtils::Mix(m_bgTo, m_bgFrom, t),
+                CZColorUtils::Mix(m_contentTo, m_contentFrom, t));
+}
+
+void AKButton::applyColors(SkColor bg, SkColor content) noexcept
+{
+    AKRoundSolidColor::setBackgroundColor(bg);
+    m_text.setColor(content);
+    m_icon.setColor(content);
 }
 
 void AKButton::setBackgroundColor(CZAdaptiveColor color) noexcept
@@ -265,5 +343,58 @@ void AKButton::setAutoContentColor(bool enabled) noexcept
         return;
 
     m_contentColorAuto = enabled;
+    updateStyleColor();
+}
+
+void AKButton::setHoverBackgroundColor(CZAdaptiveColor color) noexcept
+{
+    if (m_hoverBackgroundColor == color)
+        return;
+
+    m_hoverBackgroundColor = color;
+
+    if (!m_backgroundColorAuto)
+        updateStyleColor();
+}
+
+void AKButton::setPressedBackgroundColor(CZAdaptiveColor color) noexcept
+{
+    if (m_pressedBackgroundColor == color)
+        return;
+
+    m_pressedBackgroundColor = color;
+
+    if (!m_backgroundColorAuto)
+        updateStyleColor();
+}
+
+void AKButton::setOffToggleHoverBackgroundColor(CZAdaptiveColor color) noexcept
+{
+    if (m_offToggleHoverBackgroundColor == color)
+        return;
+
+    m_offToggleHoverBackgroundColor = color;
+
+    if (!m_backgroundColorAuto)
+        updateStyleColor();
+}
+
+void AKButton::setOffTogglePressedBackgroundColor(CZAdaptiveColor color) noexcept
+{
+    if (m_offTogglePressedBackgroundColor == color)
+        return;
+
+    m_offTogglePressedBackgroundColor = color;
+
+    if (!m_backgroundColorAuto)
+        updateStyleColor();
+}
+
+void AKButton::setAutoBackgroundColor(bool enabled) noexcept
+{
+    if (m_backgroundColorAuto == enabled)
+        return;
+
+    m_backgroundColorAuto = enabled;
     updateStyleColor();
 }

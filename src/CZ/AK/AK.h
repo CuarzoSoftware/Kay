@@ -46,6 +46,7 @@ namespace CZ
     class AKCoreTextEditor;
     class AKRoundContainer;
     class AKButton;
+    class AKButtonGroup;
     class AKTextField;
     class AKWindowButton;
     class AKWindowButtonGroup;

@@ -3,7 +3,7 @@
 
 using namespace CZ;
 
-AKRoundSolidColor::AKRoundSolidColor(SkColor color, Int32 borderRadius, AKNode *parent) noexcept : AKNinePatch({}, {}, parent)
+AKRoundSolidColor::AKRoundSolidColor(SkColor color, CZBorderRadius borderRadius, AKNode *parent) noexcept : AKNinePatch({}, {}, parent)
 {
     enableReplaceImageColor(true);
     setColor(color);
@@ -37,15 +37,19 @@ void AKRoundSolidColor::setStrokeWidth(Int32 width) noexcept
     addChange(CHStrokeWidth);
 }
 
-void AKRoundSolidColor::setBorderRadius(Int32 borderRadius) noexcept
+void AKRoundSolidColor::setBorderRadius(const CZBorderRadius &borderRadius) noexcept
 {
-    if (borderRadius < 0)
-        borderRadius = 0;
+    CZBorderRadius clamped {
+        std::max(0, borderRadius.fTL),
+        std::max(0, borderRadius.fTR),
+        std::max(0, borderRadius.fBR),
+        std::max(0, borderRadius.fBL)
+    };
 
-    if (borderRadius == m_borderRadius)
+    if (clamped == m_borderRadius)
         return;
 
-    m_borderRadius = borderRadius;
+    m_borderRadius = clamped;
     addChange(CHBorderRadius);
 }
 
@@ -58,7 +62,7 @@ void AKRoundSolidColor::onSceneBegin()
 
     if (ch.testAnyOf(CHBorderRadius, CHLayoutScale, CHStrokeColor, CHStrokeWidth, CHBackgroundColor))
     {
-        m_asset = theme()->RRect9Patch.get(borderRadius(), scale(), backgroundColor(), strokeWidth(), strokeColor());
+        m_asset = theme()->RRect9Patch.get(m_borderRadius.fTL, m_borderRadius.fTR, m_borderRadius.fBR, m_borderRadius.fBL, scale(), backgroundColor(), strokeWidth(), strokeColor());
         setImage(m_asset->image);
         setCenter(m_asset->center);
     }

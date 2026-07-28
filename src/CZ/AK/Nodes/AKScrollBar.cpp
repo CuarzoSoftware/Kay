@@ -23,14 +23,14 @@ AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept
     setEdge(edge);
 
     m_fadeOutAnim.setDuration(300);
-    m_fadeOutAnim.setOnUpdateCallback([this](CZAnimation *a){
+    m_fadeOutAnim.onUpdate.subscribe(&m_fadeOutAnim, [this](CZAnimation *a){
 
         if (opacity() > 0.f)
             setOpacity(1.0 - a->value());
         m_handle.setOpacity(0.5 * (1.0 - a->value()));
     });
 
-    m_fadeOutAnim.setOnFinishCallback([this](CZAnimation *){
+    m_fadeOutAnim.onFinish.subscribe(&m_fadeOutAnim, [this](CZAnimation *){
 
         if (m_preventHide)
             return;
@@ -58,7 +58,7 @@ AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept
     });
 
     m_hoverAnim.setDuration(100);
-    m_hoverAnim.setOnUpdateCallback([this](CZAnimation *a){
+    m_hoverAnim.onUpdate.subscribe(&m_hoverAnim, [this](CZAnimation *a){
         setOpacity(a->value());
 
         if (m_handle.orientation() == CZOrientation::H)
@@ -69,7 +69,7 @@ AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept
                 (AKTheme::ScrollBarHandleWidthHover - AKTheme::ScrollBarHandleWidth) * a->value());
     });
 
-    m_hoverAnim.setOnFinishCallback([this](CZAnimation *){
+    m_hoverAnim.onFinish.subscribe(&m_hoverAnim, [this](CZAnimation *){
         setOpacity(1.f);
     });
 
@@ -152,7 +152,7 @@ bool AKScrollBar::setPosPercent(SkScalar pos) noexcept
     updateGeometry();
 
     m_preventHide = true;
-    m_fadeOutAnim.stop();
+    m_fadeOutAnim.pause();
     m_preventHide = false;
 
     if (sizePercent() != 1.f)
@@ -186,7 +186,7 @@ bool AKScrollBar::setSizePercent(SkScalar size) noexcept
     updateGeometry();
 
     m_preventHide = true;
-    m_fadeOutAnim.stop();
+    m_fadeOutAnim.pause();
     m_preventHide = false;
 
     if (size != 1.f)

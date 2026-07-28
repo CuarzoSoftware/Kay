@@ -19,6 +19,7 @@
 #include <CZ/skia/core/SkMaskFilter.h>
 #include <CZ/skia/core/SkBlurTypes.h>
 #include <CZ/skia/core/SkCanvas.h>
+#include <CZ/skia/core/SkRRect.h>
 #include <CZ/skia/core/SkBitmap.h>
 
 using namespace CZ;
@@ -53,16 +54,25 @@ CZ::AKTheme::AKTheme() noexcept
 
     iconFont = AKIconFont::Make("Material Icons Round", AKFontsDir() / "MaterialIconsRound-Regular.codepoints");
 
-    RRect9Patch.setFactory([](Int32 radius, Int32 scale, SkColor backgroundColor, Int32 strokeWidth, SkColor strokeColor) -> std::shared_ptr<AKAsset::RRect9Patch>
+    RRect9Patch.setFactory([](Int32 radTL, Int32 radTR, Int32 radBR, Int32 radBL, Int32 scale, SkColor backgroundColor, Int32 strokeWidth, SkColor strokeColor) -> std::shared_ptr<AKAsset::RRect9Patch>
     {
-        if (radius <= 0) radius = 1;
         if (scale <= 0) scale = 1;
         if (strokeWidth < 0 || SkColorGetA(strokeColor) == 0) strokeWidth = 0;
 
-        const auto rad { std::max(radius, strokeWidth) };
+        radTL = std::max(0, radTL);
+        radTR = std::max(0, radTR);
+        radBR = std::max(0, radBR);
+        radBL = std::max(0, radBL);
 
-        const SkIRect center { SkIRect::MakeXYWH(rad, rad, 1, 1) };
-        const auto size { SkISize(rad * 2 + 1, rad * 2 + 1) };
+        // Each 9-slice cell must fit both of its corners and the stroke; the center stays a 1x1
+        // stretchable pixel. Corners may differ, so the four cells can have different sizes.
+        const Int32 leftW   { std::max({ radTL, radBL, strokeWidth }) };
+        const Int32 rightW  { std::max({ radTR, radBR, strokeWidth }) };
+        const Int32 topH    { std::max({ radTL, radTR, strokeWidth }) };
+        const Int32 bottomH { std::max({ radBL, radBR, strokeWidth }) };
+
+        const SkIRect center { SkIRect::MakeXYWH(leftW, topH, 1, 1) };
+        const auto size { SkISize(leftW + 1 + rightW, topH + 1 + bottomH) };
         const auto pixelSize { SkISize(size.fWidth * scale, size.fHeight * scale) };
         auto ream { RCore::Get() };
         auto *mainDevice { ream->mainDevice() };
@@ -101,7 +111,16 @@ CZ::AKTheme::AKTheme() noexcept
         {
             paint.setStroke(false);
             paint.setColor(backgroundColor);
-            c.drawRoundRect(rect, radius, radius, paint);
+
+            SkVector radii[4];
+            radii[SkRRect::kUpperLeft_Corner].set(radTL, radTL);
+            radii[SkRRect::kUpperRight_Corner].set(radTR, radTR);
+            radii[SkRRect::kLowerRight_Corner].set(radBR, radBR);
+            radii[SkRRect::kLowerLeft_Corner].set(radBL, radBL);
+
+            SkRRect rrect;
+            rrect.setRectRadii(rect, radii);
+            c.drawRRect(rrect, paint);
         }
 
         if (strokeWidth > 0)
@@ -109,9 +128,19 @@ CZ::AKTheme::AKTheme() noexcept
             paint.setStroke(true);
             paint.setColor(strokeColor);
             paint.setStrokeWidth(strokeWidth);
+
             const SkScalar inset { SkScalar(strokeWidth) * 0.5f };
-            const auto sRad { std::max(0.f, radius - inset) };
-            c.drawRoundRect(rect.makeInset(inset, inset), sRad, sRad, paint);
+            const auto sRad { [inset](Int32 r) { return std::max(0.f, SkScalar(r) - inset); } };
+
+            SkVector radii[4];
+            radii[SkRRect::kUpperLeft_Corner].set(sRad(radTL), sRad(radTL));
+            radii[SkRRect::kUpperRight_Corner].set(sRad(radTR), sRad(radTR));
+            radii[SkRRect::kLowerRight_Corner].set(sRad(radBR), sRad(radBR));
+            radii[SkRRect::kLowerLeft_Corner].set(sRad(radBL), sRad(radBL));
+
+            SkRRect rrect;
+            rrect.setRectRadii(rect.makeInset(inset, inset), radii);
+            c.drawRRect(rrect, paint);
         }
 
         RPixelBufferInfo pixInfo {};

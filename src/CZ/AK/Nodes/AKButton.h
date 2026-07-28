@@ -5,6 +5,7 @@
 #include <CZ/AK/Nodes/AKText.h>
 #include <CZ/AK/Nodes/AKFontIcon.h>
 #include <CZ/Core/CZAdaptive.h>
+#include <CZ/Core/CZLinearAnimation.h>
 #include <CZ/skia/core/SkFontStyle.h>
 
 /**
@@ -34,26 +35,51 @@ public:
     AKFontIcon &icon() noexcept { return m_icon; }
 
     /**
-     * @brief Base fill color; hover/pressed state layers are blended over it.
+     * @brief Idle fill while the button is ON (toggled on, or simply a non-toggle button).
+     *
+     * The background has one color per interaction state (idle / hover / pressed), split by the
+     * toggle state (this "on" set and the offToggle* "off" set). While automatic background color is
+     * enabled (default, @ref setAutoBackgroundColor), only the two idle colors are used and the
+     * hover/pressed colors are derived from them by blending a translucent state layer; when
+     * disabled, all six are used verbatim.
      *
      * Accepts a @ref CZAdaptiveColor (distinct light/dark) or a single SkColor (implicitly
      * converted, used for both). Defaults to @ref AKTheme::ControlAccent, the macOS control tint.
      */
     void setBackgroundColor(CZAdaptiveColor color) noexcept;
-
-    /** @brief The adaptive fill color. */
     CZAdaptiveColor backgroundColor() const noexcept { return m_backgroundColor; }
 
+    /** @brief Fill while ON and hovered. Used only while automatic background color is disabled. */
+    void setHoverBackgroundColor(CZAdaptiveColor color) noexcept;
+    CZAdaptiveColor hoverBackgroundColor() const noexcept { return m_hoverBackgroundColor; }
+
+    /** @brief Fill while ON and pressed. Used only while automatic background color is disabled. */
+    void setPressedBackgroundColor(CZAdaptiveColor color) noexcept;
+    CZAdaptiveColor pressedBackgroundColor() const noexcept { return m_pressedBackgroundColor; }
+
     /**
-     * @brief Base fill used while the button is a toggle and currently OFF (see setToggleable()).
+     * @brief Idle fill while the button is a toggle and currently OFF (see setToggleable()).
      *
-     * When toggleable, the base fill follows the toggle state: backgroundColor() while on and this
-     * while off. Ignored for non-toggle buttons. Defaults to @ref AKTheme::SystemFill.
+     * Ignored for non-toggle buttons. Defaults to @ref AKTheme::SystemFill.
      */
     void setOffToggleBackgroundColor(CZAdaptiveColor color) noexcept;
-
-    /** @brief The adaptive off-state fill color. */
     CZAdaptiveColor offToggleBackgroundColor() const noexcept { return m_offToggleBackgroundColor; }
+
+    /** @brief Fill while OFF and hovered. Used only while automatic background color is disabled. */
+    void setOffToggleHoverBackgroundColor(CZAdaptiveColor color) noexcept;
+    CZAdaptiveColor offToggleHoverBackgroundColor() const noexcept { return m_offToggleHoverBackgroundColor; }
+
+    /** @brief Fill while OFF and pressed. Used only while automatic background color is disabled. */
+    void setOffTogglePressedBackgroundColor(CZAdaptiveColor color) noexcept;
+    CZAdaptiveColor offTogglePressedBackgroundColor() const noexcept { return m_offTogglePressedBackgroundColor; }
+
+    /**
+     * @brief When enabled (default), the hover/pressed fills are derived from the idle fill by
+     *        blending a translucent state layer over it. When disabled, the explicit per-state
+     *        colors above are used as-is (this is what @ref AKButtonGroup does for its buttons).
+     */
+    void setAutoBackgroundColor(bool enabled) noexcept;
+    bool hasAutoBackgroundColor() const noexcept { return m_backgroundColorAuto; }
 
     /**
      * @brief Label/icon color, as a @ref CZAdaptiveColor or a single SkColor (used for both).
@@ -106,10 +132,21 @@ protected:
     void pointerLeaveEvent(const CZPointerLeaveEvent &event) override;
     void windowStateEvent(const CZWindowStateEvent &event) override;
     void updateStyleColor() noexcept;
+    // Applies fill/content colors to the nodes directly (no animation).
+    void applyColors(SkColor background, SkColor content) noexcept;
+    // Applies the eased, interpolated colors for the current animation value.
+    void applyAnimatedColors() noexcept;
+    // Starts a transition towards the recorded target colors if they differ from the displayed ones.
+    void startColorTransition() noexcept;
 
     CZAdaptiveColor m_backgroundColor;
+    CZAdaptiveColor m_hoverBackgroundColor;
+    CZAdaptiveColor m_pressedBackgroundColor;
     CZAdaptiveColor m_offToggleBackgroundColor;
+    CZAdaptiveColor m_offToggleHoverBackgroundColor;
+    CZAdaptiveColor m_offTogglePressedBackgroundColor;
     CZAdaptiveColor m_contentColor;
+    bool m_backgroundColorAuto { true };
     bool m_contentColorAuto { true };
     AKFontIcon m_icon;
     AKText m_text;
@@ -118,6 +155,15 @@ protected:
     bool m_hovered { false };
     bool m_toggleable { false };
     bool m_toggled { false };
+
+    // Short, non-interruptible color transition. updateStyleColor() records the desired colors
+    // (m_*Target); an in-flight animation is always allowed to finish, and on finish it restarts
+    // towards the latest target if it changed meanwhile. Displayed = Mix(*To, *From, ease(value)),
+    // and at rest the displayed color equals *To.
+    CZLinearAnimation m_colorAnim;
+    SkColor m_bgFrom { SK_ColorTRANSPARENT }, m_bgTo { SK_ColorTRANSPARENT }, m_bgTarget { SK_ColorTRANSPARENT };
+    SkColor m_contentFrom { SK_ColorTRANSPARENT }, m_contentTo { SK_ColorTRANSPARENT }, m_contentTarget { SK_ColorTRANSPARENT };
+    bool m_colorsSeeded { false };
 };
 
 #endif // CZ_AKBUTTON_H

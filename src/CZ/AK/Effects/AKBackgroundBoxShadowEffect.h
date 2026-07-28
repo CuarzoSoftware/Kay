@@ -2,7 +2,7 @@
 #define CZ_AKSHADOWEFFECT_H
 
 #include <CZ/AK/Effects/AKBackgroundEffect.h>
-#include <CZ/AK/AKBorderRadius.h>
+#include <CZ/Core/CZBorderRadius.h>
 #include <CZ/skia/core/SkCanvas.h>
 
 class CZ::AKBackgroundBoxShadowEffect : public AKBackgroundEffect
@@ -82,7 +82,7 @@ public:
         return m_fillBackgroundEnabled;
     }
 
-    void setBorderRadius(const AKBorderRadius &borderRadius) noexcept
+    void setBorderRadius(const CZBorderRadius &borderRadius) noexcept
     {
         if (m_borderRadius == borderRadius)
             return;
@@ -91,7 +91,7 @@ public:
         m_borderRadius = borderRadius;
     }
 
-    const AKBorderRadius &borderRadius() const noexcept
+    const CZBorderRadius &borderRadius() const noexcept
     {
         return m_borderRadius;
     }
@@ -112,7 +112,7 @@ protected:
     SkIRect m_dstRects[9];
     SkIPoint m_offset;
     SkScalar m_radius;
-    AKBorderRadius m_borderRadius { 0, 0, 0, 0};
+    CZBorderRadius m_borderRadius { 0, 0, 0, 0};
     bool m_fillBackgroundEnabled;
 };
 

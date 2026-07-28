@@ -24,7 +24,7 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
     m_slot.layout().setWidthPercent(100.f);
     m_slot.layout().setHeightPercent(100.f);
 
-    m_kineticYAnim.setOnUpdateCallback([this](CZAnimation *a){
+    m_kineticYAnim.onUpdate.subscribe(&m_kineticYAnim, [this](CZAnimation *a){
         if (!m_fingersDownY)
         {
             if (-offsetY() - m_vel.fY < m_contentBounds.fTop)
@@ -48,17 +48,17 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
             repaint();
         }
         else {
-            a->stop();
+            a->pause();
         }
     });
 
-    m_kineticYAnim.setOnFinishCallback([this](CZAnimation *){
+    m_kineticYAnim.onFinish.subscribe(&m_kineticYAnim, [this](CZAnimation *){
         m_vel.fY = 0.f;
         moveYPrivate(m_vel.fY);
         repaint();
     });
 
-    m_kineticXAnim.setOnUpdateCallback([this](CZAnimation *a){
+    m_kineticXAnim.onUpdate.subscribe(&m_kineticXAnim, [this](CZAnimation *a){
         if (!m_fingersDownX)
         {                         
             if (-offsetX() < m_contentBounds.fLeft)
@@ -82,11 +82,11 @@ AKScroll::AKScroll(AKNode *parent) noexcept :
             repaint();
         }
         else {
-            a->stop();
+            a->pause();
         }
     });
 
-    m_kineticXAnim.setOnFinishCallback([this](CZAnimation *){
+    m_kineticXAnim.onFinish.subscribe(&m_kineticXAnim, [this](CZAnimation *){
         m_vel.fX = 0.f;
         moveXPrivate(m_vel.fX);
         repaint();
@@ -245,7 +245,7 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
         if (m_fingersDownX)
         {
             m_lastFingerTimeX = CZTime::Ms();
-            m_kineticXAnim.stop();
+            m_kineticXAnim.pause();
 
             m_vel.fX = dx;
 
@@ -289,7 +289,7 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
                 m_kineticXAnim.start();
             }
             else
-                m_kineticXAnim.stop();
+                m_kineticXAnim.pause();
         }
     }
 
@@ -300,7 +300,7 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
         if (m_fingersDownY)
         {
             m_lastFingerTimeY = CZTime::Ms();
-            m_kineticYAnim.stop();
+            m_kineticYAnim.pause();
 
             m_vel.fY = dy;
 
@@ -339,7 +339,7 @@ void AKScroll::pointerScrollEvent(const CZPointerScrollEvent &e)
                 m_kineticYAnim.start();
             }
             else
-                m_kineticYAnim.stop();
+                m_kineticYAnim.pause();
         }
     }
 
