@@ -13,6 +13,7 @@
 #include <CZ/Core/Events/CZPointerButtonEvent.h>
 #include <CZ/Core/Events/CZKeyboardKeyEvent.h>
 #include <CZ/Core/Events/CZWindowStateEvent.h>
+#include <CZ/Core/Events/CZColorSchemeEvent.h>
 #include <CZ/Core/Events/CZKeyboardLeaveEvent.h>
 
 #include <CZ/AK/Events/AKRenderEvent.h>
@@ -62,6 +63,10 @@ static void EnqueueAndPropagateToParent(const CZEvent &event, AKNode *from, AKNo
 static void EnqueueAndPropagateToChildren(std::shared_ptr<CZCore> core, std::shared_ptr<CZEvent> event, AKNode *root) noexcept
 {
     core->postEvent(event, *root);
+
+    // Background effects are attached to a node but live outside its children list; deliver to them too.
+    for (auto *effect : root->backgroundEffects())
+        core->postEvent(event, *effect);
 
     for (auto *child : root->children(true))
         EnqueueAndPropagateToChildren(core, event, child);
@@ -1062,6 +1067,9 @@ bool AKScene::event(const CZEvent &event) noexcept
     case CZEvent::Type::WindowState:
         windowStateEvent((const CZWindowStateEvent&)event);
         break;
+    case CZEvent::Type::ColorScheme:
+        colorSchemeEvent((const CZColorSchemeEvent&)event);
+        break;
     default:
         return AKObject::event(event);
         break;
@@ -1307,6 +1315,15 @@ void AKScene::windowStateEvent(const CZWindowStateEvent &e) noexcept
     m_win->windowState = e.newState;
     if (!m_root) return;
 
+    auto core { CZCore::Get() };
+    EnqueueAndPropagateToChildren(core, e.copy(), m_root);
+}
+
+void AKScene::colorSchemeEvent(const CZColorSchemeEvent &e) noexcept
+{
+    if (!m_root) return;
+
+    // Deliver the event to the root node and every descendant so the whole tree adopts the scheme.
     auto core { CZCore::Get() };
     EnqueueAndPropagateToChildren(core, e.copy(), m_root);
 }

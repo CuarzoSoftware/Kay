@@ -26,6 +26,21 @@ AKText::AKText(const std::string &text, AKNode *parent) noexcept : AKBakeable(pa
     setText(text);
     SkRegion empty;
     setInputRegion(&empty);
+
+    // Re-resolve the adaptive glyph color (and the selection highlight) when the scheme changes.
+    // Skips the re-bake when neither the resolved color nor the selection would look different.
+    onColorSchemeChanged.subscribe(this, [this](CZColorScheme)
+    {
+        const SkColor resolved { m_color.resolve(colorScheme()) };
+        const bool colorChanged { resolved != m_textStyle.getColor() };
+        const bool hasSelection { m_selection[1] != 0 };
+
+        if (!colorChanged && !hasSelection)
+            return;
+
+        applyTextColor(resolved);
+        applyStyleChange(CHColor);
+    });
 }
 
 bool AKText::setText(const std::string &text) noexcept
@@ -54,21 +69,105 @@ bool AKText::setTextStyle(const skia::textlayout::TextStyle &textStyle) noexcept
         return false;
 
     m_textStyle = textStyle;
-    m_selectedStyle = textStyle;
-    SkPaint paint;
-    paint.setColor(AKTheme::SystemCyan.resolve(colorScheme()));
-    m_selectedStyle.setBackgroundPaint(paint);
-    paint.setColor(SK_ColorWHITE);
-    paint.setAntiAlias(true);
-    m_selectedStyle.setForegroundColor(paint);
-    addChange(CHTextStyle);
-    updateDimensions();
+    m_color = textStyle.getColor(); // keep the adaptive-color source in sync with the bulk set
+    applyStyleChange(CHTextStyle);
     return true;
 }
 
 const skia::textlayout::TextStyle &AKText::textStyle() const noexcept
 {
     return m_textStyle;
+}
+
+bool AKText::setFontSize(SkScalar fontSize) noexcept
+{
+    if (m_textStyle.getFontSize() == fontSize)
+        return false;
+
+    m_textStyle.setFontSize(fontSize);
+    applyStyleChange(CHFontSize);
+    return true;
+}
+
+bool AKText::setFontFamilies(std::vector<SkString> families) noexcept
+{
+    if (m_textStyle.getFontFamilies() == families)
+        return false;
+
+    m_textStyle.setFontFamilies(std::move(families));
+    applyStyleChange(CHFontFamilies);
+    return true;
+}
+
+bool AKText::setFontStyle(SkFontStyle fontStyle) noexcept
+{
+    if (m_textStyle.getFontStyle() == fontStyle)
+        return false;
+
+    m_textStyle.setFontStyle(fontStyle);
+    applyStyleChange(CHFontStyle);
+    return true;
+}
+
+bool AKText::setTextColor(CZAdaptiveColor color) noexcept
+{
+    if (m_color == color)
+        return false;
+
+    m_color = color;
+    applyTextColor(color.resolve(colorScheme()));
+    applyStyleChange(CHColor);
+    return true;
+}
+
+bool AKText::setLetterSpacing(SkScalar letterSpacing) noexcept
+{
+    if (m_textStyle.getLetterSpacing() == letterSpacing)
+        return false;
+
+    m_textStyle.setLetterSpacing(letterSpacing);
+    applyStyleChange(CHLetterSpacing);
+    return true;
+}
+
+bool AKText::setLineHeight(SkScalar lineHeight) noexcept
+{
+    if (m_textStyle.getHeight() == lineHeight)
+        return false;
+
+    m_textStyle.setHeight(lineHeight);
+    applyStyleChange(CHLineHeight);
+    return true;
+}
+
+void AKText::applyStyleChange(Change change) noexcept
+{
+    addChange(change);
+    updateDimensions();
+}
+
+void AKText::applyTextColor(SkColor color) noexcept
+{
+    // A foreground paint overrides TextStyle::setColor() (the theme's DefaultTextStyle sets one), so
+    // drive the glyph color through the paint; also mirror it into fColor so getColor() stays right.
+    m_textStyle.setColor(color);
+    SkPaint paint;
+    paint.setColor(color);
+    paint.setAntiAlias(true);
+    m_textStyle.setForegroundPaint(paint);
+}
+
+skia::textlayout::TextStyle AKText::selectedStyle() const noexcept
+{
+    // The selected run reuses the base style but with a highlight background and white ink.
+    skia::textlayout::TextStyle style { m_textStyle };
+    SkPaint paint;
+    paint.setColor(AKTheme::SystemCyan.resolve(colorScheme()));
+    style.setBackgroundPaint(paint);
+    paint.setColor(SK_ColorWHITE);
+    paint.setAntiAlias(true);
+    style.setForegroundColor(paint);
+    return style;
 }
 
 const std::string &AKText::text() const noexcept
@@ -172,7 +271,8 @@ const std::vector<size_t> &AKText::codePointByteOffsets() const noexcept
 
 void AKText::bakeEvent(const AKBakeEvent &e)
 {
-    if (e.damage.isEmpty() && !e.changes.testAnyOf(CHText, CHTextStyle, CHParagraphStyle, CHSelection))
+    if (e.damage.isEmpty() && !e.changes.testAnyOf(CHText, CHTextStyle, CHParagraphStyle, CHSelection,
+        CHFontSize, CHFontFamilies, CHFontStyle, CHColor, CHLetterSpacing, CHLineHeight))
         return;
 
     auto pass { e.surface->beginPass(RPassCap_SkCanvas) };
@@ -249,7 +349,7 @@ void AKText::updateParagraph() noexcept
 
     if (!middle.empty())
     {
-        m_builder->pushStyle(m_selectedStyle);
+        m_builder->pushStyle(selectedStyle());
         m_builder->addText(middle.c_str());
         m_builder->pop();
     }

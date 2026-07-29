@@ -78,6 +78,7 @@ protected:
     void pointerEnterEvent(const CZPointerEnterEvent &event) override;
     void pointerLeaveEvent(const CZPointerLeaveEvent &event) override;
     void windowStateEvent(const CZWindowStateEvent &event) override;
+    void colorSchemeEvent(const CZColorSchemeEvent &event) override;
 
     // Child styling (only AKButton children; verified via dynamic_cast in the signal handlers).
     void styleButton(AKButton *button) noexcept;

@@ -42,6 +42,7 @@ public:
     CZBitset<CZWindowState> windowState() const noexcept;
 
     MSurface *window() const noexcept;
+
 protected:
     bool event(const CZEvent &event) noexcept override;
 private:
@@ -103,6 +104,7 @@ private:
     void keyboardLeaveEvent(const CZKeyboardLeaveEvent &e) noexcept;
 
     void windowStateEvent(const CZWindowStateEvent &e) noexcept;
+    void colorSchemeEvent(const CZColorSchemeEvent &e) noexcept;
 
     static void SetPassParamsFromRenderable(std::shared_ptr<RPass> pass, AKRenderable *rend, bool opaque) noexcept;
 };

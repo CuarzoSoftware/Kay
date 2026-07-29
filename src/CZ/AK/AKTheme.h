@@ -63,6 +63,8 @@ public:
     /// Neutral gray accent.
     static inline CZAdaptiveColor SystemGray { 0xFF8E8E93, 0xFF98989D };
 
+    static inline CZAdaptiveColor SystemBackground { 0xFFFFFFFF, 0xFF000000 };
+
     /// Primary text/label color.
     static inline CZAdaptiveColor Label { 0xD9000000, 0xD9FFFFFF };
     /// Secondary text for subtitles and less prominent labels.

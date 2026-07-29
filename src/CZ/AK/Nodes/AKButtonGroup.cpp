@@ -1,6 +1,7 @@
 #include <CZ/Core/Events/CZPointerEnterEvent.h>
 #include <CZ/Core/Events/CZPointerLeaveEvent.h>
 #include <CZ/Core/Events/CZWindowStateEvent.h>
+#include <CZ/Core/Events/CZColorSchemeEvent.h>
 #include <CZ/AK/Nodes/AKButtonGroup.h>
 #include <CZ/AK/AKTheme.h>
 #include <CZ/Core/Utils/CZColorUtils.h>
@@ -237,6 +238,18 @@ void AKButtonGroup::windowStateEvent(const CZWindowStateEvent &event)
     }
 
     event.accept();
+}
+
+void AKButtonGroup::colorSchemeEvent(const CZColorSchemeEvent &event)
+{
+    AKRoundSolidColor::colorSchemeEvent(event);
+
+    // The grouped buttons re-resolve their own colors; re-resolve our hover backdrop too.
+    if (m_hovered)
+    {
+        m_hoverTarget = m_hoverColor.resolve(colorScheme());
+        startHoverTransition();
+    }
 }
 
 void AKButtonGroup::setHovered(bool hovered) noexcept

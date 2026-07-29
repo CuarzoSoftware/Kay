@@ -4,6 +4,7 @@
 #include <CZ/Core/Events/CZPointerMoveEvent.h>
 #include <CZ/Core/Events/CZPointerButtonEvent.h>
 #include <CZ/Core/Events/CZWindowStateEvent.h>
+#include <CZ/Core/Events/CZColorSchemeEvent.h>
 #include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/AK/AKScene.h>
 #include <CZ/AK/Nodes/AKButton.h>
@@ -55,16 +56,14 @@ void AKButton::init() noexcept
     m_icon.enableReplaceImageColor(true);
     m_icon.setSize(20);
 
-    auto textStyle { m_text.textStyle() };
-    textStyle.setFontStyle(SkFontStyle(
+    m_text.setFontStyle(SkFontStyle(
         SkFontStyle::kMedium_Weight,
         SkFontStyle::Width::kNormal_Width,
         SkFontStyle::Slant::kUpright_Slant));
-    textStyle.setFontSize(14);
-    textStyle.setFontFamilies({ SkString("Roboto") });
-    textStyle.setLetterSpacing(0.1);
-    textStyle.setHeight(20);
-    m_text.setTextStyle(textStyle);
+    m_text.setFontSize(14);
+    m_text.setFontFamilies({ SkString("Roboto") });
+    m_text.setLetterSpacing(0.1);
+    m_text.setLineHeight(20);
 
     // Default fill = macOS control accent; content color is auto-derived from it by default
     // (the explicit content color below is the fallback used when auto is disabled).
@@ -166,6 +165,12 @@ void AKButton::windowStateEvent(const CZWindowStateEvent &event)
     event.accept();
 }
 
+void AKButton::colorSchemeEvent(const CZColorSchemeEvent &event)
+{
+    AKRoundSolidColor::colorSchemeEvent(event); // updates colorScheme()
+    updateStyleColor();                         // re-resolve the adaptive fills/content for it
+}
+
 void AKButton::updateStyleColor() noexcept
 {
     // Interaction state opacities for the translucent overlay blended over the fill.
@@ -183,19 +188,21 @@ void AKButton::updateStyleColor() noexcept
     // Effective content color. In automatic mode it contrasts with what the fill actually looks
     // like: white (AKTheme::AlternateSelectedControlText) over dark fills, dark ink (AKTheme::Label)
     // over light ones. Two refinements over a naive luma check:
-    //  - The fill is first composited over a light surface, so a translucent fill is judged by what
-    //    shows through (a light button) rather than its own RGB — e.g. SystemFill (a low-alpha tint)
-    //    reads as light and gets dark content in either color scheme.
+    //  - The fill is first composited over the surface behind the button (SystemBackground for the
+    //    current scheme), so a translucent fill is judged by what actually shows through rather than
+    //    its own RGB — e.g. a low-opacity light fill over a dark surface reads dark and gets light
+    //    content, and the same fill over a light surface reads light and gets dark content.
     //  - The darkness cutoff is raised above the 0.5 midpoint so mid-luminance fills (e.g. the
     //    system green) count as dark and get readable white content.
-    // Endpoints are fixed (.light()) since the choice depends on the fill, not the app's scheme.
-    // Otherwise the set content color resolved for the current scheme is used.
+    // Endpoints are fixed (.light()) since the choice depends on the fill's apparent luminance, not
+    // the app's scheme. Otherwise the set content color resolved for the current scheme is used.
     SkColor content;
 
     if (m_contentColorAuto)
     {
         static constexpr Float32 darkFillThreshold { 0.6f };
-        const SkColor effectiveFill { CZColorUtils::SrcOver(SK_ColorWHITE, fill) };
+        const SkColor surface { AKTheme::SystemBackground.resolve(scheme) };
+        const SkColor effectiveFill { CZColorUtils::SrcOver(surface, fill) };
         content = CZColorUtils::IsColorDark(effectiveFill, darkFillThreshold)
             ? AKTheme::AlternateSelectedControlText.light()
             : AKTheme::Label.light();

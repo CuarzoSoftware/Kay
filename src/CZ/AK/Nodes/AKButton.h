@@ -131,6 +131,7 @@ protected:
     void pointerEnterEvent(const CZPointerEnterEvent &event) override;
     void pointerLeaveEvent(const CZPointerLeaveEvent &event) override;
     void windowStateEvent(const CZWindowStateEvent &event) override;
+    void colorSchemeEvent(const CZColorSchemeEvent &event) override;
     void updateStyleColor() noexcept;
     // Applies fill/content colors to the nodes directly (no animation).
     void applyColors(SkColor background, SkColor content) noexcept;

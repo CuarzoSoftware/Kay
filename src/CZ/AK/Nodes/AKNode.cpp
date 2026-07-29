@@ -480,6 +480,7 @@ void AKNode::setColorScheme(CZColorScheme scheme) noexcept
 
     m_colorScheme = scheme;
     addChange(CHColorScheme);
+    onColorSchemeChanged.notify(scheme);
 }
 
 void AKNode::enableChildrenClipping(bool enable) noexcept

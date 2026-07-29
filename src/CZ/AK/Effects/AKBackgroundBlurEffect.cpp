@@ -22,22 +22,10 @@ AKBackgroundBlurEffect::AKBackgroundBlurEffect(AKNode *target) noexcept :
     bdt.setEnabled(true);
     bdt.setScale(0.5f);
     bdt.setDamageOutset(42);
-}
 
-bool AKBackgroundBlurEffect::setColorScheme(CZColorScheme scheme) noexcept
-{
-    const auto changed { m_colorScheme != scheme };
-    bool needsRepaint { false };
-
-    if (scheme == CZColorScheme::Dark)
-        needsRepaint = m_colorScheme != CZColorScheme::Dark;
-    else
-        needsRepaint = m_colorScheme == CZColorScheme::Dark;
-
-    if (needsRepaint)
-        addChange(CHColorScheme);
-
-    return changed;
+    // Reblur when the node's color scheme changes (AKNode::setColorScheme emits this, e.g. from a
+    // propagated CZColorSchemeEvent). The scheme itself is read from colorScheme() at render time.
+    onColorSchemeChanged.subscribe(this, [this](CZColorScheme){ addChange(CHColorScheme); });
 }
 
 void AKBackgroundBlurEffect::setFullSize() noexcept

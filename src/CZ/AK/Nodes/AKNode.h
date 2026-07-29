@@ -475,6 +475,9 @@ public:
      */
     CZSignal<AKNode* /*removed*/> onChildRemoved;
 
+    /** @brief Emitted when the node's color scheme changes (see setColorScheme). Carries the new scheme. */
+    CZSignal<CZColorScheme> onColorSchemeChanged;
+
 protected:
     void setSlot(AKNode *slot) noexcept;
     bool event(const CZEvent &event) noexcept override;
