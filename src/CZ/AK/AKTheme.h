@@ -13,6 +13,8 @@
 #include <CZ/Core/CZAssetManager.h>
 #include <CZ/Core/CZAdaptive.h>
 #include <unordered_map>
+#include <map>
+#include <tuple>
 
 namespace CZ
 {
@@ -62,8 +64,34 @@ public:
     static inline CZAdaptiveColor SystemBrown { 0xFFAC7F5E, 0xFFB78A66 };
     /// Neutral gray accent.
     static inline CZAdaptiveColor SystemGray { 0xFF8E8E93, 0xFF98989D };
+    /// Secondary adaptable gray.
+    static inline CZAdaptiveColor SystemGray2 { 0xFFAEAEB2, 0xFF636366 };
+    /// Tertiary adaptable gray.
+    static inline CZAdaptiveColor SystemGray3 { 0xFFC7C7CC, 0xFF48484A };
+    /// Quaternary adaptable gray.
+    static inline CZAdaptiveColor SystemGray4 { 0xFFD1D1D6, 0xFF3A3A3C };
+    /// Low-emphasis adaptable gray.
+    static inline CZAdaptiveColor SystemGray5 { 0xFFE5E5EA, 0xFF2C2C2E };
+    /// Lightest adaptable gray.
+    static inline CZAdaptiveColor SystemGray6 { 0xFFF2F2F7, 0xFF1C1C1E };
 
+    /// Pure black (does not adapt).
+    static inline CZAdaptiveColor Black { 0xFF000000, 0xFF000000 };
+    /// Pure white (does not adapt).
+    static inline CZAdaptiveColor White { 0xFFFFFFFF, 0xFFFFFFFF };
+
+    /// Background for the overall view.
     static inline CZAdaptiveColor SystemBackground { 0xFFFFFFFF, 0xFF000000 };
+    /// Background for grouped content.
+    static inline CZAdaptiveColor SecondarySystemBackground { 0xFFF2F2F7, 0xFF1C1C1E };
+    /// Background for content nested inside secondary surfaces.
+    static inline CZAdaptiveColor TertiarySystemBackground { 0xFFFFFFFF, 0xFF2C2C2E };
+    /// Background for grouped table-style layouts.
+    static inline CZAdaptiveColor SystemGroupedBackground { 0xFFF2F2F7, 0xFF000000 };
+    /// Grouped background for secondary surfaces.
+    static inline CZAdaptiveColor SecondarySystemGroupedBackground { 0xFFFFFFFF, 0xFF1C1C1E };
+    /// Grouped background for nested tertiary surfaces.
+    static inline CZAdaptiveColor TertiarySystemGroupedBackground { 0xFFF2F2F7, 0xFF2C2C2E };
 
     /// Primary text/label color.
     static inline CZAdaptiveColor Label { 0xD9000000, 0xD9FFFFFF };
@@ -75,6 +103,11 @@ public:
     static inline CZAdaptiveColor QuaternaryLabel { 0x1A000000, 0x1AFFFFFF };
     /// Quinary text, the faintest and most decorative.
     static inline CZAdaptiveColor QuinaryLabel { 0x0D000000, 0x0DFFFFFF };
+
+    /// Legacy always-light text (fixed; does not adapt).
+    static inline CZAdaptiveColor LightText { 0x99FFFFFF, 0x99FFFFFF };
+    /// Legacy always-dark text (fixed; does not adapt).
+    static inline CZAdaptiveColor DarkText { 0xFF000000, 0xFF000000 };
 
     /// Editable document text.
     static inline CZAdaptiveColor Text { 0xFF000000, 0xFFFFFFFF };
@@ -109,6 +142,8 @@ public:
 
     /// Divider line between content.
     static inline CZAdaptiveColor Separator { 0x1A000000, 0x1AFFFFFF };
+    /// Separator that fully obscures content behind it.
+    static inline CZAdaptiveColor OpaqueSeparator { 0xFFC6C6C8, 0xFF38383A };
     /// Grid lines in tables and outlines.
     static inline CZAdaptiveColor Grid { 0xFFE6E6E6, 0xFF1A1A1A };
     /// Drop-shadow color.
@@ -196,7 +231,7 @@ public:
     static inline SkScalar  ScrollBarHandleWidth                    { 7.f };
     static inline SkScalar  ScrollBarHandleWidthHover               { 11.f };
     virtual std::shared_ptr<RImage>  roundLineThreePatchImage       (CZOrientation orientation, Int32 diam, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
-    virtual std::shared_ptr<RImage>  scrollRailThreePatchImage      (CZOrientation orientation, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
+    virtual std::shared_ptr<RImage>  scrollRailThreePatchImage      (CZOrientation orientation, Int32 scale, SkColor railBackground, SkColor railBorder, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
 
     /* AKEdgeShadow */
 
@@ -244,10 +279,9 @@ protected:
             std::unordered_map<Int32,
                 std::shared_ptr<RImage>>>> m_roundLineThreePatchImage;
 
-    /* Round Line Patch [orientation][scale] */
-    std::unordered_map<CZOrientation,
-        std::unordered_map<Int32,
-            std::shared_ptr<RImage>>> m_scrollRailThreePatchImage;
+    /* Scroll Rail Patch [orientation, scale, background, border] */
+    std::map<std::tuple<CZOrientation, Int32, SkColor, SkColor>,
+        std::shared_ptr<RImage>> m_scrollRailThreePatchImage;
 };
 
 #endif // CZ_AKTHEME_H

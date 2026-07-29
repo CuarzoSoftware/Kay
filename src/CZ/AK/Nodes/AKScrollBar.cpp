@@ -16,7 +16,6 @@ AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept
     setOpacity(0.f);
     setVisible(false);
     m_handle.enableReplaceImageColor(true);
-    m_handle.setColor(SkColorSetARGB(128, 0, 0, 0));
     setKeepSidesAspectRatio(false);
     m_handle.setKeepSidesAspectRatio(false);
     layout().setPositionType(YGPositionTypeAbsolute);
@@ -73,7 +72,37 @@ AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept
         setOpacity(1.f);
     });
 
+    // Re-resolve the adaptive rail/handle colors (regenerating the rail image) on scheme changes.
+    onColorSchemeChanged.subscribe(this, [this](CZColorScheme){ updateImages(); });
+
     m_fadeOutTimer.start(1);
+}
+
+void AKScrollBar::setRailBackgroundColor(CZAdaptiveColor color) noexcept
+{
+    if (m_railBackgroundColor == color)
+        return;
+
+    m_railBackgroundColor = color;
+    updateImages();
+}
+
+void AKScrollBar::setRailBorderColor(CZAdaptiveColor color) noexcept
+{
+    if (m_railBorderColor == color)
+        return;
+
+    m_railBorderColor = color;
+    updateImages();
+}
+
+void AKScrollBar::setHandleColor(CZAdaptiveColor color) noexcept
+{
+    if (m_handleColor == color)
+        return;
+
+    m_handleColor = color;
+    m_handle.setColor(m_handleColor.resolve(colorScheme()));
 }
 
 bool AKScrollBar::setEdge(CZEdge edge) noexcept
@@ -319,6 +348,11 @@ void AKScrollBar::layoutEvent(const CZLayoutEvent &e)
 
 void AKScrollBar::updateImages() noexcept
 {
+    const CZColorScheme scheme { colorScheme() };
+
+    // Handle is tinted from a white image via replaceImageColor.
+    m_handle.setColor(m_handleColor.resolve(scheme));
+
     SkRect side, center;
     m_handle.setImage(theme()->roundLineThreePatchImage(
         m_handle.orientation(),
@@ -337,6 +371,8 @@ void AKScrollBar::updateImages() noexcept
     setImage(theme()->scrollRailThreePatchImage(
         orientation(),
         scale(),
+        m_railBackgroundColor.resolve(scheme),
+        m_railBorderColor.resolve(scheme),
         &side, &center));
 
     setSideSrcRect(side);

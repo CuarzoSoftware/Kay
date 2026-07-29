@@ -313,7 +313,7 @@ std::shared_ptr<RImage> CZ::AKTheme::roundLineThreePatchImage(CZOrientation orie
     return surface->image();
 }
 
-std::shared_ptr<RImage> CZ::AKTheme::scrollRailThreePatchImage(CZOrientation orientation, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept
+std::shared_ptr<RImage> CZ::AKTheme::scrollRailThreePatchImage(CZOrientation orientation, Int32 scale, SkColor railBackground, SkColor railBorder, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept
 {
     if (scale <= 0 || outSideSrc == nullptr || outCenterSrc == nullptr)
         return nullptr;
@@ -329,10 +329,10 @@ std::shared_ptr<RImage> CZ::AKTheme::scrollRailThreePatchImage(CZOrientation ori
         outCenterSrc->setXYWH(2.f, 0.f, 1.f, 1.f);
     }
 
-    auto &orientationMap { m_scrollRailThreePatchImage[orientation] };
-    auto it { orientationMap.find(scale) };
+    const std::tuple<CZOrientation, Int32, SkColor, SkColor> key { orientation, scale, railBackground, railBorder };
+    auto it { m_scrollRailThreePatchImage.find(key) };
 
-    if (it != orientationMap.end())
+    if (it != m_scrollRailThreePatchImage.end())
         return it->second;
 
     auto surface = RSurface::Make(
@@ -345,21 +345,21 @@ std::shared_ptr<RImage> CZ::AKTheme::scrollRailThreePatchImage(CZOrientation ori
     auto &c { *pass->getCanvas() };
 
     // c.scale(surface->scale(), surface->scale());
-    c.clear(SkColorSetARGB(255, 251, 251, 251));
+    c.clear(railBackground);
 
     SkPaint paint;
     paint.setAntiAlias(true);
     paint.setBlendMode(SkBlendMode::kSrcOver);
     paint.setStroke(true);
     paint.setStrokeWidth(1.f);
-    paint.setColor(SkColorSetARGB(25, 0, 0, 0));
+    paint.setColor(railBorder);
 
     if (orientation == CZOrientation::V)
         c.drawLine(-5.f, 0.f, 5.f, 0.f, paint);
     else
         c.drawLine(0.f, -5.f, 0.f, 5.f, paint);
 
-    orientationMap[scale] = surface->image();
+    m_scrollRailThreePatchImage[key] = surface->image();
     return surface->image();
 }
 

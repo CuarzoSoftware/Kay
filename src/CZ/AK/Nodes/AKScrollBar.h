@@ -6,6 +6,7 @@
 #include <CZ/Core/CZLinearAnimation.h>
 #include <CZ/Core/CZTimer.h>
 #include <CZ/Core/CZEdge.h>
+#include <CZ/Core/CZAdaptive.h>
 
 class CZ::AKScrollBar : public AKThreePatch
 {
@@ -34,6 +35,18 @@ public:
     bool setSizePercent(SkScalar size) noexcept;
     SkScalar sizePercent() const noexcept { return m_sizePercent; }
 
+    /** @brief Adaptive fill of the rail (track) behind the handle. Re-resolved on scheme changes. */
+    void setRailBackgroundColor(CZAdaptiveColor color) noexcept;
+    CZAdaptiveColor railBackgroundColor() const noexcept { return m_railBackgroundColor; }
+
+    /** @brief Adaptive color of the rail's inner border line. Re-resolved on scheme changes. */
+    void setRailBorderColor(CZAdaptiveColor color) noexcept;
+    CZAdaptiveColor railBorderColor() const noexcept { return m_railBorderColor; }
+
+    /** @brief Adaptive color of the draggable handle (tinted via replaceImageColor). */
+    void setHandleColor(CZAdaptiveColor color) noexcept;
+    CZAdaptiveColor handleColor() const noexcept { return m_handleColor; }
+
 protected:
     using AKThreePatch::setOrientation;
     using AKThreePatch::setImage;
@@ -46,6 +59,10 @@ protected:
     void layoutEvent(const CZLayoutEvent &e) override;
     void updateImages() noexcept;
     void updateGeometry() noexcept;
+    // Light values match the previous hardcoded ones; dark variants mirror them for a dark scheme.
+    CZAdaptiveColor m_railBackgroundColor { 0xFFFBFBFB, 0xFF2E2E2E };
+    CZAdaptiveColor m_railBorderColor { 0x19000000, 0x19FFFFFF };
+    CZAdaptiveColor m_handleColor { 0x80000000, 0x80FFFFFF };
     SkScalar m_posPercent { 0.f };
     SkScalar m_sizePercent { 100.f };
     AKContainer m_space { YGFlexDirectionRow, false, this };
