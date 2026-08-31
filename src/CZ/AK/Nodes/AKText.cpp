@@ -24,6 +24,7 @@ AKText::AKText(const std::string &text, AKNode *parent) noexcept : AKBakeable(pa
     m_paragraphStyle.setTextDirection(skia::textlayout::TextDirection::kLtr);
     setTextStyle(theme()->DefaultTextStyle);
     setText(text);
+    setTextColor(AKTheme::Text);
     SkRegion empty;
     setInputRegion(&empty);
 

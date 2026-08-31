@@ -46,7 +46,7 @@ void AKButton::init() noexcept
     layout().setPadding(YGEdgeLeft, 12);
     layout().setPadding(YGEdgeRight, 12);
     layout().setGap(YGGutterAll, 8);
-    setBorderRadius(16);
+    setBorderRadius(10);
     setStrokeWidth(0); // solid, borderless
 
     SkRegion empty;

@@ -1114,14 +1114,14 @@ void AKScene::pointerEnterEvent(const CZPointerEnterEvent &e) noexcept
 {
     auto app { AKApp::Get() };
 
-    if (app->pointer().focus())
-        return;
-
-    auto self { m_self.lock() };
-    app->pointer().m_history.enter = e;
-    app->pointer().m_history.move.pos = e.pos;
-    app->pointer().m_focus.reset(this);
-    app->pointer().onFocusChanged.notify();
+    if (!app->pointer().focus())
+    {
+        auto self { m_self.lock() };
+        app->pointer().m_history.enter = e;
+        app->pointer().m_history.move.pos = e.pos;
+        app->pointer().m_focus.reset(this);
+        app->pointer().onFocusChanged.notify();
+    }
 
     CZPointerMoveEvent move {};
     move.pos = e.pos;
@@ -1155,47 +1155,42 @@ void AKScene::pointerMoveEvent(const CZPointerMoveEvent &e) noexcept
     }
     else
     {
-        auto *node { nodeAt(app->pointer().pos()) };
+        auto *prev { pointerFocus() };
+        m_win->pointerFocus.reset(nodeAt(app->pointer().pos()));
 
-        if (node)
+        if (m_win->pointerFocus)
         {
-            if (pointerFocus())
+            if (prev)
             {
-                if (pointerFocus() == node)
+                if (prev == m_win->pointerFocus)
                 {
-                    EnqueueAndPropagateToParent(e, pointerFocus(), nullptr, false);
+                    EnqueueAndPropagateToParent(e, prev, nullptr, false);
                 }
-                else if (pointerFocus()->isSubchildOf(node))
+                else if (prev->isSubchildOf(m_win->pointerFocus))
                 {
-                    EnqueueAndPropagateToParent(leave, pointerFocus(), node, false);
-                    EnqueueAndPropagateToParent(e, node, nullptr, false);
+                    EnqueueAndPropagateToParent(leave, prev, m_win->pointerFocus, false);
+                    EnqueueAndPropagateToParent(e, m_win->pointerFocus, nullptr, false);
                 }
-                else if (node->isSubchildOf(pointerFocus()))
+                else if (m_win->pointerFocus->isSubchildOf(prev))
                 {
-                    EnqueueAndPropagateToParent(enter, node, pointerFocus(), false);
-                    EnqueueAndPropagateToParent(e, pointerFocus(), nullptr, false);
+                    EnqueueAndPropagateToParent(enter, m_win->pointerFocus, prev, false);
+                    EnqueueAndPropagateToParent(e, prev, nullptr, false);
                 }
                 else
                 {
-                    EnqueueAndPropagateToParent(leave, pointerFocus(), nullptr, false);
-                    EnqueueAndPropagateToParent(enter, node, nullptr, false);
+                    EnqueueAndPropagateToParent(leave, prev, nullptr, false);
+                    EnqueueAndPropagateToParent(enter, m_win->pointerFocus, nullptr, false);
                 }
             }
             else
             {
-                EnqueueAndPropagateToParent(enter, pointerFocus(), nullptr, false);
+                EnqueueAndPropagateToParent(enter, m_win->pointerFocus, nullptr, false);
             }
         }
-        else
+        else if (prev)
         {
-            if (pointerFocus())
-            {
-                EnqueueAndPropagateToParent(leave, pointerFocus(), nullptr, false);
-                m_win->pointerFocus.reset();
-            }
+            EnqueueAndPropagateToParent(leave, prev, nullptr, false);
         }
-
-        m_win->pointerFocus.reset(node);
     }
 }
 
