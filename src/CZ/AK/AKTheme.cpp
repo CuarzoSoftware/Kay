@@ -161,9 +161,6 @@ CZ::AKTheme::AKTheme() noexcept
         if (radius <= 0) radius = 1;
         if (scale <= 0) scale = 1;
 
-        AKLog.setLevel(CZTrace);
-        AKLog(CZFatal, "First quadrant {} {}", radius, scale);
-
         auto surface = RSurface::Make(SkISize(radius, radius), scale, true);
         auto pass { surface->beginPass(RPassCap_SkCanvas) };
         auto &c { *pass->getCanvas() };

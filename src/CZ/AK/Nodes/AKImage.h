@@ -36,6 +36,14 @@ public:
         if (image.get() == m_image.get())
             return false;
 
+        /* Swapping between images is covered by the fine-grained damage the owner adds (e.g. a
+         * client's buffer damage), but gaining or losing the image changes whether the node draws
+         * AT ALL. That transition isn't covered by such damage: it may have been consumed by a
+         * frame where the node couldn't draw yet (null image), leaving the node permanently stale
+         * on the buffers composited before the image arrived. */
+        if ((m_image == nullptr) != (image == nullptr))
+            addDamage(AK_IRECT_INF);
+
         addChange(CHImage);
         m_image = image;
         return true;
