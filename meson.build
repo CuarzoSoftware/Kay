@@ -41,7 +41,7 @@ add_project_arguments([
 cpp             = meson.get_compiler('cpp')
 pkg             = import('pkgconfig')
 cz_core_dep     = dependency('cz-core', fallback:['cz-core', 'cz_core_dep'])
-cz_skia_dep     = dependency('cz-skia', fallback:['cz-skia', 'cz_skia_dep'])
+cz_skia_dep     = dependency('cz-skia', fallback:['cz-skia', 'cz_skia_dep'], include_type: 'system')
 cz_ream_dep     = dependency('cz-ream', fallback:['cz-ream', 'cz_ream_dep'])
 xkbcommon_dep   = dependency('xkbcommon')
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
