@@ -6,6 +6,7 @@
 
 /**
  * @brief Vertical or horizontal three image patch
+ * @ingroup AKNodes
  *
  * [Fixed Left/Top] [Stretched Center] [Mirrored Left/Top Side]
  *
@@ -14,15 +15,28 @@
 class CZ::AKThreePatch : public AKRenderable
 {
 public:
+    /** @brief Property change bits consumed on the next AKScene::render(). */
     enum Changes
     {
+        /// sideSrcRect() changed.
         CHSideSrcRect = AKRenderable::CHLast,
+
+        /// centerSrcRect() changed.
         CHCenterSrcRect,
+
+        /// orientation() changed.
         CHOrientation,
+
+        /// imageScale() changed.
         CHImageScale,
+
+        /// image() changed.
         CHImage,
+
+        /// keepSidesAspectRatio() changed.
         CHKeepSidesAspectRatio,
-        CHLast
+
+        CHLast ///< Marker for subclass chaining.
     };
 
     /**
@@ -33,6 +47,11 @@ public:
         m_orientation(orientation) {};
 
 
+    /**
+     * @brief Sets the axis along which the three parts are laid out.
+     *
+     * CZOrientation::H places them left-to-right, CZOrientation::V top-to-bottom.
+     */
     void setOrientation(CZOrientation orientation) noexcept
     {
         if (m_orientation == orientation)
@@ -43,6 +62,7 @@ public:
         addDamage(AK_IRECT_INF);
     }
 
+    /** @brief The current orientation. */
     CZOrientation orientation() const noexcept { return m_orientation; }
 
     /**
@@ -146,6 +166,7 @@ public:
      */
     std::shared_ptr<RImage> image() const noexcept { return m_image; }
 
+    /** @brief Whether the sides keep their aspect ratio (see setKeepSidesAspectRatio()). Defaults to `true`. */
     bool keepSidesAspectRatio() const noexcept { return m_keepSidesAspectRatio; }
 
     /**
@@ -165,6 +186,7 @@ public:
     }
 
 protected:
+    /** @brief Draws the two sides (the far one mirrored) and the stretched center. No-op without an image. */
     void renderEvent(const AKRenderEvent &event) override;
     SkRect m_sideSrcRect { 0.f, 0.f, 0.f, 0.f };
     SkRect m_centerSrcRect { 0.f, 0.f, 0.f, 0.f };

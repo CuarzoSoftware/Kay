@@ -22,6 +22,8 @@
  *   `RoundRect` and `Path`.
  *
  * The final blurred region is the intersection of the specified area and the clip shape.
+ *
+ * @ingroup AKEffects
  */
 class CZ::AKBackgroundBlurEffect : public AKBackgroundEffect
 {
@@ -142,8 +144,11 @@ public:
 
 protected:
     using AKBackgroundEffect::effectRect;
+    /** @brief Recalculates the effect rect, the final blurred region and the capture area when the target rect changes. */
     void targetNodeRectCalculated() override;
+    /** @brief Downsamples and blurs the captured background, then draws it with the vibrancy effect and optional clipping. */
     void renderEvent(const AKRenderEvent &event) override;
+    /** @brief Notified when the effect is attached to a different target node (no-op). */
     void onTargetNodeChanged() override { /* Nothing to free here */ }
 private:
     using AKBackgroundEffect::setStackPosition;

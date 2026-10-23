@@ -40,12 +40,15 @@ Additionally, Kay includes a submodule named Marco, which is specifically design
   - **For Compositors**: A single scene can be shared across multiple targets (e.g., one per screen), enabling features like dragging windows between screens. Nodes maintain their state per target, ensuring damage regions are managed correctly for each rendering context.
 
 - **AKNode**:  
-   An `AKNode` is the fundamental building block for components with its own layout and nesting capabilities. Depending on its role, a node can function as:
-  - **AKContainer**: A node with no rendering capabilities, serving only as a container for other nodes. It can also optionally clip its children by its bounds.
-  - **AKRenderable**: Nodes with an `onRender()` virtual method to draw content directly into the current target using internal shaders (AKPainter). They are useful for displaying textures (e.g., Wayland surfaces), solid colors, and creating efficient mask effects. Examples of built-in renderable nodes include AKImage and AKSolidColor. Skia can also be used within an `onRender()` event, but its performance is considerably worse than the built-in shaders, so it is recommended to be used sparingly.
-  - **AKBakeable**: These nodes have their own framebuffer with dimensions given by the current target properties (e.g., scaling factor). They have an `onBake()` event and can be used to avoid re-creating complex components each time, allowing the scene to re-composite them efficiently if they only move. Their framebuffers only grow in size when resized to avoid re-creating them each time, but can be automatically or manually shrunk if memory needs to be saved. They are a subclass of AKRenderable, but the default `onRender()` implementation is used to perform their composition into the target.
-  - **AKSubScene**: A subclass of AKBakeable that renders its children into its own framebuffer. This allows for sophisticated post-processing effects and avoids frequent re-compositing of subtrees. Since children nodes are baked into the framebuffer, they are always clipped by its bounds.
-  - **AKBackgroundEffect**: A subclass of AKRenderable used to generate effects such as shadows, blur, etc.
+   An `AKNode` is the fundamental building block for components with its own layout and nesting capabilities. Depending on its role, a node can function as an **AKContainer**, **AKRenderable**, **AKBakeable**, **AKSubScene** or **AKBackgroundEffect**.
+
+See @ref core_components_page "Core Components" for a detailed description of each of these classes and how they interact.
+
+### Guides
+
+- @ref core_components_page "Core Components": The building blocks of every Kay application or compositor.
+- @ref creating_components_page "Creating Components": How to create your own components and which base class to choose.
+- @ref events_page "Event System": How events are dispatched and how to feed input events from your own backend.
 
 ### Example
 

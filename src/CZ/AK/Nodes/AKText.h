@@ -14,25 +14,64 @@
 class CZ::AKText : public AKBakeable
 {
 public:
+    /** @brief Property change bits consumed on the next AKScene::render(). */
     enum Changes
     {
+        /// The paragraph style changed.
         CHParagraphStyle = AKBakeable::CHLast,
+
+        /// textStyle() changed.
         CHTextStyle,
+
+        /// text() changed.
         CHText,
+
+        /// selection() changed.
         CHSelection,
+
+        /// fontSize() changed.
         CHFontSize,
+
+        /// fontFamilies() changed.
         CHFontFamilies,
+
+        /// fontStyle() changed.
         CHFontStyle,
+
+        /// textColor() changed.
         CHColor,
+
+        /// letterSpacing() changed.
         CHLetterSpacing,
+
+        /// lineHeight() changed.
         CHLineHeight,
-        CHLast
+
+        CHLast ///< Marker for subclass chaining.
     };
 
+    /**
+     * @brief Constructs the node with the given UTF-8 text.
+     *
+     * Uses the theme's default text style and AKTheme::Text as glyph color.
+     * The input region is empty by default, so the node ignores pointer events.
+     */
     AKText(const std::string &text, AKNode *parent = nullptr) noexcept;
 
+    /**
+     * @brief Sets the UTF-8 text.
+     *
+     * Resizes the node to the laid-out paragraph, clears the selection and emits
+     * onTextChanged (and onSelectionChanged if a selection was cleared).
+     *
+     * @return `true` if the text changed, `false` otherwise.
+     */
     bool setText(const std::string &text) noexcept;
+
+    /** @brief The UTF-8 text as set with setText(). */
     const std::string &text() const noexcept;
+
+    /** @brief The text actually laid out: text() with each tab expanded to four spaces. */
     const std::string &skText() const noexcept;
 
     /**
@@ -57,7 +96,7 @@ public:
     SkFontStyle fontStyle() const noexcept { return m_textStyle.getFontStyle(); }
 
     /**
-     * @brief Glyph color, as a @ref CZAdaptiveColor (distinct light/dark, resolved for the current
+     * @brief Glyph color, as a CZAdaptiveColor (distinct light/dark, resolved for the current
      *        color scheme and re-resolved automatically when it changes).
      *
      * @note Named setTextColor (not setColor) to avoid colliding with the node-level
@@ -75,10 +114,22 @@ public:
     bool setLineHeight(SkScalar lineHeight) noexcept;
     SkScalar lineHeight() const noexcept { return m_textStyle.getHeight(); }
 
+    /**
+     * @brief Selects `count` code points starting at `start`.
+     *
+     * Out-of-range values are clamped (an out-of-range start clears the selection).
+     * The selected run is highlighted (see AKTheme::SystemCyan) and onSelectionChanged
+     * is emitted when the selection actually changes. Pass count = 0 to clear.
+     */
     void setSelection(size_t start, size_t count) noexcept;
+
+    /** @brief The current selection as a {start, count} pair of code point indices ({0, 0} when empty). */
     const size_t *selection() const noexcept;
 
+    /** @brief Index of the code point at the given position, in logical coordinates relative to the node. */
     size_t codePointAt(SkScalar x, SkScalar y) const noexcept;
+
+    /** @brief Layout bounds of the grapheme at the given code point index, relative to the node. */
     SkRect glyphAtCodePoint(size_t codePoint) const noexcept;
 
     /**
@@ -98,10 +149,14 @@ public:
      */
     size_t codePointByteOffset(size_t codePoint) const noexcept;
 
+    /** @brief Emitted when the selection changes (see setSelection()). */
     CZSignal<> onSelectionChanged;
+
+    /** @brief Emitted when the text changes (see setText()). */
     CZSignal<> onTextChanged;
 
 protected:
+    /** @brief Paints the laid-out paragraph into the node's surface with Skia. */
     void bakeEvent(const AKBakeEvent &event) override;
     void updateDimensions() noexcept;
     void updateCodePointByteOffsets() noexcept;

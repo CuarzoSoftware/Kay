@@ -1,4 +1,4 @@
-# Event System
+# Event System {#events_page}
 
 The **Cuarzo Framework** event system (including **Kay**) is heavily inspired by **Qt**.
 

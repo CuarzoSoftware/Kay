@@ -20,18 +20,47 @@ namespace CZ
 {
 namespace AKAsset
 {
+    /**
+     * @brief A baked 9-patch image for solid rounded-rect containers.
+     * @ingroup AKCore
+     */
     struct RRect9Patch
     {
+        /// The baked 9-patch image.
         std::shared_ptr<RImage> image;
+        /// The stretchable center cell within the image, in logical pixels.
         SkIRect center;
     };
 }
 };
 
+/**
+ * @brief Centralized visual style for built-in components.
+ *
+ * AKTheme gathers everything Kay's built-in components use to draw themselves:
+ *
+ * - **Colors**: adaptive (light, dark) macOS-style system colors as CZAdaptiveColor
+ *   static members, plus a few Cuarzo-specific ones.
+ * - **Fonts**: the default Skia font and text styles (initialized in the constructor,
+ *   using the "Inter" family).
+ * - **Metrics**: per-component constants such as paddings, radii and scroll physics.
+ * - **Baked assets**: lazily created, per-scale cached images (nine/three-patches,
+ *   shadows, window buttons, masks) exposed through virtual factory methods and
+ *   CZAssetManager members.
+ *
+ * The active theme is returned by CZ::theme(), which lazily creates the default one.
+ * To customize the look, subclass AKTheme (e.g. overriding the virtual asset factories
+ * or adjusting the static members) and install it with CZ::setTheme().
+ *
+ * @ingroup AKCore
+ */
 class CZ::AKTheme
 {
 public:    
+    /** @brief Constructs the theme, initializing fonts, text styles, the icon font and asset factories. */
     AKTheme() noexcept;
+
+    /** @brief Destructor. */
     virtual ~AKTheme() {}
 
     /* Colors */
@@ -190,68 +219,111 @@ public:
 
     /* Non-macOS Cuarzo colors */
 
+    /// Outline drawn around the keyboard-focused component.
     static inline SkColor   FocusOutlineColor   { 0xFF86b4fa };
+    /// Icon tint for the light color scheme.
     static inline SkColor   IconLightScheme     { 0xFF444444 };
+    /// Icon tint for the dark color scheme.
     static inline SkColor   IconDarkScheme      { 0xFFFFFFFF };
 
     /* Fonts */
 
+    /// Default Skia font ("Inter", regular, size 12).
     static inline SkFont    DefaultFont;
+    /// Default paragraph text style ("Inter", regular, size 11, black).
     skia::textlayout::TextStyle   DefaultTextStyle;
+    /// Text style for button labels (DefaultTextStyle with semi-bold weight).
     skia::textlayout::TextStyle   ButtonTextStyle;
 
     /* Renderables */
 
+    /// Opacity factor applied to renderables while their window is inactive. Defaults to 0.5.
     static inline SkScalar  RenderableInactiveOpacityFactor { 0.5f };
 
     /* AKButton */
 
+    /// Border radius of AKButton in logical pixels. Defaults to 8.
     static inline Int32     AKButtonBorderRadius                    { 8 };
 
     /* AKTextField */
 
+    /// Opacity of a disabled AKTextField. Defaults to 0.3.
     static inline SkScalar  TextFieldDisabledOpacity                { 0.3f };
+    /// Content padding of AKTextField (left, top, right, bottom). Defaults to (16, 2, 16, 2).
     static inline SkRect    TextFieldPadding                        { 16.f, 2.f, 16.f, 2.f };
+    /// Source rect of the stretchable center cell within textFieldRoundHThreePatchImage().
     static inline SkRect    TextFieldRoundHThreePatchCenterSrcRect  { SkRect::MakeXYWH(8.f, 0.f, 1.f, 24.f) };
+    /// Source rect of a side cell within textFieldRoundHThreePatchImage().
     static inline SkRect    TextFieldRoundHThreePatchSideSrcRect    { SkRect::MakeWH(8.f, 24.f) };
+    /** @brief Baked horizontal 3-patch for the rounded AKTextField background (cached per scale). */
     virtual std::shared_ptr<RImage>  textFieldRoundHThreePatchImage          (Int32 scale) noexcept;
 
     /* AKTextCaret */
 
+    /// Source rect of the stretchable center cell within textCaretVThreePatchImage().
     static inline SkRect    TextCaretVThreePatchCenterSrcRect       { SkRect::MakeXYWH(0.f, 1.f, 2.f, 1.f) };
+    /// Source rect of a side cell within textCaretVThreePatchImage().
     static inline SkRect    TextCaretVThreePatchSideSrcRect         { SkRect::MakeWH(2.f, 2.f) };
+    /** @brief Baked vertical 3-patch for the AKTextCaret (cached per scale). */
     virtual std::shared_ptr<RImage>  textCaretVThreePatchImage      (Int32 scale) noexcept;
 
     /* AKScroll */
     
+    /// Kinetic scrolling speed factor. Defaults to 1.5.
     static inline SkScalar  ScrollKineticSpeed                      { 1.5f };
+    /// Kinetic scrolling friction. Defaults to 0.15.
     static inline SkScalar  ScrollKineticFriction                   { 0.15f };
+    /// Kinetic scrolling inertia. Defaults to 10.
     static inline SkScalar  ScrollKineticInertia                    { 10.f };
+    /// Maximum overscroll bounce offset in logical pixels. Defaults to 96.
     static inline SkScalar  ScrollBounceOffsetLimit                 { 96.f };
+    /// Scroll bar handle width in logical pixels. Defaults to 7.
     static inline SkScalar  ScrollBarHandleWidth                    { 7.f };
+    /// Scroll bar handle width while hovered, in logical pixels. Defaults to 11.
     static inline SkScalar  ScrollBarHandleWidthHover               { 11.f };
+    /**
+     * @brief Baked 3-patch of a round-capped line of the given diameter, used for the scroll bar handle.
+     *
+     * Cached per orientation/diameter/scale. The side and center source rects are returned
+     * through @p outSideSrc and @p outCenterSrc.
+     */
     virtual std::shared_ptr<RImage>  roundLineThreePatchImage       (CZOrientation orientation, Int32 diam, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
+    /**
+     * @brief Baked 3-patch for the scroll bar rail with the given background and border colors.
+     *
+     * Cached per orientation/scale/colors. The side and center source rects are returned
+     * through @p outSideSrc and @p outCenterSrc.
+     */
     virtual std::shared_ptr<RImage>  scrollRailThreePatchImage      (CZOrientation orientation, Int32 scale, SkColor railBackground, SkColor railBorder, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept;
 
     /* AKEdgeShadow */
 
+    /// Thickness of AKEdgeShadow in logical pixels. Defaults to 2.
     static inline Int32     EdgeShadowRadius                        { 2 };
+    /// Tint color of AKEdgeShadow. Defaults to half-transparent black.
     static inline SkColor   EdgeShadowColor                         { 0x80000000 };
+    /** @brief Baked edge shadow gradient used by AKEdgeShadow (cached per scale). */
     virtual std::shared_ptr<RImage>  edgeShadowImage                (Int32 scale) noexcept;
 
     /* Window Button */
 
+    /// Size of an AKWindowButton in logical pixels. Defaults to 12x12.
     static inline SkISize   WindowButtonSize                        { 12, 12 };
+    /// Gap between window buttons in logical pixels. Defaults to 8.
     static inline Int32     WindowButtonGap                         { 8 };
+    /** @brief Baked AKWindowButton image for the given type and state (cached per scale/type/state). */
     virtual std::shared_ptr<RImage>  windowButtonImage              (Int32 scale, AKWindowButton::Type type, AKWindowButton::State state);
 
     /* First quadrant of a circle white-filled */
+    /// Cache of white-filled first-quadrant circle masks, keyed by radius and scale.
     CZAssetManager<RImage, Int32 /*radius*/, Int32 /*scale*/> FirstQuadrantCircleMask;
 
     /* Icon Font (could be nullptr) */
+    /// The theme's icon font ("Material Icons Round" by default). Can be `nullptr` if loading failed.
     std::shared_ptr<AKIconFont> iconFont;
 
     /* Solid round container 9-patch */
+    /// Cache of solid rounded-rect container 9-patches, keyed by corner radii, scale, fill and stroke.
     CZAssetManager<AKAsset::RRect9Patch, Int32 /*radTL*/, Int32 /*radTR*/, Int32 /*radBR*/, Int32 /*radBL*/, Int32 /*scale*/, SkColor /*backgroundColor*/, Int32 /*strokeWidth*/, SkColor /*strokeColor*/> RRect9Patch;
 
 protected:

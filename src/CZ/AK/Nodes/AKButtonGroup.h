@@ -32,12 +32,16 @@ public:
         Multiple  ///< Buttons are toggles, each independent of the others.
     };
 
+    /** @brief Property change bits consumed on the next AKScene::render(). */
     enum Changes
     {
+        /// toggleMode() changed.
         CHToggleMode = AKRoundSolidColor::CHLast,
-        CHLast
+
+        CHLast ///< Marker for subclass chaining.
     };
 
+    /** @brief Constructs an empty group (transparent fill, border radius 10, no stroke). */
     AKButtonGroup(AKNode *parent = nullptr) noexcept;
 
     /**
@@ -74,10 +78,19 @@ protected:
     // sync. The group's own setBorderRadius above hides it; this keeps it reachable internally.
     using AKRoundSolidColor::setBorderRadius;
 
+    /** @brief Styles button children that were parented during their construction (missed by onChildAdded). */
     void onSceneBegin() override;
+
+    /** @brief Starts fading the hover fill in. */
     void pointerEnterEvent(const CZPointerEnterEvent &event) override;
+
+    /** @brief Starts fading the hover fill out. */
     void pointerLeaveEvent(const CZPointerLeaveEvent &event) override;
+
+    /** @brief Re-resolves the hover fill, which may need a new color scheme. */
     void windowStateEvent(const CZWindowStateEvent &event) override;
+
+    /** @brief Re-resolves the hover fill for the new color scheme (the buttons restyle themselves). */
     void colorSchemeEvent(const CZColorSchemeEvent &event) override;
 
     // Child styling (only AKButton children; verified via dynamic_cast in the signal handlers).

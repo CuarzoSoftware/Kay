@@ -9,6 +9,15 @@
 #include <CZ/Core/Events/CZPointerMoveEvent.h>
 #include <CZ/Core/Events/CZPointerScrollEvent.h>
 
+/**
+ * @brief Global pointer state.
+ *
+ * Owned by AKApp (see AKApp::pointer() or the CZ::akPointer() shortcut), it keeps
+ * the most recent pointer events dispatched by Kay, the current cursor position and
+ * the scene currently holding pointer focus.
+ *
+ * @ingroup AKInput
+ */
 class CZ::AKPointer : public AKObject
 {
 public:
@@ -63,6 +72,8 @@ public:
      * @return The focused AKScene, or nullptr if none.
      */
     AKScene *focus() const noexcept { return m_focus; }
+
+    /** @brief Emitted when the focused scene changes (see focus()). */
     CZSignal<> onFocusChanged;
 
 protected:

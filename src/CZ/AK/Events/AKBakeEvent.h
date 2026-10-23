@@ -8,8 +8,12 @@
 #include <CZ/Ream/RSurface.h>
 
 /**
- * @brief Render event.
- * @ingroup CZEvents
+ * @brief Bake event, sent to AKBakeable nodes to (re)draw their own surface.
+ *
+ * Received through AKBakeable::bakeEvent() during AKScene::render().
+ * All regions are in node-local coordinates.
+ *
+ * @ingroup AKEvents
  */
 class CZ::AKBakeEvent : public CZEvent
 {
@@ -32,7 +36,14 @@ public:
         surface(surface)
     {}
 
+    /**
+     * @brief The node's accumulated changes for the current target (see AKNode::changes()).
+     */
     const AKChanges &changes;
+
+    /**
+     * @brief The target currently being rendered.
+     */
     const AKTarget &target;
 
     /**

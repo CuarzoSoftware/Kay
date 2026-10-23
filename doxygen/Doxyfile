@@ -949,14 +949,13 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../src/AK \
+INPUT                  = ../src/CZ/AK \
+                         ../src/CZ/AK/Nodes \
+                         ../src/CZ/AK/Effects \
+                         ../src/CZ/AK/Events \
+                         ../src/CZ/AK/Input \
                          md \
-                         md/tutorial \
-                         ../src/AK/effects \
-                         ../src/AK/events \
-                         ../src/AK/input \
-                         ../src/AK/nodes \
-                         ../src/AK/utils
+                         md/doc
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1107,8 +1106,7 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = img/tutorial \
-                         img
+IMAGE_PATH             = img
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -1169,7 +1167,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = MainPage.md
+USE_MDFILE_AS_MAINPAGE = md/MainPage.md
 
 # The Fortran standard specifies that for fixed formatted Fortran code all
 # characters from position 72 are to be considered as comment. A common

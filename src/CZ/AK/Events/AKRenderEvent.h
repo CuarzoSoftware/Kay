@@ -7,9 +7,12 @@
 #include <CZ/Ream/RSurface.h>
 
 /**
- * @brief Render event.
+ * @brief Render event, sent to AKRenderable nodes to draw into the current target.
  *
+ * Received through AKRenderable::renderEvent() during AKScene::render().
  * Unlike bake events, the destination coords are relative to the current target surface.
+ *
+ * @ingroup AKEvents
  */
 class CZ::AKRenderEvent : public CZEvent
 {
@@ -29,19 +32,29 @@ public:
         opaque(opaque)
     {}
 
-    // The current target
+    /**
+     * @brief The target currently being rendered.
+     */
     const AKTarget &target;
 
-    // Damage within rect
+    /**
+     * @brief The region to repaint within rect (restrict all drawing to it).
+     */
     const SkRegion &damage;
 
-    // Node rect relative to the current target surface
+    /**
+     * @brief The node rect relative to the current target surface.
+     */
     const SkIRect &rect;
 
-    // The pass to use for rendering
+    /**
+     * @brief The Ream pass to render with (see RPass::getPainter()).
+     */
     std::shared_ptr<RPass> pass;
 
-    // Indicates if damage only contains rects from the opaque region (blending should be disabled)
+    /**
+     * @brief Whether damage only contains rects from the opaque region (blending should be disabled).
+     */
     bool opaque;
 };
 

@@ -8,17 +8,17 @@
  * @brief A bakeable node.
  * @ingroup AKNodes
  *
- * Bakeable nodes contain their own RSurface(s) where rendering can be performed during an onBake() event using its SkCanvas.
- * The surfaces are then blitted into the main target using the AKPainter shaders during the default implementation of onRender().
+ * Bakeable nodes contain their own RSurface(s) where rendering can be performed during a bakeEvent() using its SkCanvas.
+ * The surfaces are then blitted into the main target by the default implementation of renderEvent().
  *
  * The main idea of AKBakeables is to render complex components once and then let AKScene handle the composition if the
  * node, for example, only changes position. Having a custom surface also allows for more sophisticated effects such as applying masks,
  * opacity to a tree of nodes (like AKSubScene does), and so on.
  *
- * onBake() is always called during AKScene::render(), except if the node is not visible or completely occluded. It depends
- * on its own logic to prevent re-rendering itself each time. OnBakeParams::damage indicates if there are regions that need
+ * bakeEvent() is always called during AKScene::render(), except if the node is not visible or completely occluded. It depends
+ * on its own logic to prevent re-rendering itself each time. AKBakeEvent::damage indicates if there are regions that need
  * to be repainted, which only happens when the node appears on a target for the first time or the node is resized.
- * For larger nodes, OnBakeParams::clip can be useful as it indicates which regions of the node are currently exposed (not occluded by other
+ * For larger nodes, AKBakeEvent::clip can be useful as it indicates which regions of the node are currently exposed (not occluded by other
  * nodes or clipped by the viewport).
  *
  * An RSurface is automatically created for each AKTarget the node is displayed in, ensuring a pixel-perfect
@@ -31,20 +31,26 @@ class CZ::AKBakeable : public AKRenderable
 {
 public:
 
+    /**
+     * @brief Changes tracked in addition to AKRenderable::Changes.
+     */
     enum Changes
     {
-        CHLast = AKRenderable::CHLast,
+        CHLast = AKRenderable::CHLast, ///< Marker for subclass chaining.
     };
 
     /**
      * @brief RSurface associated with an AKTarget.
      *
-     * @note During an onBake() or onRender() event, there is always a surface for the AKNode::currentTarget().
+     * @note During a bakeEvent() or renderEvent(), there is always a surface for the AKNode::currentTarget().
      *
      * @return The RSurface of the node associated with a target, or `nullptr` if there isn't one.
      */
     std::shared_ptr<RSurface> surface() const noexcept;
 
+    /**
+     * @brief Whether the last bakeEvent() added damage (repainted something).
+     */
     bool onBakeGeneratedDamage() const noexcept { return m_onBakeGeneratedDamage; };
 
 protected:
@@ -59,9 +65,16 @@ protected:
     /**
      * @brief Bake event
      *
-     * Triggered after onSceneBegin(), onSceneCalculatedRect() and before onRender().
+     * Triggered during AKScene::render(), after onSceneBegin() and before renderEvent().
+     * Draw into the surface with Skia only when AKBakeEvent::damage is non-empty or a
+     * relevant change is present in AKBakeEvent::changes, and add any repainted region
+     * to AKBakeEvent::damage.
      */
     virtual void bakeEvent(const AKBakeEvent &event) = 0;
+
+    /**
+     * @brief Blits the baked surface into the target (default implementation).
+     */
     void renderEvent(const AKRenderEvent &event) override;
     bool event(const CZEvent &event) noexcept override;
 

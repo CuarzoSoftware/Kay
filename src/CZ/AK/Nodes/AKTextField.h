@@ -12,19 +12,42 @@
 /**
  * @brief A node with text-input capabilities.
  * @ingroup AKNodes
+ *
+ * A single-line editable field: a themed rounded three-patch background with an
+ * AKText and a blinking AKTextCaret inside. It is keyboard focusable (clicking
+ * focuses it, Tab moves focus to the next focusable node) and supports typing,
+ * Backspace, caret movement with the arrow keys, pointer-driven selection and
+ * Ctrl+A select-all. Keyboard focus is dropped when a pointer press lands
+ * outside the field. The default size is 200x24.
  */
 class CZ::AKTextField : public AKContainer
 {
 public:
+    /** @brief Constructs an empty text field. */
     AKTextField(AKNode *parent = nullptr) noexcept;
 protected:
+    /** @brief App-level filter that clears keyboard focus when a pointer press lands outside the field. */
     bool eventFilter(const CZEvent &event, CZObject &target) noexcept override;
+
+    /** @brief Updates the text position on resize and the themed images on scale changes. */
     void layoutEvent(const CZLayoutEvent &event) override;
+
+    /** @brief Shows the caret and starts its blink animation. */
     void keyboardEnterEvent(const CZKeyboardEnterEvent &event) override;
+
+    /** @brief Handles typing, Backspace, arrow keys, Tab focus navigation and Ctrl+A. */
     void keyboardKeyEvent(const CZKeyboardKeyEvent &event) override;
+
+    /** @brief Clears the selection and hides the caret. */
     void keyboardLeaveEvent(const CZKeyboardLeaveEvent &event) override;
+
+    /** @brief Takes keyboard focus; a left press places the caret and starts interactive selection. */
     void pointerButtonEvent(const CZPointerButtonEvent &event) override;
+
+    /** @brief Extends the selection while interactive selection is active. */
     void pointerMoveEvent(const CZPointerMoveEvent &event) override;
+
+    /** @brief Pauses/resumes the caret according to the window's activated state. */
     void windowStateEvent(const CZWindowStateEvent &event) override;
     void updateDimensions() noexcept;
     void updateScale() noexcept;

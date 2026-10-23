@@ -43,7 +43,7 @@ public:
      * hover/pressed colors are derived from them by blending a translucent state layer; when
      * disabled, all six are used verbatim.
      *
-     * Accepts a @ref CZAdaptiveColor (distinct light/dark) or a single SkColor (implicitly
+     * Accepts a CZAdaptiveColor (distinct light/dark) or a single SkColor (implicitly
      * converted, used for both). Defaults to @ref AKTheme::ControlAccent, the macOS control tint.
      */
     void setBackgroundColor(CZAdaptiveColor color) noexcept;
@@ -82,7 +82,7 @@ public:
     bool hasAutoBackgroundColor() const noexcept { return m_backgroundColorAuto; }
 
     /**
-     * @brief Label/icon color, as a @ref CZAdaptiveColor or a single SkColor (used for both).
+     * @brief Label/icon color, as a CZAdaptiveColor or a single SkColor (used for both).
      *
      * Ignored while automatic content color is enabled (@ref setAutoContentColor). Defaults to
      * @ref AKTheme::AlternateSelectedControlText (white), the color for text over a tinted fill.

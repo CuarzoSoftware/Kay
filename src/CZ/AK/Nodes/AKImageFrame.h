@@ -7,6 +7,7 @@
 
 /**
  * @brief Image view with flexible sizing and alignment options.
+ * @ingroup AKNodes
  *
  * Displays an image framed by the node bounds.
  */
@@ -14,18 +15,34 @@ class CZ::AKImageFrame : public AKRenderable
 {
 public:
 
+    /** @brief Property change bits consumed on the next AKScene::render(). */
     enum Changes
     {
+        /// sizeMode() changed.
         CHSizeMode = AKRenderable::CHLast,
+
+        /// alignment() changed.
         CHAlignment,
+
+        /// transform() changed.
         CHTransform,
+
+        /// image() changed.
         CHImage,
+
+        /// srcRect() changed.
         CHSrcRect,
+
+        /// scale() changed.
         CHScale,
-        CHLast
+
+        CHLast ///< Marker for subclass chaining.
     };
 
+    /** @brief Constructs the frame without an image. */
     explicit AKImageFrame(AKNode* parent = nullptr) noexcept;
+
+    /** @brief Constructs the frame with an initial image (may be nullptr). */
     explicit AKImageFrame(std::shared_ptr<RImage> image, AKNode* parent = nullptr) noexcept;
 
     /**
@@ -65,6 +82,12 @@ public:
      * @return `nullptr` if no image is set.
      */
     std::shared_ptr<RImage> image() const noexcept { return m_image; }
+
+    /**
+     * @brief Sets the displayed image (nullptr to unset; the node then draws nothing).
+     *
+     * @return `true` if the image changed, `false` otherwise.
+     */
     bool setImage(std::shared_ptr<RImage> image) noexcept;
 
     /**
@@ -78,6 +101,8 @@ public:
      * @return The current transform. Defaults to `CZTransform::Normal`.
      */
     CZTransform transform() const noexcept { return m_transform; }
+
+    /** @brief Sets the source rect transform (see transform()). */
     bool setTransform(CZTransform transform) noexcept;
 
     /**
@@ -88,6 +113,12 @@ public:
      * @return The current alignment. Defaults to 0 (center).
      */
     CZAlignment alignment() const noexcept { return m_alignment; }
+
+    /**
+     * @brief Sets the alignment of the image within the frame (see alignment()).
+     *
+     * @return `true` if the alignment changed, `false` otherwise.
+     */
     bool setAlignment(CZAlignment alignment) noexcept;
 
     /**
@@ -96,6 +127,12 @@ public:
      * @return The current size mode. Defaults to `SizeMode::Contain`.
      */
     SizeMode sizeMode() const noexcept { return m_sizeMode; }
+
+    /**
+     * @brief Sets how the image is resized within the frame (see SizeMode).
+     *
+     * @return `true` if the mode changed, `false` otherwise.
+     */
     bool setSizeMode(SizeMode mode) noexcept;
 
     /**
@@ -104,6 +141,12 @@ public:
      * Defaults to nullopt (the entire image is used).
      */
     std::optional<SkRect> srcRect() const noexcept { return m_srcRect; }
+
+    /**
+     * @brief Sets a custom source rect, in logical coordinates (see setScale()).
+     *
+     * Pass std::nullopt to use the entire image (the default).
+     */
     bool setSrcRect(std::optional<SkRect> rect) noexcept;
 
     /**
@@ -112,10 +155,21 @@ public:
      * @return The current scaling factor.
      */
     SkScalar scale() const noexcept { return m_scale;}
+
+    /**
+     * @brief Sets the scale factor that maps srcRect() into image pixels (only used when a srcRect() is set).
+     *
+     * Clamped to a minimum of 0.1. Defaults to 1.0.
+     *
+     * @return `true` if the scale changed, `false` otherwise.
+     */
     bool setScale(SkScalar scale) noexcept;
 
 protected:
+    /** @brief Recalculates the source/destination rects and the invisible region when relevant properties changed. */
     void onSceneBegin() override;
+
+    /** @brief Draws the image into the calculated destination rect. No-op without an image. */
     void renderEvent(const AKRenderEvent &e) override;
     std::shared_ptr<RImage> m_image;
     std::optional<SkRect> m_srcRect;

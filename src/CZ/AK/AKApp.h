@@ -8,7 +8,14 @@
 #include <CZ/skia/modules/skparagraph/include/FontCollection.h>
 
 /**
- * @brief Core application class
+ * @brief Core application class.
+ *
+ * A per-process singleton providing shared services to all scenes: input state and
+ * focus (pointer(), keyboard()), font services and access to the CZCore (event loop)
+ * and RCore (Ream graphics) instances. Input events are typically sent to the AKApp,
+ * which dispatches them to the focused AKScene (see @ref events_page "Event System").
+ *
+ * @ingroup AKCore
  */
 class CZ::AKApp : public AKObject
 {
@@ -32,13 +39,34 @@ public:
      */
     static std::shared_ptr<AKApp> Get() noexcept;
 
+    /**
+     * @brief The CZCore instance handling the event loop.
+     */
     std::shared_ptr<CZCore> core() const noexcept { return m_cuarzo; }
+
+    /**
+     * @brief The RCore (Ream) graphics context.
+     */
     std::shared_ptr<RCore> ream() const noexcept { return m_ream; }
 
+    /**
+     * @brief The Skia font manager used by text nodes.
+     */
     sk_sp<SkFontMgr> fontManager() const noexcept;
+
+    /**
+     * @brief The Skia font collection used by text nodes (e.g. AKText).
+     */
     sk_sp<skia::textlayout::FontCollection> fontCollection() const noexcept;
 
+    /**
+     * @brief Global pointer state, focus and event history.
+     */
     AKPointer &pointer() noexcept { return m_pointer; };
+
+    /**
+     * @brief Global keyboard state, focus and event history.
+     */
     AKKeyboard &keyboard() noexcept;
 protected:
     bool event(const CZEvent &event) noexcept override;

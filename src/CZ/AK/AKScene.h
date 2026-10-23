@@ -9,19 +9,57 @@
 #include <memory.h>
 #include <vector>
 
+/**
+ * @brief Renders a tree of nodes into AKTargets.
+ *
+ * A scene calculates the layout of its node tree, tracks damage and renders the
+ * nodes back-to-front into a given target during render(). It also behaves like a
+ * window from the input point of view: it keeps the pointer and keyboard focus and
+ * dispatches input events to the right nodes (see @ref events_page "Event System").
+ *
+ * Applications typically use one scene with a single target per window, while
+ * compositors can share one scene across multiple targets (e.g. one per screen).
+ * See @ref core_components_page "Core Components".
+ *
+ * @ingroup AKCore
+ */
 class CZ::AKScene : public AKObject
 {
 public:
+    /**
+     * @brief Creates a scene.
+     */
     [[nodiscard]] static std::shared_ptr<AKScene> Make() noexcept;
     ~AKScene();
+
+    /**
+     * @brief Whether this is the internal scene of an AKSubScene.
+     */
     bool isSubScene() const noexcept { return m_isSubScene; };
 
+    /**
+     * @brief Creates a render destination bound to this scene (see AKTarget).
+     */
     [[nodiscard]] std::shared_ptr<AKTarget> makeTarget() noexcept;
+
+    /**
+     * @brief Targets created by this scene.
+     */
     const std::vector<AKTarget*> &targets() const noexcept { return m_targets; }
 
+    /**
+     * @brief Renders the node tree into the given target.
+     *
+     * Calculates the layout (unless AKTarget::layoutOnRender is disabled), dispatches
+     * bake/render events, performs damage tracking and fills the target's output regions.
+     *
+     * @return `false` if the target is invalid (e.g. missing surface or root node).
+     */
     bool render(std::shared_ptr<AKTarget> target) noexcept;
 
-    // Target passed to render(), set to nullptr after the call finishes
+    /**
+     * @brief The target passed to render(), or `nullptr` outside a render() call.
+     */
     std::shared_ptr<AKTarget> currentTarget() const noexcept { return ct; }
 
     /**
@@ -31,16 +69,52 @@ public:
      * The root node's bounds do not clip its children, but its layout properties may affect them.
      */
     void setRoot(AKNode *node) noexcept;
+
+    /**
+     * @brief The topmost node whose input region contains the given position (in world coordinates), or `nullptr`.
+     */
     AKNode *nodeAt(const SkPoint &pos) const noexcept;
+
+    /**
+     * @brief The root node (see setRoot()), or `nullptr`.
+     */
     AKNode *root() const noexcept { return m_root; }
 
+    /**
+     * @brief Redirects all pointer events to the given node (or releases the grab with `nullptr`),
+     *        e.g. during drag interactions.
+     */
     void setPointerGrab(AKNode *node) noexcept;
+
+    /**
+     * @brief The node currently grabbing pointer events, or `nullptr` (see setPointerGrab()).
+     */
     AKNode *pointerGrab() const noexcept;
+
+    /**
+     * @brief The node with direct pointer focus, or `nullptr` (see AKNode::hasPointerFocus()).
+     */
     AKNode *pointerFocus() const noexcept;
+
+    /**
+     * @brief The node with keyboard focus, or `nullptr` (see AKNode::setKeyboardFocus()).
+     */
     AKNode *keyboardFocus() const noexcept;
+
+    /**
+     * @brief The next keyboard-focusable node after the current focus, used for tab navigation
+     *        (see AKNode::setKeyboardFocusable()).
+     */
     AKNode *nextKeyboardFocusable() const noexcept;
+
+    /**
+     * @brief The window state flags last received through a CZWindowStateEvent (e.g. activated).
+     */
     CZBitset<CZWindowState> windowState() const noexcept;
 
+    /**
+     * @brief The Marco window (MSurface) displaying this scene, or `nullptr` (e.g. outside Marco).
+     */
     MSurface *window() const noexcept;
 
 protected:

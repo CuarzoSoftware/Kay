@@ -13,6 +13,8 @@
  *
  * This class allows loading icons by name or codepoint from a font family and renders them as images.
  * It also handles caching and efficient retrieval of icons.
+ *
+ * @ingroup AKCore
  */
 class CZ::AKIconFont final : public AKObject
 {
@@ -65,6 +67,7 @@ public:
      */
     std::shared_ptr<RImage> getIconByUTF8(const std::string &utf8, UInt32 size) noexcept;
 
+    /** @brief Indicates whether the codepoint map was successfully loaded (required by getIconByName() and hasIconName()). */
     bool hasCodepointMap() const noexcept { return m_codepoints != std::nullopt; }
 
     /**

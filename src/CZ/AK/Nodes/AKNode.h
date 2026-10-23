@@ -192,41 +192,83 @@ public:
         bool m_done;
     };
 
+    /**
+     * @brief Constructs a node without a parent.
+     */
     AKNode() noexcept;
     virtual ~AKNode();
 
+    /**
+     * @brief Rendering roles a node can advertise.
+     *
+     * Set by the role base classes (AKContainer, AKRenderable, AKBakeable,
+     * AKSubScene, AKBackgroundEffect) and queried with caps().
+     */
     enum Cap
     {
-        ContainerBit            = static_cast<UInt8>(1) << 0,
-        RenderableBit           = static_cast<UInt8>(1) << 1,
-        BakeableBit             = static_cast<UInt8>(1) << 2,
-        SubSceneBit             = static_cast<UInt8>(1) << 3,
-        BackgroundEffectBit     = static_cast<UInt8>(1) << 4,
+        ContainerBit            = static_cast<UInt8>(1) << 0, ///< The node is an AKContainer.
+        RenderableBit           = static_cast<UInt8>(1) << 1, ///< The node is an AKRenderable.
+        BakeableBit             = static_cast<UInt8>(1) << 2, ///< The node is an AKBakeable.
+        SubSceneBit             = static_cast<UInt8>(1) << 3, ///< The node is an AKSubScene.
+        BackgroundEffectBit     = static_cast<UInt8>(1) << 4, ///< The node is an AKBackgroundEffect.
     };
 
+    /**
+     * @brief The rendering roles of this node.
+     */
     CZBitset<Cap> caps() const noexcept { return m_caps; }
 
+    /**
+     * @brief Index of a bit within AKChanges (see Changes).
+     */
     typedef UInt32 Change;
 
+    /**
+     * @brief Changes tracked by the base AKNode class.
+     *
+     * Subclasses extend this enum starting at CHLast. See AKChanges for how
+     * changes are recorded and consumed.
+     */
     enum Changes : Change
     {
-        CHLayout,
-        CHLayoutPos,
-        CHLayoutSize,
-        CHLayoutScale,
-        CHParent,
-        CHChildrenClipping,
-        CHColorScheme,
-        CHLast
+        CHLayout,           ///< A layout property changed.
+        CHLayoutPos,        ///< The calculated position changed.
+        CHLayoutSize,       ///< The calculated size changed.
+        CHLayoutScale,      ///< The scale factor changed (see scale()).
+        CHParent,           ///< The parent changed.
+        CHChildrenClipping, ///< Children clipping was toggled (see enableChildrenClipping()).
+        CHColorScheme,      ///< The color scheme changed (see colorScheme()).
+        CHLast              ///< Marker for subclass chaining.
     };
+
+    /**
+     * @brief Records a property change.
+     *
+     * The change is stored for each AKTarget the node has been presented on, and all
+     * currently intersected targets are marked dirty (see repaint()). The accumulated
+     * changes are consumed during the next AKScene::render().
+     */
     void addChange(Change change) noexcept;
+
+    /**
+     * @brief Accumulated changes for the target currently being rendered.
+     *
+     * Only meaningful while the scene is rendering (e.g. within onSceneBegin(),
+     * AKBakeable::bakeEvent() or AKRenderable::renderEvent()).
+     */
     const AKChanges &changes() const noexcept;
 
+    /**
+     * @brief Interaction capabilities that embedders may honor.
+     */
     enum UserCaps
     {
-        UCWindowMove = 1 << 0,
+        UCWindowMove = 1 << 0, ///< Dragging the node should move the window (e.g. a window-drag area).
     };
 
+    /**
+     * @brief Interaction capability hints for this node.
+     */
     CZBitset<UserCaps> userCaps;
 
     /**
@@ -240,10 +282,27 @@ public:
      */
     void repaint() noexcept;
 
+    /**
+     * @brief Shows or hides the node (sets the layout display mode to YGDisplayNone).
+     *
+     * Hidden nodes and their children are skipped during layout, rendering and input.
+     */
     void setVisible(bool visible) noexcept;
+
+    /**
+     * @brief Whether the node is visible (see setVisible()).
+     */
     bool visible() const noexcept { return layout().display() != YGDisplayNone; }
 
+    /**
+     * @brief The node that actually receives children (like Vue's default slot).
+     *
+     * Composite components may redirect children to an internal sub-node via setSlot().
+     * Returns `this` unless a slot was set.
+     */
     const AKNode *slot() const noexcept { return m_slot ? m_slot.get() : this; }
+
+    /** @brief The node that actually receives children (see the const overload). */
     AKNode *slot() noexcept { return m_slot ? m_slot.get() : this; }
 
     /**
@@ -270,48 +329,136 @@ public:
      */
     void insertAfter(AKNode *other) noexcept;
 
-    // Passing unknown is the same as passing light
+    /**
+     * @brief Sets the color scheme (light/dark) for this node and its descendants.
+     *
+     * The scheme propagates to children until a child sets its own.
+     * Passing CZColorScheme::Unknown is the same as passing Light.
+     */
     void setColorScheme(CZColorScheme scheme) noexcept;
 
-    // Never unknown
+    /**
+     * @brief The current color scheme (never Unknown).
+     */
     CZColorScheme colorScheme() const noexcept { return m_colorScheme; }
 
-
+    /**
+     * @brief The parent node, or `nullptr`.
+     */
     AKNode *parent() const noexcept { return m_parent; }
+
+    /**
+     * @brief The furthest ancestor, or `nullptr` if the node has no parent.
+     */
     AKNode *topmostParent() const noexcept;
+
+    /**
+     * @brief The deepest last-child descendant (topmost node of the subtree in z-order).
+     */
     AKNode *bottommostRightChild() const noexcept;
+
+    /**
+     * @brief The deepest first-child descendant (bottom-most node of the subtree in z-order).
+     */
     AKNode *bottommostLeftChild() const noexcept;
 
-    // Sibling nodes
+    /**
+     * @brief The next sibling (rendered above this node), or `nullptr` if this is the last child.
+     */
     AKNode *next() const noexcept { return m_parent && m_parent->m_children.back() != this ? m_parent->m_children[m_parentLink + 1] : nullptr; }
+
+    /**
+     * @brief The previous sibling (rendered below this node), or `nullptr` if this is the first child.
+     */
     AKNode *prev() const noexcept { return m_parent && m_parentLink > 0 ? m_parent->m_children[m_parentLink - 1] : nullptr; }
 
+    /**
+     * @brief Checks if this node is a descendant of the given node.
+     */
     bool isSubchildOf(const AKNode *node) const noexcept { return (node && parent()) && (parent() == node || parent()->isSubchildOf(node)); }
 
+    /**
+     * @brief The child nodes, ordered bottom to top.
+     *
+     * @param ignoreSlot If `false` (default), returns the children of slot() (see setParent()).
+     */
     const std::vector<AKNode*> &children(bool ignoreSlot = false) const noexcept { return ignoreSlot ? m_children : slot()->children(true); }
 
+    /**
+     * @brief Whether this node is the root node of an AKScene (see AKScene::setRoot()).
+     */
     bool isRoot() const noexcept { return m_flags.has(IsRoot); }
 
+    /**
+     * @brief Targets whose viewport currently intersects this node (excluding AKSubScene targets).
+     */
     const std::unordered_set<AKTarget*> &intersectedTargets() const noexcept { return m_intersectedTargets; }
 
+    /**
+     * @brief Whether children are clipped to this node's bounds (see enableChildrenClipping()).
+     */
     bool childrenClippingEnabled() const noexcept { return m_flags.has(ChildrenClipping); }
+
+    /**
+     * @brief Toggles clipping of child nodes to this node's bounds. Disabled by default.
+     */
     void enableChildrenClipping(bool enable) noexcept;
 
-    // nullptr means the entire node receives input
+    /**
+     * @brief Sets the region (in node-local coordinates) that receives pointer input.
+     *
+     * Passing `nullptr` (default) makes the entire node receive input.
+     */
     void setInputRegion(const SkRegion *region) noexcept { m_inputRegion = region ? std::make_unique<SkRegion>(*region) : nullptr; }
+
+    /**
+     * @brief The input region, or `nullptr` if the entire node receives input.
+     */
     const SkRegion *inputRegion() const noexcept { return m_inputRegion.get(); }
 
+    /**
+     * @brief Whether the node intersected the viewport during the last AKScene::render().
+     */
     bool insideLastTarget() const noexcept { return m_flags.has(InsideLastTarget); }
+
+    /**
+     * @brief Whether the node was actually rendered (not fully occluded/clipped) during the last AKScene::render().
+     */
     bool renderedOnLastTarget() const noexcept { return m_flags.has(RenderedOnLastTarget); }
+
+    /**
+     * @brief Clears the renderedOnLastTarget() flag.
+     */
     void clearRenderedOnLastTarget() noexcept { m_flags.remove(RenderedOnLastTarget); }
+
+    /**
+     * @brief The target currently being rendered by the scene, or `nullptr` outside AKScene::render().
+     */
     AKTarget *currentTarget() const noexcept;
 
     /* Layout */
 
+    /**
+     * @brief The Flexbox (Yoga) layout of the node.
+     */
     const AKLayout &layout() const noexcept { return m_layout; }
+
+    /** @brief The Flexbox (Yoga) layout of the node. */
     AKLayout &layout() noexcept { return m_layout; }
+
+    /**
+     * @brief The node rect in world coordinates, calculated during AKScene::render().
+     */
     SkIRect worldRect() const noexcept { return m_worldRect; }
+
+    /**
+     * @brief The node rect relative to the closest AKSubScene viewport, otherwise the AKScene viewport.
+     */
     SkIRect sceneRect() const noexcept { return m_sceneRect; }
+
+    /**
+     * @brief The greatest scale factor among the intersected targets (see AKTarget::bakedNodesScale()).
+     */
     Int32 scale() const noexcept { return m_scale; }
 
     /**
@@ -336,7 +483,14 @@ public:
      */
     bool hasPointerFocus() const noexcept;
 
+    /**
+     * @brief Requests or releases keyboard focus within the parent scene.
+     */
     void setKeyboardFocus(bool focused) noexcept;
+
+    /**
+     * @brief Whether this node currently has keyboard focus (see AKScene::keyboardFocus()).
+     */
     bool hasKeyboardFocus() const noexcept;
 
     /**
@@ -366,8 +520,19 @@ public:
 
     /* Effects */
 
+    /**
+     * @brief Background effects currently attached to this node.
+     */
     const std::unordered_set<AKBackgroundEffect*> &backgroundEffects() const noexcept { return m_backgroundEffects; }
+
+    /**
+     * @brief Attaches a background effect, rendered behind this node (see AKBackgroundEffect).
+     */
     void addBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
+
+    /**
+     * @brief Detaches a background effect.
+     */
     void removeBackgroundEffect(AKBackgroundEffect *backgroundEffect) noexcept;
 
     /**
@@ -377,7 +542,14 @@ public:
      */
     AKBackgroundDamageTracker bdt { *this };
 
+    /**
+     * @brief Free-use flags for the application (ignored by Kay).
+     */
     UInt64 userFlags { 0 };
+
+    /**
+     * @brief Free-use pointer for the application (ignored by Kay).
+     */
     void *userData { nullptr };
 
     /**
@@ -407,8 +579,14 @@ public:
      */
     AKNode *root() const noexcept;
 
+    /**
+     * @brief The Marco window (MSurface) displaying the parent scene, or `nullptr` (e.g. outside Marco).
+     */
     MSurface *parentWindow() const noexcept;
 
+    /**
+     * @brief Whether the parent scene's window is activated (see AKScene::windowState()).
+     */
     bool activated() const noexcept;
 
     /**
@@ -430,9 +608,14 @@ public:
     void setCursor(std::optional<CZCursorShape> cursor) { m_cursor = cursor; }
 
 
-    // Padding + non absolute nodes dimensions
+    /**
+     * @brief Calculates the bounds of the visible, non-absolute children plus this node's padding.
+     */
     void innerBounds(SkRect *out) noexcept;
 
+    /**
+     * @brief Recursively collects all nodes of type `T` within the given subtree (including `root`).
+     */
     template<class T>
     static void FindNodesWithType(AKNode *root, std::vector<T*> *out) noexcept
     {
@@ -447,13 +630,20 @@ public:
             FindNodesWithType(node, out);
     }
 
-    // Dynamic cast
+    /** @brief Casts the node to AKContainer, or `nullptr` if it lacks the role (see caps()). */
     AKContainer         *asContainer() noexcept;
+    /** @brief Casts the node to AKRenderable, or `nullptr` if it lacks the role (see caps()). */
     AKRenderable        *asRenderable() noexcept;
+    /** @brief Casts the node to AKBackgroundEffect, or `nullptr` if it lacks the role (see caps()). */
     AKBackgroundEffect  *asBackgroundEffect() noexcept;
+    /** @brief Casts the node to AKBakeable, or `nullptr` if it lacks the role (see caps()). */
     AKBakeable          *asBakeable() noexcept;
+    /** @brief Casts the node to AKSubScene, or `nullptr` if it lacks the role (see caps()). */
     AKSubScene          *asSubScene() noexcept;
 
+    /**
+     * @brief Emitted after the node's layout changed (position, size or scale), carrying the triggering event.
+     */
     CZSignal<const CZLayoutEvent &> onLayoutChanged;
 
     /**
@@ -479,22 +669,57 @@ public:
     CZSignal<CZColorScheme> onColorSchemeChanged;
 
 protected:
+    /**
+     * @brief Redirects future children to an internal sub-node (see slot()).
+     */
     void setSlot(AKNode *slot) noexcept;
+
+    /**
+     * @brief Dispatches incoming events to the specific handlers below.
+     */
     bool event(const CZEvent &event) noexcept override;
-    /* Triggered before the scene starts rendering and
-     * after worldRect() is calculated (after layoutEvent()) */
+
+    /**
+     * @brief Triggered during AKScene::render(), before rendering starts and after
+     *        worldRect() is calculated (after layoutEvent()).
+     *
+     * The usual place to react to accumulated changes() that affect assets, damage
+     * or the opaque region.
+     */
     virtual void onSceneBegin() {}
+
+    /**
+     * @brief The node's layout changed (position, size or scale).
+     */
     virtual void layoutEvent(const CZLayoutEvent &event);
+
+    /**
+     * @brief The node's color scheme changed (see setColorScheme()).
+     */
     virtual void colorSchemeEvent(const CZColorSchemeEvent &event);
+
+    /**
+     * @brief The window state of the parent scene changed (e.g. activated).
+     */
     virtual void windowStateEvent(const CZWindowStateEvent &event);
+
+    /** @brief The pointer entered the node (see hasPointerFocus()). */
     virtual void pointerEnterEvent(const CZPointerEnterEvent &event);
+    /** @brief The pointer moved while the node has pointer focus. */
     virtual void pointerMoveEvent(const CZPointerMoveEvent &event);
+    /** @brief A pointer button was pressed/released while the node has pointer focus. */
     virtual void pointerButtonEvent(const CZPointerButtonEvent &event);
+    /** @brief A scroll event was received while the node has pointer focus. */
     virtual void pointerScrollEvent(const CZPointerScrollEvent &event);
+    /** @brief The pointer left the node. */
     virtual void pointerLeaveEvent(const CZPointerLeaveEvent &event);
+    /** @brief The node gained keyboard focus (see setKeyboardFocus()). */
     virtual void keyboardEnterEvent(const CZKeyboardEnterEvent &event);
+    /** @brief A key was pressed/released while the node has keyboard focus. */
     virtual void keyboardKeyEvent(const CZKeyboardKeyEvent &event);
+    /** @brief The node lost keyboard focus. */
     virtual void keyboardLeaveEvent(const CZKeyboardLeaveEvent &event);
+    /** @brief The node was added to or removed from a scene (see AKSceneChangedEvent). */
     virtual void sceneChangedEvent(const AKSceneChangedEvent &event);
 private:
     friend class AKBackgroundEffect;
@@ -610,5 +835,7 @@ private:
     std::optional<CZCursorShape> m_cursor { CZCursorShape::Default };
     std::vector<CZWeak<AKBackgroundDamageTracker>> m_overlayBdts;
 };
+
+/** @} */
 
 #endif // CZ_AKNODE_H

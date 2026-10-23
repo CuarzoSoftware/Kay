@@ -3,7 +3,11 @@
 	<navindex>
 
     <tab type="mainpage" title="🏠 Home" visible="yes" url="@ref MainPage"></tab>
-    <tab type="usergroup" title="🎓 Tutorial" url="@ref tutorial_tmp"></tab>
+    <tab type="usergroup" title="🎓 Guides" url="@ref core_components_page">
+      <tab type="user" title="Core Components" url="@ref core_components_page"/>
+      <tab type="user" title="Creating Components" url="@ref creating_components_page"/>
+      <tab type="user" title="Event System" url="@ref events_page"/>
+    </tab>
     <tab type="topics" title="📖 API"/>
     <tab type="namespaces" visible="no" title="">
     	<tab type="namespacelist" visible="no" title="" intro=""/>

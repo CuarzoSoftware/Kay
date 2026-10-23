@@ -5,6 +5,7 @@
 
 /**
  * @brief A node that displays a font icon.
+ * @ingroup AKNodes
  *
  * This node renders symbols from an AKIconFont using either an icon name or its corresponding UTF-8 code.
  * The icon size is specified in logical coordinates, and the image is automatically regenerated based on the current node's scale factor.
@@ -115,7 +116,10 @@ public:
     std::shared_ptr<RImage> image() const noexcept { return m_image; }
 
 protected:
+    /** @brief Regenerates the icon image when the icon, size or scale changed, and updates the invisible region. */
     void onSceneBegin() override;
+
+    /** @brief Draws the icon image into the damaged area. No-op without an image. */
     void renderEvent(const AKRenderEvent &event) override;
     std::string m_icon;
     std::shared_ptr<RImage> m_image;
