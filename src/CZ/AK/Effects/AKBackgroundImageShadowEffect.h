@@ -96,7 +96,7 @@ protected:
     void onTargetNodeChanged() override;
 
     std::shared_ptr<RSurface> m_surface;
-    Int32 m_prevScale;
+    Int32 m_prevScale { 0 };
     SkIPoint m_offset;
     SkScalar m_radius;
 };
