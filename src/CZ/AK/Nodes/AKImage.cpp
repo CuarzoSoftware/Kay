@@ -44,5 +44,15 @@ void AKImage::renderEvent(const AKRenderEvent &e)
             info.src.setWH(image()->size().width(), image()->size().height());
     }
 
+    if (m_mask)
+    {
+        RDrawImageInfo mask {};
+        mask.image = m_mask;
+        mask.dst = e.rect;
+        mask.src = SkRect::MakeWH(m_mask->size().width(), m_mask->size().height());
+        p->drawImage(info, &e.damage, &mask);
+        return;
+    }
+
     p->drawImage(info, &e.damage);
 }

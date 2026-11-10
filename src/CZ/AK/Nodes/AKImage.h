@@ -41,6 +41,9 @@ public:
         /// customSrcRectScale() changed (flagged only while SrcRectMode::Custom is active).
         CHCustomSrcRectScale,
 
+        /// mask() changed.
+        CHMask,
+
         CHLast ///< Marker for subclass chaining.
     };
 
@@ -198,6 +201,27 @@ public:
     {
         return m_autoDamage;
     }
+    /**
+     * @brief Sets an alpha mask stretched over the node: the image is drawn only where the mask is
+     *        opaque (its alpha multiplies the image). nullptr removes it.
+     *
+     * E.g. a rounded corner of a window drawn by a compositor. The opaque region isn't adjusted:
+     * leave out the masked areas (or keep it empty).
+     */
+    bool setMask(std::shared_ptr<RImage> mask) noexcept
+    {
+        if (mask.get() == m_mask.get())
+            return false;
+
+        m_mask = mask;
+        addChange(CHMask);
+        addDamage(AK_IRECT_INF);
+        return true;
+    }
+
+    /** @brief The alpha mask (see setMask()). */
+    std::shared_ptr<RImage> mask() const noexcept { return m_mask; }
+
 protected:
     /** @brief Adds full damage when source properties changed, unless auto damage is disabled. */
     virtual void onSceneBegin() override;
@@ -205,6 +229,7 @@ protected:
     /** @brief Draws the image into the damaged area of the target. No-op without an image. */
     void renderEvent(const AKRenderEvent &event) override;
     std::shared_ptr<RImage> m_image;
+    std::shared_ptr<RImage> m_mask;
     SkRect m_customSrcRect {};
     SkScalar m_customSrcRectScale { 1.f };
     SrcRectMode m_srcRectMode { SrcRectMode::EntireImage };
