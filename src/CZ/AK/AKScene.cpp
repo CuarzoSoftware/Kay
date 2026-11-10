@@ -499,6 +499,15 @@ void AKScene::calculateNewDamage(AKNode *node)
         addNodeDamage(*node, node->tData->damage);
         //t->m_damage.op(node->t->clientDamage, SkRegion::Op::kUnion_Op);
     }
+    else if (renderable->m_renderableHint == AKRenderable::RenderableHint::SolidColor && node->tData->damage.isEmpty())
+    {
+        // A uniform color fill moved or resized (nothing else changed): it looks the same wherever
+        // both rects overlap, so only the area it gained or lost needs repainting. E.g. a growing
+        // translucent selection rectangle doesn't repaint everything under it on each motion.
+        node->tData->prevSceneClip.op(clip, SkRegion::Op::kXOR_Op);
+        addNodeDamage(*node, node->tData->prevSceneClip);
+        node->tData->changes.set(AKRenderable::CHSize);
+    }
     else
     {
         // Both current and prev clip need to be repainted
