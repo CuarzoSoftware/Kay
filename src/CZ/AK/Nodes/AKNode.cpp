@@ -200,6 +200,12 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlo
     if (m_parent && m_parent == parent && m_parent->children(true).back() == this)
         return;
 
+    // Already detached and outside any scene: nothing to do. Damaging targets here would read the
+    // node's stale per-target data, whose targets may be gone (e.g. ~AKNode on a node detached by
+    // its owner after the target cleanup listeners were dropped).
+    if (!m_parent && !parent && !m_scene)
+        return;
+
     const bool isBackgroundEffect { caps().has(BackgroundEffectBit) };
 
     if (m_parent)
