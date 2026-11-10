@@ -85,6 +85,23 @@ void AKNode::addChange(Change change) noexcept
     for (auto &t : m_targets)
         t.second.changes.set(change);
 
+    // A layout change can resize/move other nodes (siblings, ancestors) even when this one isn't on
+    // any target (e.g. it's zero-sized while growing from nothing). Repaint the closest ancestor that
+    // is, otherwise the change is never applied until something else triggers a render.
+    if (change == CHLayout && m_intersectedTargets.empty())
+    {
+        for (AKNode *p { parent() }; p; p = p->parent())
+        {
+            if (!p->m_intersectedTargets.empty())
+            {
+                p->repaint();
+                return;
+            }
+        }
+
+        return;
+    }
+
     repaint();
 }
 
