@@ -266,6 +266,10 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlo
             parent->addChange(CHLayout);
             setScene(parent->scene());
             updateSubScene();
+
+            // Adopt the parent's color scheme (e.g. a node added to a dark window).
+            if (parent->colorScheme() != colorScheme())
+                adoptColorScheme(parent->colorScheme());
         }
 
         if (scene())
@@ -286,6 +290,19 @@ void AKNode::setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlo
 
         updateSubScene();
     }
+}
+
+void AKNode::adoptColorScheme(CZColorScheme scheme) noexcept
+{
+    // Set right away (colorScheme() is correct immediately), and notify through the event so nodes
+    // overriding colorSchemeEvent() refresh their colors.
+    setColorScheme(scheme);
+
+    if (auto core { CZCore::Get() })
+        core->postEvent(std::make_shared<CZColorSchemeEvent>(scheme), *this);
+
+    for (AKNode *child : m_children)
+        child->adoptColorScheme(scheme);
 }
 
 void AKNode::addFlagsAndPropagate(UInt32 flags) noexcept

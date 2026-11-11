@@ -274,8 +274,9 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         info.src = m_blur2->geometry().dst;
         info.dst = p.rect;
 
+        // Src (faster) only while fully opaque: faded, it must blend with what's below.
         auto *painter { p.pass->getPainter() };
-        painter->setBlendMode(RBlendMode::Src);
+        painter->setBlendMode(opacity() < 1.f ? RBlendMode::SrcOver : RBlendMode::Src);
         painter->drawImage(info, &damage);
     }
     else if (clipType() == RoundRect)
@@ -347,8 +348,8 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             damage.op(cornerDstRects[i], SkRegion::kDifference_Op);
         }
 
-        // Draw the non-corner stuff
-        painter->setBlendMode(RBlendMode::Src);
+        // Draw the non-corner stuff (Src only while fully opaque, see above)
+        painter->setBlendMode(opacity() < 1.f ? RBlendMode::SrcOver : RBlendMode::Src);
         painter->drawImage(imageInfo, &damage);
     }
     else if (clipType() == Path)

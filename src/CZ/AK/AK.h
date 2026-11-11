@@ -67,6 +67,7 @@ namespace CZ
     class AKWindowButtonGroup;
     class AKScroll;
     class AKScrollBar;
+    class AKSlider;
 
     class AKIconFont;
 

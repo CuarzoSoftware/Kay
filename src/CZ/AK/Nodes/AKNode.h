@@ -334,6 +334,9 @@ public:
      *
      * The scheme propagates to children until a child sets its own.
      * Passing CZColorScheme::Unknown is the same as passing Light.
+     *
+     * Nodes adopt their parent's scheme when added to it (with their subtree, also notified through
+     * colorSchemeEvent()).
      */
     void setColorScheme(CZColorScheme scheme) noexcept;
 
@@ -778,6 +781,7 @@ private:
     void propagateScene(AKScene *scene) noexcept;
     void updateSubScene() noexcept;
     void setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlot) noexcept;
+    void adoptColorScheme(CZColorScheme scheme) noexcept;
     void addFlagsAndPropagate(UInt32 flags) noexcept;
     void removeFlagsAndPropagate(UInt32 flags) noexcept;
     void setFlagsAndPropagateToParents(UInt32 flags, bool set) noexcept;

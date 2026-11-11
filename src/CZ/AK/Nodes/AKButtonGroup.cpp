@@ -121,13 +121,13 @@ void AKButtonGroup::applyButtonColors(AKButton *button) const noexcept
     // (or toggled and hovered/pressed).
     const bool toggle { m_toggleMode != ToggleMode::None };
 
-    button->setBackgroundColor(tintAt(m_buttonColor, toggle ? 0.06f : 0.00f));
-    button->setHoverBackgroundColor(tintAt(m_buttonColor, toggle ? 0.11f : 0.06f));
-    button->setPressedBackgroundColor(tintAt(m_buttonColor, toggle ? 0.16f : 0.11f));
+    button->setBackgroundColor(tintAt(m_buttonColor, toggle ? 0.12f : 0.00f));
+    button->setHoverBackgroundColor(tintAt(m_buttonColor, toggle ? 0.18f : 0.12f));
+    button->setPressedBackgroundColor(tintAt(m_buttonColor, toggle ? 0.24f : 0.18f));
 
     button->setOffToggleBackgroundColor(tintAt(m_buttonColor, 0.00f));
-    button->setOffToggleHoverBackgroundColor(tintAt(m_buttonColor, 0.06f));
-    button->setOffTogglePressedBackgroundColor(tintAt(m_buttonColor, 0.11f));
+    button->setOffToggleHoverBackgroundColor(tintAt(m_buttonColor, 0.12f));
+    button->setOffTogglePressedBackgroundColor(tintAt(m_buttonColor, 0.18f));
 }
 
 void AKButtonGroup::styleButton(AKButton *button) noexcept
