@@ -66,6 +66,12 @@ void AKSlider::setIcon(std::shared_ptr<RImage> icon) noexcept
     m_icon.setVisible(icon != nullptr);
 }
 
+void AKSlider::setIconProvider(AKImageFrame::ImageProvider provider) noexcept
+{
+    m_icon.setVisible(provider != nullptr);
+    m_icon.setImageProvider(std::move(provider));
+}
+
 void AKSlider::setTrackColor(CZAdaptiveColor color) noexcept { m_trackColor = color; updateColors(); }
 void AKSlider::setFillColor(CZAdaptiveColor color) noexcept { m_fillColor = color; updateColors(); }
 void AKSlider::setKnobColor(CZAdaptiveColor color) noexcept { m_knobColor = color; updateColors(); }

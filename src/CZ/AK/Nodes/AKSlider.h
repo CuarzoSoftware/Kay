@@ -43,6 +43,9 @@ public:
     /** @brief The icon inside the track's left end (tinted like the knob border), nullptr for none. */
     void setIcon(std::shared_ptr<RImage> icon) noexcept;
 
+    /** @brief The icon, from images made for the size it's drawn at (see AKImageFrame::setImageProvider()). */
+    void setIconProvider(AKImageFrame::ImageProvider provider) noexcept;
+
     /** @brief Track color (the unfilled part). */
     void setTrackColor(CZAdaptiveColor color) noexcept;
 

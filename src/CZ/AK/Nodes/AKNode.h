@@ -779,6 +779,7 @@ private:
     AKNode *closestClipperParent() const noexcept;
     void setScene(AKScene *scene) noexcept;
     void propagateScene(AKScene *scene) noexcept;
+    void forgetTargetsState() noexcept;
     void updateSubScene() noexcept;
     void setParentPrivate(AKNode *parent, bool handleChanges, bool ignoreSlot) noexcept;
     void adoptColorScheme(CZColorScheme scheme) noexcept;

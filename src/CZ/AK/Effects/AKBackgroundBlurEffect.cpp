@@ -376,7 +376,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         c.translate(
             p.rect.x() - pathLocalRect.x(),
             p.rect.y() - pathLocalRect.y());
-        c.clipPath(m_pathClip, false);
+        c.clipPath(m_pathClip, true); // Antialiased edges (e.g. a tooltip's rounded shape and caret)
         c.translate(
             pathLocalRect.x() - p.rect.x(),
             pathLocalRect.y() - p.rect.y());

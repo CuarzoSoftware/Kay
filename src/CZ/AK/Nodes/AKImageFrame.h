@@ -4,6 +4,7 @@
 #include <CZ/AK/Nodes/AKRenderable.h>
 #include <CZ/Core/CZTransform.h>
 #include <CZ/Core/CZAlignment.h>
+#include <functional>
 
 /**
  * @brief Image view with flexible sizing and alignment options.
@@ -86,9 +87,32 @@ public:
     /**
      * @brief Sets the displayed image (nullptr to unset; the node then draws nothing).
      *
+     * Also removes the image provider, if any (see setImageProvider()).
+     *
      * @return `true` if the image changed, `false` otherwise.
      */
     bool setImage(std::shared_ptr<RImage> image) noexcept;
+
+    /**
+     * @brief Returns an image drawn @p pixelSize pixels wide/tall (its larger side) on a screen with
+     *        scale @p scale (e.g. to look up a themed icon for that size and scale).
+     */
+    using ImageProvider = std::function<std::shared_ptr<RImage>(Int32 pixelSize, Int32 scale)>;
+
+    /**
+     * @brief Shows images made for the exact size they're drawn at (scale specific assets).
+     *
+     * Before rendering, the size the image is drawn at in pixels (as laid out by sizeMode(), times
+     * the scale of the screen the frame is on) is computed and, when it changes (resized, moved to
+     * a screen with another scale), @p provider is asked for an image of that size: drawn 1:1, never
+     * resampled (e.g. a 2x icon scaled down on a 1x screen looks aliased or blurry).
+     *
+     * While the size keeps changing (e.g. animated), the current image is kept (scaled) and the
+     * exact one is asked for once it settles. The provider should cache its images.
+     *
+     * Replaces the current image. Pass nullptr to stop (the current image stays).
+     */
+    void setImageProvider(ImageProvider provider) noexcept;
 
     /**
      * @brief Retrieves the source rect transform.
@@ -172,6 +196,12 @@ protected:
     /** @brief Draws the image into the calculated destination rect. No-op without an image. */
     void renderEvent(const AKRenderEvent &e) override;
     std::shared_ptr<RImage> m_image;
+    ImageProvider m_provider;
+    Int32 m_providerSize { 0 };  // Pixel size the current image was provided for (0: none yet)
+    Int32 m_providerScale { 0 }; // And the screen scale
+    Int32 m_lastPixels { 0 };    // Drawn pixel size on the last frame (to detect animations)
+    bool m_recheckPending { false };
+    void updateProvidedImage() noexcept;
     std::optional<SkRect> m_srcRect;
     SkScalar m_scale { 1.f };
     CZTransform m_transform { CZTransform::Normal };

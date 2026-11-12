@@ -161,10 +161,32 @@ AKNode *AKNode::closestClipperParent() const noexcept
     return parent()->closestClipperParent();
 }
 
+void AKNode::forgetTargetsState() noexcept
+{
+    // What was presented on each target (its clip, pending damage) no longer reflects the screen:
+    // the area was repainted without the node. If added again (even at the same place) it must be
+    // fully repainted, as when first presented. Its background effects (e.g. a blur) too.
+    for (auto &t : m_targets)
+    {
+        t.second.prevSceneClip.setEmpty();
+        t.second.damage.setRect(AK_IRECT_INF);
+    }
+
+    for (auto *bg : m_backgroundEffects)
+        bg->forgetTargetsState();
+
+    for (AKNode *child : m_children)
+        child->forgetTargetsState();
+}
+
 void AKNode::setScene(AKScene *scene) noexcept
 {
     if (m_scene == scene)
         return;
+
+    // Leaving its scene (or moving to another one).
+    if (m_scene)
+        forgetTargetsState();
 
     if (m_scene)
         m_scene->m_treeChanged = true;

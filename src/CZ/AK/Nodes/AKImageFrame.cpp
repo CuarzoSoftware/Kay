@@ -4,6 +4,9 @@
 #include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/Ream/RImage.h>
 #include <CZ/Ream/RPass.h>
+#include <CZ/Core/CZTimer.h>
+#include <CZ/Core/CZWeak.h>
+#include <cmath>
 
 using namespace CZ;
 
@@ -14,8 +17,75 @@ AKImageFrame::AKImageFrame(std::shared_ptr<RImage> image, AKNode *parent) noexce
     AKRenderable(RenderableHint::Image, parent),
     m_image(image){}
 
+void AKImageFrame::setImageProvider(ImageProvider provider) noexcept
+{
+    m_provider = std::move(provider);
+    m_providerSize = m_providerScale = 0;
+
+    // The image is chosen once the size it's drawn at is known (onSceneBegin()).
+    if (m_provider)
+        repaint();
+}
+
+void AKImageFrame::updateProvidedImage() noexcept
+{
+    // The size the image is drawn at (like the dst rect calculated below), in logical units: for
+    // Contain/Cover from the current image's proportions (square until there's one).
+    const SkSize frame { SkSize::Make(worldRect().size()) };
+    SkSize image { 1.f, 1.f };
+
+    if (m_image && !m_image->size().isEmpty())
+        image = SkSize::Make(m_image->size());
+
+    SkSize drawn { frame };
+
+    if (m_sizeMode != SizeMode::Fill && !frame.isEmpty())
+    {
+        const SkScalar sx { frame.width() / image.width() }, sy { frame.height() / image.height() };
+        const SkScalar s { m_sizeMode == SizeMode::Contain ? std::min(sx, sy) : std::max(sx, sy) };
+        drawn = SkSize::Make(std::round(image.width() * s), std::round(image.height() * s));
+    }
+
+    const Int32 scale { std::max(1, AKNode::scale()) };
+    const Int32 pixels { std::max(1, Int32(std::max(drawn.width(), drawn.height())) * scale) };
+    const bool changing { pixels != m_lastPixels };
+    m_lastPixels = pixels;
+
+    if (pixels == m_providerSize && scale == m_providerScale)
+        return;
+
+    // Still resizing (e.g. growing in): keep the current image for now, the exact one once settled.
+    if (changing && m_image && scale == m_providerScale)
+    {
+        if (!m_recheckPending)
+        {
+            m_recheckPending = true;
+            CZTimer::OneShot(150, [weak = CZWeak<AKImageFrame>(this)](CZTimer*){
+                if (!weak) return;
+                weak->m_recheckPending = false;
+                weak->repaint();
+            });
+        }
+
+        return;
+    }
+
+    m_providerSize = pixels;
+    m_providerScale = scale;
+    auto provided { m_provider(pixels, scale) };
+
+    if (provided != m_image)
+    {
+        m_image = std::move(provided);
+        addChange(CHImage);
+    }
+}
+
 bool AKImageFrame::setImage(std::shared_ptr<RImage> image) noexcept
 {
+    m_provider = nullptr;
+    m_providerSize = m_providerScale = 0;
+
     if (image == m_image)
         return false;
 
@@ -79,6 +149,10 @@ bool AKImageFrame::setScale(SkScalar scale) noexcept
 void AKImageFrame::onSceneBegin()
 {
     AKRenderable::onSceneBegin();
+
+    // Scale specific image: for the size it's drawn at on this screen (see setImageProvider()).
+    if (m_provider)
+        updateProvidedImage();
 
     if (!m_image)
     {
