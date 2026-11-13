@@ -142,6 +142,24 @@ public:
      */
     CZSignal<> onTargetLayoutUpdated;
 
+    /**
+     * @brief Draws the blurred background as last rendered on screen.
+     *
+     * E.g. to include it when rendering the target node's content offscreen (window captures).
+     * It's drawn in the target node's local coordinates (logical units: set the canvas matrix to
+     * place and scale it), clipped to the effect's area and shape (antialiased).
+     *
+     * @return `false` if it hasn't been rendered yet (nothing is drawn).
+     */
+    bool drawBlurred(SkCanvas &canvas) const noexcept;
+
+    /**
+     * @brief Emitted when the blurred background is updated (what drawBlurred() draws changed).
+     *
+     * Emitted while rendering the scene.
+     */
+    CZSignal<> onBlurred;
+
 protected:
     using AKBackgroundEffect::effectRect;
     /** @brief Recalculates the effect rect, the final blurred region and the capture area when the target rect changes. */

@@ -261,6 +261,9 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             painter->drawImageEffect(info, fx);
         else
             painter->drawImageEffect(info, fx, &bdt.capturedDamage);
+
+        pass.reset();
+        onBlurred.notify();
     }
 
     if (clipType() == NoClip)
@@ -393,4 +396,44 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
                         SkCanvas::kFast_SrcRectConstraint);
         c.restore();
     }
+}
+
+bool AKBackgroundBlurEffect::drawBlurred(SkCanvas &canvas) const noexcept
+{
+    if (!m_blur2 || effectRect.isEmpty() || m_finalRegion.isEmpty())
+        return false;
+
+    auto image { m_blur2->image() ? m_blur2->image()->skImage() : nullptr };
+
+    if (!image)
+        return false;
+
+    canvas.save();
+
+    // The area (local coordinates)...
+    SkPath area;
+    m_finalRegion.getBoundaryPath(&area);
+    canvas.clipPath(area);
+
+    // ...and the shape, antialiased
+    if (clipType() == RoundRect)
+    {
+        const SkVector radii[4] {
+            SkVector::Make(m_rRectClip.fRadTL, m_rRectClip.fRadTL),
+            SkVector::Make(m_rRectClip.fRadTR, m_rRectClip.fRadTR),
+            SkVector::Make(m_rRectClip.fRadBR, m_rRectClip.fRadBR),
+            SkVector::Make(m_rRectClip.fRadBL, m_rRectClip.fRadBL) };
+        SkRRect rRect;
+        rRect.setRectRadii(SkRect::Make(static_cast<const SkIRect&>(m_rRectClip)), radii);
+        canvas.clipRRect(rRect, true);
+    }
+    else if (clipType() == Path)
+        canvas.clipPath(m_pathClip, true);
+
+    SkPaint paint;
+    paint.setAntiAlias(true);
+    canvas.drawImageRect(image, m_blur2->geometry().dst, SkRect::Make(effectRect),
+                         SkFilterMode::kLinear, &paint, SkCanvas::kFast_SrcRectConstraint);
+    canvas.restore();
+    return true;
 }
