@@ -3,6 +3,7 @@
 
 #include <CZ/AK/Input/AKPointer.h>
 #include <CZ/AK/Input/AKKeyboard.h>
+#include <CZ/AK/AKClipboard.h>
 #include <CZ/Core/Cuarzo.h>
 #include <CZ/Ream/Ream.h>
 #include <CZ/skia/modules/skparagraph/include/FontCollection.h>
@@ -68,6 +69,18 @@ public:
      * @brief Global keyboard state, focus and event history.
      */
     AKKeyboard &keyboard() noexcept;
+
+    /**
+     * @brief The system clipboard, or `nullptr` if the windowing layer doesn't provide one.
+     *
+     * @see setClipboard()
+     */
+    AKClipboard *clipboard() const noexcept { return m_clipboard.get(); }
+
+    /**
+     * @brief Sets the clipboard implementation (called by the windowing layer, e.g. Marco).
+     */
+    void setClipboard(std::shared_ptr<AKClipboard> clipboard) noexcept { m_clipboard = std::move(clipboard); }
 protected:
     bool event(const CZEvent &event) noexcept override;
 private:
@@ -81,6 +94,7 @@ private:
     std::unique_ptr<AKKeyboard> m_keyboard;
     sk_sp<SkFontMgr> m_fontManager;
     sk_sp<skia::textlayout::FontCollection> m_fontCollection;
+    std::shared_ptr<AKClipboard> m_clipboard;
 };
 
 #endif // CZ_AKAPPLICATION_H

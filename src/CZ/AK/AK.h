@@ -30,6 +30,7 @@ namespace CZ
 {
     class AKApp;
     class AKObject;
+    class AKClipboard;  /* The system clipboard (set by the windowing layer, e.g. Marco) */
 
     class AKTheme;
     class AKChanges;
@@ -58,7 +59,7 @@ namespace CZ
     class AKFontIcon;
     class AKTextCaret;
     class AKText;
-    class AKCoreTextEditor;
+    class AKCoreTextEditor; /* Text display with selection and optional editing (no chrome) */
     class AKRoundContainer;
     class AKButton;
     class AKButtonGroup;
