@@ -56,6 +56,7 @@ namespace CZ
     class AKImageFrame;
     class AKThreePatch;
     class AKNinePatch;
+    class AKOutline;    /* Rounded outline (e.g. a selection/focus ring), nothing painted inside */
     class AKFontIcon;
     class AKTextCaret;
     class AKText;
