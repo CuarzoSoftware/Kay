@@ -56,7 +56,9 @@ void AKOutline::onSceneBegin()
         // The ring's corners around a single stretchable pixel (the center)
         const Int32 outer { m_radius + m_thickness };
         const Int32 size { 2 * outer + 1 };
-        const Int32 scale { std::max(1, Int32(this->scale())) };
+        // At the node's exact scale (fractional too): AKNinePatch maps the image back with it, so the
+        // antialiased edges land 1:1 on the screen's pixels
+        const SkScalar scale { std::max(1.f, SkScalar(this->scale())) };
 
         if (auto surface { RSurface::Make(SkISize(size, size), scale, true) })
         {
