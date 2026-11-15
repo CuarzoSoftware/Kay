@@ -23,6 +23,11 @@
  *
  * The final blurred region is the intersection of the specified area and the clip shape.
  *
+ * The look follows the Apple materials model: the backdrop is blurred (setBlurRadius()), saturated
+ * and covered by a translucent tint (setMaterial(), one per color scheme). Saturation and tint fold
+ * into a single color matrix applied in the last blur pass, so they're free. Larger radii are
+ * cheaper: the backdrop is processed at a proportionally lower resolution.
+ *
  * @ingroup AKEffects
  */
 class CZ::AKBackgroundBlurEffect : public AKBackgroundEffect
@@ -37,6 +42,7 @@ public:
         CHArea,        ///< Indicates that the blur area has changed.
         CHClip,        ///< Indicates that the clipping shape has changed.
         CHColorScheme, ///< Indicates that the color scheme has changed.
+        CHMaterial,    ///< Indicates that the blur radius or a material has changed.
         CHLast         ///< Sentinel value (not used directly).
     };
 
@@ -64,11 +70,55 @@ public:
     };
 
     /**
+     * @brief Color treatment applied over the blurred backdrop.
+     */
+    struct Material
+    {
+        /// Saturation multiplier of the blurred backdrop (1 = unchanged, like CSS `saturate()`).
+        SkScalar saturation;
+
+        /// Color drawn over the saturated backdrop (unpremultiplied), its alpha being the opacity.
+        SkColor4f tint;
+    };
+
+    /// Default light material (macOS-like: `saturate(180%)` under rgba(251, 251, 253, 0.8)).
+    static constexpr Material DefaultLightMaterial { 1.8f, { 251.f/255.f, 251.f/255.f, 253.f/255.f, 0.8f } };
+
+    /// Default dark material (macOS-like: `saturate(180%)` under rgba(22, 22, 23, 0.8)).
+    static constexpr Material DefaultDarkMaterial { 1.8f, { 22.f/255.f, 22.f/255.f, 23.f/255.f, 0.8f } };
+
+    /// Default blur radius (Gaussian standard deviation, logical units).
+    static constexpr SkScalar DefaultBlurRadius { 20.f };
+
+    /**
      * @brief Constructs a new background blur effect.
      *
      * @param target The node to which this effect is applied. Can be nullptr.
      */
     AKBackgroundBlurEffect(AKNode *target = nullptr) noexcept;
+
+    /**
+     * @brief Sets the blur radius: the Gaussian standard deviation in logical units (like CSS `blur()`).
+     *
+     * Clamped to [6, 96]. Defaults to DefaultBlurRadius.
+     */
+    void setBlurRadius(SkScalar radius) noexcept;
+
+    /// @see setBlurRadius()
+    SkScalar blurRadius() const noexcept { return m_blurRadius; }
+
+    /**
+     * @brief Sets the material used while the target node has the @p scheme color scheme.
+     *
+     * CZColorScheme::Unknown sets the light one. Defaults to DefaultLightMaterial and DefaultDarkMaterial.
+     */
+    void setMaterial(CZColorScheme scheme, const Material &material) noexcept;
+
+    /// @see setMaterial()
+    const Material &material(CZColorScheme scheme) const noexcept
+    {
+        return scheme == CZColorScheme::Dark ? m_darkMaterial : m_lightMaterial;
+    }
 
     /**
      * @brief Returns the current area type (FullSize or Region).
@@ -174,6 +224,10 @@ private:
     CZRRect m_rRectClip;
     SkPath m_pathClip;
     AreaType m_areaType { FullSize };
+    SkScalar m_blurRadius { DefaultBlurRadius };
+    Material m_lightMaterial { DefaultLightMaterial };
+    Material m_darkMaterial { DefaultDarkMaterial };
+    void updateTrackerScale() noexcept;
     ClipType m_clipType { NoClip };
     std::shared_ptr<RSurface> m_blur;
     std::shared_ptr<RSurface> m_blur2;

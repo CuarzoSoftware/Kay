@@ -428,6 +428,11 @@ void AKScene::calculateNewDamage(AKNode *node)
         additionalAnyway.op(clip, SkRegion::Op::kDifference_Op);
         node->bdt.paintAnyway().translate(node->m_sceneRect.x(), node->m_sceneRect.y(), &node->bdt.m_paintAnywayTranslated);
         node->bdt.m_paintAnywayTranslated.op(additionalAnyway, SkRegion::Op::kUnion_Op);
+
+        // A translucent background effect (e.g. a blur fading out) shows what's behind it: that
+        // must also be painted into the target, not only captured.
+        if (auto *fx { node->asBackgroundEffect() }; fx && fx->opacity() < 1.f)
+            node->bdt.m_paintAnywayTranslated.op(node->bdt.captureRectTranslated(), SkRegion::Op::kUnion_Op);
         // reactive.op(clip, SkRegion::Op::kIntersect_Op); // remove?
         ct->m_bdts.push_back(&node->bdt);
         ct->m_opaque.op(node->bdt.captureRectTranslated(), SkRegion::Op::kDifference_Op);

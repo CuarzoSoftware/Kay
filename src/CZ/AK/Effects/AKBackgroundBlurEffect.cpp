@@ -20,12 +20,54 @@ AKBackgroundBlurEffect::AKBackgroundBlurEffect(AKNode *target) noexcept :
         target->addBackgroundEffect(this);
 
     bdt.setEnabled(true);
-    bdt.setScale(0.5f);
-    bdt.setDamageOutset(42);
+    updateTrackerScale();
 
     // Reblur when the node's color scheme changes (AKNode::setColorScheme emits this, e.g. from a
     // propagated CZColorSchemeEvent). The scheme itself is read from colorScheme() at render time.
     onColorSchemeChanged.subscribe(this, [this](CZColorScheme){ addChange(CHColorScheme); });
+}
+
+/*
+ * The blur passes use fixed kernels: sigma 6 texels horizontally (reading the captured backdrop at
+ * 1/n scale) and sigma 3 texels vertically (reading the 1/2n result), i.e. sigma 6n logical units.
+ * n is the integer divisor closest to radius/6 and the remaining factor stretches the tap step, so
+ * any radius costs the same per pixel, with fewer pixels as it grows.
+ */
+static Int32 ScaleDivisor(SkScalar radius) noexcept
+{
+    return std::clamp(SkScalarRoundToInt(radius / 6.f), 1, 16); // 1/16: the tracker's min scale
+}
+
+void AKBackgroundBlurEffect::updateTrackerScale() noexcept
+{
+    bdt.setScale(1.f / SkScalar(ScaleDivisor(m_blurRadius)));
+
+    // Captured damage spreads up to the kernel reach (the vertical pass reaches ~4.3 sigma, but its
+    // outer taps weigh little)
+    bdt.setDamageOutset(SkScalarCeilToInt(m_blurRadius * 3.5f));
+}
+
+void AKBackgroundBlurEffect::setBlurRadius(SkScalar radius) noexcept
+{
+    radius = std::clamp(radius, 6.f, 96.f);
+
+    if (radius == m_blurRadius)
+        return;
+
+    m_blurRadius = radius;
+    updateTrackerScale();
+    addChange(CHMaterial);
+}
+
+void AKBackgroundBlurEffect::setMaterial(CZColorScheme scheme, const Material &material) noexcept
+{
+    Material &current { scheme == CZColorScheme::Dark ? m_darkMaterial : m_lightMaterial };
+
+    if (current.saturation == material.saturation && current.tint == material.tint)
+        return;
+
+    current = material;
+    addChange(CHMaterial);
 }
 
 void AKBackgroundBlurEffect::setFullSize() noexcept
@@ -82,10 +124,10 @@ void AKBackgroundBlurEffect::targetNodeRectCalculated()
     const auto bounds { m_finalRegion.getBounds() };
     const bool changedSize { effectRect.size() != bounds.size() };
 
-    if (!changes().testAnyOf(CHArea, CHClip, CHColorScheme) && !changedSize)
+    if (!changes().testAnyOf(CHArea, CHClip, CHColorScheme, CHMaterial) && !changedSize)
         return;
 
-    if (changes().test(CHColorScheme))
+    if (changes().testAnyOf(CHColorScheme, CHMaterial))
         addDamage(AK_IRECT_INF);
 
     if (clipType() == NoClip)
@@ -193,7 +235,7 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
     if (!bdt.currentSurface() || p.damage.isEmpty() || p.rect.isEmpty())
         return;
 
-    const auto schemeChanged { changes().test(CHColorScheme) };
+    const auto schemeChanged { changes().testAnyOf(CHColorScheme, CHMaterial) };
     bool reblur { !bdt.capturedDamage.isEmpty() || schemeChanged };
     bool copyAll { schemeChanged };
     SkScalar bdtScale { bdt.scale() };
@@ -231,23 +273,49 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         auto pass { m_blur->beginPass(RPassCap_Painter) };
         auto *painter { pass->getPainter() };
 
+        // The tap stretch completing the radius the scale divisor doesn't reach (see ScaleDivisor())
+        RImageEffectParams params {};
+        params.tapStep = m_blurRadius * bdtScale / 6.f;
+
         RDrawImageInfo info {};
         info.image = bdt.currentSurface()->image();
         info.srcScale = bdtScale;
         info.dst = m_blur->geometry().viewport.roundOut();
         info.src = SkRect::Make(p.rect);
 
+        // Only the part of the effect within the target (screen) is ever captured: e.g. a dock
+        // sliding in from below the screen. Taps beyond it are mirrored back (see validRect), so the
+        // blur continues the screen's content past its edges instead of reading what was never
+        // captured (dark or stale).
+        const SkRect hDst { SkRect::Make(info.dst) };
+        SkRect valid { info.src };
+
+        const SkRect &captured { bdt.currentSurface()->geometry().viewport }; // Target-sized, at 0,0
+
+        if (!valid.intersect(SkRect::MakeWH(captured.width(), captured.height())))
+            valid.setXYWH(info.src.centerX(), info.src.centerY(), 1.f, 1.f); // Fully off-screen: nothing valid
+
+        const auto mapRect = [](const SkRect &r, const SkRect &from, const SkRect &to) {
+            const SkScalar sx { to.width() / std::max(1.f, from.width()) };
+            const SkScalar sy { to.height() / std::max(1.f, from.height()) };
+            return SkRect::MakeLTRB(to.x() + (r.left() - from.x()) * sx,   to.y() + (r.top() - from.y()) * sy,
+                                    to.x() + (r.right() - from.x()) * sx,  to.y() + (r.bottom() - from.y()) * sy);
+        };
+
+        params.validRect = mapRect(valid, info.src, hDst); // In H dst coordinates
+
         if (copyAll)
-            painter->drawImageEffect(info, RPainter::VibrancyH);
+            painter->drawImageEffect(info, RPainter::VibrancyH, nullptr, params);
         else
         {
             bdt.capturedDamage.translate(-p.rect.x(), -p.rect.y());
             bdt.capturedDamage.op(info.dst, SkRegion::Op::kIntersect_Op);
-            painter->drawImageEffect(info, RPainter::VibrancyH, &bdt.capturedDamage);
+            painter->drawImageEffect(info, RPainter::VibrancyH, &bdt.capturedDamage, params);
         }
 
-        // V Pass: 0.5 blur => 0.25 blur + saturation
-        auto fx { colorScheme() == CZColorScheme::Dark ? RPainter::VibrancyDarkV : RPainter::VibrancyLightV };
+        // V Pass: x0.5 => x0.25 blur, then the material's saturation and tint (one color matrix)
+        const Material &mat { material(colorScheme()) };
+        params.colorMatrix = RImageEffectParams::MakeVibrancyMatrix(mat.saturation, mat.tint);
         pass = m_blur2->beginPass(RPassCap_Painter);
         painter = pass->getPainter();
 
@@ -257,10 +325,27 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         info.srcScale = 1.f;
         info.dst = m_blur2->geometry().viewport.roundOut();
 
+        // The same valid area, in V dst coordinates: the H pass never writes the rest (it may hold
+        // anything from previous frames)
+        params.validRect = mapRect(*params.validRect, hDst, SkRect::Make(info.dst));
+
         if (copyAll)
-            painter->drawImageEffect(info, fx);
+            painter->drawImageEffect(info, RPainter::VibrancyV, nullptr, params);
         else
-            painter->drawImageEffect(info, fx, &bdt.capturedDamage);
+        {
+            // One output texel beyond the damage too, even past the screen edges (the captured
+            // damage never is): the final upscale blends each on-screen pixel with its neighbor
+            // texels, which would otherwise keep stale content (a dark band along the screen edge
+            // while e.g. the dock slides in). Their mirrored taps make them valid.
+            const Int32 texel { SkScalarCeilToInt(1.f / blur2Scale) };
+            SkRegion vDamage;
+
+            for (SkRegion::Iterator it(bdt.capturedDamage); !it.done(); it.next())
+                vDamage.op(it.rect().makeOutset(texel, texel), SkRegion::kUnion_Op);
+
+            vDamage.op(info.dst, SkRegion::kIntersect_Op);
+            painter->drawImageEffect(info, RPainter::VibrancyV, &vDamage, params);
+        }
 
         pass.reset();
         onBlurred.notify();
@@ -385,8 +470,11 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
             pathLocalRect.y() - p.rect.y());
         c.clipPath(damagePath, true);
 
+        // Src (faster) only while fully opaque: faded, it must blend with what's below (which the
+        // scene then paints too, see AKScene)
         SkPaint paint;
-        paint.setBlendMode(SkBlendMode::kSrc);
+        paint.setBlendMode(opacity() < 1.f ? SkBlendMode::kSrcOver : SkBlendMode::kSrc);
+        paint.setAlphaf(std::clamp(opacity(), 0.f, 1.f));
         paint.setAntiAlias(true);
         c.drawImageRect(m_blur2->image()->skImage(),
                         m_blur2->geometry().dst,
