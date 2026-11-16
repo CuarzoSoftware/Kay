@@ -43,6 +43,7 @@ pkg             = import('pkgconfig')
 cz_core_dep     = dependency('cz-core', fallback:['cz-core', 'cz_core_dep'])
 cz_skia_dep     = dependency('cz-skia', fallback:['cz-skia', 'cz_skia_dep'], include_type: 'system')
 cz_ream_dep     = dependency('cz-ream', fallback:['cz-ream', 'cz_ream_dep'])
+cz_asset_broker_dep = dependency('cz-asset-broker', fallback:['cz-asset-broker', 'cz_asset_broker_dep'])
 xkbcommon_dep   = dependency('xkbcommon')
 yoga_dep        = dependency('yoga', modules: ['yoga::yogacore'])
 
@@ -50,6 +51,7 @@ deps = [
   cz_core_dep,
   cz_skia_dep,
   cz_ream_dep,
+  cz_asset_broker_dep,
   yoga_dep,
   xkbcommon_dep
 ]

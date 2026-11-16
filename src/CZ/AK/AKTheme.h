@@ -18,6 +18,8 @@
 
 namespace CZ
 {
+class ABCore;
+
 namespace AKAsset
 {
     /**
@@ -322,11 +324,23 @@ public:
     /// The theme's icon font ("Material Icons Round" by default). Can be `nullptr` if loading failed.
     std::shared_ptr<AKIconFont> iconFont;
 
+    /**
+     * @brief The AssetBroker that draws the default theme assets (created on first use).
+     *
+     * The default implementations of the asset factories above get their images from it, so
+     * they're drawn once and shared with other apps when the cz-asset-broker service is running.
+     * Subclasses overriding a factory can draw their own images instead.
+     *
+     * @return nullptr if it can't be created yet (it needs a CZCore and an RCore).
+     */
+    ABCore *assetBroker() noexcept;
+
     /* Solid round container 9-patch */
     /// Cache of solid rounded-rect container 9-patches, keyed by corner radii, scale, fill and stroke.
     CZAssetManager<AKAsset::RRect9Patch, Int32 /*radTL*/, Int32 /*radTR*/, Int32 /*radBR*/, Int32 /*radBL*/, Int32 /*scale*/, SkColor /*backgroundColor*/, Int32 /*strokeWidth*/, SkColor /*strokeColor*/> RRect9Patch;
 
 protected:
+    std::shared_ptr<ABCore> m_assetBroker;
 
     /* AKButton */
     std::unordered_map<Int32,std::shared_ptr<RImage>> m_buttonPlainHThreePatchImage;

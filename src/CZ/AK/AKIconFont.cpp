@@ -1,6 +1,8 @@
 #include <CZ/AK/AKApp.h>
 #include <CZ/AK/AKIconFont.h>
 #include <CZ/AK/AKLog.h>
+#include <CZ/AssetBroker/ABCore.h>
+#include <CZ/AssetBroker/ABGenerators.h>
 
 #include <CZ/Core/CZBitset.h>
 
@@ -35,15 +37,7 @@ std::shared_ptr<AKIconFont> AKIconFont::Make(const std::string &fontFamily, cons
 std::shared_ptr<CZ::AKIconFont> AKIconFont::Make(const std::string &fontFamily, const char *codepoints) noexcept
 {
     auto iconFont { std::shared_ptr<AKIconFont>(new AKIconFont()) };
-    iconFont->m_style.setFontFamilies({SkString(fontFamily)});
-    iconFont->m_paragraphStyle.setTextDirection(skia::textlayout::TextDirection::kLtr);
-    iconFont->m_builder = skia::textlayout::ParagraphBuilderImpl::make(iconFont->m_paragraphStyle, AKApp::Get()->fontCollection());
-
-    if (!iconFont->m_builder)
-    {
-        AKLog(CZError, CZLN, "Failed to create ParagraphBuilder");
-        return {};
-    }
+    iconFont->m_fontFamily = fontFamily;
 
     if (codepoints)
     {
@@ -77,7 +71,7 @@ std::shared_ptr<RImage> AKIconFont::getIconByName(const std::string &iconName, U
 
 std::shared_ptr<RImage> AKIconFont::getIconByUTF8(const std::string &utf8, UInt32 size) noexcept
 {
-    if (size == 0)
+    if (size == 0 || utf8.empty())
         return {};
 
     auto found { m_cache[utf8][size] };
@@ -85,51 +79,23 @@ std::shared_ptr<RImage> AKIconFont::getIconByUTF8(const std::string &utf8, UInt3
     if (auto lock = found.lock())
         return lock;
 
-    auto surface { RSurface::Make(SkISize(size, size), 1, true) };
+    // Drawn (and shared with other apps) by the AssetBroker: the glyph stretched to a size x size square
+    if (!m_assetBroker)
+        m_assetBroker = ABCore::GetOrMake();
 
-    if (!surface)
+    if (!m_assetBroker)
+        return {};
+
+    auto image { m_assetBroker->generate({ ABGenerators::Glyph, { Int64(size) }, { m_fontFamily, utf8 } }) };
+
+    if (!image)
     {
-        AKLog(CZError, CZLN, "Failed to create RImage");
+        AKLog(CZError, CZLN, "Failed to draw the glyph of {} at {}px", m_fontFamily, size);
         return {};
     }
 
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto *c { pass->getCanvas() };
-    c->clear(SK_ColorTRANSPARENT);
-    m_builder->Reset();
-    SkPaint p;
-    p.setBlendMode(SkBlendMode::kSrc);
-    p.setAntiAlias(true);
-    p.setColor(SK_ColorWHITE);
-    m_style.setForegroundColor(p);
-    m_style.setHeight(size);
-    m_style.setFontSize(size);
-    m_builder->pushStyle(m_style);
-    m_builder->addText(utf8.c_str());
-    m_paragraph = m_builder->Build();
-
-    if (!m_paragraph)
-    {
-        AKLog(CZError, CZLN, "Failed to create paragraph");
-        return {};
-    }
-
-    m_paragraph->layout(size);
-
-    if (m_paragraph->getMaxIntrinsicWidth() <= 0 || m_paragraph->getHeight() <= 0)
-        return {};
-
-    float scaleX = size / m_paragraph->getMaxIntrinsicWidth();
-    float scaleY = size / m_paragraph->getHeight();
-
-    c->save();
-    c->scale(scaleX, scaleY);
-    m_paragraph->paint(c, 0, 0);
-    c->restore();
-    pass.reset();
-
-    m_cache[utf8][size] = surface->image();
-    return surface->image();
+    m_cache[utf8][size] = image;
+    return image;
 }
 
 bool AKIconFont::hasIconName(const std::string &iconName) const noexcept

@@ -5,6 +5,8 @@
 #include <CZ/Ream/Ream.h>
 #include <optional>
 
+namespace CZ { class ABCore; }
+
 #include <CZ/skia/modules/skparagraph/src/ParagraphImpl.h>
 #include <CZ/skia/modules/skparagraph/src/ParagraphBuilderImpl.h>
 
@@ -106,10 +108,8 @@ private:
         std::unordered_map<UInt32, std::weak_ptr<RImage>>> m_cache;
     // [icon name][utf8 code point]
     std::optional<std::unordered_map<std::string, std::string>> m_codepoints;
-    skia::textlayout::TextStyle m_style;
-    skia::textlayout::ParagraphStyle m_paragraphStyle;
-    std::unique_ptr<skia::textlayout::ParagraphBuilder> m_builder;
-    std::unique_ptr<skia::textlayout::Paragraph> m_paragraph;
+    std::string m_fontFamily;
+    std::shared_ptr<ABCore> m_assetBroker; // Draws the glyphs (shared with other apps)
     AKIconFont() noexcept = default;
 };
 

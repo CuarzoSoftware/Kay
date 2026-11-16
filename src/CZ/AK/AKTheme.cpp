@@ -3,6 +3,8 @@
 #include <CZ/AK/AKTarget.h>
 #include <CZ/AK/AKIconFont.h>
 #include <CZ/AK/AKLog.h>
+#include <CZ/AssetBroker/ABCore.h>
+#include <CZ/AssetBroker/ABGenerators.h>
 
 #include <CZ/Ream/RCore.h>
 #include <CZ/Ream/RSurface.h>
@@ -54,8 +56,13 @@ CZ::AKTheme::AKTheme() noexcept
 
     iconFont = AKIconFont::Make("Material Icons Round", AKFontsDir() / "MaterialIconsRound-Regular.codepoints");
 
-    RRect9Patch.setFactory([](Int32 radTL, Int32 radTR, Int32 radBR, Int32 radBL, Int32 scale, SkColor backgroundColor, Int32 strokeWidth, SkColor strokeColor) -> std::shared_ptr<AKAsset::RRect9Patch>
+    RRect9Patch.setFactory([this](Int32 radTL, Int32 radTR, Int32 radBR, Int32 radBL, Int32 scale, SkColor backgroundColor, Int32 strokeWidth, SkColor strokeColor) -> std::shared_ptr<AKAsset::RRect9Patch>
     {
+        auto *ab { assetBroker() };
+
+        if (!ab)
+            return {};
+
         if (scale <= 0) scale = 1;
         if (strokeWidth < 0 || SkColorGetA(strokeColor) == 0) strokeWidth = 0;
 
@@ -66,114 +73,41 @@ CZ::AKTheme::AKTheme() noexcept
 
         // Each 9-slice cell must fit both of its corners and the stroke; the center stays a 1x1
         // stretchable pixel. Corners may differ, so the four cells can have different sizes.
-        const Int32 leftW   { std::max({ radTL, radBL, strokeWidth }) };
-        const Int32 rightW  { std::max({ radTR, radBR, strokeWidth }) };
-        const Int32 topH    { std::max({ radTL, radTR, strokeWidth }) };
-        const Int32 bottomH { std::max({ radBL, radBR, strokeWidth }) };
-
+        const Int32 leftW { std::max({ radTL, radBL, strokeWidth }) };
+        const Int32 topH  { std::max({ radTL, radTR, strokeWidth }) };
         const SkIRect center { SkIRect::MakeXYWH(leftW, topH, 1, 1) };
-        const auto size { SkISize(leftW + 1 + rightW, topH + 1 + bottomH) };
-        const auto pixelSize { SkISize(size.fWidth * scale, size.fHeight * scale) };
-        auto ream { RCore::Get() };
-        auto *mainDevice { ream->mainDevice() };
-        const auto fmt { mainDevice->textureFormats().formats().find(DRM_FORMAT_ARGB8888) };
-        assert(fmt != mainDevice->textureFormats().formats().end());
 
-        // Use raster for pixel perfect drawing
+        // Drawn (and shared with other apps) by the AssetBroker
+        auto image { ab->generate({ ABGenerators::AKRRect9Patch,
+            { radTL, radTR, radBR, radBL, scale, backgroundColor, strokeWidth, strokeColor }, {} }) };
 
-        SkImageInfo info
-        {
-            SkImageInfo::Make(
-            pixelSize,
-            RSKFormat::FromDRM(fmt->format()),
-            kPremul_SkAlphaType)
-        };
-
-        SkBitmap bitmap;
-
-        if (!bitmap.tryAllocPixels(info))
-        {
-            AKLog(CZDebug, CZLN, "Failed to allocate SkBitmap pixels");
+        if (!image)
             return {};
-        }
 
-        SkCanvas c { bitmap };
-        c.clear(SK_ColorTRANSPARENT);
-        c.scale(scale, scale);
-
-        SkPaint paint;
-        paint.setAntiAlias(true);
-        paint.setBlendMode(SkBlendMode::kSrc);
-
-        const auto rect { SkRect::Make(size) };
-
-        if (SkColorGetA(backgroundColor) > 0)
-        {
-            paint.setStroke(false);
-            paint.setColor(backgroundColor);
-
-            SkVector radii[4];
-            radii[SkRRect::kUpperLeft_Corner].set(radTL, radTL);
-            radii[SkRRect::kUpperRight_Corner].set(radTR, radTR);
-            radii[SkRRect::kLowerRight_Corner].set(radBR, radBR);
-            radii[SkRRect::kLowerLeft_Corner].set(radBL, radBL);
-
-            SkRRect rrect;
-            rrect.setRectRadii(rect, radii);
-            c.drawRRect(rrect, paint);
-        }
-
-        if (strokeWidth > 0)
-        {
-            paint.setStroke(true);
-            paint.setColor(strokeColor);
-            paint.setStrokeWidth(strokeWidth);
-
-            const SkScalar inset { SkScalar(strokeWidth) * 0.5f };
-            const auto sRad { [inset](Int32 r) { return std::max(0.f, SkScalar(r) - inset); } };
-
-            SkVector radii[4];
-            radii[SkRRect::kUpperLeft_Corner].set(sRad(radTL), sRad(radTL));
-            radii[SkRRect::kUpperRight_Corner].set(sRad(radTR), sRad(radTR));
-            radii[SkRRect::kLowerRight_Corner].set(sRad(radBR), sRad(radBR));
-            radii[SkRRect::kLowerLeft_Corner].set(sRad(radBL), sRad(radBL));
-
-            SkRRect rrect;
-            rrect.setRectRadii(rect.makeInset(inset, inset), radii);
-            c.drawRRect(rrect, paint);
-        }
-
-        RPixelBufferInfo pixInfo {};
-        pixInfo.pixels = (UInt8*)bitmap.pixelRef()->pixels();
-        pixInfo.stride = bitmap.pixelRef()->rowBytes();
-        pixInfo.format = DRM_FORMAT_ARGB8888;
-        pixInfo.size = pixelSize;
-
-        RImageConstraints cons {};
-        cons.allocator = mainDevice;
-        cons.caps[mainDevice] = RImageCap_Src;
-
-        return std::make_shared<AKAsset::RRect9Patch>(RImage::MakeFromPixels(pixInfo, *fmt, &cons), center);
+        return std::make_shared<AKAsset::RRect9Patch>(image, center);
     });
 
-    FirstQuadrantCircleMask.setFactory([](Int32 radius, Int32 scale) -> std::shared_ptr<RImage>
+    FirstQuadrantCircleMask.setFactory([this](Int32 radius, Int32 scale) -> std::shared_ptr<RImage>
     {
+        auto *ab { assetBroker() };
+
+        if (!ab)
+            return {};
+
         if (radius <= 0) radius = 1;
         if (scale <= 0) scale = 1;
 
-        auto surface = RSurface::Make(SkISize(radius, radius), scale, true);
-        auto pass { surface->beginPass(RPassCap_SkCanvas) };
-        auto &c { *pass->getCanvas() };
-        c.clear(SK_ColorTRANSPARENT);
-
-        SkPaint paint;
-        paint.setStroke(false);
-        paint.setAntiAlias(true);
-        paint.setColor(SK_ColorWHITE);
-        paint.setBlendMode(SkBlendMode::kSrc);
-        c.drawCircle(SkPoint::Make(radius, radius), radius, paint);
-        return surface->image();
+        return ab->generate({ ABGenerators::AKCircleQuadrant, { radius, scale }, {} });
     });
+}
+
+ABCore *CZ::AKTheme::assetBroker() noexcept
+{
+    // Created on first use: it needs the CZCore and RCore (and keeps the connection to the service)
+    if (!m_assetBroker)
+        m_assetBroker = ABCore::GetOrMake();
+
+    return m_assetBroker.get();
 }
 
 std::shared_ptr<RImage> CZ::AKTheme::textFieldRoundHThreePatchImage(Int32 scale) noexcept
@@ -183,46 +117,19 @@ std::shared_ptr<RImage> CZ::AKTheme::textFieldRoundHThreePatchImage(Int32 scale)
     if (it != m_textFieldRoundHThreePatchImage.end())
         return it->second;
 
-    auto surface = RSurface::Make(SkISize(TextFieldRoundHThreePatchSideSrcRect.width() + TextFieldRoundHThreePatchCenterSrcRect.width(),
-                                          TextFieldRoundHThreePatchSideSrcRect.height()),
-                                   scale, true);
+    auto *ab { assetBroker() };
 
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto &c { *pass->getCanvas() };
+    if (!ab)
+        return {};
 
-    // c.scale(surface->scale(), surface->scale());
-    c.clear(SK_ColorTRANSPARENT);
+    const Int32 width { Int32(TextFieldRoundHThreePatchSideSrcRect.width() + TextFieldRoundHThreePatchCenterSrcRect.width()) };
+    const Int32 height { Int32(TextFieldRoundHThreePatchSideSrcRect.height()) };
+    auto image { ab->generate({ ABGenerators::AKTextFieldRoundH3Patch, { width, height, scale }, {} }) };
 
-    SkPaint paint;
-    const float borderRadius { 5.f };
-    SkRect roundRect { SkRect::MakeWH(surface->geometry().viewport.width() * 2, surface->geometry().viewport.height()) };
+    if (image)
+        m_textFieldRoundHThreePatchImage[scale] = image;
 
-    // Shadow
-    paint.setAntiAlias(true);
-    roundRect.inset(2.5f, 2.5f);
-    roundRect.offset(0.f, 0.5f);
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setColor(SkColorSetARGB(82, 0, 0, 0));
-    paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 1.f));
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-    paint.setMaskFilter(nullptr);
-    roundRect.offset(0.f, -0.5f);
-
-    // Border
-    paint.setBlendMode(SkBlendMode::kSrcOver);
-    paint.setStroke(true);
-    paint.setStrokeWidth(1.f);
-    paint.setColor(SkColorSetARGB(9, 0, 0, 0));
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-
-    // Fill
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setStroke(false);
-    paint.setColor(SK_ColorWHITE);
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
-
-    m_textFieldRoundHThreePatchImage[scale] = surface->image();
-    return surface->image();
+    return image;
 }
 
 std::shared_ptr<RImage> CZ::AKTheme::textCaretVThreePatchImage(Int32 scale) noexcept
@@ -232,27 +139,19 @@ std::shared_ptr<RImage> CZ::AKTheme::textCaretVThreePatchImage(Int32 scale) noex
     if (it != m_textCaretVThreePatchImage.end())
         return it->second;
 
-    auto surface = RSurface::Make(SkISize(TextCaretVThreePatchSideSrcRect.width(),
-                                          TextCaretVThreePatchSideSrcRect.height() + TextCaretVThreePatchCenterSrcRect.height()),
-                                   scale, true);
+    auto *ab { assetBroker() };
 
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto &c { *pass->getCanvas() };
+    if (!ab)
+        return {};
 
-    // c.scale(surface->scale(), surface->scale());
-    c.clear(SK_ColorTRANSPARENT);
+    const Int32 width { Int32(TextCaretVThreePatchSideSrcRect.width()) };
+    const Int32 height { Int32(TextCaretVThreePatchSideSrcRect.height() + TextCaretVThreePatchCenterSrcRect.height()) };
+    auto image { ab->generate({ ABGenerators::AKTextCaretV3Patch, { width, height, scale }, {} }) };
 
-    const SkScalar borderRadius { surface->geometry().viewport.width() * 0.5f };
-    SkRect roundRect { SkRect::MakeWH(surface->geometry().viewport.width(), surface->geometry().viewport.height() * 2) };
-    SkPaint paint;
-    paint.setAntiAlias(true);
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setStroke(false);
-    paint.setColor(SK_ColorWHITE);
-    c.drawRoundRect(roundRect, borderRadius, borderRadius, paint);
+    if (image)
+        m_textCaretVThreePatchImage[scale] = image;
 
-    m_textCaretVThreePatchImage[scale] = surface->image();
-    return surface->image();
+    return image;
 }
 
 std::shared_ptr<RImage> CZ::AKTheme::roundLineThreePatchImage(CZOrientation orientation, Int32 diam, Int32 scale, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept
@@ -281,33 +180,17 @@ std::shared_ptr<RImage> CZ::AKTheme::roundLineThreePatchImage(CZOrientation orie
     if (it != scaleMap.end())
         return it->second;
 
-    auto surface = RSurface::Make(
-        SkISize(
-            orientation == CZOrientation::V ? diam : rad + 2.f,
-            orientation == CZOrientation::V ? rad + 2.f : diam),
-        scale, true);
+    auto *ab { assetBroker() };
 
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto &c { *pass->getCanvas() };
+    if (!ab)
+        return {};
 
-    // c.scale(surface->scale(), surface->scale());
-    c.clear(SK_ColorTRANSPARENT);
+    auto image { ab->generate({ ABGenerators::AKRoundLine3Patch, { orientation == CZOrientation::V ? 1 : 0, diam, scale }, {} }) };
 
-    SkPaint paint;
-    paint.setAntiAlias(true);
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setStroke(false);
-    paint.setColor(SK_ColorWHITE);
+    if (image)
+        scaleMap[diam] = image;
 
-    if (orientation == CZOrientation::V)
-        c.drawCircle(SkPoint(rad, rad + 1.f), rad, paint);
-    else
-        c.drawCircle(SkPoint(rad + 1.f, rad), rad, paint);
-
-    c.drawRect(*outCenterSrc, paint);
-
-    scaleMap[diam] = surface->image();
-    return surface->image();
+    return image;
 }
 
 std::shared_ptr<RImage> CZ::AKTheme::scrollRailThreePatchImage(CZOrientation orientation, Int32 scale, SkColor railBackground, SkColor railBorder, SkRect *outSideSrc, SkRect *outCenterSrc) noexcept
@@ -332,32 +215,18 @@ std::shared_ptr<RImage> CZ::AKTheme::scrollRailThreePatchImage(CZOrientation ori
     if (it != m_scrollRailThreePatchImage.end())
         return it->second;
 
-    auto surface = RSurface::Make(
-        SkISize(
-            orientation == CZOrientation::V ? 1.f : 3.f,
-            orientation == CZOrientation::V ? 3.f : 1.f),
-        scale, true);
+    auto *ab { assetBroker() };
 
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto &c { *pass->getCanvas() };
+    if (!ab)
+        return {};
 
-    // c.scale(surface->scale(), surface->scale());
-    c.clear(railBackground);
+    auto image { ab->generate({ ABGenerators::AKScrollRail3Patch,
+        { orientation == CZOrientation::V ? 1 : 0, scale, railBackground, railBorder }, {} }) };
 
-    SkPaint paint;
-    paint.setAntiAlias(true);
-    paint.setBlendMode(SkBlendMode::kSrcOver);
-    paint.setStroke(true);
-    paint.setStrokeWidth(1.f);
-    paint.setColor(railBorder);
+    if (image)
+        m_scrollRailThreePatchImage[key] = image;
 
-    if (orientation == CZOrientation::V)
-        c.drawLine(-5.f, 0.f, 5.f, 0.f, paint);
-    else
-        c.drawLine(0.f, -5.f, 0.f, 5.f, paint);
-
-    m_scrollRailThreePatchImage[key] = surface->image();
-    return surface->image();
+    return image;
 }
 
 std::shared_ptr<RImage> CZ::AKTheme::edgeShadowImage(Int32 scale) noexcept
@@ -367,28 +236,66 @@ std::shared_ptr<RImage> CZ::AKTheme::edgeShadowImage(Int32 scale) noexcept
     if (it != m_edgeShadowImage.end())
         return it->second;
 
-    auto surface = RSurface::Make(SkISize(1, EdgeShadowRadius), scale, true);
-    auto pass { surface->beginPass(RPassCap_SkCanvas) };
-    auto &c { *pass->getCanvas() };
+    auto *ab { assetBroker() };
 
-    // c.scale(surface->scale(), surface->scale());
-    c.clear(SK_ColorTRANSPARENT);
+    if (!ab)
+        return {};
 
-    SkPaint paint;
-    paint.setColor(SK_ColorWHITE);
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, SkScalar(EdgeShadowRadius)/3.f));
-    c.drawIRect(SkIRect::MakeXYWH(-100, -100, 200, 100), paint);
+    auto image { ab->generate({ ABGenerators::AKEdgeShadow, { EdgeShadowRadius, scale }, {} }) };
 
-    m_edgeShadowImage[scale] = surface->image();
-    return surface->image();
+    if (image)
+        m_edgeShadowImage[scale] = image;
+
+    return image;
+}
+
+static const char *WindowButtonFile(AKWindowButton::Type type, AKWindowButton::State state) noexcept
+{
+    using Type = AKWindowButton::Type;
+    using State = AKWindowButton::State;
+
+    switch (state)
+    {
+    case State::Normal:
+        switch (type)
+        {
+        case Type::Close:           return "window_button_close_normal.png";
+        case Type::Minimize:        return "window_button_minimize_normal.png";
+        case Type::Maximize:
+        case Type::Fullscreen:
+        case Type::UnsetFullscreen: return "window_button_maximize_normal.png";
+        }
+        break;
+    case State::Hover:
+        switch (type)
+        {
+        case Type::Close:           return "window_button_close_hover.png";
+        case Type::Minimize:        return "window_button_minimize_hover.png";
+        case Type::Maximize:        return "window_button_maximize_hover.png";
+        case Type::Fullscreen:      return "window_button_fullscreen_hover.png";
+        case Type::UnsetFullscreen: return "window_button_unset_fullscreen_hover.png";
+        }
+        break;
+    case State::Pressed:
+        switch (type)
+        {
+        case Type::Close:           return "window_button_close_pressed.png";
+        case Type::Minimize:        return "window_button_minimize_pressed.png";
+        case Type::Maximize:        return "window_button_maximize_pressed.png";
+        case Type::Fullscreen:      return "window_button_fullscreen_pressed.png";
+        case Type::UnsetFullscreen: return "window_button_unset_fullscreen_pressed.png";
+        }
+        break;
+    default:
+        break;
+    }
+
+    return "window_button_disabled.png";
 }
 
 std::shared_ptr<RImage> CZ::AKTheme::windowButtonImage(Int32 scale, AKWindowButton::Type type, AKWindowButton::State state)
 {
-    CZ_UNUSED(scale)
-
-    // Being lazy and always using scale 2
+    // Being lazy and always using scale 2 (the PNGs are 2x)
 
     auto &typeMap { m_windowButtons[scale] };
     auto &stateMap { typeMap[type] };
@@ -397,87 +304,16 @@ std::shared_ptr<RImage> CZ::AKTheme::windowButtonImage(Int32 scale, AKWindowButt
     if (it != stateMap.end())
         return it->second;
 
-    std::shared_ptr<RImage> image;
+    auto *ab { assetBroker() };
 
-    auto *mainDevice { RCore::Get()->mainDevice() };
+    if (!ab)
+        return {};
 
-    RImageConstraints cons {};
-    cons.allocator = mainDevice;
-    cons.caps[mainDevice] = RImageCap_Src | RImageCap_SkImage;
-
-    auto fmt { mainDevice->textureFormats().formats().find(DRM_FORMAT_ARGB8888) };
-    assert(fmt != mainDevice->textureFormats().formats().end());
-
-    switch (state)
-    {
-    case AKWindowButton::State::Disabled:
-        image = RImage::LoadFile(AKAssetsDir() / "window_button_disabled.png", *fmt, {}, &cons);
-        break;
-    case AKWindowButton::State::Normal:
-        switch (type)
-        {
-            case CZ::AKWindowButton::Type::Close:
-                image = RImage::LoadFile(AKAssetsDir() / "window_button_close_normal.png", *fmt, {}, &cons);
-                break;
-            case CZ::AKWindowButton::Type::Minimize:
-                image = RImage::LoadFile(AKAssetsDir() / "window_button_minimize_normal.png", *fmt, {}, &cons);
-                break;
-            case CZ::AKWindowButton::Type::Maximize:
-            case CZ::AKWindowButton::Type::Fullscreen:
-            case CZ::AKWindowButton::Type::UnsetFullscreen:
-                image = RImage::LoadFile(AKAssetsDir() / "window_button_maximize_normal.png", *fmt, {}, &cons);
-                break;
-        }
-        break;
-    case AKWindowButton::State::Hover:
-        switch (type)
-        {
-        case CZ::AKWindowButton::Type::Close:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_close_hover.png", *fmt, {}, &cons);
-            break;
-        case CZ::AKWindowButton::Type::Minimize:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_minimize_hover.png", *fmt, {}, &cons);
-            break;
-        case CZ::AKWindowButton::Type::Maximize:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_maximize_hover.png", *fmt, {}, &cons);
-            break;
-        case CZ::AKWindowButton::Type::Fullscreen:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_fullscreen_hover.png", *fmt, {}, &cons);
-            break;
-        case CZ::AKWindowButton::Type::UnsetFullscreen:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_unset_fullscreen_hover.png", *fmt, {}, &cons);
-            break;
-        }
-        break;
-    case AKWindowButton::State::Pressed:
-        switch (type)
-        {
-        case CZ::AKWindowButton::Type::Close:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_close_pressed.png", *fmt, {}, &cons);
-            break;
-        case CZ::AKWindowButton::Type::Minimize:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_minimize_pressed.png", *fmt, {}, &cons);
-            break;
-        case CZ::AKWindowButton::Type::Maximize:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_maximize_pressed.png", *fmt, {}, &cons);
-            break;
-        case CZ::AKWindowButton::Type::Fullscreen:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_fullscreen_pressed.png", *fmt, {}, &cons);
-            break;
-        case CZ::AKWindowButton::Type::UnsetFullscreen:
-            image = RImage::LoadFile(AKAssetsDir() / "window_button_unset_fullscreen_pressed.png", *fmt, {}, &cons);
-            break;
-        }
-        break;
-    default:
-        image = RImage::LoadFile(AKAssetsDir() / "window_button_disabled.png", *fmt, {}, &cons);
-        break;
-    }
+    // Loaded (and shared with other apps) by the AssetBroker
+    auto image { ab->image(AKAssetsDir() / WindowButtonFile(type, state)) };
 
     if (image)
-    {
         stateMap[state] = image;
-    }
 
     return image;
 }

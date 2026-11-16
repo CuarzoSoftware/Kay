@@ -8,6 +8,7 @@
 #include <CZ/Core/CZKeymap.h>
 
 #include <CZ/skia/ports/SkFontMgr_fontconfig.h>
+#include <CZ/AssetBroker/ABGenerators.h>
 
 using namespace CZ;
 
@@ -20,6 +21,9 @@ AKApp::AKApp(std::shared_ptr<CZCore> cuarzo, std::shared_ptr<RCore> ream) noexce
     m_fontCollection = sk_make_sp<skia::textlayout::FontCollection>();
     m_fontCollection->setDefaultFontManager(m_fontManager);
     m_fontCollection->enableFontFallback();
+
+    // In-process glyphs (AKIconFont through the AssetBroker) use the same fonts
+    ABGenerators::SetFontCollection(m_fontCollection);
 }
 
 std::shared_ptr<AKApp> AKApp::GetOrMake() noexcept
