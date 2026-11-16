@@ -9,9 +9,10 @@
  *
  * Displays the themed image for its type() and state() (see
  * AKTheme::windowButtonImage) at the fixed AKTheme::WindowButtonSize. Releasing
- * a left click performs the matching action on the parent window's toplevel role
- * (when built with Marco) and emits onClick. Usually used through
- * AKWindowButtonGroup, which drives the hover/pressed/disabled states.
+ * a left click (press and release on it) emits onClick: performing the action
+ * is up to the toolkit showing the window (e.g. Marco's MToplevel). Usually used
+ * through AKWindowButtonGroup, which takes its input and drives the
+ * hover/pressed/disabled states.
  */
 class CZ::AKWindowButton : public AKImage
 {
@@ -75,10 +76,10 @@ public:
     /** @brief The current interaction state. Defaults to Disabled. */
     State state() const noexcept { return m_state; }
 
-    /** @brief Presses/releases the button; on left-button release triggers the action and onClick. */
+    /** @brief Presses/releases the button; a left click (released on it) emits onClick. */
     void pointerButtonEvent(const CZPointerButtonEvent &e) override;
 
-    /** @brief Emitted on left-button release while the button is enabled. */
+    /** @brief Emitted when the button is clicked (pressed and released on it) while enabled. */
     CZSignal<> onClick;
 protected:
     Type m_type;

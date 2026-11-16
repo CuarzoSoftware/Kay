@@ -1,13 +1,10 @@
 #include <CZ/Core/CZCore.h>
 #include <CZ/Core/Events/CZPointerButtonEvent.h>
-#include <CZ/Core/Events/CZCloseEvent.h>
 #include <CZ/AK/Nodes/AKWindowButton.h>
 #include <CZ/AK/AKApp.h>
 #include <CZ/AK/AKTheme.h>
 
-#ifdef CZ_ENABLE_MARCO
-#include <CZ/Marco/roles/MToplevel.h>
-#endif
+#include <CZ/AK/AKScene.h>
 
 using namespace CZ;
 
@@ -47,40 +44,31 @@ bool AKWindowButton::setState(State state) noexcept
 
 void AKWindowButton::pointerButtonEvent(const CZPointerButtonEvent &e)
 {
+    // Standalone (an AKWindowButtonGroup takes its buttons' input)
     if (state() == State::Disabled || e.button != BTN_LEFT)
         return;
 
     e.accept();
 
     if (e.pressed)
-        setState(Pressed);
-    else
     {
-#ifdef CZ_ENABLE_MARCO
+        setState(Pressed);
 
-        if (MToplevel *tl = dynamic_cast<MToplevel*>(window()))
-        {
-            switch (type())
-            {
-            case Type::Close:
-                if (CZCore::Get()->sendEvent(CZCloseEvent(), *tl))
-                    tl->setMapped(false);
-                break;
-            case Type::Fullscreen:
-                tl->setFullscreen(true);
-                break;
-            case Type::UnsetFullscreen:
-                tl->setFullscreen(false);
-                break;
-            case Type::Maximize:
-                tl->setMaximized(!tl->maximized());
-                break;
-            case Type::Minimize:
-                tl->setMinimized();
-                break;
-            }
-        }
-#endif
-        onClick.notify();
+        if (scene())
+            scene()->setPointerGrab(this);
+
+        return;
     }
+
+    if (state() != Pressed)
+        return;
+
+    if (scene() && scene()->pointerGrab() == this)
+        scene()->setPointerGrab(nullptr);
+
+    setState(Normal);
+
+    if (worldRect().contains(SkScalarFloorToInt(AKApp::Get()->pointer().pos().x()),
+                             SkScalarFloorToInt(AKApp::Get()->pointer().pos().y())))
+        onClick.notify();
 }

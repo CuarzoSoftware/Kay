@@ -1,14 +1,14 @@
 #include <CZ/Core/Events/CZWindowStateEvent.h>
 #include <CZ/Core/Events/CZPointerButtonEvent.h>
 #include <CZ/Core/Events/CZKeyboardKeyEvent.h>
+#include <CZ/Core/CZWeak.h>
 #include <CZ/AK/Events/AKSceneChangedEvent.h>
 #include <CZ/AK/Nodes/AKWindowButtonGroup.h>
 #include <CZ/AK/AKScene.h>
 #include <CZ/AK/AKTheme.h>
-
-#ifdef CZ_ENABLE_MARCO
-#include <CZ/Marco/roles/MToplevel.h>
-#endif
+#include <CZ/AK/AKApp.h>
+#include <linux/input-event-codes.h>
+#include <cmath>
 
 using namespace CZ;
 
@@ -18,36 +18,95 @@ AKWindowButtonGroup::AKWindowButtonGroup(AKNode *parent) noexcept :
     layout().setGap(YGGutterAll, AKTheme::WindowButtonGap);
     layout().setHeight(AKTheme::WindowButtonSize.height());
 
-    const auto state { activated() ? AKWindowButton::State::Normal : AKWindowButton::State::Disabled };
-    closeButton.setState(state);
-    minimizeButton.setState(state);
-    maximizeButton.setState(state);
+    // The group takes the input (the gaps between the buttons too): see buttonAtPointer()
+    const SkRegion empty;
+
+    for (AKWindowButton *b : { &closeButton, &minimizeButton, &maximizeButton })
+        b->setInputRegion(&empty);
+
+    updateButtons();
+}
+
+bool AKWindowButtonGroup::fullscreen() const noexcept
+{
+    return scene() && scene()->windowState().has(CZWinFullscreen);
+}
+
+void AKWindowButtonGroup::updateButtons() noexcept
+{
+    // Third button: fullscreen (maximize while Alt is held), exit fullscreen while fullscreen
+    const bool fs { fullscreen() };
+    maximizeButton.setType(fs ? AKWindowButton::UnsetFullscreen :
+                           m_alt ? AKWindowButton::Maximize : AKWindowButton::Fullscreen);
+
+    for (AKWindowButton *b : { &closeButton, &minimizeButton, &maximizeButton })
+    {
+        AKWindowButton::State state { activated() ? AKWindowButton::Normal : AKWindowButton::Disabled };
+
+        if (b == &minimizeButton && fs)
+            state = AKWindowButton::Disabled; // Can't minimize a fullscreen window
+        else if (b == m_pressed && m_pressedInside)
+            state = AKWindowButton::Pressed;
+        else if (m_hover)
+            state = AKWindowButton::Hover;
+
+        b->setState(state);
+    }
+}
+
+bool AKWindowButtonGroup::pointerInside() const noexcept
+{
+    const SkPoint &pos { AKApp::Get()->pointer().pos() };
+    return SkRect::Make(worldRect()).contains(pos.x(), pos.y());
+}
+
+AKWindowButton *AKWindowButtonGroup::buttonAtPointer() const noexcept
+{
+    const SkPoint &pos { AKApp::Get()->pointer().pos() };
+
+    for (const AKWindowButton *b : { &closeButton, &minimizeButton, &maximizeButton })
+        if (SkRect::Make(b->worldRect()).contains(pos.x(), pos.y()))
+            return const_cast<AKWindowButton*>(b);
+
+    return nullptr;
+}
+
+void AKWindowButtonGroup::updatePointer() noexcept
+{
+    // While a button is held the group holds the pointer (see pointerButtonEvent()): hovering
+    // follows where it actually is
+    const bool hover { pointerInside() };
+    const bool pressedInside { m_pressed && buttonAtPointer() == m_pressed };
+
+    if (hover == m_hover && pressedInside == m_pressedInside)
+        return;
+
+    m_hover = hover;
+    m_pressedInside = pressedInside;
+    updateButtons();
 }
 
 bool AKWindowButtonGroup::eventFilter(const CZEvent &ev, CZObject &o) noexcept
 {
-    // TODO: Fix this
-    CZ_UNUSED(ev)
-    CZ_UNUSED(o)
-    
-#ifdef CZ_ENABLE_MARCO
+    if (&o != (CZObject*)scene())
+        return false;
 
-    if (ev.type() == CZEvent::Type::KeyboardKey && &o == (AKObject*)scene() && window() && window()->role() == MSurface::Role::Toplevel)
+    if (ev.type() == CZEvent::Type::KeyboardKey)
     {
-        if (!static_cast<MToplevel*>(window())->fullscreen())
-        {
-            const auto &e { static_cast<const CZKeyboardKeyEvent &>(ev) };
+        const auto &e { static_cast<const CZKeyboardKeyEvent &>(ev) };
 
-            if (e.keyCode == KEY_LEFTALT)
-            {
-                if (e.pressed)
-                    maximizeButton.setType(AKWindowButton::Maximize);
-                else
-                    maximizeButton.setType(AKWindowButton::Fullscreen);
-            }
+        if ((e.code == KEY_LEFTALT || e.code == KEY_RIGHTALT) && m_alt != e.isPressed)
+        {
+            m_alt = e.isPressed;
+            updateButtons();
         }
     }
-#endif
+    else if (ev.type() == CZEvent::Type::KeyboardLeave && m_alt)
+    {
+        // Its release won't be seen
+        m_alt = false;
+        updateButtons();
+    }
 
     return false;
 }
@@ -55,41 +114,48 @@ bool AKWindowButtonGroup::eventFilter(const CZEvent &ev, CZObject &o) noexcept
 void AKWindowButtonGroup::sceneChangedEvent(const AKSceneChangedEvent &e)
 {
     if (e.oldScene)
+    {
         e.oldScene->removeEventFilter(this);
+
+        if (e.oldScene->pointerGrab() == this)
+            e.oldScene->setPointerGrab(nullptr);
+    }
+
+    m_pressed = nullptr;
+    m_pressedInside = false;
+    m_hover = false;
+    m_alt = false;
 
     if (e.newScene)
         e.newScene->installEventFilter(this);
+
+    updateButtons();
 }
 
 void AKWindowButtonGroup::pointerEnterEvent(const CZPointerEnterEvent &)
 {
-    closeButton.setState(AKWindowButton::State::Hover);
-    maximizeButton.setState(AKWindowButton::State::Hover);
+    updatePointer();
+}
 
-#ifdef CZ_ENABLE_MARCO
-    MToplevel *tl = dynamic_cast<MToplevel*>(window());
-
-    if (tl && tl->fullscreen())
-        minimizeButton.setState(AKWindowButton::State::Disabled);
-    else
-        minimizeButton.setState(AKWindowButton::State::Hover);
-#endif
+void AKWindowButtonGroup::pointerMoveEvent(const CZPointerMoveEvent &)
+{
+    updatePointer();
 }
 
 void AKWindowButtonGroup::pointerLeaveEvent(const CZPointerLeaveEvent &)
 {
-    const auto state { activated() ? AKWindowButton::State::Normal : AKWindowButton::State::Disabled };
-    closeButton.setState(state);
-    maximizeButton.setState(state);
+    // Left the window while held: the press is dropped (its release may never come)
+    if (m_pressed)
+    {
+        m_pressed = nullptr;
 
-#ifdef CZ_ENABLE_MARCO
-    MToplevel *tl = dynamic_cast<MToplevel*>(window());
+        if (scene() && scene()->pointerGrab() == this)
+            scene()->setPointerGrab(nullptr);
+    }
 
-    if (tl && tl->fullscreen())
-        minimizeButton.setState(AKWindowButton::State::Disabled);
-    else
-        minimizeButton.setState(state);
-#endif
+    m_hover = false;
+    m_pressedInside = false;
+    updateButtons();
 }
 
 void AKWindowButtonGroup::pointerButtonEvent(const CZPointerButtonEvent &e)
@@ -97,41 +163,50 @@ void AKWindowButtonGroup::pointerButtonEvent(const CZPointerButtonEvent &e)
     if (e.button != BTN_LEFT)
         return;
 
-    if (!e.pressed)
+    e.accept();
+
+    if (e.pressed)
     {
-        e.accept();
+        AKWindowButton *button { buttonAtPointer() };
 
-        const auto state { AKWindowButton::State::Hover };
-        closeButton.setState(state);
-        maximizeButton.setState(state);
+        if (m_pressed || !button || button->state() == AKWindowButton::Disabled)
+            return;
 
-#ifdef CZ_ENABLE_MARCO
+        // Held until released (wherever the pointer goes)
+        m_pressed = button;
+        m_pressedInside = true;
 
-        MToplevel *tl = dynamic_cast<MToplevel*>(window());
+        if (scene())
+            scene()->setPointerGrab(this);
 
-        if (tl && tl->fullscreen())
-            minimizeButton.setState(AKWindowButton::State::Disabled);
-        else
-            minimizeButton.setState(state);
-#endif
-
+        updateButtons();
+        return;
     }
+
+    if (!m_pressed)
+        return;
+
+    AKWindowButton *button { m_pressed };
+    const bool clicked { buttonAtPointer() == button };
+    m_pressed = nullptr;
+    m_pressedInside = false;
+
+    if (scene() && scene()->pointerGrab() == this)
+        scene()->setPointerGrab(nullptr);
+
+    // Minimizing: the window goes away under the pointer (no leave event may follow)
+    if (clicked && button == &minimizeButton)
+        m_hover = false;
+    else
+        m_hover = pointerInside();
+
+    updateButtons();
+
+    if (clicked)
+        button->onClick.notify(); // May destroy it (e.g. closing the window)
 }
 
-void AKWindowButtonGroup::windowStateEvent(const CZWindowStateEvent &e)
+void AKWindowButtonGroup::windowStateEvent(const CZWindowStateEvent &)
 {
-    const auto state { activated() ? AKWindowButton::State::Normal : AKWindowButton::State::Disabled };
-    closeButton.setState(state);
-    maximizeButton.setState(state);
-
-    if (e.newState.has(CZWinFullscreen))
-    {
-        maximizeButton.setType(AKWindowButton::Type::UnsetFullscreen);
-        minimizeButton.setState(AKWindowButton::State::Disabled);
-    }
-    else
-    {
-        maximizeButton.setType(AKWindowButton::Type::Fullscreen);
-        minimizeButton.setState(state);
-    }
+    updateButtons();
 }

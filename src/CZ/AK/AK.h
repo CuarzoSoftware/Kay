@@ -53,6 +53,7 @@ namespace CZ
     class AKRoundSolidColor;
     class AKPath;
     class AKImage;
+    class AKBlurImage;
     class AKImageFrame;
     class AKThreePatch;
     class AKNinePatch;
