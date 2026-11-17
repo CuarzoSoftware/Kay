@@ -231,6 +231,7 @@ private:
     ClipType m_clipType { NoClip };
     std::shared_ptr<RSurface> m_blur;
     std::shared_ptr<RSurface> m_blur2;
+    SkIRect m_prevSrc { 0, 0, 0, 0 }; // Backdrop rect last blurred (target coordinates)
     std::shared_ptr<RImage> m_firstQuarterCircleMasks[4];
 };
 

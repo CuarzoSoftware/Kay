@@ -151,6 +151,38 @@ public:
     }
 
     /**
+     * @brief While the capture rect sticks out of the target (e.g. a panel sliding in from outside
+     *        the screen), also captures it pushed inside the target.
+     *
+     * Nothing outside the target is ever rendered: the effect can sample the pushed rect instead
+     * (see sampleOffset()), what the node will be over once inside, rather than mirroring the thin
+     * strip already inside. Disabled by default.
+     *
+     * Only along the axes the node enters through (e.g. vertically for a top bar): along the others
+     * it may stick out while it moves with what's behind it (e.g. a top bar sliding with its
+     * workspace), and must keep blurring what's under it.
+     */
+    void setCaptureInsideTarget(bool horizontally, bool vertically) noexcept
+    {
+        m_captureInsideH = horizontally;
+        m_captureInsideV = vertically;
+    }
+
+    bool captureInsideTargetH() const noexcept { return m_captureInsideH; }
+    bool captureInsideTargetV() const noexcept { return m_captureInsideV; }
+
+    /**
+     * @brief Where to sample the capture this frame, relative to the capture rect's own position.
+     *
+     * Non-zero only with setCaptureInsideTarget() while the capture rect sticks out of the target (and
+     * fits in it). captureRectTranslated() then spans both rects.
+     */
+    const SkIPoint &sampleOffset() const noexcept
+    {
+        return m_sampleOffset;
+    }
+
+    /**
      * @brief Forces a specific region to be painted into the scene target.
      *
      * By default, the captured region is rendered only in the tracker surface.
@@ -321,6 +353,10 @@ private:
     SkRegion m_capturedDamage;
     SkIRect m_captureRect { 0, 0, 0, 0};
     SkIRect m_captureRectTranslated;
+    bool m_captureInsideH { false };
+    bool m_captureInsideV { false };
+    SkIPoint m_sampleOffset { 0, 0 };
+    SkIRect m_prevSampleRect { 0, 0, 0, 0 }; // Last pushed rect captured (its area is damaged when it changes)
     SkRegion m_paintAnyway;
     SkRegion m_paintAnywayTranslated;
     AKNode &m_node;

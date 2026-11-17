@@ -424,6 +424,40 @@ void AKScene::calculateNewDamage(AKNode *node)
         geo.viewport.offsetTo(0, 0);
         node->bdt.m_currentSurface->setGeometry(geo);
         node->bdt.m_captureRectTranslated = node->bdt.captureRect().makeOffset(node->m_sceneRect.x(), node->m_sceneRect.y());
+        node->bdt.m_sampleOffset = SkIPoint::Make(0, 0);
+
+        // Sticking out of the target: also captured pushed inside it (see setCaptureInsideTarget())
+        if (node->bdt.m_captureInsideH || node->bdt.m_captureInsideV)
+        {
+            const SkIRect &capture { node->bdt.m_captureRectTranslated };
+            const SkIRect &vp { ct->m_sceneViewport };
+
+            const auto push = [](Int32 lo, Int32 hi, Int32 vpLo, Int32 vpHi) -> Int32 {
+                if (hi - lo > vpHi - vpLo) return 0; // Doesn't fit
+                if (lo < vpLo) return vpLo - lo;
+                if (hi > vpHi) return vpHi - hi;
+                return 0;
+            };
+
+            const SkIPoint offset { SkIPoint::Make(
+                node->bdt.m_captureInsideH ? push(capture.left(), capture.right(), vp.left(), vp.right()) : 0,
+                node->bdt.m_captureInsideV ? push(capture.top(), capture.bottom(), vp.top(), vp.bottom()) : 0) };
+
+            if (offset != SkIPoint::Make(0, 0) && !capture.isEmpty())
+            {
+                const SkIRect sample { capture.makeOffset(offset.x(), offset.y()) };
+
+                // Newly captured there: everything in it (not only what changed)
+                if (sample != node->bdt.m_prevSampleRect)
+                    ct->m_damage.op(sample, SkRegion::Op::kUnion_Op);
+
+                node->bdt.m_prevSampleRect = sample;
+                node->bdt.m_sampleOffset = offset;
+                node->bdt.m_captureRectTranslated.join(sample);
+            }
+            else
+                node->bdt.m_prevSampleRect.setEmpty();
+        }
         SkRegion additionalAnyway { node->bdt.captureRectTranslated() };
         additionalAnyway.op(clip, SkRegion::Op::kDifference_Op);
         node->bdt.paintAnyway().translate(node->m_sceneRect.x(), node->m_sceneRect.y(), &node->bdt.m_paintAnywayTranslated);

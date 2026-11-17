@@ -10,8 +10,38 @@
 #include <CZ/AK/AKLog.h>
 #include <CZ/Ream/RImage.h>
 #include <CZ/Ream/RPass.h>
+#include <cstdlib>
 
 using namespace CZ;
+
+/*
+ * CZ_AK_BLUR_DEBUG: a bitmask to find blur artifacts (e.g. dark frames while a panel slides in).
+ * - 1: Always reblur the whole effect (not only the captured damage).
+ * - 2: Fill the blur buffers with magenta before reblurring: texels not rewritten that frame show pink.
+ * - 4: Log every reblur (effect rect, valid area, damage).
+ */
+enum BlurDebug : UInt32
+{
+    BlurDebugFullReblur = 1,
+    BlurDebugMagenta    = 2,
+    BlurDebugLog        = 4,
+};
+
+static UInt32 BlurDebugFlags() noexcept
+{
+    static const UInt32 flags { [] {
+        const char *env { getenv("CZ_AK_BLUR_DEBUG") };
+        return env ? UInt32(std::strtoul(env, nullptr, 10)) : 0u;
+    }() };
+    return flags;
+}
+
+static void FillMagenta(RPainter &painter, const SkIRect &rect) noexcept
+{
+    painter.setBlendMode(RBlendMode::Src);
+    painter.setColor(SK_ColorMAGENTA);
+    painter.drawColor(SkRegion(rect));
+}
 
 AKBackgroundBlurEffect::AKBackgroundBlurEffect(AKNode *target) noexcept :
     AKBackgroundEffect(Behind)
@@ -236,8 +266,19 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         return;
 
     const auto schemeChanged { changes().testAnyOf(CHColorScheme, CHMaterial) };
-    bool reblur { !bdt.capturedDamage.isEmpty() || schemeChanged };
-    bool copyAll { schemeChanged };
+    const UInt32 debug { BlurDebugFlags() };
+
+    // Where the backdrop is sampled: under the effect, or pushed inside the screen while it sticks
+    // out (see AKBackgroundDamageTracker::setCaptureInsideTarget())
+    const SkIRect src { p.rect.makeOffset(bdt.sampleOffset().x(), bdt.sampleOffset().y()) };
+
+    // The blur buffers hold the backdrop of the last sampled rect: once it moves (e.g. a panel
+    // sliding in), all of it is stale, not only the captured damage
+    const bool moved { src != m_prevSrc };
+    m_prevSrc = src;
+
+    bool reblur { !bdt.capturedDamage.isEmpty() || schemeChanged || moved || (debug & BlurDebugFullReblur) };
+    bool copyAll { schemeChanged || moved || (debug & BlurDebugFullReblur) };
     SkScalar bdtScale { bdt.scale() };
     SkScalar scale { bdtScale * 0.5f};
     SkScalar blur2Scale { scale * 0.5f };
@@ -281,10 +322,11 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         info.image = bdt.currentSurface()->image();
         info.srcScale = bdtScale;
         info.dst = m_blur->geometry().viewport.roundOut();
-        info.src = SkRect::Make(p.rect);
+        info.src = SkRect::Make(src);
 
         // Only the part of the effect within the target (screen) is ever captured: e.g. a dock
-        // sliding in from below the screen. Taps beyond it are mirrored back (see validRect), so the
+        // sliding in from below the screen (unless sampled pushed inside, see src above, then all of
+        // it is valid). Taps beyond it are mirrored back (see validRect), so the
         // blur continues the screen's content past its edges instead of reading what was never
         // captured (dark or stale).
         const SkRect hDst { SkRect::Make(info.dst) };
@@ -304,11 +346,23 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
 
         params.validRect = mapRect(valid, info.src, hDst); // In H dst coordinates
 
+        if (debug & BlurDebugLog)
+        {
+            const SkIRect dmg { bdt.capturedDamage.getBounds() };
+            AKLog(CZInfo, "[BlurDebug] {} rect ({},{} {}x{}) src ({},{}) captured {}x{} valid ({},{} {}x{}) copyAll {} damage ({},{} {}x{}) rects {}",
+                  (const void*)this, p.rect.x(), p.rect.y(), p.rect.width(), p.rect.height(), src.x(), src.y(),
+                  captured.width(), captured.height(), valid.x(), valid.y(), valid.width(), valid.height(),
+                  copyAll, dmg.x(), dmg.y(), dmg.width(), dmg.height(), bdt.capturedDamage.computeRegionComplexity());
+        }
+
+        if (debug & BlurDebugMagenta)
+            FillMagenta(*painter, info.dst);
+
         if (copyAll)
             painter->drawImageEffect(info, RPainter::VibrancyH, nullptr, params);
         else
         {
-            bdt.capturedDamage.translate(-p.rect.x(), -p.rect.y());
+            bdt.capturedDamage.translate(-src.x(), -src.y()); // Relative to the sampled rect
             bdt.capturedDamage.op(info.dst, SkRegion::Op::kIntersect_Op);
             painter->drawImageEffect(info, RPainter::VibrancyH, &bdt.capturedDamage, params);
         }
@@ -328,6 +382,9 @@ void AKBackgroundBlurEffect::renderEvent(const AKRenderEvent &p)
         // The same valid area, in V dst coordinates: the H pass never writes the rest (it may hold
         // anything from previous frames)
         params.validRect = mapRect(*params.validRect, hDst, SkRect::Make(info.dst));
+
+        if (debug & BlurDebugMagenta)
+            FillMagenta(*painter, info.dst);
 
         if (copyAll)
             painter->drawImageEffect(info, RPainter::VibrancyV, nullptr, params);
