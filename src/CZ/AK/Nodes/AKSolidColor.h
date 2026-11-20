@@ -9,7 +9,7 @@
 /**
  * @brief Node for displaying solid colors.
  *
- * The fill is a @ref CZAdaptiveColor: it is resolved for the current color scheme and re-resolved
+ * The fill is a @ref CZAdaptiveColor, it is resolved for the current color scheme and re-resolved
  * automatically when the scheme changes (only when the light and dark variants actually differ).
  *
  * The inherited raw AKRenderable::setColor() (a single SkColor) is demoted to protected — use the
