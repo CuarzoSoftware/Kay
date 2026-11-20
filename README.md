@@ -8,8 +8,9 @@
   </a>
 </p>
 
-
 # Kay
+
+> This project is part of the [Cuarzo Framework](https://github.com/CuarzoSoftware/Cuarzo). Follow the instructions there to build and install it.
 
 > ⚠️ **This project is a work in progress.**
 
