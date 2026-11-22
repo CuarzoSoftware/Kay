@@ -6,6 +6,7 @@
 #include <CZ/Core/CZAdaptive.h>
 #include <CZ/Core/CZTimer.h>
 #include <CZ/Core/CZSignal.h>
+#include <CZ/Core/CZWeak.h>
 #include <CZ/skia/modules/skparagraph/include/Paragraph.h>
 #include <CZ/skia/modules/skparagraph/include/ParagraphStyle.h>
 #include <CZ/skia/modules/skparagraph/include/TextStyle.h>
@@ -107,6 +108,15 @@ public:
     /** @brief Whether the user can select (and copy) the text. `true` by default. */
     void setSelectable(bool selectable) noexcept;
     bool selectable() const noexcept { return m_selectable || m_editable; }
+
+    /**
+     * @brief Presses on @p area (or its children) keep the keyboard focus; ones elsewhere drop it.
+     *
+     * The editor itself by default (nullptr). E.g. AKTextInput sets its box, so clicking its padding
+     * or its visibility toggle doesn't drop the focus for a moment.
+     */
+    void setFocusArea(AKNode *area) noexcept { m_focusArea.reset(area); }
+    AKNode *focusArea() const noexcept { return m_focusArea ? m_focusArea.get() : const_cast<AKCoreTextEditor*>(this); }
 
     /** @brief Whether the user can edit the text (implies selectable()). `false` by default. */
     void setEditable(bool editable) noexcept;
@@ -257,6 +267,7 @@ private:
 
     std::vector<UndoState> m_undo, m_redo;
     bool m_lastEditTyping { false };
+    CZWeak<AKNode> m_focusArea;
 
     AKSolidColor m_caretNode;
     CZTimer m_blink;

@@ -731,11 +731,11 @@ bool AKCoreTextEditor::eventFilter(const CZEvent &event, CZObject &target) noexc
 {
     auto app { AKApp::Get() };
 
-    // A press outside (or on another surface) drops the focus
+    // A press outside (see setFocusArea()), or on another surface, drops the focus
     if (hasKeyboardFocus() && &target == app.get() && event.type() == CZEvent::Type::PointerButton &&
         static_cast<const CZPointerButtonEvent&>(event).pressed && scene() &&
         (app->pointer().focus() != scene() || !scene()->pointerFocus() ||
-         (scene()->pointerFocus() != this && !scene()->pointerFocus()->isSubchildOf(this))))
+         (scene()->pointerFocus() != focusArea() && !scene()->pointerFocus()->isSubchildOf(focusArea()))))
         setKeyboardFocus(false);
 
     return false;

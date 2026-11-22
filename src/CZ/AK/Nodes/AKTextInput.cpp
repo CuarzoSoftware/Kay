@@ -28,6 +28,7 @@ AKTextInput::AKTextInput(const std::string &placeholderText, AKNode *parent) noe
     editor.setEditable(true);
     editor.setMaxLines(1);
     editor.layout().setFlex(1.f);
+    editor.setFocusArea(this); // Presses on the box (its padding, the toggle) keep the focus
 
     const SkRegion empty;
     placeholder.setInputRegion(&empty);
@@ -35,6 +36,15 @@ AKTextInput::AKTextInput(const std::string &placeholderText, AKNode *parent) noe
     placeholder.layout().setPositionType(YGPositionTypeAbsolute);
     placeholder.layout().setPosition(YGEdgeLeft, PaddingX);
     placeholder.setText(placeholderText);
+
+    // Closer to the right edge than the text is to the left one
+    visibilityToggle.layout().setMargin(YGEdgeRight, -4.f);
+    visibilityToggle.setCursor(CZCursorShape::Default);
+    visibilityToggle.setVisible(false);
+    visibilityToggle.onClick.subscribe(this, [this](const CZPointerButtonEvent &){
+        setPasswordMode(!passwordMode());
+        focus(); // If it wasn't (it keeps it if it was, see AKCoreTextEditor::setFocusArea())
+    });
 
     editor.onTextChanged.subscribe(this, [this]{
         placeholder.setVisible(editor.text().empty());
@@ -53,6 +63,18 @@ void AKTextInput::setText(const std::string &text) noexcept
     editor.setText(text);
     editor.setCaret(text.size());
     placeholder.setVisible(text.empty());
+}
+
+void AKTextInput::setPasswordMode(bool enabled) noexcept
+{
+    editor.setPasswordMode(enabled);
+    updateVisibilityToggle();
+}
+
+void AKTextInput::updateVisibilityToggle() noexcept
+{
+    // Hidden: the eye, shown: the crossed-out eye
+    visibilityToggle.icon.setIconFromName(passwordMode() ? "visibility" : "visibility_off");
 }
 
 void AKTextInput::pointerButtonEvent(const CZPointerButtonEvent &e)

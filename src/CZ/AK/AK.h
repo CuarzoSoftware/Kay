@@ -83,6 +83,10 @@ namespace CZ
     class AKTextInput;
     class AKWiFiIcon;
     class AKActivityIndicator;
+    class AKPopUpButton;
+    class AKCheckBox;
+    class AKSegmentedControl;
+    class AKLevelIndicator;
 
     class AKIconFont;
 
