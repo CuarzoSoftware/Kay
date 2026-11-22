@@ -81,7 +81,7 @@ public:
     void setTextColor(CZAdaptiveColor color) noexcept;
     CZAdaptiveColor textColor() const noexcept { return m_textColor; }
 
-    /** @brief Selection highlight while focused (unfocused selections are gray). */
+    /** @brief Selection highlight while focused (unfocused editable text keeps its selection, gray; read-only text drops it). */
     void setSelectionColor(CZAdaptiveColor color) noexcept;
     CZAdaptiveColor selectionColor() const noexcept { return m_selectionColor; }
 
@@ -115,6 +115,16 @@ public:
     /** @brief Whether Enter inserts line breaks (Ctrl+Enter then submits). `false` by default. */
     void setMultiline(bool multiline) noexcept { m_multiline = multiline; }
     bool multiline() const noexcept { return m_multiline; }
+
+    /**
+     * @brief Shows each character as a bullet (•), e.g. for passwords.
+     *
+     * The text itself is kept as typed (text()), but it can't be copied or cut.
+     */
+    void setPasswordMode(bool enabled) noexcept;
+
+    /** @brief See setPasswordMode(). */
+    bool passwordMode() const noexcept { return m_password; }
 
     /** @brief Being edited: editable() and with keyboard focus. */
     bool editing() const noexcept;
@@ -236,7 +246,7 @@ private:
 
     size_t m_anchor { 0 }, m_caret { 0 };
     SkScalar m_preferredX { -1.f }; // Kept while moving up/down
-    bool m_selectable { true }, m_editable { false }, m_multiline { false };
+    bool m_selectable { true }, m_editable { false }, m_multiline { false }, m_password { false };
 
     // Pointer selection: 1 = characters, 2 = words, 3 = everything
     bool m_dragging { false };

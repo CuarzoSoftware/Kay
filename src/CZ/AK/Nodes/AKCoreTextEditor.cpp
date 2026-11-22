@@ -258,11 +258,21 @@ void AKCoreTextEditor::insert(const std::string &text) noexcept
     replace(selectionStart(), selectionEnd(), clean, clean.size() <= 4 && clean != " ");
 }
 
+void AKCoreTextEditor::setPasswordMode(bool enabled) noexcept
+{
+    if (m_password == enabled)
+        return;
+
+    m_password = enabled;
+    updateMaps();
+    relayout();
+}
+
 bool AKCoreTextEditor::copy(const CZInputEvent &triggeringEvent) noexcept
 {
     auto *clipboard { AKApp::Get()->clipboard() };
 
-    if (!clipboard || !hasSelection())
+    if (!clipboard || !hasSelection() || m_password)
         return false;
 
     clipboard->setText(selectedText(), triggeringEvent);
@@ -271,6 +281,9 @@ bool AKCoreTextEditor::copy(const CZInputEvent &triggeringEvent) noexcept
 
 bool AKCoreTextEditor::cut(const CZInputEvent &triggeringEvent) noexcept
 {
+    if (m_password)
+        return false;
+
     if (!m_editable || !copy(triggeringEvent))
         return false;
 
@@ -475,7 +488,7 @@ void AKCoreTextEditor::updateMaps() noexcept
         for (size_t k = 0; k < len; k++)
             m_u8ToU16[i + k] = u16;
 
-        const size_t units { len == 4 ? 2u : 1u };
+        const size_t units { (len == 4 && !m_password) ? 2u : 1u }; // Masked: one bullet each
 
         for (size_t k = 0; k < units; k++)
             m_u16ToU8.push_back(i);
@@ -628,7 +641,15 @@ void AKCoreTextEditor::relayout() noexcept
 
     auto builder { ParagraphBuilder::make(paragraphStyle, AKApp::Get()->fontCollection()) };
     builder->pushStyle(style);
-    builder->addText(m_text.data(), m_text.size());
+
+    if (m_password)
+    {
+        // One bullet per code point (see updateMaps())
+        std::u16string masked(m_u16ToU8.empty() ? 0 : m_u16ToU8.size() - 1, u'\u2022');
+        builder->addText(masked);
+    }
+    else
+        builder->addText(m_text.data(), m_text.size());
     builder->pop();
     m_paragraph = builder->Build();
 
@@ -736,6 +757,12 @@ void AKCoreTextEditor::keyboardLeaveEvent(const CZKeyboardLeaveEvent &event)
     m_blink.stop();
     m_dragging = false;
     m_lastEditTyping = false;
+
+    // Read-only text (e.g. a label) drops its selection, like macOS's. Editable text keeps it (drawn
+    // unfocused) until it's focused again.
+    if (!m_editable && hasSelection())
+        setCaret(m_caret);
+
     relayout();
     addChange(CHSelection);
     onEditingFinished.notify();

@@ -474,15 +474,34 @@ void AKScene::calculateNewDamage(AKNode *node)
 
     /// BAKEABLES AND SUBSCENES ///
 
-    const auto needsBake { bakeable && !clip.isEmpty() && (node->tData->changes.any() || !node->tData->damage.isEmpty() || !bakeable->surface() || bakeable->m_surfaceScale != node->scale()) };
+    const auto needsBake { bakeable && (node->tData->changes.any() || !node->tData->damage.isEmpty() || !bakeable->surface() || bakeable->m_surfaceScale != node->scale() || bakeable->m_bakePending) };
 
     if (needsBake)
     {
         SkRegion clipRegion = clip;
         clipRegion.op(ct->m_clip, SkRegion::Op::kIntersect_Op);
 
-        if (!clipRegion.isEmpty())
+        if (clipRegion.isEmpty())
         {
+            // Not visible (e.g. scrolled out of view): the changes are reset after this frame, so
+            // keep them for when it shows up again.
+            if (node->tData->changes.any() || !node->tData->damage.isEmpty())
+            {
+                bakeable->m_bakePending = true;
+                bakeable->m_pendingChanges |= node->tData->changes;
+            }
+        }
+        else
+        {
+            const bool pending { bakeable->m_bakePending };
+
+            if (pending)
+            {
+                node->tData->changes |= bakeable->m_pendingChanges;
+                bakeable->m_pendingChanges.reset();
+                bakeable->m_bakePending = false;
+            }
+
             clipRegion.translate(-bakeable->m_sceneRect.x(), -bakeable->m_sceneRect.y());
             bool surfaceChanged;
 
@@ -510,7 +529,7 @@ void AKScene::calculateNewDamage(AKNode *node)
                 bakeable->opaqueRegion,
                 bakeable->m_surface);
 
-            if (surfaceChanged)
+            if (surfaceChanged || pending)
             {
                 bakeable->tData->changes.set(AKRenderable::CHSize);
                 event.damage.setRect(AK_IRECT_INF);

@@ -271,14 +271,16 @@ public:
 
     /* AKScroll */
     
-    /// Kinetic scrolling speed factor. Defaults to 1.5.
+    /// Scrolling speed factor (logical pixels per scroll axis unit). Defaults to 1.5.
     static inline SkScalar  ScrollKineticSpeed                      { 1.5f };
-    /// Kinetic scrolling friction. Defaults to 0.15.
-    static inline SkScalar  ScrollKineticFriction                   { 0.15f };
-    /// Kinetic scrolling inertia. Defaults to 10.
-    static inline SkScalar  ScrollKineticInertia                    { 10.f };
-    /// Maximum overscroll bounce offset in logical pixels. Defaults to 96.
-    static inline SkScalar  ScrollBounceOffsetLimit                 { 96.f };
+    /// Momentum deceleration: the velocity is multiplied by this each millisecond. Defaults to 0.998 (like macOS).
+    static inline SkScalar  ScrollDecelerationRate                  { 0.998f };
+    /// Rubber band stiffness past the edges, see AKScroll. Defaults to 0.55 (like macOS).
+    static inline SkScalar  ScrollRubberBandCoefficient             { 0.55f };
+    /// The furthest content can be dragged past an edge (approached asymptotically), in logical pixels. Defaults to 100.
+    static inline SkScalar  ScrollRubberBandLimit                   { 100.f };
+    /// Angular frequency (per ms) of the spring bringing overscrolled content back. Defaults to 0.02 (settles in ~0.3 s).
+    static inline SkScalar  ScrollBounceFrequency                   { 0.02f };
     /// Scroll bar handle width in logical pixels. Defaults to 7.
     static inline SkScalar  ScrollBarHandleWidth                    { 7.f };
     /// Scroll bar handle width while hovered, in logical pixels. Defaults to 11.

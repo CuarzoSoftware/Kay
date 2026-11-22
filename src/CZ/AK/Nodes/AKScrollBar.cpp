@@ -12,7 +12,7 @@ AKScrollBar::AKScrollBar(AKScroll *scroll, CZEdge edge, AKNode *parent) noexcept
     AKThreePatch(edge == CZEdgeLeft || edge == CZEdgeRight ? CZOrientation::V : CZOrientation::H, parent),
     m_scroll(scroll)
 {
-    opaqueRegion.setRect(AK_IRECT_INF);
+    // The rail is translucent (see railBackgroundColor()): never declared opaque.
     setOpacity(0.f);
     setVisible(false);
     m_handle.enableReplaceImageColor(true);
@@ -93,6 +93,15 @@ void AKScrollBar::setRailBorderColor(CZAdaptiveColor color) noexcept
         return;
 
     m_railBorderColor = color;
+    updateImages();
+}
+
+void AKScrollBar::setRailVisible(bool visible) noexcept
+{
+    if (m_railVisible == visible)
+        return;
+
+    m_railVisible = visible;
     updateImages();
 }
 
@@ -367,6 +376,12 @@ void AKScrollBar::updateImages() noexcept
     m_handle.setSideSrcRect(side);
     m_handle.setCenterSrcRect(center);
     m_handle.setImageScale(scale());
+
+    if (!m_railVisible)
+    {
+        setImage(nullptr); // Only the handle is drawn
+        return;
+    }
 
     setImage(theme()->scrollRailThreePatchImage(
         orientation(),

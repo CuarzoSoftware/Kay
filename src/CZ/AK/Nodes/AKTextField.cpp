@@ -277,8 +277,13 @@ void AKTextField::updateScale() noexcept
 
 void AKTextField::updateTextPosition() noexcept
 {
-    layout().calculate();
-    if (m_text.layout().calculatedWidth() + m_caret.layout().calculatedWidth() < m_content.layout().calculatedWidth())
+    // The text's width is set by AKText when its text changes (no need to calculate the layout:
+    // never call calculate() here, this also runs during the scene's layout pass, see layoutEvent(),
+    // where it'd lay out the parent as a root and reset its position).
+    const YGValue width { m_text.layout().width() };
+    const SkScalar textWidth { width.unit == YGUnitPoint ? width.value : 0.f };
+
+    if (textWidth + m_caret.layout().calculatedWidth() < m_content.layout().calculatedWidth())
         m_content.layout().setJustifyContent(YGJustifyCenter);
     else
         m_content.layout().setJustifyContent(YGJustifyFlexEnd);

@@ -71,6 +71,18 @@ namespace CZ
     class AKScroll;
     class AKScrollBar;
     class AKSlider;
+    class AKSearchField;
+    class AKAvatar;
+    class AKSidebarItem;
+    class AKSidebarList;
+    class AKIconTile;
+    class AKSwitch;
+    class AKIconButton;
+    class AKFormSection;
+    class AKFormRow;
+    class AKTextInput;
+    class AKWiFiIcon;
+    class AKActivityIndicator;
 
     class AKIconFont;
 

@@ -58,11 +58,20 @@ void AKNinePatch::renderEvent(const AKRenderEvent &e)
     if (!m_image || e.damage.isEmpty())
         return;
 
+    // Invisible: nothing to draw (e.g. an AKRoundSolidColor with a transparent fill and no stroke,
+    // like a row only highlighted while hovered). Each patch is a draw call.
+    if (opacity() <= 0.f || colorFactor().fA <= 0.f || (replaceImageColorEnabled() && SkColorGetA(color()) == 0))
+        return;
+
     auto *p { e.pass->getPainter() };
 
     RDrawImageInfo info {};
     info.image = image();
     info.srcScale = scale();
+
+    // All its patches at once (a single draw call where the backend supports it)
+    std::vector<RImageRect> rects;
+    rects.reserve(Region_Last);
 
     for (int i = 0; i < Region_Last; i++)
     {
@@ -71,10 +80,10 @@ void AKNinePatch::renderEvent(const AKRenderEvent &e)
         if (!r->visible || r->dst.isEmpty())
             continue;
 
-        info.src = SkRect::Make(r->src);
-        info.dst = r->dst.makeOffset(e.rect.topLeft());
-        p->drawImage(info, &e.damage);
+        rects.push_back({ SkRect::Make(r->src), r->dst.makeOffset(e.rect.topLeft()) });
     }
+
+    p->drawImageRects(info, rects, &e.damage);
 }
 
 void AKNinePatch::updateRegions() noexcept

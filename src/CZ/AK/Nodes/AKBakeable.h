@@ -82,6 +82,12 @@ private:
     std::shared_ptr<RSurface> m_surface;
     Int32 m_surfaceScale { 1 };
     bool m_onBakeGeneratedDamage;
+
+    // Changed while it wasn't visible (so it wasn't baked): baked from scratch once it is, with
+    // these changes (otherwise the old bake is reused, e.g. a text colored for the previous
+    // color scheme after scrolling it into view).
+    bool m_bakePending { false };
+    AKChanges m_pendingChanges {};
 };
 
 #endif // CZ_AKBAKEABLE_H

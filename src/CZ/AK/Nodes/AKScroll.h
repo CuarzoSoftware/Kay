@@ -4,6 +4,7 @@
 #include <CZ/AK/Nodes/AKContainer.h>
 #include <CZ/AK/Nodes/AKScrollBar.h>
 #include <CZ/Core/CZLinearAnimation.h>
+#include <CZ/Core/Events/CZPointerScrollEvent.h>
 
 /**
  * @brief Scrollable container.
@@ -77,16 +78,44 @@ protected:
     void moveYPrivate(SkScalar dy) noexcept;
 
     AKContainer m_slot;
-    CZLinearAnimation m_kineticYAnim;
-    CZLinearAnimation m_kineticXAnim;
-    SkPoint m_vel { 0.f, 0.f };
-    SkIRect m_contentBounds { 0, 0, 0, 0};
-    Int64 m_lastFingerTimeX;
-    Int64 m_lastFingerTimeY;
+    SkIRect m_contentBounds { 0, 0, 0, 0 };
     AKScrollBar m_hBar { this, CZEdgeBottom, this };
     AKScrollBar m_vBar { this, CZEdgeRight, this };
-    bool m_fingersDownX { false };
-    bool m_fingersDownY { false };
+
+    /// @cond INTERNAL
+    /*
+     * Kinetic scrolling, per axis (0 = X, 1 = Y), like macOS:
+     *
+     * - Tracking: the fingers move the content 1:1; past an edge it's rubber-banded.
+     * - Momentum: after lifting them, it keeps going and slows down exponentially.
+     * - Spring: past an edge (released there or reached by momentum), a critically damped spring
+     *   brings it back. Its overshoot is rubber-banded too (never past the limit).
+     * - Wheel: a discrete wheel step glides to its target.
+     */
+    struct Axis
+    {
+        enum class Phase { Idle, Tracking, Momentum, Spring, Wheel };
+        Phase phase { Phase::Idle };
+        SkScalar vel { 0.f };          // Logical px per ms
+        SkScalar raw { 0.f };          // Tracking: the offset without the rubber band
+        SkScalar overshoot { 0.f };    // Spring: distance past the edge without the rubber band
+        SkScalar edge { 0.f };         // Spring: the edge it springs back to
+        SkScalar wheelTarget { 0.f };
+        UInt64 lastEventUs { 0 };
+    };
+
+    Axis m_axes[2];
+    CZLinearAnimation m_ticker;        // Drives the axes not Idle nor Tracking
+    UInt64 m_lastTickUs { 0 };
+
+    SkScalar offset(int axis) const noexcept { return axis == 0 ? offsetX() : offsetY(); }
+    void setOffsetPrivate(int axis, SkScalar offset) noexcept;
+    void scrollRange(int axis, SkScalar &min, SkScalar &max) const noexcept;
+    SkScalar viewportSize(int axis) const noexcept;
+    void scrollAxis(int axis, SkScalar delta, CZPointerScrollEvent::Source source, bool stop) noexcept;
+    void tick() noexcept;
+    void stopKinetic() noexcept;
+    /// @endcond
 };
 
 #endif // CZ_AKSCROLL_H

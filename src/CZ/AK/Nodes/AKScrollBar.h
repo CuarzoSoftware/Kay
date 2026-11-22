@@ -92,6 +92,14 @@ public:
     void setRailBorderColor(CZAdaptiveColor color) noexcept;
     CZAdaptiveColor railBorderColor() const noexcept { return m_railBorderColor; }
 
+    /**
+     * @brief Whether the rail (the track behind the handle, shown while hovered) is drawn.
+     *
+     * Enabled by default. Disable it for a knob-only bar, like macOS's scrollers over sidebars.
+     */
+    void setRailVisible(bool visible) noexcept;
+    bool railVisible() const noexcept { return m_railVisible; }
+
     /** @brief Adaptive color of the draggable handle (tinted via replaceImageColor). */
     void setHandleColor(CZAdaptiveColor color) noexcept;
     CZAdaptiveColor handleColor() const noexcept { return m_handleColor; }
@@ -119,9 +127,10 @@ protected:
     void updateImages() noexcept;
     void updateGeometry() noexcept;
     // Light values match the previous hardcoded ones; dark variants mirror them for a dark scheme.
-    CZAdaptiveColor m_railBackgroundColor { 0xFFFBFBFB, 0xFF2E2E2E };
+    CZAdaptiveColor m_railBackgroundColor { 0x8CFAFAFA, 0x59303030 }; // Translucent, like macOS's overlay scrollers
     CZAdaptiveColor m_railBorderColor { 0x19000000, 0x19FFFFFF };
     CZAdaptiveColor m_handleColor { 0x80000000, 0x80FFFFFF };
+    bool m_railVisible { true };
     SkScalar m_posPercent { 0.f };
     SkScalar m_sizePercent { 100.f };
     AKContainer m_space { YGFlexDirectionRow, false, this };
