@@ -5,35 +5,49 @@
 #include <CZ/Ream/RSurface.h>
 #include <CZ/Ream/RPass.h>
 #include <CZ/skia/core/SkCanvas.h>
+#include <CZ/skia/core/SkBitmap.h>
 #include <drm_fourcc.h>
 #include <pwd.h>
 #include <unistd.h>
 #include <algorithm>
+#include <map>
+#include <cmath>
 
 using namespace CZ;
 namespace fs = std::filesystem;
 
-// A white antialiased circle on transparent (the mask), shared by every avatar.
-static std::shared_ptr<RImage> CircleMask() noexcept
+// A white antialiased circle on transparent (the mask), @p size pixels wide: drawn at the size it's
+// shown at (a larger one scaled down without mipmaps loses its antialiasing). Shared by the avatars
+// of that size.
+static std::shared_ptr<RImage> CircleMask(Int32 size) noexcept
 {
-    static std::shared_ptr<RImage> mask;
+    static std::map<Int32, std::weak_ptr<RImage>> masks;
+    size = std::clamp(size, 1, 1024);
 
-    if (mask)
+    if (auto mask { masks[size].lock() })
         return mask;
 
-    constexpr Int32 size { 256 };
-    auto surface { RSurface::Make(SkISize::Make(size, size), 1, true) };
+    std::erase_if(masks, [](const auto &m){ return m.second.expired(); });
 
-    if (!surface)
+    // Drawn on the CPU: antialiased whatever the GPU context does
+    auto ream { RCore::Get() };
+
+    if (!ream || !ream->mainDevice())
+        return {};
+
+    const auto &formats { ream->mainDevice()->textureFormats().formats() };
+    const auto format { formats.find(DRM_FORMAT_ABGR8888) }; // RGBA in memory
+
+    if (format == formats.end())
+        return {};
+
+    SkBitmap bitmap;
+
+    if (!bitmap.tryAllocPixels(SkImageInfo::Make(size, size, kRGBA_8888_SkColorType, kPremul_SkAlphaType)))
         return {};
 
     {
-        auto pass { surface->beginPass(RPassCap_SkCanvas) };
-
-        if (!pass)
-            return {};
-
-        SkCanvas &c { *pass->getCanvas() };
+        SkCanvas c { bitmap };
         c.clear(SK_ColorTRANSPARENT);
         SkPaint paint;
         paint.setAntiAlias(true);
@@ -41,7 +55,17 @@ static std::shared_ptr<RImage> CircleMask() noexcept
         c.drawCircle(size / 2.f, size / 2.f, size / 2.f, paint);
     }
 
-    mask = surface->image();
+    RPixelBufferInfo info {};
+    info.pixels = static_cast<UInt8*>(bitmap.getPixels());
+    info.stride = UInt32(bitmap.rowBytes());
+    info.format = format->format();
+    info.size = SkISize::Make(size, size);
+    auto mask { RImage::MakeFromPixels(info, *format) };
+
+    if (!mask)
+        return {};
+
+    masks[size] = mask;
     return mask;
 }
 
@@ -59,7 +83,6 @@ AKAvatar::AKAvatar(Int32 size, AKNode *parent) noexcept :
     image.layout().setPosition(YGEdgeTop, 0.f);
     image.layout().setWidthPercent(100.f);
     image.layout().setHeightPercent(100.f);
-    image.setMask(CircleMask());
     image.setSrcRectMode(AKImage::SrcRectMode::Custom);
 
     icon.setInputRegion(&empty);
@@ -84,12 +107,30 @@ void AKAvatar::setSize(Int32 size) noexcept
     icon.setSize(UInt32(std::max(1, Int32(size * 0.7f))));
 }
 
+void AKAvatar::onSceneBegin()
+{
+    AKRoundSolidColor::onSceneBegin();
+
+    // Its diameter in pixels (the mask's antialiasing at the size it's drawn at)
+    const Int32 pixels { Int32(std::ceil(m_size * std::max(1, scale()))) };
+
+    if (pixels != m_maskSize)
+    {
+        m_maskSize = pixels;
+        image.setMask(CircleMask(pixels));
+    }
+}
+
 void AKAvatar::setPicture(std::shared_ptr<RImage> picture) noexcept
 {
     m_picture = picture;
     image.setImage(picture);
     image.setVisible(picture != nullptr);
     icon.setVisible(picture == nullptr);
+
+    // The gray circle only behind the silhouette: under the picture its edge would show around the
+    // picture's antialiased one
+    setBackgroundColor(picture ? SK_ColorTRANSPARENT : 0xFFA8A8AD);
 
     if (!picture)
         return;

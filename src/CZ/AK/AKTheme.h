@@ -197,6 +197,21 @@ public:
     /// Label text of a disabled control.
     static inline CZAdaptiveColor DisabledControlText { 0x40000000, 0x40FFFFFF };
 
+    /**
+     * @name Interactive fills
+     * Translucent fills for custom controls and rows over any background (blurred ones included).
+     * Use these for hover/pressed feedback instead of ad hoc colors: each step is clearly visible
+     * (a few percent more opacity isn't, especially over a blur).
+     * @{
+     */
+    /// A control's face at rest (e.g. a round icon button). Flat rows use none.
+    static inline CZAdaptiveColor ControlFill { 0x14000000, 0x1FFFFFFF };
+    /// A control or row under the pointer.
+    static inline CZAdaptiveColor ControlHoverFill { 0x2E000000, 0x3DFFFFFF };
+    /// A control or row being pressed.
+    static inline CZAdaptiveColor ControlPressedFill { 0x4D000000, 0x5CFFFFFF };
+    /** @} */
+
     /// Background of selected rows/items in a focused list.
     static inline CZAdaptiveColor SelectedContentBackground { 0xFF0064E1, 0xFF0059D1 };
     /// Selected-item background when the list is unfocused.

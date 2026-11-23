@@ -55,9 +55,14 @@ public:
     AKImage image { this };     ///< The picture (hidden without one)
     AKFontIcon icon { this };   ///< The silhouette (hidden with a picture)
 
+protected:
+    /// Its circle mask at the size it's drawn at (see CircleMask() in AKAvatar.cpp).
+    void onSceneBegin() override;
+
 private:
     std::shared_ptr<RImage> m_picture;
     Int32 m_size { 0 };
+    Int32 m_maskSize { 0 }; // Pixels
 };
 
 #endif // CZ_AKAVATAR_H
