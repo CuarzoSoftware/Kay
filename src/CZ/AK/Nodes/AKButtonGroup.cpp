@@ -14,7 +14,7 @@ AKButtonGroup::AKButtonGroup(AKNode *parent) noexcept :
     AKRoundSolidColor(SK_ColorTRANSPARENT, 10, parent)
 {
     setStrokeWidth(0);
-    m_hoverColor = AKTheme::TertiarySystemFill;
+    m_hoverColor = AKTheme::ControlHoverFill;
 
     // Pack the buttons in a row, no gaps, and shrink to fit them (no padding, no cross-axis stretch).
     layout().setFlexDirection(YGFlexDirectionRow);

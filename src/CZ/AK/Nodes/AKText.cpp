@@ -4,8 +4,10 @@
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKLog.h>
 #include <CZ/AK/AKApp.h>
+#include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/Ream/RSurface.h>
 #include <CZ/Ream/RPass.h>
+#include <limits>
 #include <locale>
 #include <codecvt>
 
@@ -299,7 +301,9 @@ void AKText::updateDimensions() noexcept
     }
 
     updateParagraph();
-    layout().setWidth(SkScalarRoundToScalar(m_paragraph->getMaxIntrinsicWidth()));
+    // Truncated: never narrower than the text (rounding down would cut it, see layoutParagraph())
+    const SkScalar textWidth { m_paragraph->getMaxIntrinsicWidth() };
+    layout().setWidth(truncates() ? SkScalarCeilToScalar(textWidth) : SkScalarRoundToScalar(textWidth));
     layout().setHeight(SkScalarRoundToScalar(m_paragraph->getHeight()));
     addDamage(AK_IRECT_INF);
 }
@@ -365,5 +369,64 @@ void AKText::updateParagraph() noexcept
     // std::cout << "Text [" << m_selection[0] << "," << m_selection[1] << "](" << A << "," << B << "," << C << "," << D << "): " << start << "_" << middle << "_" << end << std::endl;
 
     m_paragraph = m_builder->Build();
+
+    // Unbounded first: measures the whole text (its max intrinsic width), then cut if needed
     m_paragraph->layout(3000000);
+    layoutParagraph();
+}
+
+void AKText::layoutParagraph() noexcept
+{
+    if (!m_paragraph)
+        return;
+
+    if (!truncates())
+        return;
+
+    /* Cut (ending with the ellipsis) only if the node is really narrower than the whole text,
+     * measured by the last layout (the max intrinsic width doesn't depend on the width laid out
+     * at). Otherwise the whole text, unbounded. */
+    const SkScalar width { SkScalar(worldRect().width()) };
+    const SkScalar textWidth { m_paragraph->getMaxIntrinsicWidth() };
+    const SkScalar layoutWidth { width > 0.f && width + 0.5f < textWidth ? width : 3000000.f };
+
+    if (layoutWidth != m_paragraph->getMaxWidth())
+        m_paragraph->layout(layoutWidth);
+}
+
+void AKText::setTruncates(bool truncates) noexcept
+{
+    if (this->truncates() == truncates)
+        return;
+
+    if (truncates)
+    {
+        m_paragraphStyle.setMaxLines(1);
+        m_paragraphStyle.setEllipsis(u"…");
+    }
+    else
+    {
+        m_paragraphStyle.setMaxLines(std::numeric_limits<size_t>::max());
+        m_paragraphStyle.setEllipsis(u"");
+    }
+
+    addChange(CHParagraphStyle);
+    updateDimensions();
+}
+
+bool AKText::truncates() const noexcept
+{
+    return m_paragraphStyle.getMaxLines() == 1 && m_paragraphStyle.ellipsized();
+}
+
+void AKText::layoutEvent(const CZLayoutEvent &event)
+{
+    AKBakeable::layoutEvent(event);
+
+    if (!truncates() || !event.changes.has(CZLayoutChangeSize) || !m_paragraph)
+        return;
+
+    layoutParagraph();
+    addChange(CHParagraphStyle);
+    addDamage(AK_IRECT_INF);
 }

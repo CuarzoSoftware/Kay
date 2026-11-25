@@ -83,6 +83,9 @@ public:
     /**
      * @brief Redirects all pointer events to the given node (or releases the grab with `nullptr`),
      *        e.g. during drag interactions.
+     *
+     * Meanwhile the node under the pointer doesn't change (nor the cursor). Once released, the
+     * node under the pointer is found again right away (it gets the enter/leave events).
      */
     void setPointerGrab(AKNode *node) noexcept;
 

@@ -112,8 +112,22 @@ static void contentBounds(AKNode *root, SkIRect *bounds) noexcept
         contentBounds(child, bounds);
 }
 
+bool AKScroll::contentHidden(CZEdge edge) const noexcept
+{
+    // Half a pixel of tolerance (offsets aren't whole while kinetic scrolling settles)
+    switch (edge)
+    {
+    case CZEdgeTop:    return offsetY() < -SkScalar(m_contentBounds.fTop) - 0.5f;
+    case CZEdgeBottom: return SkScalar(m_contentBounds.fBottom) + offsetY() > layout().calculatedHeight() + 0.5f;
+    case CZEdgeLeft:   return offsetX() < -SkScalar(m_contentBounds.fLeft) - 0.5f;
+    case CZEdgeRight:  return SkScalar(m_contentBounds.fRight) + offsetX() > layout().calculatedWidth() + 0.5f;
+    default:           return false;
+    }
+}
+
 void AKScroll::calculateContentBounds() noexcept
 {
+    const SkIRect prevBounds { m_contentBounds };
     m_contentBounds.setEmpty();
 
     for (AKNode *child : m_slot.children())
@@ -132,6 +146,9 @@ void AKScroll::calculateContentBounds() noexcept
     // bottom/right edge checks pull it down/right, e.g. a short list in a tall scroll).
     m_contentBounds.fRight = std::max(m_contentBounds.fRight, m_contentBounds.fLeft + Int32(layout().calculatedWidth()));
     m_contentBounds.fBottom = std::max(m_contentBounds.fBottom, m_contentBounds.fTop + Int32(layout().calculatedHeight()));
+
+    if (m_contentBounds != prevBounds)
+        onContentBoundsChanged.notify();
 }
 
 void AKScroll::applyConstraints() noexcept

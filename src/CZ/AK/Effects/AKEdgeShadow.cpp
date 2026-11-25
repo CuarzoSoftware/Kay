@@ -27,27 +27,35 @@ AKEdgeShadow::~AKEdgeShadow() noexcept
     m_fade.pause();
 }
 
-void AKEdgeShadow::showWhileScrolled(AKScroll *scroll) noexcept
+void AKEdgeShadow::showWhileScrolled(AKScroll *scroll, CZEdge hiddenEdge) noexcept
 {
-    if (m_scroll.get() == scroll)
+    if (m_scroll.get() == scroll && m_hiddenEdge == hiddenEdge)
         return;
 
     // Gone with its scroll if that was destroyed
     if (m_scroll)
+    {
         delete m_scrollListener;
+        delete m_boundsListener;
+    }
 
-    m_scrollListener = nullptr;
+    m_scrollListener = m_boundsListener = nullptr;
     m_scroll.reset(scroll);
+    m_hiddenEdge = hiddenEdge;
 
+    // Scrolled, or the content changed size (e.g. more below)
     if (scroll)
+    {
         m_scrollListener = scroll->onOffsetChanged.subscribe(this, [this]{ updateScrolled(true); });
+        m_boundsListener = scroll->onContentBoundsChanged.subscribe(this, [this]{ updateScrolled(true); });
+    }
 
     updateScrolled(false);
 }
 
 void AKEdgeShadow::updateScrolled(bool animated) noexcept
 {
-    const SkScalar target { !m_scroll || m_scroll->offsetY() < 0.f ? 1.f : 0.f };
+    const SkScalar target { !m_scroll || m_scroll->contentHidden(m_hiddenEdge) ? 1.f : 0.f };
 
     // Already there or on its way
     if (target == m_fadeTo && (m_fade.isRunning() || m_level == target))

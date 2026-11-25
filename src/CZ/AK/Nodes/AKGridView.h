@@ -71,6 +71,16 @@ public:
     void setContentPadding(SkScalar padding) noexcept;
 
     /**
+     * @brief The content is at least @p width wide (the padding included): wider than the view,
+     *        it scrolls horizontally. 0 (the default): as wide as the view.
+     *
+     * E.g. a list whose columns don't fit (see AKListView): its rows (setFillWidth()) are as wide
+     * as the content.
+     */
+    void setMinContentWidth(SkScalar width) noexcept;
+    SkScalar minContentWidth() const noexcept { return m_minContentWidth; }
+
+    /**
      * @brief Fills each row (its whole width, the spacing below it included) with @p color.
      *
      * Use the color the grid is shown over: with an opaque one the rows are opaque too (faster to
@@ -86,6 +96,15 @@ public:
      * at once when one comes into view, and more to render again when one of their cells changes.
      */
     void setBatchSize(size_t rows, size_t columns = 0) noexcept;
+
+    /**
+     * @brief Alternating colors behind the rows, like the stripes of macOS's lists (@p even for the
+     *        first row). std::nullopt (the default): none.
+     *
+     * Drawn over the row background (see setRowBackground()), the spacing below each row included:
+     * with opaque colors the batches are opaque.
+     */
+    void setRowColors(std::optional<std::pair<CZAdaptiveColor, CZAdaptiveColor>> colors) noexcept;
     size_t batchRows() const noexcept { return m_batchRows; }
     size_t batchColumns() const noexcept { return m_batchColumns; }
 
@@ -118,6 +137,15 @@ public:
     void scrollToItem(size_t index) noexcept;
 
 protected:
+    /**
+     * @brief One column whose cells take the whole width of the view (minus the padding), like
+     *        the rows of a list (see AKListView). The cell width of setCellSize() is ignored.
+     */
+    void setFillWidth(bool fill) noexcept;
+
+    /// The width of the cells (see setFillWidth()).
+    SkScalar cellWidth() const noexcept;
+
     void layoutEvent(const CZLayoutEvent &e) override;
     void onSceneBegin() override;
 
@@ -138,6 +166,7 @@ private:
     public:
         Batch(AKNode *parent) noexcept;
         AKSolidColor background { CZAdaptiveColor(0), this };
+        std::vector<std::unique_ptr<AKSolidColor>> stripes; // One per row (see setRowColors())
         std::vector<std::unique_ptr<AKNode>> cells; // Row by row, `columns` per row
         size_t columns { 0 };                       // Of this batch (the last chunk of a row may have less)
         size_t batchRow { 0 }, chunk { 0 };         // Which one it shows
@@ -161,12 +190,14 @@ private:
     size_t m_builtColumns { 0 };                                 // Grid columns the batches were built for
     size_t m_batchRows { 1 }, m_batchColumns { 0 };
     std::optional<CZAdaptiveColor> m_rowBackground;
+    std::optional<std::pair<CZAdaptiveColor, CZAdaptiveColor>> m_rowColors;
+    bool m_fillWidth { false };
     SkSize m_cellSize { 64.f, 64.f };
     SkScalar m_columnSpacing { 0.f }, m_rowSpacing { 0.f }, m_padding { 0.f };
+    SkScalar m_minContentWidth { 0.f };
     size_t m_count { 0 };
     std::optional<size_t> m_scrollTo;
-    bool m_inLayout { false };  // Within a layout event: cells are updated on the next scene begin
-    bool m_dirty { false };
+    bool m_dirty { false };     // A scroll waits for the content's height (see onSceneBegin())
 };
 
 #endif // CZ_AKGRIDVIEW_H

@@ -55,7 +55,7 @@ public:
     /**
      * @brief Adaptive fill shown while the pointer is over the group (animated in from transparent).
      *
-     * Defaults to @ref AKTheme::SystemFill, the standard subtle state layer.
+     * Defaults to @ref AKTheme::ControlHoverFill.
      */
     void setHoverColor(CZAdaptiveColor color) noexcept;
     CZAdaptiveColor hoverColor() const noexcept { return m_hoverColor; }

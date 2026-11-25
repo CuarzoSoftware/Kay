@@ -126,13 +126,22 @@ void AKSidebarItem::windowStateEvent(const CZWindowStateEvent &e)
     updateColors();
 }
 
+void AKSidebarItem::setDropTarget(bool target) noexcept
+{
+    if (m_dropTarget == target)
+        return;
+
+    m_dropTarget = target;
+    updateColors();
+}
+
 void AKSidebarItem::updateColors() noexcept
 {
     const CZColorScheme scheme { colorScheme() };
     const bool emphasized { m_selected && activated() };
 
     if (!m_selected)
-        setBackgroundColor(SK_ColorTRANSPARENT);
+        setBackgroundColor(m_dropTarget ? AKTheme::ControlHoverFill.resolve(scheme) : SK_ColorTRANSPARENT);
     else if (emphasized)
         setBackgroundColor(AKTheme::SelectedContentBackground.resolve(scheme));
     else

@@ -3,6 +3,7 @@
 
 #include <CZ/AK/Nodes/AKRoundSolidColor.h>
 #include <CZ/AK/Nodes/AKText.h>
+#include <CZ/AK/Nodes/AKFontIcon.h>
 #include <CZ/Core/CZSignal.h>
 #include <memory>
 #include <string>
@@ -17,6 +18,9 @@
  * One segment is selected at a time: it's raised (a lighter fill with a hairline). Clicking another
  * one selects it and emits onSelected. The segments share the control's width equally, so give it
  * a width (e.g. a percent) to make it wider than its labels.
+ *
+ * Segments can show icons of the theme's icon font instead of text (setIconItems()), like the view
+ * switcher of Finder's toolbar: [ ▦ | ☰ ].
  */
 class CZ::AKSegmentedControl : public AKRoundSolidColor
 {
@@ -31,6 +35,11 @@ public:
     /** @brief Replaces the segments, selecting @p selected (None: none). */
     void setItems(const std::vector<std::string> &items, size_t selected = 0) noexcept;
     size_t count() const noexcept { return m_segments.size(); }
+
+    /** @brief Replaces the segments with icons of the theme's icon font (e.g. "grid_view"), selecting @p selected. */
+    void setIconItems(const std::vector<std::string> &iconNames, size_t selected = 0) noexcept;
+
+    static constexpr UInt32 IconSize { 16 }; ///< Of icon segments
 
     /** @brief Selects the segment at @p index without emitting onSelected (None or out of range: none). */
     void setSelectedIndex(size_t index) noexcept;
@@ -51,9 +60,10 @@ protected:
     /// @cond INTERNAL
     struct Segment
     {
-        Segment(const std::string &text, AKNode *parent) noexcept;
+        Segment(const std::string &text, bool icon, AKNode *parent) noexcept;
         AKRoundSolidColor bg;
         AKText label;
+        std::unique_ptr<AKFontIcon> icon; // Icon segments
     };
     size_t segmentAt(SkScalar x) const noexcept;
     void updateColors() noexcept;

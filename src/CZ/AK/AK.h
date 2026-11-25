@@ -70,6 +70,7 @@ namespace CZ
     class AKWindowButtonGroup;
     class AKScroll;
     class AKGridView;
+    class AKListView;
     class AKScrollBar;
     class AKSlider;
     class AKSearchField;

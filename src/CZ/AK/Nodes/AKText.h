@@ -110,6 +110,16 @@ public:
     bool setLetterSpacing(SkScalar letterSpacing) noexcept;
     SkScalar letterSpacing() const noexcept { return m_textStyle.getLetterSpacing(); }
 
+    /**
+     * @brief Shown in a single line that ends with an ellipsis ("…") when the node is narrower
+     *        than its text (e.g. a title in a toolbar, a name in a list's column).
+     *
+     * Its width is still the text's, so it needs to be allowed to shrink (e.g. a flex shrink in a
+     * row): the text is cut at the width it's laid out at. Off by default.
+     */
+    void setTruncates(bool truncates) noexcept;
+    bool truncates() const noexcept;
+
     /** @brief Line height (as a multiple of the font size; only applied when height override is on). */
     bool setLineHeight(SkScalar lineHeight) noexcept;
     SkScalar lineHeight() const noexcept { return m_textStyle.getHeight(); }
@@ -158,9 +168,14 @@ public:
 protected:
     /** @brief Paints the laid-out paragraph into the node's surface with Skia. */
     void bakeEvent(const AKBakeEvent &event) override;
+    /** @brief Truncated (see setTruncates()): the text is cut at the new width. */
+    void layoutEvent(const CZLayoutEvent &event) override;
     void updateDimensions() noexcept;
     void updateCodePointByteOffsets() noexcept;
     void updateParagraph() noexcept;
+    // Truncated (see setTruncates()): lays the paragraph out at the node's width if it's narrower
+    // than the text, else unbounded. Called after every unbounded layout and when the size changes.
+    void layoutParagraph() noexcept;
     // Flags the change, re-lays out the paragraph and re-bakes. Called by every style setter.
     void applyStyleChange(Change change) noexcept;
     // Applies a resolved glyph color via the foreground paint (which overrides TextStyle::setColor),

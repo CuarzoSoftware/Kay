@@ -11,7 +11,7 @@
  * @ingroup AKNodes
  *
  * E.g. the "…" (more_horiz) buttons that open a row's menu in macOS's settings. Hovering it shows
- * a faint circle behind the icon, pressing it a darker one. setOutlined() draws a ring around the
+ * a circle behind the icon (AKTheme::ControlHoverFill), pressing it a darker one. setOutlined() draws a ring around the
  * icon (like SF Symbols' "ellipsis.circle").
  */
 class CZ::AKIconButton : public AKRoundSolidColor

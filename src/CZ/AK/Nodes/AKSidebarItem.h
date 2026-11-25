@@ -48,6 +48,13 @@ public:
     void setSelected(bool selected) noexcept;
     bool selected() const noexcept { return m_selected; }
 
+    /**
+     * @brief Highlights the row (a rounded fill, AKTheme::ControlHoverFill) while something
+     *        dragged over it would be dropped into it (e.g. files over a folder).
+     */
+    void setDropTarget(bool target) noexcept;
+    bool dropTarget() const noexcept { return m_dropTarget; }
+
     /** @brief The tile behind the icon (adaptive; transparent: no tile, the icon gets the label color). */
     void setTileColor(CZAdaptiveColor color) noexcept;
     CZAdaptiveColor tileColor() const noexcept { return m_tileColor; }
@@ -96,6 +103,7 @@ protected:
     CZAdaptiveColor m_tileColor;
     bool m_selected { false };
     bool m_pressed { false };
+    bool m_dropTarget { false };
     /// @endcond
 };
 

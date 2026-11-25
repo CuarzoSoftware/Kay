@@ -52,12 +52,13 @@ public:
     CZEdge edge() const noexcept { return m_edge; };
 
     /**
-     * @brief Shows the shadow only while @p scroll is scrolled down (AKScroll::offsetY() < 0, its
-     *        content's top hidden), fading in and out (FadeMs).
+     * @brief Shows the shadow only while @p scroll's content is hidden beyond its @p hiddenEdge
+     *        (see AKScroll::contentHidden()), fading in and out (FadeMs).
      *
-     * nullptr: always shown (the default).
+     * CZEdgeTop (the default) for a header: shown once scrolled down. CZEdgeBottom for a footer:
+     * shown while there's more content below. nullptr: always shown (the default).
      */
-    void showWhileScrolled(AKScroll *scroll) noexcept;
+    void showWhileScrolled(AKScroll *scroll, CZEdge hiddenEdge = CZEdgeTop) noexcept;
 
     /** @brief The scroll it follows (see showWhileScrolled()), or nullptr. */
     AKScroll *scroll() const noexcept { return m_scroll.get(); }
@@ -77,7 +78,8 @@ protected:
     /// @cond INTERNAL
     void updateScrolled(bool animated) noexcept;
     CZWeak<AKScroll> m_scroll;
-    CZListener *m_scrollListener { nullptr };
+    CZListener *m_scrollListener { nullptr }, *m_boundsListener { nullptr };
+    CZEdge m_hiddenEdge { CZEdgeTop };
     CZLinearAnimation m_fade;
     void setLevel(SkScalar level) noexcept; // Shown fraction (fade), times strength() is the opacity
     SkScalar m_fadeFrom { 0.f }, m_fadeTo { 1.f };

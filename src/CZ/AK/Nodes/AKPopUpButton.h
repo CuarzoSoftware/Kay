@@ -16,7 +16,9 @@
  *
  * [selected item's text][up/down chevrons]
  *
- * Borderless, highlighted while hovered or pressed (e.g. at the trailing side of an AKFormRow).
+ * Borderless, highlighted while hovered or pressed (AKTheme::ControlHoverFill and
+ * AKTheme::ControlPressedFill), e.g. at the trailing side of an AKFormRow. Clicking it while its
+ * menu is open just closes the menu (it isn't opened again).
  * It holds the items (setItems()) and the selected one (selectedIndex()), but Kay can't open
  * popup windows: clicking it calls openMenu(), which emits onMenuRequested. Toolkits override it
  * to show the list (e.g. Marco's MPopUpButton, as an MMenu) and call select() with the user's
@@ -50,14 +52,14 @@ public:
     /** @brief Selects the item at @p index as the user would (emits onSelected if it changes). */
     void select(size_t index) noexcept;
 
-    /** @brief Highlighted as if pressed, e.g. while its menu is open (see MPopUpButton). */
+    /**
+     * @brief Highlighted as if pressed, e.g. while its menu is open (see MPopUpButton).
+     *
+     * Set it from openMenu() as soon as the menu is requested (not once it's shown): the button
+     * goes from pressed to open with the same fill, without a frame of hover in between.
+     */
     void setMenuOpen(bool open) noexcept;
     bool menuOpen() const noexcept { return m_menuOpen; }
-
-    /// Fill while hovered.
-    static inline CZAdaptiveColor HoverColor   { 0x1F000000, 0x24FFFFFF };
-    /// Fill while pressed or its menu is open.
-    static inline CZAdaptiveColor PressedColor { 0x33000000, 0x3DFFFFFF };
 
     /** @brief Dimmed and not clickable while disabled. */
     void setEnabled(bool enabled) noexcept;
@@ -89,6 +91,7 @@ protected:
     std::vector<std::string> m_items;
     size_t m_selected { None };
     bool m_enabled { true }, m_hover { false }, m_pressed { false }, m_menuOpen { false };
+    UInt64 m_menuClosedMs { 0 }; // When the menu was closed (see pointerButtonEvent())
     /// @endcond
 };
 

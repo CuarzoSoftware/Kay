@@ -9,9 +9,9 @@
 
 using namespace CZ;
 
-AKSegmentedControl::Segment::Segment(const std::string &text, AKNode *parent) noexcept :
+AKSegmentedControl::Segment::Segment(const std::string &text, bool isIcon, AKNode *parent) noexcept :
     bg(0, CZBorderRadius::Make(5), parent),
-    label(text, &bg)
+    label(isIcon ? std::string() : text, &bg)
 {
     const SkRegion empty;
     bg.setInputRegion(&empty);
@@ -22,6 +22,13 @@ AKSegmentedControl::Segment::Segment(const std::string &text, AKNode *parent) no
     bg.layout().setAlignItems(YGAlignCenter);
     bg.layout().setPadding(YGEdgeHorizontal, 10.f);
     label.setFontSize(FontSize);
+
+    if (isIcon)
+    {
+        label.setVisible(false);
+        icon = std::make_unique<AKFontIcon>(text, IconSize, &bg);
+        icon->setInputRegion(&empty);
+    }
 }
 
 AKSegmentedControl::AKSegmentedControl(const std::vector<std::string> &items, AKNode *parent) noexcept :
@@ -41,7 +48,19 @@ void AKSegmentedControl::setItems(const std::vector<std::string> &items, size_t 
     m_segments.clear();
 
     for (const auto &item : items)
-        m_segments.emplace_back(std::make_unique<Segment>(item, this));
+        m_segments.emplace_back(std::make_unique<Segment>(item, false, this));
+
+    m_pressed = m_hover = None;
+    m_selected = None;
+    setSelectedIndex(selected);
+}
+
+void AKSegmentedControl::setIconItems(const std::vector<std::string> &iconNames, size_t selected) noexcept
+{
+    m_segments.clear();
+
+    for (const auto &name : iconNames)
+        m_segments.emplace_back(std::make_unique<Segment>(name, true, this));
 
     m_pressed = m_hover = None;
     m_selected = None;
@@ -139,8 +158,8 @@ void AKSegmentedControl::updateColors() noexcept
     static const CZAdaptiveColor Track    { 0x14000000, 0x1AFFFFFF };
     static const CZAdaptiveColor Selected { 0xFFFFFFFF, 0x4DFFFFFF };
     static const CZAdaptiveColor Border   { 0x1F000000, 0x14FFFFFF };
-    static const CZAdaptiveColor Hover    { 0x0D000000, 0x0DFFFFFF };
-    static const CZAdaptiveColor Pressed  { 0x1F000000, 0x1FFFFFFF };
+    const CZAdaptiveColor &Hover   { AKTheme::ControlHoverFill };
+    const CZAdaptiveColor &Pressed { AKTheme::ControlPressedFill };
 
     setBackgroundColor(Track.resolve(scheme));
 
@@ -148,6 +167,9 @@ void AKSegmentedControl::updateColors() noexcept
     {
         auto &s { *m_segments[i] };
         s.label.setTextColor(AKTheme::Label);
+
+        if (s.icon)
+            s.icon->setColor(AKTheme::Label.resolve(scheme));
 
         if (i == m_selected)
         {

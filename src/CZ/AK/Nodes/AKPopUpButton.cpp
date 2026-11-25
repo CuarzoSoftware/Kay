@@ -4,9 +4,13 @@
 #include <CZ/Core/Events/CZPointerEnterEvent.h>
 #include <CZ/Core/Events/CZPointerLeaveEvent.h>
 #include <CZ/Core/Events/CZColorSchemeEvent.h>
+#include <CZ/Core/CZTime.h>
 #include <linux/input-event-codes.h>
 
 using namespace CZ;
+
+// A press this soon after the menu closed is the one that closed it (see pointerButtonEvent())
+static constexpr UInt64 MenuDismissGraceMs { 150 };
 
 AKPopUpButton::AKPopUpButton(const std::vector<std::string> &items, AKNode *parent) noexcept :
     AKRoundSolidColor(0, CZBorderRadius::Make(5), parent)
@@ -59,6 +63,9 @@ void AKPopUpButton::select(size_t index) noexcept
 
 void AKPopUpButton::setMenuOpen(bool open) noexcept
 {
+    if (m_menuOpen && !open)
+        m_menuClosedMs = CZTime::Ms();
+
     m_menuOpen = open;
     updateColors();
 }
@@ -99,13 +106,25 @@ void AKPopUpButton::pointerButtonEvent(const CZPointerButtonEvent &e)
 
     // Opened when clicked (released over it): opened on press, the release would land outside the
     // menu and dismiss it right away
+    /* Pressed while its menu is open: the press closes the menu (the popup is dismissed by the
+     * compositor, often just before the press reaches us). Not opened again on release: the
+     * menu would blink. */
     if (e.pressed)
+    {
+        if (m_menuOpen || CZTime::Ms() - m_menuClosedMs < MenuDismissGraceMs)
+        {
+            m_pressed = false;
+            return;
+        }
+
         m_pressed = true;
+    }
     else if (m_pressed)
     {
+        // Straight from pressed to open (see setMenuOpen()): no frame with the hover fill between
         m_pressed = false;
-        updateColors();
         openMenu(e);
+        updateColors();
         return;
     }
 
@@ -125,9 +144,9 @@ void AKPopUpButton::updateColors() noexcept
     chevron.setColor(AKTheme::SecondaryLabel.resolve(scheme));
 
     if (m_pressed || m_menuOpen)
-        setBackgroundColor(PressedColor.resolve(scheme));
+        setBackgroundColor(AKTheme::ControlPressedFill.resolve(scheme));
     else if (m_hover)
-        setBackgroundColor(HoverColor.resolve(scheme));
+        setBackgroundColor(AKTheme::ControlHoverFill.resolve(scheme));
     else
         setBackgroundColor(SK_ColorTRANSPARENT);
 }

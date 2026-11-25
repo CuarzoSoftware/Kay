@@ -111,9 +111,9 @@ void AKFormRow::updateColors() noexcept
     subtitle.setTextColor(AKTheme::SecondaryLabel);
 
     if (m_pressed)
-        setBackgroundColor(AKTheme::TertiarySystemFill.resolve(scheme));
+        setBackgroundColor(AKTheme::ControlPressedFill.resolve(scheme));
     else if (m_hover)
-        setBackgroundColor(AKTheme::QuaternarySystemFill.resolve(scheme));
+        setBackgroundColor(AKTheme::ControlHoverFill.resolve(scheme));
     else
         setBackgroundColor(SK_ColorTRANSPARENT);
 }

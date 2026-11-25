@@ -95,9 +95,9 @@ void AKIconButton::updateColors() noexcept
     icon.setColor(iconColor);
 
     if (m_pressed)
-        setBackgroundColor(AKTheme::SystemFill.resolve(scheme));
+        setBackgroundColor(AKTheme::ControlPressedFill.resolve(scheme));
     else if (m_hover)
-        setBackgroundColor(AKTheme::TertiarySystemFill.resolve(scheme));
+        setBackgroundColor(AKTheme::ControlHoverFill.resolve(scheme));
     else
         setBackgroundColor(SK_ColorTRANSPARENT);
 

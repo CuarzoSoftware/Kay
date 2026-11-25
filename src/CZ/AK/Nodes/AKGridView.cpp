@@ -20,30 +20,22 @@ void AKGridView::Content::layoutEvent(const CZLayoutEvent &e)
 {
     AKContainer::layoutEvent(e);
 
-    // Its new height laid out: the scroll range follows, then a pending scroll can be done
+    /* Its new height laid out: the scroll range follows (which may scroll it), then a pending
+     * scroll can be done. The cells changed here are laid out in this same frame (AKScene lays
+     * out again when layout events change the layout). */
     if (e.changes.has(CZLayoutChangeSize))
     {
-        grid.m_inLayout = true;
         grid.calculateContentBounds();
         grid.applyConstraints();
-        grid.m_inLayout = false;
-        grid.m_dirty = true;
-        grid.repaint();
+        grid.updateCells();
+        grid.applyPendingScroll();
     }
 }
 
 AKGridView::AKGridView(AKNode *parent) noexcept : AKScroll(parent)
 {
-    onOffsetChanged.subscribe(this, [this]{
-        // Moved by the user or an animation: right away. During a layout pass: once it's done.
-        if (m_inLayout)
-        {
-            m_dirty = true;
-            repaint();
-        }
-        else
-            updateCells();
-    });
+    // Moved by the user, an animation or a layout pass: the cells in view follow right away
+    onOffsetChanged.subscribe(this, [this]{ updateCells(); });
 }
 
 AKGridView::Batch::Batch(AKNode *parent) noexcept : AKSubScene(parent)
@@ -135,13 +127,53 @@ void AKGridView::reloadItems() noexcept
 
 void AKGridView::reloadItem(size_t index) noexcept
 {
-    if (AKNode *c { cell(index) }; c && bindCell)
+    if (AKNode *c { index < m_count ? cell(index) : nullptr }; c && bindCell)
         bindCell(*c, index);
+}
+
+SkScalar AKGridView::cellWidth() const noexcept
+{
+    // As wide as the content (the view, or wider: see setMinContentWidth())
+    return m_fillWidth ? std::max(1.f, std::max(layout().calculatedWidth(), m_minContentWidth) - 2.f * m_padding) : m_cellSize.width();
+}
+
+void AKGridView::setMinContentWidth(SkScalar width) noexcept
+{
+    width = std::max(0.f, width);
+
+    if (width == m_minContentWidth)
+        return;
+
+    // The rows (fill width) follow the content's width by themselves; the columns of a grid may change
+    m_minContentWidth = width;
+    m_content.layout().setMinWidth(width);
+    updateCells();
+}
+
+void AKGridView::setFillWidth(bool fill) noexcept
+{
+    if (m_fillWidth == fill)
+        return;
+
+    m_fillWidth = fill;
+    dropBatches();
+    updateContentSize();
+    updateCells();
+}
+
+void AKGridView::setRowColors(std::optional<std::pair<CZAdaptiveColor, CZAdaptiveColor>> colors) noexcept
+{
+    m_rowColors = colors;
+    dropBatches();
+    updateCells();
 }
 
 size_t AKGridView::columns() const noexcept
 {
-    const SkScalar width { layout().calculatedWidth() - 2.f * m_padding };
+    if (m_fillWidth)
+        return 1;
+
+    const SkScalar width { std::max(layout().calculatedWidth(), m_minContentWidth) - 2.f * m_padding };
     const SkScalar step { m_cellSize.width() + m_columnSpacing };
     return std::max<size_t>(1, size_t(std::floor((width + m_columnSpacing) / step)));
 }
@@ -157,9 +189,9 @@ SkRect AKGridView::cellRect(size_t index) const noexcept
 {
     const size_t cols { columns() };
     const size_t row { index / cols }, col { index % cols };
-    return SkRect::MakeXYWH(m_padding + col * (m_cellSize.width() + m_columnSpacing),
+    return SkRect::MakeXYWH(m_padding + col * (cellWidth() + m_columnSpacing),
                             m_padding + row * (m_cellSize.height() + m_rowSpacing),
-                            m_cellSize.width(), m_cellSize.height());
+                            cellWidth(), m_cellSize.height());
 }
 
 std::optional<size_t> AKGridView::indexAt(const SkPoint &pos) const noexcept
@@ -174,11 +206,11 @@ std::optional<size_t> AKGridView::indexAt(const SkPoint &pos) const noexcept
     if (x < 0.f || y < 0.f)
         return std::nullopt;
 
-    const SkScalar stepX { m_cellSize.width() + m_columnSpacing }, stepY { m_cellSize.height() + m_rowSpacing };
+    const SkScalar stepX { cellWidth() + m_columnSpacing }, stepY { m_cellSize.height() + m_rowSpacing };
     const size_t col { size_t(x / stepX) }, row { size_t(y / stepY) };
 
     // In the spacing between cells
-    if (col >= columns() || x - col * stepX >= m_cellSize.width() || y - row * stepY >= m_cellSize.height())
+    if (col >= columns() || x - col * stepX >= cellWidth() || y - row * stepY >= m_cellSize.height())
         return std::nullopt;
 
     const size_t index { row * columns() + col };
@@ -209,11 +241,12 @@ void AKGridView::applyPendingScroll() noexcept
     if (!m_scrollTo)
         return;
 
-    // Laid out at its full height first (the scroll range follows the content's size)
+    // Laid out at its full height first (the scroll range follows the content's size): tried again then
     const SkScalar viewHeight { layout().calculatedHeight() };
 
     if (viewHeight <= 0.f || std::abs(m_content.layout().calculatedHeight() - contentHeight()) > 0.5f)
     {
+        m_dirty = true;
         repaint();
         return;
     }
@@ -286,7 +319,7 @@ void AKGridView::bindBatch(Batch &batch, size_t batchRow, size_t chunk) noexcept
 
     const size_t cols { m_builtColumns };
     const size_t per { m_batchColumns == 0 ? cols : std::min(m_batchColumns, cols) };
-    const SkScalar stepX { m_cellSize.width() + m_columnSpacing }, stepY { m_cellSize.height() + m_rowSpacing };
+    const SkScalar stepX { cellWidth() + m_columnSpacing }, stepY { m_cellSize.height() + m_rowSpacing };
 
     // Covers its part of the rows: the first chunk from the left edge (padding included), the
     // last one to the right edge, the spacing below the cells included (opaque batches tile the content)
@@ -295,10 +328,30 @@ void AKGridView::bindBatch(Batch &batch, size_t batchRow, size_t chunk) noexcept
     batch.layout().setPosition(YGEdgeTop, m_padding + batchRow * m_batchRows * stepY);
     batch.layout().setHeight(m_batchRows * stepY);
 
+    // The last one stretches to the right edge (following the view's width)
     if (chunk + 1 == chunks())
-        batch.layout().setWidth(std::max(1.f, layout().calculatedWidth() - x));
+    {
+        batch.layout().setWidthAuto();
+        batch.layout().setPosition(YGEdgeRight, 0.f);
+    }
     else
+    {
+        batch.layout().setPosition(YGEdgeRight, YGUndefined);
         batch.layout().setWidth((chunk == 0 ? m_padding : 0.f) + per * stepX);
+    }
+
+    // Alternating rows (see setRowColors())
+    const size_t totalRows { (m_count + cols - 1) / cols };
+
+    for (size_t r = 0; r < batch.stripes.size(); r++)
+    {
+        auto &stripe { *batch.stripes[r] };
+        const size_t row { batchRow * m_batchRows + r };
+        stripe.setVisible(row < totalRows);
+        stripe.setColor(row % 2 == 0 ? m_rowColors->first : m_rowColors->second);
+        stripe.layout().setPosition(YGEdgeTop, r * stepY);
+        stripe.layout().setHeight(stepY);
+    }
 
     for (size_t r = 0; r < m_batchRows; r++)
         for (size_t c = 0; c < batch.columns; c++)
@@ -307,16 +360,26 @@ void AKGridView::bindBatch(Batch &batch, size_t batchRow, size_t chunk) noexcept
             const size_t row { batchRow * m_batchRows + r };
             const size_t item { row * cols + chunk * per + c };
 
-            // Past the last item
+            // Past the last item (e.g. fewer items now): hidden, and no longer in visibleCells()
             if (item >= m_count || chunk * per + c >= cols)
             {
+                if (auto it { m_visible.find(item) }; it != m_visible.end() && it->second == &cell)
+                    m_visible.erase(it);
+
                 cell.setVisible(false);
                 continue;
             }
 
             cell.setVisible(true);
-            cell.layout().setPosition(YGEdgeLeft, m_padding + (chunk * per + c) * stepX - x);
             cell.layout().setPosition(YGEdgeTop, r * stepY);
+            cell.layout().setPosition(YGEdgeLeft, m_padding + (chunk * per + c) * stepX - x);
+
+            // As wide as the view (minus the padding), following its width
+            if (m_fillWidth)
+            {
+                cell.layout().setWidthAuto();
+                cell.layout().setPosition(YGEdgeRight, m_padding);
+            }
             m_visible[item] = &cell;
 
             if (bindCell)
@@ -326,16 +389,16 @@ void AKGridView::bindBatch(Batch &batch, size_t batchRow, size_t chunk) noexcept
 
 void AKGridView::layoutEvent(const CZLayoutEvent &e)
 {
-    // The width changes the columns (and so the content's height)
-    m_inLayout = true;
     AKScroll::layoutEvent(e);
-    m_inLayout = false;
 
+    /* The width changes the columns (and so the content's height): the cells are made again now,
+     * laid out in this same frame (AKScene lays out again when layout events change the layout),
+     * so no frame shows the grid without them. Also when shown again (see AKNode::setVisible()). */
     if (e.changes.has(CZLayoutChangeSize))
     {
         updateContentSize();
-        m_dirty = true;
-        repaint();
+        updateCells();
+        applyPendingScroll();
     }
 }
 
@@ -346,12 +409,10 @@ void AKGridView::onSceneBegin()
     if (!m_dirty)
         return;
 
+    // A scroll that waited for the content's height (see applyPendingScroll())
     m_dirty = false;
     updateCells();
     applyPendingScroll();
-
-    // New cells are laid out on the next frame
-    repaint();
 }
 
 void AKGridView::updateCells() noexcept
@@ -418,12 +479,24 @@ void AKGridView::updateCells() noexcept
                 batch->background.setColor(m_rowBackground ? *m_rowBackground : CZAdaptiveColor(0));
                 batch->columns = chunkColumns(chunk);
 
+                // Behind the cells (created first)
+                if (m_rowColors)
+                    for (size_t r = 0; r < m_batchRows; r++)
+                    {
+                        auto &stripe { batch->stripes.emplace_back(std::make_unique<AKSolidColor>(m_rowColors->first, batch)) };
+                        const SkRegion empty;
+                        stripe->setInputRegion(&empty);
+                        stripe->layout().setPositionType(YGPositionTypeAbsolute);
+                        stripe->layout().setPosition(YGEdgeLeft, 0.f);
+                        stripe->layout().setWidthPercent(100.f);
+                    }
+
                 for (size_t i = 0; i < m_batchRows * batch->columns; i++)
                 {
                     auto &cell { batch->cells.emplace_back(makeCell()) };
                     cell->setParent(batch);
                     cell->layout().setPositionType(YGPositionTypeAbsolute);
-                    cell->layout().setWidth(m_cellSize.width());
+                    cell->layout().setWidth(cellWidth());
                     cell->layout().setHeight(m_cellSize.height());
                 }
             }

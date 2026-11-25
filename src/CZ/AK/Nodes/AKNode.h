@@ -745,7 +745,8 @@ private:
         ChildrenNeedPosUpdate       = 1 << 9,
         ChildrenNeedScaleUpdate     = 1 << 10,
         Skip                        = 1 << 11,
-        KeyboardFocusable           = 1 << 12
+        KeyboardFocusable           = 1 << 12,
+        Shown                       = 1 << 13  // Made visible again: see AKLayout::applyTree()
     };
 
     /* Created by AKScene when the node is presented on the target for the first time */

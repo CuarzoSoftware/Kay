@@ -38,6 +38,9 @@
 
 using namespace CZ;
 
+// See layoutTree()
+static constexpr int MaxRelayoutPasses { 3 };
+
 static void EnqueueAndPropagateToParent(const CZEvent &event, AKNode *from, AKNode *to, bool includeTo) noexcept
 {
     auto core { CZCore::Get() };
@@ -198,6 +201,13 @@ void AKScene::layoutTree() noexcept
         const bool scaleChanged { ct->m_bakedNodesScale != ct->m_prevBakedNodesScale };
         root()->m_flags.setFlag(AKNode::ChildrenNeedScaleUpdate, scaleChanged);
         root()->layout().apply(ct->layoutOnRender, true);
+
+        /* Layout events may change the layout again (e.g. an AKGridView creating the cells that fit
+         * its new size): laid out again, so this frame already shows the result instead of nodes
+         * that were never laid out. Bounded, in case nodes keep changing it. */
+        for (int pass = 0; pass < MaxRelayoutPasses && YGNodeIsDirty(root()->layout().ygNode()); pass++)
+            root()->layout().apply(true, true);
+
         root()->m_flags.remove(AKNode::ChildrenNeedScaleUpdate);
     }
 }
@@ -994,23 +1004,26 @@ AKNode *AKScene::nodeAt(const SkPoint &pos) const noexcept
             continue;
         }
 
-        clipper = it.node()->closestClipperParent();
+        // Inside every ancestor that clips it, not just the closest one: e.g. a cell of a list
+        // clipped by its row and by the list's viewport (scrolled out of view: not there)
+        bool clipped { false };
 
-        if (clipper)
+        for (clipper = it.node()->closestClipperParent(); clipper; clipper = clipper->closestClipperParent())
         {
-            if (!clipper->worldRect().contains(ipos.x(), ipos.y()))
-            {
-                it.next();
-                continue;
-            }
-
-            if (clipper->inputRegion() && !clipper->inputRegion()->contains(
+            if (!clipper->worldRect().contains(ipos.x(), ipos.y()) ||
+                (clipper->inputRegion() && !clipper->inputRegion()->contains(
                     ipos.x() - clipper->worldRect().x(),
-                    ipos.y() - clipper->worldRect().y()))
+                    ipos.y() - clipper->worldRect().y())))
             {
-                it.next();
-                continue;
+                clipped = true;
+                break;
             }
+        }
+
+        if (clipped)
+        {
+            it.next();
+            continue;
         }
 
         return it.node();
@@ -1150,7 +1163,13 @@ void AKScene::setPointerGrab(AKNode *node) noexcept
     if (isSubScene() || (node && node->scene() != this))
         return;
 
+    const bool released { !node && m_win->pointerGrab };
     m_win->pointerGrab.reset(node);
+
+    // Released: the node under the pointer gets it again (its cursor, hover states), without
+    // waiting for the pointer to move
+    if (released && AKApp::Get()->pointer().focus() == this)
+        pointerMoveEvent(AKApp::Get()->pointer().history().move);
 }
 
 AKNode *AKScene::pointerGrab() const noexcept

@@ -66,6 +66,15 @@ public:
      */
     CZSignal<> onOffsetChanged;
 
+    /** @brief Emitted after the content's measured bounds change (it grew, shrank...). */
+    CZSignal<> onContentBoundsChanged;
+
+    /**
+     * @brief Whether part of the content is out of view beyond @p edge of the view (scrolled
+     *        under it), e.g. CZEdgeTop once scrolled down, CZEdgeBottom while there's more below.
+     */
+    bool contentHidden(CZEdge edge) const noexcept;
+
 protected:
     void calculateContentBounds() noexcept;
     void applyConstraints() noexcept;

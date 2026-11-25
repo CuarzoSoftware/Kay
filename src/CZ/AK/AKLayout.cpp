@@ -127,8 +127,14 @@ void AKLayout::applyTree(AKNode *node)
     if (!node->visible())
         return;
 
+    /* Shown again: its rect is the one it had when hidden (hidden nodes aren't laid out), so it
+     * could look unchanged. It gets a layout event anyway: what it shows may depend on a size it
+     * missed (e.g. an AKGridView creates the cells that fit). */
+    const bool shown { node->m_flags.has(AKNode::Shown) };
+    node->m_flags.remove(AKNode::Shown);
+
     const bool updateScale { node->parent()->m_flags.has(AKNode::ChildrenNeedScaleUpdate) };
-    const bool updateRect { node->parent()->m_flags.has(AKNode::ChildrenNeedPosUpdate) || YGNodeGetHasNewLayout(node->layout().m_node) };
+    const bool updateRect { shown || node->parent()->m_flags.has(AKNode::ChildrenNeedPosUpdate) || YGNodeGetHasNewLayout(node->layout().m_node) };
 
     if (!updateScale && !updateRect)
         return;
@@ -160,6 +166,12 @@ void AKLayout::applyTree(AKNode *node)
         }
 
         node->m_worldRect = newWorldRect;
+
+        if (shown)
+        {
+            changes.add(CZLayoutChangePos);
+            changes.add(CZLayoutChangeSize);
+        }
 
         /* The sceneRect is relative to the current target viewport.
          * If it differs from the previous frame, the scene damages both.

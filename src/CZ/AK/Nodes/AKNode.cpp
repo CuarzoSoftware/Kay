@@ -124,7 +124,9 @@ void AKNode::setVisible(bool visible) noexcept
 
     layout().setDisplay(visible ? YGDisplayFlex : YGDisplayNone);
 
-    if (!visible)
+    if (visible)
+        m_flags.add(Shown);
+    else
         damageTargetsAndPropagate();
 }
 
