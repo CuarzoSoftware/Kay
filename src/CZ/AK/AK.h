@@ -69,12 +69,14 @@ namespace CZ
     class AKWindowButton;
     class AKWindowButtonGroup;
     class AKScroll;
+    class AKGridView;
     class AKScrollBar;
     class AKSlider;
     class AKSearchField;
     class AKAvatar;
     class AKSidebarItem;
     class AKSidebarList;
+    class AKSidebarSection;
     class AKIconTile;
     class AKSwitch;
     class AKIconButton;

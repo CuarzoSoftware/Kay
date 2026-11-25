@@ -52,6 +52,7 @@ void AKScroll::setOffset(SkScalar x, SkScalar y) noexcept
     stopKinetic();
     m_slot.layout().setPosition(YGEdgeTop, y);
     m_slot.layout().setPosition(YGEdgeLeft, x);
+    calculateContentBounds(); // The content may have changed since (e.g. more items)
     applyConstraints();
 }
 
@@ -59,6 +60,7 @@ void AKScroll::setOffsetX(Int32 x) noexcept
 {
     stopKinetic();
     m_slot.layout().setPosition(YGEdgeLeft, x);
+    calculateContentBounds(); // The content may have changed since (e.g. more items)
     applyConstraints();
 }
 
@@ -66,6 +68,7 @@ void AKScroll::setOffsetY(Int32 y) noexcept
 {
     stopKinetic();
     m_slot.layout().setPosition(YGEdgeTop, y);
+    calculateContentBounds(); // The content may have changed since (e.g. more items)
     applyConstraints();
 }
 
@@ -142,8 +145,10 @@ void AKScroll::applyConstraints() noexcept
 
     m_slot.layout().setPosition(YGEdgeTop, y);
     m_slot.layout().setPosition(YGEdgeLeft, x);
-    updateBarXPrivate();
-    updateBarYPrivate();
+
+    // Not the user scrolling (other content, a new size, setOffset()): the bars don't show up
+    updateBarXPrivate(false);
+    updateBarYPrivate(false);
 }
 
 /* ------------------------------------ Kinetic scrolling ------------------------------------ */
@@ -440,52 +445,67 @@ bool AKScroll::eventFilter(const CZEvent &event, CZObject &t) noexcept
     return AKContainer::eventFilter(e, t);
 }
 
-void AKScroll::updateBarXPrivate() noexcept
+void AKScroll::updateBarXPrivate(bool reveal) noexcept
 {
     if (layout().calculatedWidth() >= m_contentBounds.width())
-        m_hBar.setSizePercent(1.f);
+        m_hBar.setSizePercent(1.f, reveal);
     else
-        m_hBar.setSizePercent(layout().calculatedWidth() / m_contentBounds.width());
+        m_hBar.setSizePercent(layout().calculatedWidth() / m_contentBounds.width(), reveal);
 
     SkScalar x { -(offsetX() - m_contentBounds.fLeft) };
     SkScalar realWidth { m_contentBounds.width() - layout().calculatedWidth() };
 
     if (realWidth <= 0.f)
-        m_hBar.setPosPercent(0.f);
+        m_hBar.setPosPercent(0.f, reveal);
     else
     {
         x = x/realWidth;
-        m_hBar.setPosPercent(x);
+        m_hBar.setPosPercent(x, reveal);
 
         if (x < 0.f)
-            m_hBar.setSizePercent(m_hBar.sizePercent() + x * (1.f - m_hBar.sizePercent()));
+            m_hBar.setSizePercent(m_hBar.sizePercent() + x * (1.f - m_hBar.sizePercent()), reveal);
         else if (x > 1.f)
-            m_hBar.setSizePercent(m_hBar.sizePercent() + (1.f - x) * (1.f - m_hBar.sizePercent()));
+            m_hBar.setSizePercent(m_hBar.sizePercent() + (1.f - x) * (1.f - m_hBar.sizePercent()), reveal);
     }
+
+    notifyOffset();
 }
 
-void AKScroll::updateBarYPrivate() noexcept
+void AKScroll::updateBarYPrivate(bool reveal) noexcept
 {
     if (layout().calculatedHeight() >= m_contentBounds.height())
-        m_vBar.setSizePercent(1.f);
+        m_vBar.setSizePercent(1.f, reveal);
     else
-        m_vBar.setSizePercent(layout().calculatedHeight() / m_contentBounds.height());
+        m_vBar.setSizePercent(layout().calculatedHeight() / m_contentBounds.height(), reveal);
 
     SkScalar y { -(offsetY() - m_contentBounds.fTop) };
     SkScalar realHeight { m_contentBounds.height() - layout().calculatedHeight() };
 
     if (realHeight <= 0.f)
-        m_vBar.setPosPercent(0.f);
+        m_vBar.setPosPercent(0.f, reveal);
     else
     {
         y = y/realHeight;
-        m_vBar.setPosPercent(y);
+        m_vBar.setPosPercent(y, reveal);
 
         if (y < 0.f)
-            m_vBar.setSizePercent(m_vBar.sizePercent() + y * (1.f - m_vBar.sizePercent()));
+            m_vBar.setSizePercent(m_vBar.sizePercent() + y * (1.f - m_vBar.sizePercent()), reveal);
         else if (y > 1.f)
-            m_vBar.setSizePercent(m_vBar.sizePercent() + (1.f - y) * (1.f - m_vBar.sizePercent()));
+            m_vBar.setSizePercent(m_vBar.sizePercent() + (1.f - y) * (1.f - m_vBar.sizePercent()), reveal);
     }
+
+    notifyOffset();
+}
+
+void AKScroll::notifyOffset() noexcept
+{
+    const SkPoint offset { offsetX(), offsetY() };
+
+    if (offset == m_notifiedOffset)
+        return;
+
+    m_notifiedOffset = offset;
+    onOffsetChanged.notify();
 }
 
 void AKScroll::moveXPrivate(SkScalar dx) noexcept

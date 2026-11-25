@@ -61,11 +61,13 @@ public:
      * @brief Sets the handle position along the rail, clamped to [0, 1].
      *
      * Purely visual: it does not scroll the attached AKScroll (which is the one
-     * updating it). Shows the bar and restarts the fade-out timeout.
+     * updating it). With @p reveal (the user scrolled) it shows the bar and restarts
+     * the fade-out timeout; otherwise (e.g. the content changed) the bar is updated
+     * without appearing.
      *
      * @return `true` if the position changed, `false` otherwise.
      */
-    bool setPosPercent(SkScalar pos) noexcept;
+    bool setPosPercent(SkScalar pos, bool reveal = true) noexcept;
 
     /** @brief The handle position along the rail, in [0, 1]. */
     SkScalar posPercent() const noexcept { return m_posPercent; }
@@ -74,12 +76,12 @@ public:
     /**
      * @brief Sets the handle length relative to the rail, clamped to [0, 1].
      *
-     * Purely visual (see setPosPercent()). A value of 1 means the whole content
-     * is visible and fades the bar out instead of showing it.
+     * Purely visual (see setPosPercent(), also for @p reveal). A value of 1 means the
+     * whole content is visible and fades the bar out instead of showing it.
      *
      * @return `true` if the size changed, `false` otherwise.
      */
-    bool setSizePercent(SkScalar size) noexcept;
+    bool setSizePercent(SkScalar size, bool reveal = true) noexcept;
 
     /** @brief The handle length relative to the rail, in [0, 1]. */
     SkScalar sizePercent() const noexcept { return m_sizePercent; }
@@ -136,6 +138,7 @@ protected:
     AKContainer m_space { YGFlexDirectionRow, false, this };
     AKThreePatch m_handle { CZOrientation::H, this };
     CZEdge m_edge { CZEdgeNone };
+    void changed(bool reveal) noexcept; // After the position or size changed
     CZTimer m_fadeOutTimer;
     CZLinearAnimation m_fadeOutAnim;
     CZLinearAnimation m_hoverAnim;

@@ -1326,6 +1326,14 @@ void AKScene::keyboardEnterEvent(const CZKeyboardEnterEvent &e) noexcept
     app->keyboard().m_history.enter = e;
     app->keyboard().m_focus.reset(this);
     app->keyboard().onFocusChanged.notify();
+
+    // The node focused when the window lost the keyboard gets it back (e.g. a window that only
+    // types through a node it focused once, clicking it doesn't focus it again)
+    AKNode *prev { m_win->prevKeyboardFocus };
+    m_win->prevKeyboardFocus.reset();
+
+    if (prev && !keyboardFocus() && prev->scene() == this)
+        prev->setKeyboardFocus(true);
 }
 
 void AKScene::keyboardKeyEvent(const CZKeyboardKeyEvent &e) noexcept
@@ -1369,6 +1377,7 @@ void AKScene::keyboardLeaveEvent(const CZKeyboardLeaveEvent &e) noexcept
         return;
 
     EnqueueAndPropagateToParent(e, keyboardFocus(), nullptr, false);
+    m_win->prevKeyboardFocus.reset(keyboardFocus());
     m_win->keyboardFocus.reset();
 }
 

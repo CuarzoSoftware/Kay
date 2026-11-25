@@ -175,7 +175,7 @@ bool AKScrollBar::setEdge(CZEdge edge) noexcept
     return true;
 }
 
-bool AKScrollBar::setPosPercent(SkScalar pos) noexcept
+bool AKScrollBar::setPosPercent(SkScalar pos, bool reveal) noexcept
 {
     if (pos < 0.f)
         pos = 0.f;
@@ -189,27 +189,40 @@ bool AKScrollBar::setPosPercent(SkScalar pos) noexcept
     addChange(CHPosPercent);
     updateGeometry();
 
-    m_preventHide = true;
-    m_fadeOutAnim.pause();
-    m_preventHide = false;
-
-    if (sizePercent() != 1.f)
-    {
-        setVisible(true);
-        m_fadeOutTimer.start(1000);
-        m_handle.setOpacity(0.5f);
-    }
-    else if (opacity() != 0.f)
-    {
-        setVisible(true);
-        m_fadeOutTimer.stop();
-        m_fadeOutAnim.start();
-    }
-
+    changed(reveal);
     return true;
 }
 
-bool AKScrollBar::setSizePercent(SkScalar size) noexcept
+void AKScrollBar::changed(bool reveal) noexcept
+{
+    // The whole content fits: it fades out (if shown)
+    if (sizePercent() == 1.f)
+    {
+        if (opacity() != 0.f)
+        {
+            m_preventHide = true;
+            m_fadeOutAnim.pause();
+            m_preventHide = false;
+            setVisible(true);
+            m_fadeOutTimer.stop();
+            m_fadeOutAnim.start();
+        }
+        return;
+    }
+
+    // Not scrolled by the user (e.g. other content): updated where it is, shown or not
+    if (!reveal)
+        return;
+
+    m_preventHide = true;
+    m_fadeOutAnim.pause();
+    m_preventHide = false;
+    setVisible(true);
+    m_fadeOutTimer.start(1000);
+    m_handle.setOpacity(0.5f);
+}
+
+bool AKScrollBar::setSizePercent(SkScalar size, bool reveal) noexcept
 {
     if (size < 0.f)
         size = 0.f;
@@ -223,23 +236,7 @@ bool AKScrollBar::setSizePercent(SkScalar size) noexcept
     addChange(CHSizePercent);
     updateGeometry();
 
-    m_preventHide = true;
-    m_fadeOutAnim.pause();
-    m_preventHide = false;
-
-    if (size != 1.f)
-    {
-        setVisible(true);
-        m_fadeOutTimer.start(1000);
-        m_handle.setOpacity(0.5f);
-    }
-    else if (opacity() != 0.f)
-    {
-        setVisible(true);
-        m_fadeOutTimer.stop();
-        m_fadeOutAnim.start();
-    }
-
+    changed(reveal);
     return true;
 }
 

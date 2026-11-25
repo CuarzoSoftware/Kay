@@ -44,6 +44,10 @@ public:
         /// mask() changed.
         CHMask,
 
+        /// opaque() changed.
+
+        CHOpaque,
+
         CHLast ///< Marker for subclass chaining.
     };
 
@@ -222,6 +226,29 @@ public:
     /** @brief The alpha mask (see setMask()). */
     std::shared_ptr<RImage> mask() const noexcept { return m_mask; }
 
+    /**
+     * @brief Declares the image fully opaque (e.g. a snapshot of an opaque surface or a picture
+     *        without transparency). Disabled by default.
+     *
+     * The whole node then counts as opaque (see AKRenderable::opaqueRegion, kept up to date with
+     * its size): what's behind it isn't painted, and it's drawn without blending. Not while there's
+     * no image or a mask (see setMask()), nor while it's faded (AKRenderable::opacity() or the
+     * color factor's alpha below 1).
+     *
+     * While disabled the opaque region is left to the owner (it's cleared once, when disabled).
+     */
+    void setOpaque(bool opaque) noexcept
+    {
+        if (m_opaque == opaque)
+            return;
+
+        m_opaque = opaque;
+        addChange(CHOpaque);
+    }
+
+    /** @brief Whether the image is declared fully opaque (see setOpaque()). */
+    bool opaque() const noexcept { return m_opaque; }
+
 protected:
     /** @brief Adds full damage when source properties changed, unless auto damage is disabled. */
     virtual void onSceneBegin() override;
@@ -235,6 +262,7 @@ protected:
     SrcRectMode m_srcRectMode { SrcRectMode::EntireImage };
     CZTransform m_srcTransform { CZTransform::Normal };
     bool m_autoDamage { true };
+    bool m_opaque { false };
 };
 
 #endif // CZ_AKIMAGE_H

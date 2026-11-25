@@ -39,6 +39,12 @@ AKNode::~AKNode()
 {
     m_beingDestroyed = true;
 
+    // What it showed (its background effects and descendants included) must be repainted: the
+    // detachments below don't damage anything. E.g. a destroyed card's shadow, which isn't one of
+    // its children, stayed on screen
+    if (m_scene)
+        damageTargetsAndPropagate();
+
     while (!m_backgroundEffects.empty())
         removeBackgroundEffect(*m_backgroundEffects.begin());
 

@@ -7,6 +7,18 @@ using namespace CZ;
 
 void AKImage::onSceneBegin()
 {
+    // Its whole rect (it's stretched over the node), unless it isn't drawn as is. Left alone
+    // otherwise: the owner may manage it (e.g. a client's opaque region)
+    if (m_opaque)
+    {
+        if (m_image && !m_mask)
+            opaqueRegion.setRect(SkIRect::MakeSize(worldRect().size()));
+        else
+            opaqueRegion.setEmpty();
+    }
+    else if (changes().test(CHOpaque))
+        opaqueRegion.setEmpty();
+
     if (!m_autoDamage)
         return;
 

@@ -147,6 +147,7 @@ private:
         CZWeak<AKNode> pointerGrab;
         CZWeak<AKNode> pointerFocus;
         CZWeak<AKNode> keyboardFocus;
+        CZWeak<AKNode> prevKeyboardFocus; // Its keyboardFocus when the window lost the keyboard (restored when it gets it back)
         CZTimer keyDelayTimer, keyRepeatTimer;
         Int64 repeatedKey { -1 };
         CZBitset<CZWindowState> windowState { CZWinActivated };

@@ -12,33 +12,49 @@ AKSidebarList::AKSidebarList(AKNode *parent) noexcept : AKScroll(parent)
     horizontalBar().setRailVisible(false);
 }
 
-AKSidebarItem &AKSidebarList::addItem(const std::string &text, const std::string &iconName, CZAdaptiveColor tileColor, const std::string &id) noexcept
+AKSidebarList::~AKSidebarList() noexcept
 {
-    auto &item { m_items.emplace_back(std::make_unique<AKSidebarItem>(text, iconName, tileColor, this)) };
-    item->id = id;
-
-    if (m_sectionPending)
-    {
-        m_sectionPending = false;
-        item->layout().setMargin(YGEdgeTop, SectionGap);
-    }
-
-    AKSidebarItem *raw { item.get() };
-    raw->onClicked.subscribe(this, [this, raw]{ setSelectedItem(raw); });
-    return *raw;
+    // Rows go first: nothing to notify about anymore
+    m_selected = nullptr;
+    m_sections.clear();
 }
 
-void AKSidebarList::addSection() noexcept
+AKSidebarItem &AKSidebarList::addItem(const std::string &text, const std::string &iconName, CZAdaptiveColor tileColor, const std::string &id) noexcept
 {
-    // Not before the first row
-    m_sectionPending = !m_items.empty();
+    if (m_sections.empty())
+        addSection();
+
+    return m_sections.back()->addItem(text, iconName, tileColor, id);
+}
+
+AKSidebarSection &AKSidebarList::addSection(const std::string &title) noexcept
+{
+    const bool first { m_sections.empty() };
+    auto &section { m_sections.emplace_back(new AKSidebarSection(*this, title, slot())) };
+
+    if (!first)
+        section->layout().setMargin(YGEdgeTop, title.empty() ? SectionGap : SectionGap - 8.f);
+
+    return *section;
+}
+
+std::vector<AKSidebarItem*> AKSidebarList::items() const noexcept
+{
+    std::vector<AKSidebarItem*> items;
+
+    for (const auto &section : m_sections)
+        for (const auto &item : section->items())
+            items.emplace_back(item.get());
+
+    return items;
 }
 
 AKSidebarItem *AKSidebarList::item(const std::string &id) const noexcept
 {
-    for (const auto &item : m_items)
-        if (item->id == id)
-            return item.get();
+    for (const auto &section : m_sections)
+        for (const auto &item : section->items())
+            if (item->id == id)
+                return item.get();
 
     return nullptr;
 }

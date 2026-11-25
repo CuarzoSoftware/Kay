@@ -1,16 +1,84 @@
 #include <CZ/AK/Effects/AKEdgeShadow.h>
 #include <CZ/Core/Events/CZLayoutEvent.h>
 #include <CZ/AK/AKTheme.h>
+#include <CZ/AK/Nodes/AKScroll.h>
+#include <algorithm>
 
 using namespace CZ;
 
-AKEdgeShadow::AKEdgeShadow(CZEdge edge, AKNode *parent) noexcept : AKImage(parent)
+AKEdgeShadow::AKEdgeShadow(CZEdge edge, AKNode *parent) noexcept :
+    AKImage(parent),
+    m_fade(FadeMs,
+        [this](CZAnimation *a){ setLevel(m_fadeFrom + (m_fadeTo - m_fadeFrom) * SkScalar(a->value())); },
+        [this](CZAnimation *){ setLevel(m_fadeTo); setVisible(m_fadeTo > 0.f); })
 {
+    const SkRegion empty;
+    setInputRegion(&empty);
     layout().setPositionType(YGPositionTypeAbsolute);
     setEdge(edge);
     enableReplaceImageColor(true);
     setColor(AKTheme::EdgeShadowColor);
     setImage(theme()->edgeShadowImage(scale()));
+}
+
+AKEdgeShadow::~AKEdgeShadow() noexcept
+{
+    // The listener goes away with this object (its owner)
+    m_fade.pause();
+}
+
+void AKEdgeShadow::showWhileScrolled(AKScroll *scroll) noexcept
+{
+    if (m_scroll.get() == scroll)
+        return;
+
+    // Gone with its scroll if that was destroyed
+    if (m_scroll)
+        delete m_scrollListener;
+
+    m_scrollListener = nullptr;
+    m_scroll.reset(scroll);
+
+    if (scroll)
+        m_scrollListener = scroll->onOffsetChanged.subscribe(this, [this]{ updateScrolled(true); });
+
+    updateScrolled(false);
+}
+
+void AKEdgeShadow::updateScrolled(bool animated) noexcept
+{
+    const SkScalar target { !m_scroll || m_scroll->offsetY() < 0.f ? 1.f : 0.f };
+
+    // Already there or on its way
+    if (target == m_fadeTo && (m_fade.isRunning() || m_level == target))
+        return;
+
+    m_fadeTo = target;
+
+    if (!animated)
+    {
+        m_fade.pause();
+        setLevel(target);
+        setVisible(target > 0.f);
+        return;
+    }
+
+    m_fadeFrom = visible() ? m_level : 0.f;
+    setVisible(true);
+    m_fade.pause();
+    m_fade.start();
+}
+
+void AKEdgeShadow::setStrength(SkScalar strength) noexcept
+{
+    m_strength = std::clamp(strength, 0.f, 1.f);
+    setLevel(m_level);
+}
+
+void AKEdgeShadow::setLevel(SkScalar level) noexcept
+{
+    m_level = level;
+    setOpacity(m_level * m_strength);
 }
 
 void AKEdgeShadow::setEdge(CZEdge edge) noexcept

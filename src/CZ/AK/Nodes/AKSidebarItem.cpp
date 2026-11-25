@@ -1,5 +1,6 @@
 #include <CZ/AK/Nodes/AKSidebarItem.h>
 #include <CZ/AK/AKTheme.h>
+#include <CZ/AK/AKApp.h>
 #include <CZ/Core/Events/CZPointerButtonEvent.h>
 #include <CZ/Core/Events/CZPointerLeaveEvent.h>
 #include <CZ/Core/Events/CZColorSchemeEvent.h>
@@ -48,12 +49,55 @@ void AKSidebarItem::setTileColor(CZAdaptiveColor color) noexcept
     updateColors();
 }
 
+void AKSidebarItem::setIconColor(std::optional<CZAdaptiveColor> color) noexcept
+{
+    m_iconColor = color;
+    updateColors();
+}
+
+AKIconButton *AKSidebarItem::setAccessory(const std::string &iconName) noexcept
+{
+    if (iconName.empty())
+    {
+        m_accessory.reset();
+        return nullptr;
+    }
+
+    if (!m_accessory)
+    {
+        m_accessory = std::make_unique<AKIconButton>(iconName, Int32(TileSize), this);
+        m_accessory->layout().setMarginAuto(YGEdgeLeft); // At the trailing end
+        m_accessory->onClick.subscribe(this, [this](const auto &){ onAccessoryClicked.notify(); });
+    }
+    else
+        m_accessory->icon.setIconFromName(iconName);
+
+    updateColors();
+    return m_accessory.get();
+}
+
+bool AKSidebarItem::overAccessory() const noexcept
+{
+    if (!m_accessory || !m_accessory->visible())
+        return false;
+
+    const SkPoint pos { AKApp::Get()->pointer().pos() };
+    return SkRect::Make(m_accessory->worldRect()).contains(pos.x(), pos.y());
+}
+
 void AKSidebarItem::pointerButtonEvent(const CZPointerButtonEvent &e)
 {
     AKRoundSolidColor::pointerButtonEvent(e);
 
     if (e.button != BTN_LEFT)
         return;
+
+    // The accessory's own click (propagated here)
+    if (overAccessory())
+    {
+        m_pressed = false;
+        return;
+    }
 
     if (e.pressed)
         m_pressed = true;
@@ -99,5 +143,8 @@ void AKSidebarItem::updateColors() noexcept
     // Without a tile the icon is drawn like the label (white over the selection)
     tile.setTileColor(m_tileColor);
     const bool noTile { SkColorGetA(m_tileColor.resolve(scheme)) == 0 };
-    tile.setIconColor(noTile && emphasized ? std::optional<CZAdaptiveColor>(AKTheme::White) : std::nullopt);
+    tile.setIconColor(noTile && emphasized ? std::optional<CZAdaptiveColor>(AKTheme::White) : m_iconColor);
+
+    if (m_accessory)
+        m_accessory->setIconColor(emphasized ? AKTheme::White : AKTheme::SecondaryLabel);
 }

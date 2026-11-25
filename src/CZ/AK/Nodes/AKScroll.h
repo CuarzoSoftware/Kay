@@ -2,6 +2,7 @@
 #define CZ_AKSCROLL_H
 
 #include <CZ/AK/Nodes/AKContainer.h>
+#include <CZ/Core/CZSignal.h>
 #include <CZ/AK/Nodes/AKScrollBar.h>
 #include <CZ/Core/CZLinearAnimation.h>
 #include <CZ/Core/Events/CZPointerScrollEvent.h>
@@ -56,6 +57,15 @@ public:
         return m_vBar;
     }
 
+    /**
+     * @brief Emitted after offsetX() or offsetY() change: scrolled by the user, set with
+     *        setOffset() or corrected after the content or the view changed size.
+     *
+     * E.g. to show a toolbar's shadow while the content is scrolled (see
+     * AKEdgeShadow::showWhileScrolled()).
+     */
+    CZSignal<> onOffsetChanged;
+
 protected:
     void calculateContentBounds() noexcept;
     void applyConstraints() noexcept;
@@ -72,10 +82,13 @@ protected:
     /** @brief Scrolls by 128 logical pixels on arrow key presses delivered to the scene. */
     bool eventFilter(const CZEvent &event, CZObject &target) noexcept override;
 
-    void updateBarXPrivate() noexcept;
-    void updateBarYPrivate() noexcept;
+    // reveal: shows the bars (the user scrolled), see AKScrollBar::setPosPercent()
+    void updateBarXPrivate(bool reveal = true) noexcept;
+    void updateBarYPrivate(bool reveal = true) noexcept;
     void moveXPrivate(SkScalar dx) noexcept;
     void moveYPrivate(SkScalar dy) noexcept;
+    void notifyOffset() noexcept; // Emits onOffsetChanged if the offset changed
+    SkPoint m_notifiedOffset { 0.f, 0.f };
 
     AKContainer m_slot;
     SkIRect m_contentBounds { 0, 0, 0, 0 };
