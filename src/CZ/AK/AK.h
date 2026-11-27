@@ -83,6 +83,8 @@ namespace CZ
     class AKIconButton;
     class AKFormSection;
     class AKFormRow;
+    class AKDisclosureSection;
+    class AKInfoRow;
     class AKTextInput;
     class AKWiFiIcon;
     class AKActivityIndicator;
