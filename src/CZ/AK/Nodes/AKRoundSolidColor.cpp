@@ -63,8 +63,16 @@ void AKRoundSolidColor::onSceneBegin()
     if (ch.testAnyOf(CHBorderRadius, CHLayoutScale, CHStrokeColor, CHStrokeWidth, CHBackgroundColor))
     {
         m_asset = theme()->RRect9Patch.get(m_borderRadius.fTL, m_borderRadius.fTR, m_borderRadius.fBR, m_borderRadius.fBL, scale(), backgroundColor(), strokeWidth(), strokeColor());
-        setImage(m_asset->image);
-        setCenter(m_asset->center);
+
+        // It couldn't be created (e.g. the asset broker failed for this device): nothing is drawn,
+        // rather than crashing
+        if (m_asset)
+        {
+            setImage(m_asset->image);
+            setCenter(m_asset->center);
+        }
+        else
+            setImage(nullptr);
     }
 
     AKNinePatch::onSceneBegin();
