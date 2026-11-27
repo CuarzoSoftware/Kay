@@ -4,6 +4,7 @@
 #include <CZ/AK/AKScene.h>
 #include <CZ/AK/AKTheme.h>
 #include <CZ/AK/AKApp.h>
+#include <CZ/Core/CZMouseSettings.h>
 #include <CZ/Core/CZCore.h>
 #include <CZ/Core/CZKeymap.h>
 #include <CZ/Core/CZTime.h>
@@ -26,7 +27,6 @@ using namespace CZ;
 using namespace skia::textlayout;
 
 static constexpr UInt32 BlinkMs { 530 };
-static constexpr UInt32 MultiClickMs { 400 };
 static constexpr SkScalar MultiClickDistance { 4.f };
 static constexpr size_t UndoLimit { 100 };
 static const CZAdaptiveColor UnfocusedSelection { 0x40808080, 0x50808080 };
@@ -901,7 +901,7 @@ void AKCoreTextEditor::pointerButtonEvent(const CZPointerButtonEvent &e)
     const SkPoint local { localPointer() };
     const UInt64 now { CZTime::Ms() };
 
-    if (now - m_lastClickMs <= MultiClickMs && SkPoint::Distance(local, m_lastClickPos) <= MultiClickDistance)
+    if (now - m_lastClickMs <= CZMouseSettings::DoubleClickMs() && SkPoint::Distance(local, m_lastClickPos) <= MultiClickDistance)
         m_clickCount = m_clickCount % 3 + 1;
     else
         m_clickCount = 1;
